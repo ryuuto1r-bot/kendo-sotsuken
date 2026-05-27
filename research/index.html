@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卒研情報センター | Kendo Virtual Coach</title>
+    <meta name="description" content="剣道の非接触打突分析アプリ Kendo Virtual Coach の卒業研究向け説明ページ">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="../icon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --soft: #f8fafc;
+            --blue: #2563eb;
+            --green: #059669;
+            --amber: #d97706;
+            --red: #dc2626;
+            --panel: #ffffff;
+            --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.75;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.96);
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(14px);
+        }
+
+        .topbar-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: #2563eb;
+            font-weight: 900;
+        }
+
+        .top-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .pill.primary {
+            background: #fff;
+            color: #0f172a;
+        }
+
+        .pill button {
+            color: inherit;
+            font: inherit;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .hero {
+            background:
+                linear-gradient(120deg, rgba(15, 23, 42, 0.96), rgba(30, 64, 175, 0.88)),
+                radial-gradient(circle at 78% 10%, rgba(16, 185, 129, 0.22), transparent 32%);
+            color: #fff;
+        }
+
+        .hero-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 54px 18px 36px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #dbeafe;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 880px;
+            font-size: clamp(30px, 5vw, 58px);
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+
+        .lead {
+            max-width: 880px;
+            margin: 18px 0 0;
+            color: #dbeafe;
+            font-size: clamp(15px, 2vw, 18px);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .hero-stat {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .hero-stat strong {
+            display: block;
+            font-size: 19px;
+            line-height: 1.2;
+        }
+
+        .hero-stat span {
+            display: block;
+            margin-top: 4px;
+            color: #bfdbfe;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .layout {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 24px 18px 54px;
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .side {
+            position: sticky;
+            top: 70px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .side-title {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 900;
+            margin: 2px 6px 8px;
+        }
+
+        .side a {
+            display: block;
+            padding: 9px 10px;
+            border-radius: 8px;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .side a:hover { background: #eff6ff; color: #1d4ed8; }
+
+        .menu-group {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .menu-group summary {
+            cursor: pointer;
+            padding: 9px 10px;
+            color: #0f172a;
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .menu-group a {
+            border-radius: 0;
+            border-top: 1px solid #f1f5f9;
+            padding-left: 14px;
+        }
+
+        .search-box {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+
+        .search-label {
+            display: block;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px;
+        }
+
+        .search-input {
+            width: 100%;
+            min-height: 38px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--ink);
+            background: #fff;
+            font-size: 14px;
+        }
+
+        .search-clear {
+            min-width: 38px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #475569;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .search-count {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .search-results {
+            display: none;
+            margin-top: 10px;
+            border-top: 1px solid var(--line);
+            padding-top: 10px;
+        }
+
+        .search-results.active { display: block; }
+
+        .search-result {
+            display: block;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            background: #fff;
+            padding: 9px;
+            margin-bottom: 8px;
+        }
+
+        .search-result strong {
+            display: block;
+            color: #1d4ed8;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .search-result span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        mark {
+            background: #fef3c7;
+            color: inherit;
+            border-radius: 4px;
+            padding: 0 2px;
+        }
+
+        .search-dim {
+            opacity: 0.42;
+        }
+
+        main { min-width: 0; }
+
+        section {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 24px;
+            line-height: 1.25;
+            letter-spacing: 0;
+        }
+
+        h3 {
+            margin: 20px 0 8px;
+            font-size: 17px;
+            line-height: 1.35;
+        }
+
+        p { margin: 8px 0; }
+
+        .section-kicker {
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 14px;
+            background: var(--soft);
+        }
+
+        .card strong {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .card p, .card li { color: #475569; font-size: 13px; }
+
+        .mini-meta {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            margin-top: 8px;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 8px;
+            padding: 6px 9px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .badge.green { background: #ecfdf5; color: #047857; }
+        .badge.amber { background: #fffbeb; color: #b45309; }
+        .badge.red { background: #fef2f2; color: #b91c1c; }
+
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .flow-step {
+            position: relative;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            border-radius: 10px;
+            padding: 14px;
+            min-height: 118px;
+        }
+
+        .flow-step .num {
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .flow-step strong { display: block; }
+
+        .flow-step span {
+            display: block;
+            color: #475569;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 10px 8px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #334155;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .note {
+            border-left: 4px solid var(--blue);
+            background: #eff6ff;
+            padding: 13px 14px;
+            border-radius: 8px;
+            color: #1e3a8a;
+            margin-top: 14px;
+        }
+
+        .warn {
+            border-left-color: var(--amber);
+            background: #fffbeb;
+            color: #78350f;
+        }
+
+        .danger {
+            border-left-color: var(--red);
+            background: #fef2f2;
+            color: #7f1d1d;
+        }
+
+        .copy-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .checklist {
+            padding-left: 20px;
+            margin: 8px 0 0;
+        }
+
+        .checklist li { margin: 6px 0; }
+
+        .faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 0;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .faq-item summary {
+            cursor: pointer;
+            padding: 13px 14px;
+            font-weight: 900;
+            background: #f8fafc;
+        }
+
+        .faq-item p, .faq-item ul {
+            padding: 0 14px 14px;
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .term {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 12px;
+        }
+
+        .term strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .term span {
+            display: block;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .timeline {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 12px;
+        }
+
+        .timeline-item strong {
+            color: #1d4ed8;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .matrix-cell {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 12px;
+        }
+
+        .matrix-cell strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .footer {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 18px 34px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .topbar-inner { align-items: flex-start; flex-direction: column; }
+            .layout { grid-template-columns: 1fr; }
+            .side { position: static; }
+            .hero-grid, .cards, .flow, .two-col, .glossary-grid { grid-template-columns: 1fr; }
+            .timeline-item, .matrix { grid-template-columns: 1fr; }
+            section { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="../index.html">
+                <span class="brand-mark">剣</span>
+                <span>Kendo Virtual Coach</span>
+            </a>
+            <div class="top-actions">
+                <a class="pill primary" href="../index.html">解析アプリを開く</a>
+                <a class="pill" href="./history.html">開発メモ</a>
+                <a class="pill" href="../yolo.html">YOLO比較版</a>
+                <span class="pill"><button id="printPageBtn" type="button">印刷/PDF</button></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-inner">
+            <div class="eyebrow">卒研情報センター / Research Hub</div>
+            <h1>剣道の自主練習を、映像解析で客観的に振り返る。</h1>
+            <p class="lead">
+                本ページは、剣道非接触打突分析アプリ「Kendo Virtual Coach」の研究目的、測定方法、
+                評価指標、技術構成、検証方針、限界と今後の発展を説明するための情報センターです。
+                実際の練習UIとは分離し、先生・発表・共同検討に使いやすい形で整理しています。
+            </p>
+            <div class="hero-grid">
+                <div class="hero-stat"><strong>対象</strong><span>素振り・打突動作</span></div>
+                <div class="hero-stat"><strong>本採用</strong><span>MediaPipe版</span></div>
+                <div class="hero-stat"><strong>正式測定</strong><span>高fps動画解析</span></div>
+                <div class="hero-stat"><strong>主指標</strong><span>時間・速度・角度</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <aside class="side">
+            <div class="search-box">
+                <label class="search-label" for="researchSearchInput">サイト内検索</label>
+                <div class="search-row">
+                    <input id="researchSearchInput" class="search-input" type="search" placeholder="例: 打突時間 / fps / 異常値">
+                    <button id="researchSearchClear" class="search-clear" type="button" aria-label="検索をクリア">×</button>
+                </div>
+                <div id="researchSearchCount" class="search-count">キーワードで説明を検索できます</div>
+                <div id="researchSearchResults" class="search-results"></div>
+            </div>
+            <div class="side-title">卒研メニュー</div>
+            <details class="menu-group" open>
+                <summary>はじめに</summary>
+                <a href="#quickstart">初めて使う人へ</a>
+                <a href="#audience">利用者別ガイド</a>
+                <a href="#overview">研究概要</a>
+                <a href="#scope">研究対象と範囲</a>
+            </details>
+            <details class="menu-group" open>
+                <summary>研究設計</summary>
+                <a href="#question">研究課題・仮説</a>
+                <a href="#related">関連技術の整理</a>
+                <a href="#protocol">実験プロトコル</a>
+                <a href="#data">データ管理・倫理</a>
+            </details>
+            <details class="menu-group" open>
+                <summary>測定・評価</summary>
+                <a href="#method">測定方法</a>
+                <a href="#timing">打突時間の定義</a>
+                <a href="#metrics">評価指標</a>
+                <a href="#reliability">信頼性と異常値除外</a>
+                <a href="#video">動画解析の流れ</a>
+            </details>
+            <details class="menu-group">
+                <summary>技術・運用</summary>
+                <a href="#system">システム構成</a>
+                <a href="#trouble">トラブル対応</a>
+                <a href="#glossary">用語集</a>
+                <a href="#sharing">共有・公開方法</a>
+            </details>
+            <details class="menu-group">
+                <summary>検証・発表</summary>
+                <a href="#validation">検証計画</a>
+                <a href="#thesis">卒論章立て</a>
+                <a href="#checklist">提出前チェック</a>
+                <a href="./history.html">開発メモ・進化</a>
+                <a href="#limitations">限界と今後</a>
+                <a href="#presentation">発表用メモ</a>
+                <a href="#faq">FAQ</a>
+            </details>
+        </aside>
+
+        <main>
+            <section id="quickstart">
+                <div class="section-kicker">00 / QUICK START</div>
+                <h2>初めて使う人へ</h2>
+                <p>
+                    この情報センターは、剣道解析アプリを初めて見る人でも、研究の目的・使い方・測定値の意味を理解できるように作っている。
+                    まずは下の順番で読むと、アプリの全体像を短時間で把握できる。
+                </p>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="num">1</div>
+                        <strong>何を測るか</strong>
+                        <span>打突時間、最高速時刻、右肘角、体幹軸、刃筋を確認する。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">2</div>
+                        <strong>どう撮るか</strong>
+                        <span>上半身、肩、肘、手首が見える高fps動画を用意する。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">3</div>
+                        <strong>どう測るか</strong>
+                        <span>動画解析で開始/終了マーカーを置き、解析結果を見る。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">4</div>
+                        <strong>どう判断するか</strong>
+                        <span>信頼度と異常値チェックを見て、採用できる値か確認する。</span>
+                    </div>
+                </div>
+                <div class="cards">
+                    <div class="card">
+                        <strong>すぐ試す</strong>
+                        <p>解析アプリを開き、動画解析タブから動画を読み込む。</p>
+                        <div class="mini-meta"><a href="../index.html">解析アプリを開く</a></div>
+                    </div>
+                    <div class="card">
+                        <strong>先生に説明する</strong>
+                        <p>研究概要、測定方法、評価指標、異常値除外基準を順に見る。</p>
+                        <div class="mini-meta">説明用の要点は発表用メモに集約</div>
+                    </div>
+                    <div class="card">
+                        <strong>検証する</strong>
+                        <p>同じ条件で複数動画を撮り、手動確認値とアプリ測定値の差分を見る。</p>
+                        <div class="mini-meta">検証計画の表を使用</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="audience">
+                <div class="section-kicker">00-2 / AUDIENCE GUIDE</div>
+                <h2>利用者別ガイド</h2>
+                <p>
+                    見る人によって知りたい情報が違うため、目的別に読む場所を分ける。
+                    練習者は使い方、先生は評価の意味、研究発表では測定方法と限界を中心に確認する。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>利用者</th><th>まず見る場所</th><th>確認すべきポイント</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>剣道練習者</td>
+                            <td>初めて使う人へ / 動画解析の流れ</td>
+                            <td>動画の入れ方、開始/終了マーカー、結果の見方。</td>
+                        </tr>
+                        <tr>
+                            <td>先生・指導者</td>
+                            <td>評価指標 / 信頼性と異常値除外</td>
+                            <td>どの角度を見ているか、どの測定値を採用するか。</td>
+                        </tr>
+                        <tr>
+                            <td>卒研発表の聞き手</td>
+                            <td>研究概要 / 測定方法 / 限界と今後</td>
+                            <td>研究目的、技術構成、研究としての限界。</td>
+                        </tr>
+                        <tr>
+                            <td>共同開発者</td>
+                            <td>システム構成 / トラブル対応 / 共有・公開方法</td>
+                            <td>ローカル起動、PWA、MediaPipe本採用、YOLO比較版の位置づけ。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="overview">
+                <div class="section-kicker">01 / OVERVIEW</div>
+                <h2>研究概要</h2>
+                <p>
+                    本研究では、剣道の自主練習で行う素振り・打突動作を対象に、カメラ映像から人体姿勢を推定し、
+                    打突時間、速度変化、右肘角、体幹軸、刃筋などを可視化するWebアプリを開発する。
+                </p>
+                <p>
+                    目的は、市販測定器を完全に置き換えることではなく、練習者が自分の動きを客観的に振り返り、
+                    次の一本で修正しやすくする「技術向上支援ツール」を作ることである。
+                </p>
+                <div class="cards">
+                    <div class="card">
+                        <strong>研究テーマ</strong>
+                        <p>姿勢推定AIを用いた剣道打突動作の非接触分析と自主練習支援。</p>
+                    </div>
+                    <div class="card">
+                        <strong>問題意識</strong>
+                        <p>自主練習では、打突時間や腕角度、体幹軸の乱れを自分だけで確認しにくい。</p>
+                    </div>
+                    <div class="card">
+                        <strong>解決方針</strong>
+                        <p>スマホやPCで撮影した映像から、上半身動作を数値と重ね表示で確認する。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="scope">
+                <div class="section-kicker">02 / SCOPE</div>
+                <h2>研究対象と扱わない範囲</h2>
+                <p>
+                    現段階では、剣道の打突動作のうち、特に素振りや面打ちに近い上半身動作を中心に扱う。
+                    足幅、歩幅、踏み込み、気剣体一致、気合音量などは、精度検証の焦点が広がりすぎるため主対象から外す。
+                </p>
+                <div class="two-col">
+                    <div class="card">
+                        <strong>主に扱うもの</strong>
+                        <ul class="checklist">
+                            <li>打突時間</li>
+                            <li>最高速時刻</li>
+                            <li>右肘角度</li>
+                            <li>体幹軸</li>
+                            <li>刃筋</li>
+                            <li>手首速度・推定剣先速度</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <strong>現段階では重視しないもの</strong>
+                        <ul class="checklist">
+                            <li>足幅・歩幅</li>
+                            <li>踏み込み足の詳細評価</li>
+                            <li>気合音量</li>
+                            <li>複数人同時解析</li>
+                            <li>市販速度計と同等の絶対速度保証</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="question">
+                <div class="section-kicker">03 / RESEARCH QUESTION</div>
+                <h2>研究課題・仮説</h2>
+                <p>
+                    卒研として説明するには、「アプリを作った」だけでなく、何を明らかにしたいのかを明確にする必要がある。
+                    本研究では、以下の研究課題と仮説を置く。
+                </p>
+                <div class="matrix">
+                    <div class="matrix-cell">
+                        <strong>研究課題 1</strong>
+                        <p>カメラ映像から、剣道の素振り・打突動作に関する時間と角度を、練習者が理解できる形で可視化できるか。</p>
+                    </div>
+                    <div class="matrix-cell">
+                        <strong>仮説</strong>
+                        <p>開始/終了フレームを手動補正できる動画解析を用いれば、リアルタイム計測より説明しやすい測定値を得られる。</p>
+                    </div>
+                    <div class="matrix-cell">
+                        <strong>検証方法</strong>
+                        <p>高fps動画を用いて、手動スロー確認値とアプリ測定値の差分を比較する。</p>
+                    </div>
+                    <div class="matrix-cell">
+                        <strong>研究課題 2</strong>
+                        <p>打突時間、右肘角、体幹軸、刃筋を提示することで、自主練習時の振り返りに役立つか。</p>
+                    </div>
+                    <div class="matrix-cell">
+                        <strong>仮説</strong>
+                        <p>数字だけでなく、骨格・角度ライン・グラフを併用すると、どこを修正すべきか把握しやすくなる。</p>
+                    </div>
+                    <div class="matrix-cell">
+                        <strong>検証方法</strong>
+                        <p>複数試行を記録し、良かった一本と要確認の一本を比較できるか確認する。</p>
+                    </div>
+                </div>
+                <div class="note">
+                    卒研では、最終的に「どの程度正確に測れたか」と「練習支援として何が有効だったか」を分けて説明すると、研究として整理しやすい。
+                </div>
+            </section>
+
+            <section id="related">
+                <div class="section-kicker">04 / RELATED TECHNOLOGY</div>
+                <h2>関連技術の整理</h2>
+                <p>
+                    先行研究や関連技術を整理する章では、個別の論文名を並べる前に、どの技術群と比較するのかを整理する。
+                    このページでは、卒論で説明しやすい比較軸をまとめる。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>分類</th><th>概要</th><th>本研究での扱い</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>姿勢推定AI</td>
+                            <td>映像から人体ランドマークを推定する技術。肩、肘、手首などの座標を得る。</td>
+                            <td>MediaPipe Pose Landmarkerを本採用し、YOLO Poseは比較・将来検証用として残す。</td>
+                        </tr>
+                        <tr>
+                            <td>スポーツ動作解析</td>
+                            <td>フォーム、角度、速度、タイミングなどを映像から評価する手法。</td>
+                            <td>剣道の自主練習向けに、打突時間と上半身角度へ絞って実装する。</td>
+                        </tr>
+                        <tr>
+                            <td>高速度撮影</td>
+                            <td>120fps/240fpsなどで撮影し、短時間動作をフレーム単位で確認する方法。</td>
+                            <td>正式測定に近い確認ではリアルタイムより動画解析を重視する。</td>
+                        </tr>
+                        <tr>
+                            <td>市販測定器</td>
+                            <td>センサーや専用機器で速度・時間を測る方式。</td>
+                            <td>本研究は代替測定器ではなく、低コストな練習支援・可視化ツールとして位置付ける。</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="note warn">
+                    論文提出時には、実際の先行研究文献・公式ドキュメント・比較対象を別途引用リストとして整理する。
+                    このページは、説明構成の土台として使う。
+                </div>
+            </section>
+
+            <section id="protocol">
+                <div class="section-kicker">05 / EXPERIMENT PROTOCOL</div>
+                <h2>実験プロトコル</h2>
+                <p>
+                    測定条件を毎回変えると、打突時間や角度の比較が難しくなる。
+                    そのため、検証では撮影条件、撮影本数、採用基準を固定する。
+                </p>
+                <div class="flow">
+                    <div class="flow-step"><div class="num">1</div><strong>条件固定</strong><span>同じ端末、同じ距離、同じ向き、同じ明るさで撮影する。</span></div>
+                    <div class="flow-step"><div class="num">2</div><strong>動画撮影</strong><span>1セット5本から10本の素振り・打突動画を撮影する。</span></div>
+                    <div class="flow-step"><div class="num">3</div><strong>手動補正</strong><span>開始/終了フレームをスローで確認し、必要に応じて補正する。</span></div>
+                    <div class="flow-step"><div class="num">4</div><strong>比較記録</strong><span>手動確認値、アプリ測定値、差分、信頼度を表に残す。</span></div>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>項目</th><th>推奨設定</th><th>記録する理由</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>撮影fps</td><td>120fpsまたは240fps</td><td>1フレームあたりの時間を明確にし、誤差を説明するため。</td></tr>
+                        <tr><td>撮影距離</td><td>上半身が画面に収まり、肩・肘・手首が見える距離</td><td>姿勢推定の安定性を確保するため。</td></tr>
+                        <tr><td>撮影方向</td><td>正面またはやや斜め正面で統一</td><td>角度比較の条件をそろえるため。</td></tr>
+                        <tr><td>試行本数</td><td>最低10本、可能なら複数日で記録</td><td>平均値、ばらつき、最良/要確認の比較を行うため。</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="data">
+                <div class="section-kicker">06 / DATA AND ETHICS</div>
+                <h2>データ管理・倫理</h2>
+                <p>
+                    映像には個人が映るため、卒研ではデータ管理と説明責任が必要になる。
+                    外部共有や発表では、本人確認ができる映像の扱いに注意する。
+                </p>
+                <div class="cards">
+                    <div class="card">
+                        <strong>保存するデータ</strong>
+                        <p>動画ファイル、開始/終了フレーム、打突時間、角度、信頼度、メモ、検証表。</p>
+                    </div>
+                    <div class="card">
+                        <strong>注意するデータ</strong>
+                        <p>顔、声、道場名、個人名、学校名、撮影場所が分かる映像やファイル名。</p>
+                    </div>
+                    <div class="card">
+                        <strong>共有時の方針</strong>
+                        <p>外部提出用には必要最小限のデータを使い、可能なら顔や背景情報を隠す。</p>
+                    </div>
+                </div>
+                <div class="note danger">
+                    他人の動画を使う場合は、本人の許可を取り、研究・発表でどのように使うかを事前に説明する。
+                </div>
+            </section>
+
+            <section id="method">
+                <div class="section-kicker">07 / METHOD</div>
+                <h2>測定方法</h2>
+                <p>
+                    測定は、リアルタイム計測と動画解析に分ける。練習中の即時確認にはリアルタイム計測を使い、
+                    打突時間や角度の正式確認には、iPhone等で撮影した高fps動画を読み込む動画解析を用いる。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>項目</th><th>推奨条件</th><th>理由</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>撮影端末</td>
+                            <td>iPhone等の高fps撮影に対応した端末</td>
+                            <td>打突時間は短いため、60fpsより120fps/240fps動画の方がフレーム単位の誤差を小さくしやすい。</td>
+                        </tr>
+                        <tr>
+                            <td>撮影方式</td>
+                            <td>上半身が画面内に入り、肩・肘・手首が見える構図</td>
+                            <td>本研究の主指標は上半身ランドマークから算出するため。</td>
+                        </tr>
+                        <tr>
+                            <td>撮影方向</td>
+                            <td>まずは正面またはやや斜め正面で統一</td>
+                            <td>条件を固定しないと、角度や速度の比較が難しくなる。</td>
+                        </tr>
+                        <tr>
+                            <td>解析方式</td>
+                            <td>動画解析で開始/終了フレームを手動補正</td>
+                            <td>自動検出だけに依存せず、スロー確認後の値を正式値にできる。</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="note">
+                    60fpsでは1フレーム約16.7ms、120fpsでは約8.3ms、240fpsでは約4.2msとなる。
+                    打突時間の検証では、リアルタイム解析よりも高fps動画解析を重視する。
+                </div>
+            </section>
+
+            <section id="timing">
+                <div class="section-kicker">08 / TIMING DEFINITION</div>
+                <h2>打突時間の定義</h2>
+                <p>
+                    打突時間は、打突動作の開始フレームから終了フレームまでの時間として扱う。
+                    アプリでは自動検出も行うが、卒研で正式値として扱う場合は、動画解析画面で開始/終了フレームを確認し、
+                    必要に応じて1コマ単位で補正する。
+                </p>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="num">1</div>
+                        <strong>動画を入れる</strong>
+                        <span>iPhone等で撮影した高fps動画を読み込む。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">2</div>
+                        <strong>開始を置く</strong>
+                        <span>打突動作が始まるフレームに開始マーカーを置く。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">3</div>
+                        <strong>終了を置く</strong>
+                        <span>打突動作が終端に達したフレームに終了マーカーを置く。</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="num">4</div>
+                        <strong>正式値化</strong>
+                        <span>開始から終了までの時間を正式な打突時間として保存する。</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>用語</th><th>定義</th><th>補足</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>開始フレーム</td>
+                            <td>右手首の下方向速度が閾値を超えた最初のフレーム、または手動で指定した開始位置。</td>
+                            <td>手動指定がある場合は手動値を優先する。</td>
+                        </tr>
+                        <tr>
+                            <td>最高速フレーム</td>
+                            <td>採用速度が最大になったフレーム。</td>
+                            <td>手首速度、推定剣先速度、テープ剣先速度のいずれを正式値にするかで変わる。</td>
+                        </tr>
+                        <tr>
+                            <td>終了フレーム</td>
+                            <td>最高速度後に急減速したフレーム、または手動で指定した終了位置。</td>
+                            <td>正式測定では、スロー確認後の補正値を採用する。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="metrics">
+                <div class="section-kicker">09 / EVALUATION</div>
+                <h2>評価指標</h2>
+                <p>
+                    評価指標は、剣道の技術向上に必要な情報を、映像から取得できる範囲に絞って設計している。
+                    特に、打突時間、速度ピーク、腕の伸び、体幹の軸、刃筋を中心に確認する。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>評価項目</th><th>内容</th><th>練習での意味</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>打突時間</td>
+                            <td>開始フレームから終了フレームまでの時間。</td>
+                            <td>動作の鋭さ、無駄の少なさを確認する。</td>
+                        </tr>
+                        <tr>
+                            <td>最高速時刻</td>
+                            <td>採用速度がピークになった時点。</td>
+                            <td>打突のどの局面で速度が出ているかを見る。</td>
+                        </tr>
+                        <tr>
+                            <td>右肘角度</td>
+                            <td>右肩・右肘・右手首のなす角。</td>
+                            <td>打突時の腕の伸び、縮こまりを確認する。</td>
+                        </tr>
+                        <tr>
+                            <td>体幹軸</td>
+                            <td>左右肩の中点と左右腰の中点を結ぶ線の傾き。</td>
+                            <td>打突時に体が左右へ崩れていないかを見る。</td>
+                        </tr>
+                        <tr>
+                            <td>刃筋</td>
+                            <td>右肘から右手首方向の角度。</td>
+                            <td>打突方向が安定しているかを確認する。</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="badge-row">
+                    <span class="badge">時間</span>
+                    <span class="badge green">角度</span>
+                    <span class="badge amber">速度ピーク</span>
+                    <span class="badge red">異常値除外</span>
+                </div>
+            </section>
+
+            <section id="system">
+                <div class="section-kicker">10 / SYSTEM</div>
+                <h2>システム構成</h2>
+                <p>
+                    本採用版は、ブラウザ単体で動作するMediaPipeベースのWebアプリである。
+                    YOLO版は比較・将来検証用として残し、現時点ではMediaPipe版を卒研の本採用として扱う。
+                </p>
+                <div class="cards">
+                    <div class="card">
+                        <strong>フロントエンド</strong>
+                        <p>HTML5、Vanilla JavaScript、Canvas、Chart.js、Three.js。</p>
+                    </div>
+                    <div class="card">
+                        <strong>姿勢推定</strong>
+                        <p>MediaPipe Pose Landmarkerを優先し、必要に応じてLegacy Poseへフォールバック。</p>
+                    </div>
+                    <div class="card">
+                        <strong>動作環境</strong>
+                        <p>カメラ・AI・WASMを使うため、file直開きではなくlocalhostまたはHTTPSで起動。</p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>処理</th><th>役割</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>動画読み込み</td><td>mp4/movファイル、またはCORS対応の直接動画URLを読み込む。</td></tr>
+                        <tr><td>姿勢推定</td><td>肩、肘、手首、腰などのランドマークを取得する。</td></tr>
+                        <tr><td>フィルタ処理</td><td>信頼度に応じて座標のブレを抑え、速度計算を安定させる。</td></tr>
+                        <tr><td>角度計算</td><td>右肘角、体幹軸、刃筋を算出する。</td></tr>
+                        <tr><td>可視化</td><td>骨格、角度ライン、速度/角度グラフ、3Dモデルを表示する。</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="video">
+                <div class="section-kicker">11 / VIDEO ANALYSIS</div>
+                <h2>動画解析の流れ</h2>
+                <p>
+                    現在のアプリでは、動画解析画面を4ステップに整理している。
+                    練習者は、動画を読み込み、開始/終了を置き、解析し、結果を見るだけで基本測定ができる。
+                </p>
+                <div class="flow">
+                    <div class="flow-step"><div class="num">1</div><strong>動画を入れる</strong><span>ファイルまたは直接動画URLを読み込む。</span></div>
+                    <div class="flow-step"><div class="num">2</div><strong>開始/終了を置く</strong><span>手動マーカーで解析範囲を指定する。</span></div>
+                    <div class="flow-step"><div class="num">3</div><strong>解析する</strong><span>必要に応じて詳細設定を開き、解析を実行する。</span></div>
+                    <div class="flow-step"><div class="num">4</div><strong>結果を見る</strong><span>打突時間、角度、信頼度、グラフを確認する。</span></div>
+                </div>
+                <div class="note warn">
+                    YouTubeページURLは、ブラウザ単体では映像フレームを直接取得できない。
+                    解析する場合は、権利のある動画をmp4/movファイルとして保存してから読み込む。
+                </div>
+            </section>
+
+            <section id="reliability">
+                <div class="section-kicker">12 / RELIABILITY</div>
+                <h2>測定値の信頼性と異常値除外</h2>
+                <p>
+                    姿勢推定AIは、照明、カメラ角度、遮蔽、ブレ、服装、背景の影響を受ける。
+                    そのため、本研究では測定値そのものに加えて、測定が信頼できるかを確認する仕組みを設ける。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>確認項目</th><th>要確認にする例</th><th>目的</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>打突時間</td><td>短すぎる、または長すぎる測定値。</td><td>誤検出を正式値として採用しない。</td></tr>
+                        <tr><td>速度</td><td>フレーム間で急激に跳ねる速度。</td><td>骨格座標の飛びによる異常値を除外する。</td></tr>
+                        <tr><td>姿勢信頼度</td><td>肩・肘・手首の検出信頼度が低い。</td><td>上半身が正しく追えているかを見る。</td></tr>
+                        <tr><td>体幹角</td><td>1フレームで大きく変化する。</td><td>姿勢推定の誤認識を検出する。</td></tr>
+                        <tr><td>画面条件</td><td>上半身が画面外、暗い、ブレが大きい。</td><td>撮影条件の問題を把握する。</td></tr>
+                    </tbody>
+                </table>
+                <div class="note">
+                    卒研では「測定値」だけでなく、「どの条件なら採用し、どの条件なら要確認とするか」を明文化することで、
+                    測定方法の説明性を高める。
+                </div>
+            </section>
+
+            <section id="validation">
+                <div class="section-kicker">13 / VALIDATION</div>
+                <h2>検証計画</h2>
+                <p>
+                    検証では、同じ撮影条件で複数本の素振り動画を撮影し、アプリの測定結果とスロー確認による手動値を比較する。
+                    差分を記録することで、測定値の傾向と限界を説明できるようにする。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>試行</th><th>手動確認</th><th>アプリ測定</th><th>差分</th><th>判定</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1本目</td><td>例: 180ms</td><td>例: 184ms</td><td>+4ms</td><td>良好</td></tr>
+                        <tr><td>2本目</td><td>例: 172ms</td><td>例: 176ms</td><td>+4ms</td><td>良好</td></tr>
+                        <tr><td>3本目</td><td>例: 190ms</td><td>例: 210ms</td><td>+20ms</td><td>要確認</td></tr>
+                    </tbody>
+                </table>
+                <h3>検証で見る観点</h3>
+                <ul class="checklist">
+                    <li>開始フレームの自動検出と手動補正の差</li>
+                    <li>終了フレームの自動検出と手動補正の差</li>
+                    <li>fpsによる打突時間の分解能の違い</li>
+                    <li>姿勢信頼度が低い時の測定値の乱れ</li>
+                    <li>同一人物・同一条件での再現性</li>
+                </ul>
+            </section>
+
+            <section id="thesis">
+                <div class="section-kicker">14 / THESIS STRUCTURE</div>
+                <h2>卒論章立て案</h2>
+                <p>
+                    卒論や発表資料に落とし込む時は、アプリの機能紹介だけでなく、背景、方法、結果、考察、限界の順で組み立てる。
+                    下の章立てを使うと、研究として説明しやすい。
+                </p>
+                <div class="timeline">
+                    <div class="timeline-item"><strong>第1章</strong><span>背景と目的: 剣道自主練習の課題、客観的フィードバックの必要性、本研究の目的。</span></div>
+                    <div class="timeline-item"><strong>第2章</strong><span>関連技術: 姿勢推定AI、スポーツ動作解析、高fps動画解析、既存測定方法との違い。</span></div>
+                    <div class="timeline-item"><strong>第3章</strong><span>システム設計: MediaPipe採用理由、動画解析、手動補正、評価指標、UI構成。</span></div>
+                    <div class="timeline-item"><strong>第4章</strong><span>実装: カメラ入力、動画解析、角度計算、信頼度チェック、記録・レポート機能。</span></div>
+                    <div class="timeline-item"><strong>第5章</strong><span>評価実験: 撮影条件、試行本数、手動確認値との比較、誤差、異常値除外。</span></div>
+                    <div class="timeline-item"><strong>第6章</strong><span>考察: どの指標が有効だったか、測定値の限界、練習支援としての有用性。</span></div>
+                    <div class="timeline-item"><strong>第7章</strong><span>結論と今後: 研究成果、改善点、公開・運用、竹刀先端検出や先生評価との照合。</span></div>
+                </div>
+            </section>
+
+            <section id="checklist">
+                <div class="section-kicker">15 / SUBMISSION CHECKLIST</div>
+                <h2>提出前チェック</h2>
+                <p>
+                    卒研として不足しやすい項目をチェックリスト化する。
+                    実装が進んでいても、測定条件や評価基準が曖昧だと研究として説明しにくくなるため、提出前に確認する。
+                </p>
+                <div class="two-col">
+                    <div class="card">
+                        <strong>研究内容のチェック</strong>
+                        <ul class="checklist">
+                            <li>研究目的が「技術向上支援」として明文化されている。</li>
+                            <li>対象動作が素振り・打突動作に絞られている。</li>
+                            <li>足元系など対象外の項目を説明できる。</li>
+                            <li>MediaPipe本採用、YOLO比較版の位置づけを説明できる。</li>
+                            <li>打突時間の開始/終了定義を説明できる。</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <strong>実験・評価のチェック</strong>
+                        <ul class="checklist">
+                            <li>撮影fps、距離、角度、照明条件を記録している。</li>
+                            <li>手動確認値とアプリ測定値の差分表がある。</li>
+                            <li>異常値除外の基準がある。</li>
+                            <li>検出信頼度が低い場合の扱いを決めている。</li>
+                            <li>限界と今後の改善を明記している。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="note">
+                    先生に見せる前は、「目的」「測定方法」「評価指標」「検証結果」「限界」の5つが1分で説明できるか確認する。
+                </div>
+            </section>
+
+            <section id="faq">
+                <div class="section-kicker">16 / FAQ</div>
+                <h2>よくある質問</h2>
+                <p>
+                    アプリを初めて使う人や、研究内容を確認する人がつまずきやすい点をまとめる。
+                    発表時の質疑応答にも使えるように、測定値の扱いと限界を明確にしている。
+                </p>
+                <details class="faq-item" open>
+                    <summary>このアプリは何をするものですか？</summary>
+                    <p>
+                        剣道の自主練習で行う素振り・打突動作を、カメラ映像から非接触で分析する技術向上支援ツールである。
+                        打突時間、最高速時刻、右肘角、体幹軸、刃筋などを表示し、自分の動作を客観的に振り返るために使う。
+                    </p>
+                </details>
+                <details class="faq-item">
+                    <summary>市販の速度測定器と同じ精度ですか？</summary>
+                    <p>
+                        現段階では同等の絶対精度を保証するものではない。
+                        本研究では、同じ撮影条件での比較、動作の傾向確認、角度や時間の可視化を主目的としている。
+                        速度は撮影条件や姿勢推定の安定性に依存するため、正式な測定器ではなく練習支援値として扱う。
+                    </p>
+                </details>
+                <details class="faq-item">
+                    <summary>なぜ動画解析を重視するのですか？</summary>
+                    <p>
+                        打突動作は非常に短いため、リアルタイム処理ではフレーム落ちや処理負荷の影響を受けやすい。
+                        高fps動画を後から解析し、開始/終了フレームをスローで補正できる方が、打突時間の確認に向いている。
+                    </p>
+                </details>
+                <details class="faq-item">
+                    <summary>どの向きで撮影すればよいですか？</summary>
+                    <p>
+                        まずは正面またはやや斜め正面で統一する。
+                        肩、肘、手首が見えることを優先し、比較実験では毎回同じ距離、同じ高さ、同じ明るさで撮影する。
+                    </p>
+                </details>
+                <details class="faq-item">
+                    <summary>YouTube動画を直接解析できますか？</summary>
+                    <p>
+                        ブラウザ単体ではYouTubeの再生ページから映像フレームを直接取得できない。
+                        解析する場合は、権利のある動画をmp4/movファイルとして保存し、動画ファイルとして読み込む必要がある。
+                    </p>
+                </details>
+                <details class="faq-item">
+                    <summary>MediaPipe版とYOLO版の違いは何ですか？</summary>
+                    <p>
+                        本採用はMediaPipe版である。ブラウザ上で比較的軽く動き、動画解析とリアルタイム解析を組み合わせやすいためである。
+                        YOLO版は姿勢推定方式の比較や将来検証用として残している。
+                    </p>
+                </details>
+            </section>
+
+            <section id="trouble">
+                <div class="section-kicker">17 / TROUBLESHOOTING</div>
+                <h2>トラブル対応</h2>
+                <p>
+                    研究説明サイトを他の人に見せる場合、アプリが動かない原因をすぐ確認できるようにしておく必要がある。
+                    代表的な問題と対処を以下にまとめる。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>症状</th><th>考えられる原因</th><th>対処</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>カメラが映らない</td>
+                            <td>file直開き、権限未許可、HTTPS/localhost以外で開いている。</td>
+                            <td>localhostまたはHTTPSで開き、ブラウザのカメラ許可を確認する。</td>
+                        </tr>
+                        <tr>
+                            <td>動画が読み込めない</td>
+                            <td>ブラウザ非対応形式、HEVC、破損ファイル、CORS制限。</td>
+                            <td>H.264 mp4へ変換し、動画ファイルとして読み込む。</td>
+                        </tr>
+                        <tr>
+                            <td>解析が遅い</td>
+                            <td>動画が長い、fps設定が高い、端末性能が不足。</td>
+                            <td>開始/終了マーカーで範囲を短くし、必要に応じて解析fpsを下げる。</td>
+                        </tr>
+                        <tr>
+                            <td>角度が不安定</td>
+                            <td>肩・肘・手首が隠れている、照明が暗い、体が画面外。</td>
+                            <td>明るい場所で、上半身が大きく入りすぎない構図にする。</td>
+                        </tr>
+                        <tr>
+                            <td>測定値が明らかにおかしい</td>
+                            <td>骨格座標の飛び、開始/終了の誤検出、低信頼度フレーム。</td>
+                            <td>妥当性チェックを確認し、開始/終了フレームを手動補正する。</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="note">
+                    迷った場合は、まず「動画解析」で短い範囲を手動指定し、打突時間と角度がスロー映像と合うか確認する。
+                </div>
+            </section>
+
+            <section id="glossary">
+                <div class="section-kicker">18 / GLOSSARY</div>
+                <h2>用語集</h2>
+                <p>
+                    研究説明で出てくる用語を、剣道経験者にも非エンジニアにも伝わるように整理する。
+                </p>
+                <div class="glossary-grid">
+                    <div class="term"><strong>打突時間</strong><span>開始フレームから終了フレームまでの時間。動画解析では手動補正後の値を正式値として扱う。</span></div>
+                    <div class="term"><strong>開始フレーム</strong><span>打突動作が始まると判断したフレーム。自動検出または手動マーカーで指定する。</span></div>
+                    <div class="term"><strong>終了フレーム</strong><span>打突動作の終端と判断したフレーム。最高速後の急減速や手動マーカーで決める。</span></div>
+                    <div class="term"><strong>最高速時刻</strong><span>採用した速度が最大になった時点。速度そのものではなく、ピークがいつ来たかを見る。</span></div>
+                    <div class="term"><strong>右肘角度</strong><span>右肩、右肘、右手首から算出する角度。腕の伸びや縮こまりの確認に使う。</span></div>
+                    <div class="term"><strong>体幹軸</strong><span>左右肩の中点と左右腰の中点を結ぶ線の傾き。体の軸ブレを見る。</span></div>
+                    <div class="term"><strong>刃筋</strong><span>右肘から右手首方向の線。打突方向の安定性を確認するための指標。</span></div>
+                    <div class="term"><strong>MediaPipe</strong><span>Google系の姿勢推定ライブラリ。ブラウザ上で人体ランドマークを取得できる。</span></div>
+                    <div class="term"><strong>YOLO Pose</strong><span>YOLO系の姿勢推定方式。本研究では比較・将来検証用として残している。</span></div>
+                    <div class="term"><strong>m/s*</strong><span>肩幅などから換算した推定速度。絶対測定値ではなく、条件を揃えた比較に使う。</span></div>
+                    <div class="term"><strong>異常値除外</strong><span>短すぎる打突時間、速度の急な跳ね、低信頼度などを要確認として扱う処理。</span></div>
+                    <div class="term"><strong>PWA</strong><span>WebアプリをスマホやPCに追加し、アプリのように使う仕組み。</span></div>
+                </div>
+            </section>
+
+            <section id="sharing">
+                <div class="section-kicker">19 / SHARING</div>
+                <h2>共有・公開方法</h2>
+                <p>
+                    他の人に見せる場合は、解析アプリ本体と卒研情報センターを分けて案内する。
+                    練習者には解析アプリ、先生や発表相手には卒研情報センターを渡すと説明が分かりやすい。
+                </p>
+                <div class="two-col">
+                    <div class="card">
+                        <strong>ローカル確認</strong>
+                        <p>PC上で確認する場合は、`serve-kendo.py` を使ってlocalhostで開く。</p>
+                        <div class="copy-block">python3 serve-kendo.py</div>
+                    </div>
+                    <div class="card">
+                        <strong>公開URLで共有</strong>
+                        <p>将来的にはCloudflare Pages、Netlify、GitHub PagesなどでHTTPS公開する。</p>
+                        <div class="copy-block">/          解析アプリ
+/research/  卒研情報センター</div>
+                    </div>
+                </div>
+                <h3>共有時に伝えること</h3>
+                <ul class="checklist">
+                    <li>カメラやAI機能はHTTPSまたはlocalhostで動作する。</li>
+                    <li>動画解析ではmp4/movファイルを使う。</li>
+                    <li>YouTubeページURLは直接解析できない。</li>
+                    <li>速度は条件に依存するため、同一条件での比較に使う。</li>
+                    <li>卒研説明はこのページ、実際の測定は解析アプリで行う。</li>
+                </ul>
+            </section>
+
+            <section id="limitations">
+                <div class="section-kicker">20 / LIMITATIONS AND FUTURE WORK</div>
+                <h2>限界と今後の発展</h2>
+                <div class="two-col">
+                    <div class="card">
+                        <strong>現在の限界</strong>
+                        <ul class="checklist">
+                            <li>竹刀先端を常に直接追えているわけではない。</li>
+                            <li>速度は条件により推定値として扱う必要がある。</li>
+                            <li>カメラ角度や照明条件に影響される。</li>
+                            <li>遮蔽が大きい場合、手首や肘の検出が不安定になる。</li>
+                            <li>市販測定器と同等の絶対精度を保証する段階ではない。</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <strong>今後の発展</strong>
+                        <ul class="checklist">
+                            <li>iPhone高fps動画での検証データ蓄積。</li>
+                            <li>先生評価との照合。</li>
+                            <li>竹刀先端テープ検出の精度検証。</li>
+                            <li>手動補正前後の誤差比較。</li>
+                            <li>スマホ向けPWA公開と道場での実地テスト。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="note danger">
+                    本ツールは技術向上支援を目的とする。速度や打突時間は撮影条件と解析条件に依存するため、
+                    絶対的な測定器ではなく、同一条件下での比較・振り返りに重点を置く。
+                </div>
+            </section>
+
+            <section id="presentation">
+                <div class="section-kicker">21 / PRESENTATION NOTES</div>
+                <h2>発表用メモ</h2>
+                <p>
+                    発表や先生への説明では、次の文章をベースにすると説明しやすい。
+                </p>
+                <div class="copy-block">本研究では、剣道の自主練習における素振り・打突動作を対象とし、カメラ映像から上半身の姿勢と動作時間を取得することで、非接触で技術向上を支援するWebアプリを開発した。
+
+リアルタイム解析は練習中の即時フィードバックに用い、打突時間や角度の正式確認には高fps動画を用いた動画解析を使用する。
+動画解析では開始フレームと終了フレームを手動補正できるため、自動検出だけに依存せず、スロー確認に基づいた測定値を記録できる。
+
+評価指標は、打突時間、最高速時刻、右肘角度、体幹軸、刃筋を中心とし、測定値の妥当性を確認するために、姿勢信頼度や異常値除外の基準も設けている。</div>
+                <div class="badge-row">
+                    <a class="badge" href="../index.html">解析アプリへ</a>
+                    <a class="badge green" href="../yolo.html">YOLO比較版へ</a>
+                    <span class="badge amber">最終更新: 2026-05-26</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        Kendo Virtual Coach Research Hub. 実装ページ: <a href="../index.html">../index.html</a>
+    </footer>
+    <script>
+        (() => {
+            const input = document.getElementById('researchSearchInput');
+            const clear = document.getElementById('researchSearchClear');
+            const results = document.getElementById('researchSearchResults');
+            const count = document.getElementById('researchSearchCount');
+            const printBtn = document.getElementById('printPageBtn');
+            const sections = Array.from(document.querySelectorAll('main section')).map(section => {
+                const title = section.querySelector('h2')?.textContent?.trim() || section.id;
+                return {
+                    id: section.id,
+                    title,
+                    text: section.textContent.replace(/\s+/g, ' ').trim(),
+                    el: section
+                };
+            });
+
+            const escapeHtml = value => String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+
+            const normalize = value => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+            function snippet(text, query) {
+                const normalizedText = normalize(text);
+                const normalizedQuery = normalize(query);
+                const index = normalizedText.indexOf(normalizedQuery);
+                if (index < 0) return escapeHtml(text.slice(0, 92)) + (text.length > 92 ? '...' : '');
+                const start = Math.max(0, index - 34);
+                const end = Math.min(text.length, index + normalizedQuery.length + 58);
+                const before = escapeHtml(text.slice(start, index));
+                const hit = escapeHtml(text.slice(index, index + normalizedQuery.length));
+                const after = escapeHtml(text.slice(index + normalizedQuery.length, end));
+                return `${start > 0 ? '...' : ''}${before}<mark>${hit}</mark>${after}${end < text.length ? '...' : ''}`;
+            }
+
+            function runSearch() {
+                const query = input.value.trim();
+                if (!query) {
+                    results.classList.remove('active');
+                    results.innerHTML = '';
+                    count.textContent = 'キーワードで説明を検索できます';
+                    sections.forEach(section => section.el.classList.remove('search-dim'));
+                    return;
+                }
+
+                const words = normalize(query).split(' ').filter(Boolean);
+                const matches = sections
+                    .map(section => {
+                        const haystack = normalize(`${section.title} ${section.text}`);
+                        const ok = words.every(word => haystack.includes(word));
+                        const score = ok
+                            ? words.reduce((sum, word) => sum + (haystack.split(word).length - 1), 0)
+                            : 0;
+                        return { ...section, ok, score };
+                    })
+                    .filter(section => section.ok)
+                    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'ja'));
+
+                sections.forEach(section => {
+                    section.el.classList.toggle('search-dim', !matches.some(match => match.id === section.id));
+                });
+
+                count.textContent = matches.length
+                    ? `${matches.length}件見つかりました`
+                    : '該当する説明が見つかりません';
+                results.classList.add('active');
+                results.innerHTML = matches.length
+                    ? matches.slice(0, 8).map(match => `
+                        <a class="search-result" href="#${match.id}">
+                            <strong>${escapeHtml(match.title)}</strong>
+                            <span>${snippet(match.text, query)}</span>
+                        </a>
+                    `).join('')
+                    : '<div class="search-result"><strong>見つかりません</strong><span>別の言葉で検索してください。例: 打突時間、動画解析、MediaPipe、異常値、fps</span></div>';
+            }
+
+            input?.addEventListener('input', runSearch);
+            clear?.addEventListener('click', () => {
+                input.value = '';
+                input.focus();
+                runSearch();
+            });
+            results?.addEventListener('click', event => {
+                const link = event.target.closest('a[href^="#"]');
+                if (!link) return;
+                const target = document.querySelector(link.getAttribute('href'));
+                if (target) target.classList.remove('search-dim');
+            });
+            printBtn?.addEventListener('click', () => window.print());
+        })();
+    </script>
+</body>
+</html>

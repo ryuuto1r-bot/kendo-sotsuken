@@ -1,0 +1,11 @@
+{
+  "name": "Kendo Virtual Coach MediaPipe",
+  "short_name": "Kendo Coach",
+  "description": "MediaPipeを本採用した剣道素振り・打突動作の相対評価ツール",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#020617"
+}

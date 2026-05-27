@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開発メモ | Kendo Virtual Coach 卒研情報センター</title>
+    <meta name="description" content="Kendo Virtual Coach の開発メモ、機能の変化、判断理由、今後の予定">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="../icon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --soft: #f8fafc;
+            --blue: #2563eb;
+            --green: #059669;
+            --amber: #d97706;
+            --red: #dc2626;
+            --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.75;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.96);
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(14px);
+        }
+        .topbar-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 900;
+        }
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: var(--blue);
+            font-weight: 900;
+        }
+        .top-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+        }
+        .pill.primary { background: #fff; color: var(--ink); }
+
+        .hero {
+            color: #fff;
+            background:
+                linear-gradient(120deg, rgba(15,23,42,0.96), rgba(30,64,175,0.88)),
+                radial-gradient(circle at 80% 20%, rgba(16,185,129,0.22), transparent 34%);
+        }
+        .hero-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 50px 18px 34px;
+        }
+        .eyebrow {
+            display: inline-flex;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.12);
+            color: #dbeafe;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        h1 {
+            margin: 0;
+            max-width: 920px;
+            font-size: clamp(30px, 5vw, 56px);
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+        .lead {
+            max-width: 900px;
+            margin: 16px 0 0;
+            color: #dbeafe;
+            font-size: clamp(15px, 2vw, 18px);
+        }
+
+        .layout {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 24px 18px 54px;
+            display: grid;
+            grid-template-columns: 270px minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+        .side {
+            position: sticky;
+            top: 70px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+        .side-title {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 900;
+            margin: 2px 6px 8px;
+        }
+        .side a {
+            display: block;
+            padding: 9px 10px;
+            border-radius: 8px;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 800;
+        }
+        .side a:hover { background: #eff6ff; color: #1d4ed8; }
+
+        .filter-box {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+        .filter-label {
+            display: block;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .filter-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #334155;
+            padding: 6px 8px;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+
+        section {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow);
+        }
+        h2 {
+            margin: 0 0 12px;
+            font-size: 24px;
+            line-height: 1.25;
+        }
+        h3 { margin: 20px 0 8px; font-size: 17px; }
+        p { margin: 8px 0; }
+        .section-kicker {
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .summary-card, .decision, .feature-card {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--soft);
+            padding: 14px;
+        }
+        .summary-card strong, .decision strong, .feature-card strong {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .summary-card span, .decision span, .feature-card span {
+            display: block;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .timeline {
+            position: relative;
+            display: grid;
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .phase {
+            display: grid;
+            grid-template-columns: 128px minmax(0, 1fr);
+            gap: 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            padding: 14px;
+        }
+        .phase-index {
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 12px;
+            font-weight: 900;
+            text-align: center;
+        }
+        .phase-index span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        .phase h3 { margin-top: 0; }
+        .phase ul { margin: 8px 0 0; padding-left: 20px; }
+        .phase li { margin: 4px 0; }
+        .phase.hidden { display: none; }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .tag {
+            border-radius: 8px;
+            padding: 4px 7px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .tag.green { background: #ecfdf5; color: #047857; }
+        .tag.amber { background: #fffbeb; color: #b45309; }
+        .tag.red { background: #fef2f2; color: #b91c1c; }
+        .tag.slate { background: #f1f5f9; color: #475569; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 10px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: #f8fafc;
+            color: #334155;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .decision-grid, .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .note {
+            border-left: 4px solid var(--blue);
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-radius: 8px;
+            padding: 13px 14px;
+            margin-top: 14px;
+        }
+        .note.warn { border-left-color: var(--amber); background: #fffbeb; color: #78350f; }
+        .footer {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 18px 34px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .topbar-inner { align-items: flex-start; flex-direction: column; }
+            .layout { grid-template-columns: 1fr; }
+            .side { position: static; }
+            .summary-grid, .decision-grid, .feature-grid { grid-template-columns: 1fr; }
+            .phase { grid-template-columns: 1fr; }
+            section { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="../index.html">
+                <span class="brand-mark">剣</span>
+                <span>Kendo Virtual Coach</span>
+            </a>
+            <div class="top-actions">
+                <a class="pill primary" href="./">卒研情報センター</a>
+                <a class="pill" href="../index.html">解析アプリ</a>
+                <a class="pill" href="../yolo.html">YOLO比較版</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-inner">
+            <div class="eyebrow">開発メモ / Evolution Notes</div>
+            <h1>ここまでどう作ってきたかを、自分用メモとして整理する。</h1>
+            <p class="lead">
+                このページは、Kendo Virtual Coachを作りながら考えたこと、変更したこと、やめたことを残すためのメモです。
+                最初は「剣道の動きを数値で見たい」というところから始まり、途中でYOLO版も試しつつ、最終的にはMediaPipe版と動画解析を中心にする形へ寄せました。
+                卒研で説明するときに、「なぜ今の仕様になったのか」を振り返れるようにまとめています。
+            </p>
+        </div>
+    </div>
+
+    <div class="layout">
+        <aside class="side">
+            <div class="filter-box">
+                <span class="filter-label">カテゴリで絞り込み</span>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all" type="button">すべて</button>
+                    <button class="filter-btn" data-filter="measurement" type="button">測定</button>
+                    <button class="filter-btn" data-filter="ui" type="button">UI</button>
+                    <button class="filter-btn" data-filter="engine" type="button">AI</button>
+                    <button class="filter-btn" data-filter="research" type="button">卒研</button>
+                </div>
+            </div>
+            <div class="side-title">開発メモ</div>
+            <a href="#summary">現在の到達点</a>
+            <a href="#timeline">開発フェーズ</a>
+            <a href="#decisions">主な判断</a>
+            <a href="#features">機能一覧</a>
+            <a href="#deferred">保留・削除した機能</a>
+            <a href="#story">先生向け説明</a>
+            <a href="#roadmap">今後のロードマップ</a>
+        </aside>
+
+        <main>
+            <section id="summary">
+                <div class="section-kicker">01 / CURRENT STATE</div>
+                <h2>現在の到達点</h2>
+                <p>
+                    現在は、MediaPipe版を本採用として進めている。
+                    リアルタイム分析も残しているが、打突時間や角度をきちんと確認する場面では、動画解析を中心に使う方針にした。
+                    理由は、動画なら開始フレームと終了フレームを自分で確認でき、スローで見直しながら測定値を説明しやすいからである。
+                </p>
+                <div class="summary-grid">
+                    <div class="summary-card"><strong>本採用</strong><span>MediaPipe Pose Landmarker中心</span></div>
+                    <div class="summary-card"><strong>正式測定</strong><span>高fps動画解析 + 手動補正</span></div>
+                    <div class="summary-card"><strong>主指標</strong><span>打突時間・速度ピーク・角度</span></div>
+                    <div class="summary-card"><strong>研究説明</strong><span>卒研情報センターに分離</span></div>
+                </div>
+            </section>
+
+            <section id="timeline">
+                <div class="section-kicker">02 / TIMELINE</div>
+                <h2>開発フェーズ</h2>
+                <p>
+                    下の履歴は、単に追加した機能を並べるのではなく、その時に何を考えて、なぜ今の方向へ変えたのかを残したものである。
+                    卒研で説明するときは、この流れを見せると「行き当たりばったりではなく、目的に合わせて絞ってきた」と説明しやすい。
+                </p>
+                <div class="timeline">
+                    <article class="phase" data-category="measurement ui">
+                        <div class="phase-index">Phase 1<span>初期構想</span></div>
+                        <div>
+                            <h3>剣道の動きを数値で見たいところから開始</h3>
+                            <p>最初は、剣道の打突動作をカメラで見て、良い動きかどうかを数値で確認できるツールを作ろうとした。</p>
+                            <ul>
+                                <li>まずは打突動作を定量評価する方向で作り始めた。</li>
+                                <li>カメラ映像の上に骨格や評価を重ねる形にした。</li>
+                                <li>最初はGOOD/CHECKのような分かりやすい表示も入れていた。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag">定量評価</span><span class="tag">リアルタイム</span><span class="tag">単体HTML</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="ui research">
+                        <div class="phase-index">Phase 2<span>アプリ化</span></div>
+                        <div>
+                            <h3>スマホやPCで使えるようにアプリ化</h3>
+                            <p>最初のHTMLだけでは使いにくかったため、スマホに追加できる形や、localhostで安定して開く方法を整えた。</p>
+                            <ul>
+                                <li>manifest.webmanifestとsw.jsを追加した。</li>
+                                <li>file直開きではカメラやAIが不安定なので、localhostで開く運用にした。</li>
+                                <li>スマホやPCで試しやすいように、起動方法も整理した。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag green">PWA</span><span class="tag">localhost</span><span class="tag">起動安定化</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="measurement engine">
+                        <div class="phase-index">Phase 3<span>MediaPipe基盤</span></div>
+                        <div>
+                            <h3>MediaPipeで上半身の角度を見る方向へ</h3>
+                            <p>剣道の打突動作では、まず上半身の動きが重要だと考え、肩・肘・手首・腰の座標から角度を計算する形へ進めた。</p>
+                            <ul>
+                                <li>右肘角、体幹軸、刃筋を出せるようにした。</li>
+                                <li>面・小手・胴・突きで評価基準を変える案も検討した。</li>
+                                <li>ただし最初の卒研では、足元よりも上半身・速度・角度に絞る方が良いと判断した。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag green">MediaPipe</span><span class="tag">角度</span><span class="tag">上半身特化</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="ui measurement">
+                        <div class="phase-index">Phase 4<span>稽古UI</span></div>
+                        <div>
+                            <h3>練習画面をシンプルにする方向へ</h3>
+                            <p>作っていくうちに画面の情報が増えすぎて、実際の練習では見にくいと感じた。そのため、練習中に見る情報を減らす方向にした。</p>
+                            <ul>
+                                <li>練習画面を最大化できるようにした。</li>
+                                <li>打突時間、速度、角度を中心に表示するようにした。</li>
+                                <li>GOOD/CHECKが細かく切り替わると見にくいため、表示の安定性を重視するようにした。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag">UX改善</span><span class="tag amber">不要項目整理</span><span class="tag">稽古用</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="engine measurement">
+                        <div class="phase-index">Phase 5<span>YOLO検証</span></div>
+                        <div>
+                            <h3>YOLO版も試したが、比較版として残すことにした</h3>
+                            <p>MediaPipeより精度を上げられる可能性を考えて、YOLO Pose版も作った。ただ、ブラウザ単体で安定して使うには準備や動作の重さが課題になった。</p>
+                            <ul>
+                                <li>YOLO版は消さずに、比較・将来検証用として残した。</li>
+                                <li>上半身の速度や角度を取る方向性は試した。</li>
+                                <li>卒研の本採用としては、現時点で説明しやすいMediaPipe版に戻した。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag red">比較版</span><span class="tag">YOLO Pose</span><span class="tag">ONNX Runtime Web</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="measurement ui">
+                        <div class="phase-index">Phase 6<span>動画解析</span></div>
+                        <div>
+                            <h3>動画解析を正式測定の中心にした</h3>
+                            <p>リアルタイム分析は便利だが、打突時間を正確に見るには限界がある。そこで、iPhoneなどで撮った120fps/240fps動画を後から解析する方向に重点を移した。</p>
+                            <ul>
+                                <li>動画読み込み、スロー再生、フレーム送りを追加した。</li>
+                                <li>開始/終了フレームを自分で置けるようにした。</li>
+                                <li>動画フレームと速度・角度グラフを合わせて見られるようにした。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag green">高fps</span><span class="tag">手動補正</span><span class="tag">正式測定</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="measurement research">
+                        <div class="phase-index">Phase 7<span>信頼性</span></div>
+                        <div>
+                            <h3>測定値をそのまま信じない仕組みを追加</h3>
+                            <p>数字が出ても、それが正しいとは限らない。そのため、短すぎる打突時間、速度の急な跳ね、骨格の飛び、信頼度の低下などを要確認として表示するようにした。</p>
+                            <ul>
+                                <li>妥当性チェックを一覧で見られるようにした。</li>
+                                <li>異常値除外の基準を作れるようにした。</li>
+                                <li>測定値を採用してよいか説明しやすくした。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag amber">異常値除外</span><span class="tag">信頼度</span><span class="tag">卒研向け</span></div>
+                        </div>
+                    </article>
+
+                    <article class="phase" data-category="research ui">
+                        <div class="phase-index">Phase 8<span>卒研分離</span></div>
+                        <div>
+                            <h3>卒研説明は別ページに分けた</h3>
+                            <p>解析アプリの中に研究説明まで入れると、練習中の画面が複雑になる。そのため、研究説明は卒研情報センターとして分けた。</p>
+                            <ul>
+                                <li>/research/ に卒研情報センターを作った。</li>
+                                <li>検索、メニュー分類、FAQ、用語集を入れた。</li>
+                                <li>研究課題、関連技術、実験プロトコル、卒論章立ても整理した。</li>
+                            </ul>
+                            <div class="tag-row"><span class="tag green">研究説明</span><span class="tag">検索</span><span class="tag">別サイト化</span></div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="decisions">
+                <div class="section-kicker">03 / DECISION LOG</div>
+                <h2>主な仕様判断</h2>
+                <p>開発中に迷った点と、最終的にどう判断したかをメモとして残す。</p>
+                <div class="decision-grid">
+                    <div class="decision"><strong>MediaPipeを本採用</strong><span>ブラウザで動かしやすく、動画解析とリアルタイム分析を両方残しやすいため。</span></div>
+                    <div class="decision"><strong>YOLOは比較版として残す</strong><span>精度面の可能性はあるが、今の段階では安定運用まで持っていくのが難しいため。</span></div>
+                    <div class="decision"><strong>動画解析を重視</strong><span>打突時間は一瞬なので、リアルタイムより動画で確認した方が説明しやすいため。</span></div>
+                    <div class="decision"><strong>足元系は後回し</strong><span>最初から足元まで入れると研究範囲が広くなりすぎるため。</span></div>
+                    <div class="decision"><strong>卒研説明は別サイト</strong><span>練習画面をシンプルに保ちつつ、研究説明だけ詳しくできるため。</span></div>
+                    <div class="decision"><strong>測定器とは言い切らない</strong><span>速度や角度は撮影条件に左右されるため、比較・振り返り用として扱うため。</span></div>
+                </div>
+            </section>
+
+            <section id="features">
+                <div class="section-kicker">04 / FEATURE MEMO</div>
+                <h2>これまでに入れた主な機能</h2>
+                <p>
+                    ここは、今のアプリに何が入っているかを自分で確認するためのメモである。
+                    機能を増やした目的は、ただ多機能にすることではなく、打突時間・速度・角度を説明できる形に近づけることである。
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>分類</th><th>入れたもの</th><th>なぜ入れたか</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>測定</td><td>打突時間、最高速時刻、右肘角、体幹軸、刃筋</td><td>剣道の素振りを見たときに、まず確認したい数字だから。</td></tr>
+                        <tr><td>動画解析</td><td>動画読み込み、手動開始/終了、スロー再生、フレーム補正</td><td>リアルタイムだけでは怪しい部分を、あとから1コマずつ確認できるようにするため。</td></tr>
+                        <tr><td>信頼性</td><td>姿勢信頼度、骨格飛び、速度異常、時間異常のチェック</td><td>数字が出ても、明らかにおかしい値はそのまま使わないようにするため。</td></tr>
+                        <tr><td>可視化</td><td>骨格、角度ライン、速度/角度グラフ、3Dモデル</td><td>どの関節や線を基準にしているかを、見た目で説明できるようにするため。</td></tr>
+                        <tr><td>記録</td><td>履歴、CSV、レポート、正式記録保存</td><td>1本だけで判断せず、複数回の動きを比べられるようにするため。</td></tr>
+                        <tr><td>研究説明</td><td>卒研情報センター、検索、FAQ、用語集、開発メモ</td><td>アプリを使う画面と、卒研として説明する画面を分けるため。</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="deferred">
+                <div class="section-kicker">05 / DEFERRED ITEMS</div>
+                <h2>いったん保留・削除した機能</h2>
+                <p>
+                    作っている途中で、面白そうだから入れたくなった機能も多かった。
+                    ただ、最初の卒研では打突時間・速度・角度をできるだけ説明できる形にすることが大事なので、目的から外れるものはいったん後回しにした。
+                </p>
+                <div class="feature-grid">
+                    <div class="feature-card"><strong>気剣体一致・気合音量</strong><span>剣道では大事だが、音声や主観評価が入るため、今回の測定テーマからは外した。</span></div>
+                    <div class="feature-card"><strong>足幅・歩幅・踏み込み詳細</strong><span>足元まで入れると研究範囲が広がりすぎる。まずは上半身と打突動作に絞る。</span></div>
+                    <div class="feature-card"><strong>複雑なGOOD/CHECK表示</strong><span>表示がパカパカすると練習中に見づらいので、判定よりも数値と安定表示を優先する。</span></div>
+                    <div class="feature-card"><strong>過度にリッチな3D演出</strong><span>かっこよさより、角度の基準が分かることを優先する。3Dは説明用として使いやすくする。</span></div>
+                    <div class="feature-card"><strong>YouTube直接解析</strong><span>ブラウザの制限や権利の問題があるため、基本は自分で用意した動画ファイルを読み込む形にする。</span></div>
+                    <div class="feature-card"><strong>市販測定器相当の絶対速度</strong><span>現段階では推定値として扱う。同じ条件で比較することを重視する。</span></div>
+                </div>
+            </section>
+
+            <section id="story">
+                <div class="section-kicker">06 / PRESENTATION STORY</div>
+                <h2>先生に説明するときの流れ</h2>
+                <p>
+                    説明するときは、最初から完成形を作ったというより、使いながら必要な形に絞っていった、と話すのが自然だと思う。
+                    最初はリアルタイムでGOOD/CHECKを出す練習支援ツールとして作り始めた。
+                    しかし、実際に使ってみると、打突時間はかなり短く、リアルタイム処理だけではフレーム落ちやノイズの影響を受けやすいことが分かった。
+                </p>
+                <p>
+                    そのため、練習中はリアルタイムで大まかに確認し、正式な測定は高fps動画を読み込んで、開始フレームと終了フレームを手動で確認する形に変えた。
+                    さらに、測定値が出るだけではなく、その値を採用してよいか判断するために、信頼度や異常値チェックも入れた。
+                    最終的に、練習者が使う解析アプリと、卒研として説明する情報ページを分ける形にした。
+                </p>
+                <div class="note">
+                    発表では「機能をたくさん増やした」ではなく、「測定値を説明できるようにするため、リアルタイム中心から動画解析中心へ整理した」と言うと伝わりやすい。
+                </div>
+            </section>
+
+            <section id="roadmap">
+                <div class="section-kicker">07 / ROADMAP</div>
+                <h2>次にやること</h2>
+                <table>
+                    <thead>
+                        <tr><th>優先度</th><th>やること</th><th>なぜ必要か</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>高</td><td>iPhone高fps動画で10本以上測ってみる</td><td>1本だけでは分からないので、測定値がどれくらい安定するか確認する。</td></tr>
+                        <tr><td>高</td><td>開始/終了フレーム補正が記録に反映されるか確認する</td><td>先生に見せる値は、自動判定だけでなく補正後の正式値にしたいから。</td></tr>
+                        <tr><td>中</td><td>先生評価との照合をする</td><td>アプリの数値と、実際の指導者の見方がどこまで合うか確認するため。</td></tr>
+                        <tr><td>中</td><td>竹刀先端テープ検出を検証する</td><td>右手首速度だけでなく、より剣先速度に近い値を出したいため。</td></tr>
+                        <tr><td>中</td><td>公開URL化する</td><td>先生や協力者に渡しやすくし、同じ環境で見てもらえるようにするため。</td></tr>
+                    </tbody>
+                </table>
+                <div class="note warn">
+                    今は新機能を増やすより、同じ条件で測ったときにどのくらい安定するかを確認する段階である。
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        Kendo Virtual Coach 開発メモ. 卒研情報センター: <a href="./">research/index.html</a>
+    </footer>
+
+    <script>
+        (() => {
+            const buttons = Array.from(document.querySelectorAll('.filter-btn'));
+            const phases = Array.from(document.querySelectorAll('.phase'));
+            function applyFilter(filter) {
+                buttons.forEach(button => button.classList.toggle('active', button.dataset.filter === filter));
+                phases.forEach(phase => {
+                    const categories = String(phase.dataset.category || '').split(' ');
+                    phase.classList.toggle('hidden', filter !== 'all' && !categories.includes(filter));
+                });
+            }
+            buttons.forEach(button => button.addEventListener('click', () => applyFilter(button.dataset.filter)));
+        })();
+    </script>
+</body>
+</html>

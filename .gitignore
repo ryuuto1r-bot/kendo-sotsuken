@@ -1,0 +1,36 @@
+# macOS / editor
+.DS_Store
+*.swp
+*.tmp
+
+# Python local server artifacts
+__pycache__/
+*.pyc
+
+# Local-only archives and old generated packages
+*.zip
+
+# Backup snapshots kept on the Mac only
+*.before-*.html
+sw 2.js
+
+# Local logs / private notes
+*.log
+.env
+.env.*
+
+# Codex / thesis handoff notes kept on this Mac
+AGENTS.md
+卒研プロジェクト/
+
+# Optional package builds that are not used by the browser app
+vendor/mediapipe/tasks-vision/vision.d.ts
+vendor/mediapipe/tasks-vision/vision_bundle.cjs
+vendor/mediapipe/tasks-vision/vision_bundle.cjs.map
+vendor/mediapipe/tasks-vision/vision_bundle.mjs
+vendor/mediapipe/tasks-vision/vision_bundle.mjs.map
+vendor/mediapipe/tasks-vision/vision_bundle_module.js
+
+# Keep dependencies that are intentionally vendored for offline/public use.
+!vendor/
+!models/
