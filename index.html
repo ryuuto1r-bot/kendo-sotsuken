@@ -1581,6 +1581,17 @@
                 safeText('precisionCameraStatus', 'localhost推奨');
                 document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-amber-400"></span> localhost推奨`;
             }
+            if (isIOSLikeBrowser()) {
+                Params.usePoseLandmarker = false;
+                const useLandmarker = document.getElementById('paramUsePoseLandmarker');
+                if (useLandmarker) useLandmarker.checked = false;
+                AppState.landmarkerDiag = 'iPhone互換: Legacy Pose';
+                safeText('precisionLandmarkerDiag', AppState.landmarkerDiag);
+                safeText('cameraDeviceStatus', 'iPhone互換モード / Legacy Poseで解析');
+                if (!AppState.isCameraRunning) {
+                    document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-blue-400"></span> iPhone互換`;
+                }
+            }
             safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps}fps`);
         }
 
@@ -1811,6 +1822,26 @@
             } catch (err) {
                 console.warn('保存領域を更新できませんでした', err);
             }
+        }
+
+        function isIOSLikeBrowser() {
+            const ua = navigator.userAgent || '';
+            const platform = navigator.platform || '';
+            return /iPad|iPhone|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function shouldUsePoseLandmarkerRealtime() {
+            // iPhone/iPad SafariではTasks版のWASM/GPU初期化で止まることがあるため、
+            // リアルタイム分析は互換性重視でLegacy Poseに倒す。
+            return !!Params.usePoseLandmarker && !isIOSLikeBrowser();
+        }
+
+        function withTimeout(promise, timeoutMs, label = '処理') {
+            let timer = null;
+            const timeout = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs);
+            });
+            return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
         }
 
         function getFrameTimestampMs(now, metadata) {
@@ -4449,14 +4480,19 @@
             AppState.poseEngine = '準備中';
             AppState.landmarkerDiag = 'Tasks確認中';
             updatePrecisionPanel();
-            if (Params.usePoseLandmarker) {
+            const useTasks = shouldUsePoseLandmarkerRealtime();
+            if (!useTasks && Params.usePoseLandmarker) {
+                AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
+                updatePrecisionPanel();
+            }
+            if (useTasks) {
                 try {
-                    await ensurePoseLandmarkerAssets();
-                    const vision = await waitForVisionTasks(10000);
+                    await withTimeout(ensurePoseLandmarkerAssets(), 12000, 'Pose assets');
+                    const vision = await withTimeout(waitForVisionTasks(10000), 11000, 'MediaPipe Tasks');
                     const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
                     const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-                    const fileset = await vision.FilesetResolver.forVisionTasks(wasmRoot);
-                    AppState.poseLandmarker = await vision.PoseLandmarker.createFromOptions(fileset, {
+                    const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 10000, 'Vision WASM');
+                    AppState.poseLandmarker = await withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
                         baseOptions: {
                             modelAssetPath: modelPath,
                             delegate: 'GPU'
@@ -4466,7 +4502,7 @@
                         minPoseDetectionConfidence: 0.6,
                         minPosePresenceConfidence: 0.6,
                         minTrackingConfidence: 0.6
-                    });
+                    }), 14000, 'Pose Landmarker GPU');
                     AppState.poseEngine = 'Pose Landmarker';
                     AppState.landmarkerDiag = window.crossOriginIsolated ? 'GPU / 安定サーバ' : 'GPU / 通常HTTP';
                     AppState.poseReady = true;
@@ -4477,18 +4513,18 @@
                     updatePrecisionPanel();
                     console.warn('Pose Landmarker GPU初期化失敗。CPUへ切り替えます。', gpuError);
                     try {
-                        const vision = await waitForVisionTasks(10000);
+                        const vision = await withTimeout(waitForVisionTasks(10000), 11000, 'MediaPipe Tasks');
                         const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
                         const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-                        const fileset = await vision.FilesetResolver.forVisionTasks(wasmRoot);
-                        AppState.poseLandmarker = await vision.PoseLandmarker.createFromOptions(fileset, {
+                        const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 10000, 'Vision WASM');
+                        AppState.poseLandmarker = await withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
                             baseOptions: { modelAssetPath: modelPath },
                             runningMode: 'VIDEO',
                             numPoses: 1,
                             minPoseDetectionConfidence: 0.6,
                             minPosePresenceConfidence: 0.6,
                             minTrackingConfidence: 0.6
-                        });
+                        }), 14000, 'Pose Landmarker CPU');
                         AppState.poseEngine = 'Pose Landmarker CPU';
                         AppState.landmarkerDiag = window.crossOriginIsolated ? 'CPU / 安定サーバ' : 'CPU / 通常HTTP';
                         AppState.poseReady = true;
@@ -7862,6 +7898,14 @@
 
         const elUsePoseLandmarker = document.getElementById('paramUsePoseLandmarker');
         if (elUsePoseLandmarker) elUsePoseLandmarker.addEventListener('change', e=>{
+            if (isIOSLikeBrowser() && e.target.checked) {
+                e.target.checked = false;
+                Params.usePoseLandmarker = false;
+                AppState.landmarkerDiag = 'iPhone互換: Legacy Pose固定';
+                updatePrecisionPanel();
+                showToast('iPhoneでは安定性優先でLegacy Poseを使います', 'yellow');
+                return;
+            }
             Params.usePoseLandmarker = e.target.checked;
             if (!AppState.isCameraRunning) {
                 AppState.poseReady = false;
