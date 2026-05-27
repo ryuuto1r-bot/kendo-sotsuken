@@ -236,6 +236,42 @@
             white-space: nowrap;
         }
         .video-editor-marker[hidden] { display: none; }
+        .video-editor-strikes {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+        .video-editor-strike-range {
+            position: absolute;
+            top: 24px;
+            height: 28px;
+            min-width: 3px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.18);
+            border: 1px solid rgba(245, 158, 11, 0.28);
+        }
+        .video-editor-strike {
+            position: absolute;
+            top: 21px;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 2px solid #fff;
+            background: #f59e0b;
+            color: #111827;
+            font-size: 11px;
+            font-weight: 1000;
+            transform: translateX(-50%);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .video-editor-strike.active {
+            background: #111827;
+            color: #fff;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.32), 0 8px 18px rgba(15, 23, 42, 0.28);
+        }
         .model-preview-canvas {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -571,6 +607,7 @@
                         <div id="videoTimelineTrack" class="video-editor-track" role="slider" tabindex="0" aria-label="動画の再生位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
                             <div id="videoTimelineRange" class="video-editor-range"></div>
                             <div id="videoTimelineTicks" class="video-editor-ticks"></div>
+                            <div id="videoTimelineStrikeMarkers" class="video-editor-strikes"></div>
                             <button id="videoTimelineStartMarker" type="button" class="video-editor-marker start" data-label="開始" hidden="" title="開始マーカーをドラッグ"></button>
                             <button id="videoTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
                             <div id="videoTimelinePlayhead" class="video-editor-playhead"></div>
@@ -631,6 +668,7 @@
                     </label>
                     <label class="font-bold text-slate-700">解析fps
                         <select id="videoAnalysisFpsSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
+                            <option value="30">30fps</option>
                             <option value="60" selected="">60fps</option>
                             <option value="120">120fps</option>
                             <option value="240">240fps</option>
@@ -1208,12 +1246,15 @@
                             </div>
                             <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
                                 <select id="cameraPerformanceMode" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white font-bold">
-                                    <option value="stable" selected="">安定</option>
-                                    <option value="precision">高精度</option>
+                                    <option value="stable" selected="">安定 30fps</option>
+                                    <option value="precision">高精度 60fps</option>
+                                    <option value="iphone120">iPhone 120fps</option>
+                                    <option value="iphone240">iPhone 240fps検証</option>
                                 </select>
                                 <div id="realtimeAnalysisFpsLabel" class="font-black text-slate-900 font-mono-num">24fps</div>
                             </div>
                         </div>
+                        <p class="mt-2 text-[11px] text-slate-500">120/240fpsはブラウザと接続方法が対応した場合だけ有効です。実際に取得できたfpsは「計測条件」に表示されます。</p>
                     </div>
                 </div>
 
@@ -1514,6 +1555,7 @@
             cameraStableWidth: 1280,
             cameraStableHeight: 720,
             cameraStableFps: 30,
+            cameraMaxFps: 60,
             useNativeVideoLayer: true,
             overlayHoldMs: 1200,
             tipTracking: false,
@@ -1734,7 +1776,7 @@
                     document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-blue-400"></span> iPhone互換`;
                 }
             }
-            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps}fps`);
+            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
         }
 
         function reportRuntimeIssue(message, color = 'yellow') {
@@ -1747,28 +1789,68 @@
             showToast(text.slice(0, 90), color);
         }
 
+        function cameraPerformanceProfile(mode) {
+            const profiles = {
+                stable: {
+                    key: 'stable',
+                    label: '安定',
+                    width: 1280,
+                    height: 720,
+                    cameraFps: 30,
+                    maxFps: 60,
+                    aiFps: 24,
+                    hint: '安定: 720p / カメラ30fps目標 / AI 24fps。外部iPhoneカメラでも固まりにくい設定です。'
+                },
+                precision: {
+                    key: 'precision',
+                    label: '高精度',
+                    width: 1920,
+                    height: 1080,
+                    cameraFps: 60,
+                    maxFps: 60,
+                    aiFps: 30,
+                    hint: '高精度: 1080p / カメラ60fps目標 / AI 30fps。映像が重い場合は安定へ戻してください。'
+                },
+                iphone120: {
+                    key: 'iphone120',
+                    label: 'iPhone 120fps',
+                    width: 1920,
+                    height: 1080,
+                    cameraFps: 120,
+                    maxFps: 120,
+                    aiFps: 45,
+                    hint: 'iPhone 120fps: 1080p / カメラ120fps目標 / AI 45fps。対応しない接続では自動で60/30fps相当に落ちます。'
+                },
+                iphone240: {
+                    key: 'iphone240',
+                    label: 'iPhone 240fps検証',
+                    width: 1280,
+                    height: 720,
+                    cameraFps: 240,
+                    maxFps: 240,
+                    aiFps: 60,
+                    hint: 'iPhone 240fps検証: 720p / カメラ240fps目標 / AI 60fps。リアルタイムでは重いため、正式測定は動画解析240fps推奨です。'
+                }
+            };
+            return profiles[mode] || profiles.stable;
+        }
+
         function applyCameraPerformanceMode(mode = AppState.cameraPerformanceMode, options = {}) {
-            AppState.cameraPerformanceMode = mode === 'precision' ? 'precision' : 'stable';
-            if (AppState.cameraPerformanceMode === 'precision') {
-                Params.cameraStableWidth = 1920;
-                Params.cameraStableHeight = 1080;
-                Params.cameraStableFps = 60;
-                Params.realtimeAnalysisFps = 30;
-                safeText('cameraPerformanceHint', '高精度: 1080p / カメラ60fps目標 / AI 30fps。映像が重い場合は安定へ戻してください。');
-            } else {
-                Params.cameraStableWidth = 1280;
-                Params.cameraStableHeight = 720;
-                Params.cameraStableFps = 30;
-                Params.realtimeAnalysisFps = 24;
-                safeText('cameraPerformanceHint', '安定: 720p / AI 24fps。外部iPhoneカメラでも固まりにくい設定です。');
-            }
+            const profile = cameraPerformanceProfile(mode);
+            AppState.cameraPerformanceMode = profile.key;
+            Params.cameraStableWidth = profile.width;
+            Params.cameraStableHeight = profile.height;
+            Params.cameraStableFps = profile.cameraFps;
+            Params.cameraMaxFps = profile.maxFps;
+            Params.realtimeAnalysisFps = profile.aiFps;
+            safeText('cameraPerformanceHint', profile.hint);
             const select = document.getElementById('cameraPerformanceMode');
             if (select) select.value = AppState.cameraPerformanceMode;
-            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps}fps`);
+            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
             updatePrecisionPanel();
             if (options.restart && AppState.isCameraRunning) {
                 startCameraStream()
-                    .then(() => showToast(AppState.cameraPerformanceMode === 'precision' ? '高精度モードに切り替えました' : '安定モードに切り替えました', 'green'))
+                    .then(() => showToast(`${profile.label}モードに切り替えました`, 'green'))
                     .catch(err => {
                         console.error('処理モード切替エラー', err);
                         showToast(cameraErrorText(err), 'red');
@@ -1918,7 +2000,7 @@
             if (videoTapeColor) videoTapeColor.value = 'yellow';
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
-            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps}fps`);
+            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
             setVideoStrikeMode('single');
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
                 const values = [42, 120, 250, 60];
@@ -2113,7 +2195,7 @@
             Params.targetFps = clamp(fps, 30, 240);
             safeText('calibrationStatus', `肩幅${shoulder.toFixed(1)}cm / 竹刀${shinai.toFixed(1)}cm / 距離${distance.toFixed(0)}cm / ${fps.toFixed(0)}fps`);
             const videoFps = document.getElementById('videoAnalysisFpsSelect');
-            if (videoFps && ['60', '120', '240'].includes(String(Math.round(Params.targetFps)))) {
+            if (videoFps && ['30', '60', '120', '240'].includes(String(Math.round(Params.targetFps)))) {
                 videoFps.value = String(Math.round(Params.targetFps));
             }
         }
@@ -4721,7 +4803,7 @@
             AppState.cameraSettings = settings || null;
             AppState.cameraLabel = track?.label || document.getElementById('cameraDeviceSelect')?.selectedOptions?.[0]?.textContent || '自動選択';
             const fps = AppState.frameFps || settings.frameRate || 0;
-            const modeLabel = AppState.cameraPerformanceMode === 'precision' ? '高精度' : '安定';
+            const modeLabel = cameraPerformanceProfile(AppState.cameraPerformanceMode).label;
             const text = `${modeLabel} / ${AppState.cameraLabel || 'カメラ'} / ${settings.width || canvasElement.width || '-'}x${settings.height || canvasElement.height || '-'} / ${fps ? fps.toFixed(1) : '-'}fps`;
             safeText('cameraDeviceStatus', text);
             safeText('precisionCameraStatus', text);
@@ -4736,7 +4818,7 @@
                         deviceId: { exact: AppState.selectedCameraId },
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
-                        frameRate: { ideal: 30, max: 60 }
+                        frameRate: { ideal: Math.min(60, Params.cameraStableFps || 30), max: Math.min(60, Params.cameraMaxFps || 60) }
                     }
                 });
             }
@@ -4747,7 +4829,7 @@
                         facingMode: 'user',
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
-                        frameRate: { ideal: 30, max: 60 }
+                        frameRate: { ideal: Math.min(60, Params.cameraStableFps || 30), max: Math.min(60, Params.cameraMaxFps || 60) }
                     }
                 },
                 { audio: false, video: true }
@@ -4786,12 +4868,12 @@
                 deviceId: { exact: AppState.selectedCameraId },
                 width: { ideal: Params.cameraStableWidth },
                 height: { ideal: Params.cameraStableHeight },
-                frameRate: { ideal: Params.cameraStableFps, max: 60 }
+                frameRate: { ideal: Params.cameraStableFps, max: Params.cameraMaxFps || Params.cameraStableFps || 60 }
             } : {
                 facingMode: 'user',
                 width: { ideal: Params.cameraStableWidth },
                 height: { ideal: Params.cameraStableHeight },
-                frameRate: { ideal: Params.cameraStableFps, max: 60 }
+                frameRate: { ideal: Params.cameraStableFps, max: Params.cameraMaxFps || Params.cameraStableFps || 60 }
             };
             const constraints = {
                 audio: false,
@@ -5138,6 +5220,7 @@
             const pct = sec => safeDuration > 0 ? `${clamp((Number(sec || 0) / safeDuration) * 100, 0, 100).toFixed(3)}%` : '0%';
 
             renderVideoTimelineTicks(safeDuration);
+            updateVideoTimelineStrikeMarkers(safeDuration);
             if (label) label.textContent = `${formatTimelineClock(safeCurrent)} / ${safeDuration > 0 ? formatTimelineClock(safeDuration) : '---'}`;
             if (track) {
                 track.setAttribute('aria-valuemax', safeDuration > 0 ? String(Math.round(safeDuration * 1000)) : '0');
@@ -5177,6 +5260,42 @@
             }
         }
 
+        function videoStrikeSourceSecond(data, strike, frameKey = 'peakFrame') {
+            if (!data || !strike) return null;
+            const frameIndex = clamp(Math.round(Number(strike[frameKey] ?? strike.peakFrame ?? 0)), 0, Math.max(0, (data.frames?.length || 1) - 1));
+            const frame = data.frames?.[frameIndex];
+            if (!frame) return null;
+            return Number(data.sourceStartSec || 0) + Number(frame.timeMs || 0) / 1000;
+        }
+
+        function updateVideoTimelineStrikeMarkers(duration) {
+            const box = document.getElementById('videoTimelineStrikeMarkers');
+            if (!box) return;
+            const data = AppState.videoAnalysis;
+            const strikes = data?.strikes || [];
+            const safeDuration = Number(duration || 0);
+            if (!data?.frames?.length || !strikes.length || !Number.isFinite(safeDuration) || safeDuration <= 0) {
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = strikes.map((strike, index) => {
+                const startSec = videoStrikeSourceSecond(data, strike, 'startFrame');
+                const peakSec = videoStrikeSourceSecond(data, strike, 'peakFrame');
+                const endSec = videoStrikeSourceSecond(data, strike, 'endFrame');
+                if (!Number.isFinite(peakSec)) return '';
+                const startPct = Number.isFinite(startSec) ? clamp((startSec / safeDuration) * 100, 0, 100) : clamp((peakSec / safeDuration) * 100, 0, 100);
+                const endPct = Number.isFinite(endSec) ? clamp((endSec / safeDuration) * 100, 0, 100) : startPct;
+                const peakPct = clamp((peakSec / safeDuration) * 100, 0, 100);
+                const active = index === AppState.videoSelectedStrikeIndex;
+                return `
+                    <div class="video-editor-strike-range" style="left:${startPct.toFixed(3)}%;width:${Math.max(0.35, endPct - startPct).toFixed(3)}%"></div>
+                    <button type="button" class="video-editor-strike${active ? ' active' : ''}" data-index="${index}" style="left:${peakPct.toFixed(3)}%" title="#${strike.number || index + 1} へ移動">
+                        #${strike.number || index + 1}
+                    </button>
+                `;
+            }).join('');
+        }
+
         function getVideoTimelineSecondsFromEvent(event) {
             const track = document.getElementById('videoTimelineTrack');
             const video = document.getElementById('analysisVideoElement');
@@ -5193,7 +5312,46 @@
             if (!video || !Number.isFinite(duration) || duration <= 0) return;
             const target = clamp(Number(seconds || 0), 0, duration);
             if (Math.abs(Number(video.currentTime || 0) - target) > 0.001) video.currentTime = target;
+            syncVideoTimelineModelFrame(target);
             updateVideoManualRangeUi();
+        }
+
+        function syncVideoTimelineModelFrame(sourceSecond) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return;
+            const relativeMs = (Number(sourceSecond || 0) - Number(data.sourceStartSec || 0)) * 1000;
+            if (!Number.isFinite(relativeMs)) return;
+            let bestIndex = 0;
+            let bestDiff = Infinity;
+            data.frames.forEach((frame, index) => {
+                const diff = Math.abs(Number(frame.timeMs || 0) - relativeMs);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    bestIndex = index;
+                }
+            });
+            const frame = data.frames[bestIndex];
+            if (!frame) return;
+            setVideoModelSnapshotFromFrame(frame, bestIndex);
+            syncModelFrameControls(bestIndex);
+            if (document.getElementById('tab-model')?.classList.contains('active') || AppState.modelSourceMode === 'video') {
+                setModelSourceMode('video');
+                drawModelVideoFramePreview(bestIndex);
+                drawModelAngleTimeline(bestIndex);
+                updateModelAnalysisLabels();
+                renderAngleModel();
+            }
+        }
+
+        function jumpVideoTimelineStrike(index) {
+            const data = AppState.videoAnalysis;
+            const strike = data?.strikes?.[index];
+            if (!data || !strike) return;
+            const peakSec = videoStrikeSourceSecond(data, strike, 'peakFrame');
+            AppState.videoSelectedStrikeIndex = index;
+            if (Number.isFinite(peakSec)) seekManualVideoToSeconds(peakSec);
+            applyVideoStrikeSelection(index, 'peak');
+            showToast(`#${strike.number || index + 1} の最高速フレームへ移動しました`, 'blue');
         }
 
         function setVideoManualMarkerSeconds(kind, seconds) {
@@ -6018,7 +6176,10 @@
             const panel = document.getElementById('videoMultiStrikePanel');
             const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
-            if (!data || !shouldShow) return;
+            if (!data || !shouldShow) {
+                updateVideoManualRangeUi();
+                return;
+            }
             const strikes = data.strikes || [];
             if (!strikes.length) {
                 safeText('videoMultiCount', '0');
@@ -6032,6 +6193,7 @@
                 const jumpBox = document.getElementById('videoStrikeJumpButtons');
                 if (jumpBox) jumpBox.innerHTML = '';
                 if (body) body.innerHTML = '<tr><td colspan="11" class="p-4 text-amber-700">打突を分割できませんでした。速度閾値や動画条件を確認してください。</td></tr>';
+                updateVideoManualRangeUi();
                 return;
             }
             const avgDuration = strikes.reduce((sum, s) => sum + s.durationMs, 0) / strikes.length;
@@ -6082,6 +6244,7 @@
                     </tr>
                 `).join('');
             }
+            updateVideoManualRangeUi();
         }
 
         function applyVideoStrikeSelection(index, target = 'peak', options = {}) {
@@ -7823,10 +7986,20 @@
         const videoTimelineTrack = document.getElementById('videoTimelineTrack');
         if (videoTimelineTrack) {
             videoTimelineTrack.addEventListener('pointerdown', event => {
-                if (event.target?.closest?.('.video-editor-marker')) return;
+                if (event.target?.closest?.('.video-editor-marker, .video-editor-strike')) return;
                 startVideoTimelineDrag(event, 'playhead');
             });
             videoTimelineTrack.addEventListener('keydown', handleVideoTimelineKey);
+        }
+        const videoTimelineStrikeMarkers = document.getElementById('videoTimelineStrikeMarkers');
+        if (videoTimelineStrikeMarkers) {
+            videoTimelineStrikeMarkers.addEventListener('click', event => {
+                const btn = event.target.closest('.video-editor-strike');
+                if (!btn) return;
+                event.preventDefault();
+                event.stopPropagation();
+                jumpVideoTimelineStrike(Number(btn.dataset.index || 0));
+            });
         }
         const videoTimelineStartMarker = document.getElementById('videoTimelineStartMarker');
         if (videoTimelineStartMarker) {
