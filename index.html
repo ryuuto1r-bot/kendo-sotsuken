@@ -81,7 +81,7 @@
             min-height: 240px;
             background: #020617;
             border-radius: 10px;
-            overflow: hidden;
+            overflow: visible;
         }
         .video-correction-preview video,
         .video-correction-preview canvas {
@@ -112,6 +112,130 @@
         .video-check-card.good { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
         .video-check-card.wait { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
         .video-check-card.warn { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+        .video-editor-timeline {
+            position: relative;
+            border: 1px solid rgba(59, 130, 246, 0.18);
+            background: rgba(255, 255, 255, 0.82);
+            border-radius: 12px;
+            padding: 10px 10px 12px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+        }
+        .video-editor-timebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #1e3a8a;
+            font-weight: 900;
+            font-size: 11px;
+        }
+        .video-editor-track {
+            position: relative;
+            height: 76px;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            background:
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.02)),
+                repeating-linear-gradient(to right, #eff6ff 0, #eff6ff 15px, #dbeafe 16px, #eff6ff 32px);
+            overflow: hidden;
+            cursor: pointer;
+            touch-action: none;
+            user-select: none;
+        }
+        .video-editor-track:focus {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+        .video-editor-range {
+            position: absolute;
+            top: 18px;
+            bottom: 18px;
+            left: 0;
+            width: 0;
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(239, 68, 68, 0.18));
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .video-editor-ticks {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .video-editor-tick {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(30, 64, 175, 0.2);
+        }
+        .video-editor-tick.major {
+            width: 2px;
+            background: rgba(30, 64, 175, 0.42);
+        }
+        .video-editor-tick span {
+            position: absolute;
+            top: 6px;
+            left: 4px;
+            transform: translateX(-2px);
+            color: #1d4ed8;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .video-editor-playhead {
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: 0;
+            width: 3px;
+            border-radius: 999px;
+            background: #f8fafc;
+            box-shadow: 0 0 0 1px #0f172a, 0 0 12px rgba(15, 23, 42, 0.28);
+            transform: translateX(-50%);
+            z-index: 5;
+            pointer-events: none;
+        }
+        .video-editor-playhead::before {
+            content: "";
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            background: #0f172a;
+            transform: translateX(-50%) rotate(45deg);
+        }
+        .video-editor-marker {
+            position: absolute;
+            top: 12px;
+            width: 18px;
+            height: 52px;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            transform: translateX(-50%);
+            z-index: 6;
+            cursor: ew-resize;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+        }
+        .video-editor-marker.start { background: #2563eb; }
+        .video-editor-marker.end { background: #ef4444; }
+        .video-editor-marker::after {
+            content: attr(data-label);
+            position: absolute;
+            left: 50%;
+            bottom: -17px;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 900;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+        .video-editor-marker[hidden] { display: none; }
         .model-preview-canvas {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -439,6 +563,20 @@
                         </label>
                     </div>
                     <input id="videoManualScrubSlider" type="range" min="0" max="0" step="1" value="0" class="w-full accent-blue-600">
+                    <div id="videoEditorTimeline" class="video-editor-timeline mt-3" aria-label="動画タイムライン">
+                        <div class="video-editor-timebar">
+                            <span><i class="fa-solid fa-scissors mr-1"></i>動画タイムライン</span>
+                            <span id="videoTimelineTimeLabel" class="font-mono-num">0:00.000 / ---</span>
+                        </div>
+                        <div id="videoTimelineTrack" class="video-editor-track" role="slider" tabindex="0" aria-label="動画の再生位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                            <div id="videoTimelineRange" class="video-editor-range"></div>
+                            <div id="videoTimelineTicks" class="video-editor-ticks"></div>
+                            <button id="videoTimelineStartMarker" type="button" class="video-editor-marker start" data-label="開始" hidden="" title="開始マーカーをドラッグ"></button>
+                            <button id="videoTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
+                            <div id="videoTimelinePlayhead" class="video-editor-playhead"></div>
+                        </div>
+                        <p class="mt-2 text-[11px] text-blue-800">タイムラインをドラッグすると動画を移動できます。開始/終了マーカーもドラッグで微調整できます。</p>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                         <div class="bg-white/80 border border-blue-100 rounded p-2"><span class="text-blue-700">現在位置</span><div id="videoManualCurrentLabel" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/80 border border-blue-100 rounded p-2"><span class="text-blue-700">開始</span><div id="videoManualStartLabel" class="font-black font-mono-num">未設定</div></div>
@@ -1332,6 +1470,8 @@
             videoUrlSource: null,
             videoManualStartSec: null,
             videoManualEndSec: null,
+            videoTimelineTickKey: '',
+            videoTimelineDragMode: null,
             videoOfficialSpeedSource: 'tip',
             videoAngleOverlay: true,
             videoAngleOverlayTarget: 'all',
@@ -4952,6 +5092,162 @@
             return `${Math.round(value * 1000)} ms`;
         }
 
+        function formatTimelineClock(sec) {
+            const value = Number(sec);
+            if (!Number.isFinite(value) || value < 0) return '---';
+            const totalMs = Math.round(value * 1000);
+            const minutes = Math.floor(totalMs / 60000);
+            const seconds = Math.floor((totalMs % 60000) / 1000);
+            const millis = totalMs % 1000;
+            return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+        }
+
+        function renderVideoTimelineTicks(duration) {
+            const ticks = document.getElementById('videoTimelineTicks');
+            if (!ticks) return;
+            const safeDuration = Number(duration || 0);
+            if (!Number.isFinite(safeDuration) || safeDuration <= 0) {
+                AppState.videoTimelineTickKey = '';
+                ticks.innerHTML = '';
+                return;
+            }
+            const totalTicks = Math.round(clamp(safeDuration * 8, 24, 80));
+            const labelEvery = Math.max(1, Math.round(totalTicks / 8));
+            const key = `${Math.round(safeDuration * 1000)}:${totalTicks}:${labelEvery}`;
+            if (AppState.videoTimelineTickKey === key) return;
+            AppState.videoTimelineTickKey = key;
+            const html = [];
+            for (let i = 0; i <= totalTicks; i++) {
+                const pct = (i / totalTicks) * 100;
+                const isMajor = i === 0 || i === totalTicks || i % labelEvery === 0;
+                const time = (safeDuration * i) / totalTicks;
+                html.push(`<div class="video-editor-tick${isMajor ? ' major' : ''}" style="left:${pct.toFixed(3)}%">${isMajor ? `<span>${formatTimelineClock(time)}</span>` : ''}</div>`);
+            }
+            ticks.innerHTML = html.join('');
+        }
+
+        function updateVideoEditorTimeline(video, current, duration, start, end, hasRange) {
+            const track = document.getElementById('videoTimelineTrack');
+            const playhead = document.getElementById('videoTimelinePlayhead');
+            const startMarker = document.getElementById('videoTimelineStartMarker');
+            const endMarker = document.getElementById('videoTimelineEndMarker');
+            const range = document.getElementById('videoTimelineRange');
+            const label = document.getElementById('videoTimelineTimeLabel');
+            const safeDuration = Number(duration || 0);
+            const safeCurrent = clamp(Number(current || 0), 0, Math.max(0, safeDuration));
+            const pct = sec => safeDuration > 0 ? `${clamp((Number(sec || 0) / safeDuration) * 100, 0, 100).toFixed(3)}%` : '0%';
+
+            renderVideoTimelineTicks(safeDuration);
+            if (label) label.textContent = `${formatTimelineClock(safeCurrent)} / ${safeDuration > 0 ? formatTimelineClock(safeDuration) : '---'}`;
+            if (track) {
+                track.setAttribute('aria-valuemax', safeDuration > 0 ? String(Math.round(safeDuration * 1000)) : '0');
+                track.setAttribute('aria-valuenow', String(Math.round(safeCurrent * 1000)));
+                track.setAttribute('aria-valuetext', `${formatVideoTime(safeCurrent)} / ${formatVideoTime(safeDuration)}`);
+            }
+            if (playhead) playhead.style.left = pct(safeCurrent);
+
+            if (startMarker) {
+                const show = Number.isFinite(start);
+                startMarker.hidden = !show;
+                if (show) {
+                    startMarker.style.left = pct(start);
+                    startMarker.title = `開始 ${formatVideoTime(start)}。ドラッグで調整できます。`;
+                }
+            }
+            if (endMarker) {
+                const show = Number.isFinite(end);
+                endMarker.hidden = !show;
+                if (show) {
+                    endMarker.style.left = pct(end);
+                    endMarker.title = `終了 ${formatVideoTime(end)}。ドラッグで調整できます。`;
+                }
+            }
+            if (range) {
+                if (hasRange) {
+                    const startPct = clamp((start / safeDuration) * 100, 0, 100);
+                    const endPct = clamp((end / safeDuration) * 100, 0, 100);
+                    range.style.left = `${startPct.toFixed(3)}%`;
+                    range.style.width = `${Math.max(0, endPct - startPct).toFixed(3)}%`;
+                    range.hidden = false;
+                } else {
+                    range.style.left = '0%';
+                    range.style.width = '0%';
+                    range.hidden = true;
+                }
+            }
+        }
+
+        function getVideoTimelineSecondsFromEvent(event) {
+            const track = document.getElementById('videoTimelineTrack');
+            const video = document.getElementById('analysisVideoElement');
+            const duration = Number(video?.duration || 0);
+            if (!track || !Number.isFinite(duration) || duration <= 0) return null;
+            const rect = track.getBoundingClientRect();
+            const ratio = rect.width > 0 ? clamp((event.clientX - rect.left) / rect.width, 0, 1) : 0;
+            return ratio * duration;
+        }
+
+        function seekManualVideoToSeconds(seconds) {
+            const video = document.getElementById('analysisVideoElement');
+            const duration = Number(video?.duration || 0);
+            if (!video || !Number.isFinite(duration) || duration <= 0) return;
+            const target = clamp(Number(seconds || 0), 0, duration);
+            if (Math.abs(Number(video.currentTime || 0) - target) > 0.001) video.currentTime = target;
+            updateVideoManualRangeUi();
+        }
+
+        function setVideoManualMarkerSeconds(kind, seconds) {
+            const video = document.getElementById('analysisVideoElement');
+            const duration = Number(video?.duration || 0);
+            if (!Number.isFinite(duration) || duration <= 0) return;
+            let current = clamp(Number(seconds || 0), 0, duration);
+            const minGap = Math.max(0.001, 1 / Math.max(240, Number(AppState.videoAnalysis?.fps || 0)));
+            if (kind === 'start') {
+                if (Number.isFinite(AppState.videoManualEndSec)) current = Math.min(current, Math.max(0, AppState.videoManualEndSec - minGap));
+                AppState.videoManualStartSec = current;
+            } else {
+                if (Number.isFinite(AppState.videoManualStartSec)) current = Math.max(current, Math.min(duration, AppState.videoManualStartSec + minGap));
+                AppState.videoManualEndSec = current;
+            }
+            seekManualVideoToSeconds(current);
+            updateVideoStepHint('mark');
+        }
+
+        function applyVideoTimelinePointer(event) {
+            const mode = AppState.videoTimelineDragMode || 'playhead';
+            const seconds = getVideoTimelineSecondsFromEvent(event);
+            if (!Number.isFinite(seconds)) return;
+            if (mode === 'start' || mode === 'end') {
+                setVideoManualMarkerSeconds(mode, seconds);
+            } else {
+                seekManualVideoToSeconds(seconds);
+            }
+        }
+
+        function startVideoTimelineDrag(event, mode = 'playhead') {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            AppState.videoTimelineDragMode = mode;
+            applyVideoTimelinePointer(event);
+        }
+
+        function handleVideoTimelineKey(event) {
+            const video = document.getElementById('analysisVideoElement');
+            const duration = Number(video?.duration || 0);
+            if (!video || !Number.isFinite(duration) || duration <= 0) return;
+            const fps = Math.max(1, Number(AppState.videoAnalysis?.fps || AppState.videoDiagnostics?.fps || 30));
+            const frameStep = 1 / fps;
+            let next = Number(video.currentTime || 0);
+            if (event.key === 'ArrowLeft') next -= event.shiftKey ? frameStep * 10 : frameStep;
+            else if (event.key === 'ArrowRight') next += event.shiftKey ? frameStep * 10 : frameStep;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = duration;
+            else return;
+            event.preventDefault();
+            seekManualVideoToSeconds(next);
+        }
+
         function resetVideoManualMarkers() {
             AppState.videoManualStartSec = null;
             AppState.videoManualEndSec = null;
@@ -4983,6 +5279,7 @@
             safeText('videoManualStartLabel', Number.isFinite(start) ? formatVideoTime(start) : '未設定');
             safeText('videoManualEndLabel', Number.isFinite(end) ? formatVideoTime(end) : '未設定');
             safeText('videoManualDurationLabel', ok ? formatVideoTime(end - start) : '---');
+            updateVideoEditorTimeline(video, current, duration, start, end, ok);
             syncCorrectionVideoSource(current);
             const status = document.getElementById('videoManualRangeStatus');
             if (status) {
@@ -7518,14 +7815,48 @@
         const videoManualScrubSlider = document.getElementById('videoManualScrubSlider');
         if (videoManualScrubSlider) {
             const scrubHandler = event => {
-                const video = document.getElementById('analysisVideoElement');
-                if (!video || !Number.isFinite(Number(video.duration))) return;
-                video.currentTime = clamp(Number(event.target.value || 0) / 1000, 0, Math.max(0, Number(video.duration || 0)));
-                updateVideoManualRangeUi();
+                seekManualVideoToSeconds(Number(event.target.value || 0) / 1000);
             };
             videoManualScrubSlider.addEventListener('input', scrubHandler);
             videoManualScrubSlider.addEventListener('change', scrubHandler);
         }
+        const videoTimelineTrack = document.getElementById('videoTimelineTrack');
+        if (videoTimelineTrack) {
+            videoTimelineTrack.addEventListener('pointerdown', event => {
+                if (event.target?.closest?.('.video-editor-marker')) return;
+                startVideoTimelineDrag(event, 'playhead');
+            });
+            videoTimelineTrack.addEventListener('keydown', handleVideoTimelineKey);
+        }
+        const videoTimelineStartMarker = document.getElementById('videoTimelineStartMarker');
+        if (videoTimelineStartMarker) {
+            videoTimelineStartMarker.addEventListener('pointerdown', event => startVideoTimelineDrag(event, 'start'));
+            videoTimelineStartMarker.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (Number.isFinite(AppState.videoManualStartSec)) seekManualVideoToSeconds(AppState.videoManualStartSec);
+            });
+        }
+        const videoTimelineEndMarker = document.getElementById('videoTimelineEndMarker');
+        if (videoTimelineEndMarker) {
+            videoTimelineEndMarker.addEventListener('pointerdown', event => startVideoTimelineDrag(event, 'end'));
+            videoTimelineEndMarker.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (Number.isFinite(AppState.videoManualEndSec)) seekManualVideoToSeconds(AppState.videoManualEndSec);
+            });
+        }
+        window.addEventListener('pointermove', event => {
+            if (!AppState.videoTimelineDragMode) return;
+            event.preventDefault();
+            applyVideoTimelinePointer(event);
+        }, { passive: false });
+        window.addEventListener('pointerup', () => {
+            AppState.videoTimelineDragMode = null;
+        });
+        window.addEventListener('pointercancel', () => {
+            AppState.videoTimelineDragMode = null;
+        });
         const setManualStartMarkerBtn = document.getElementById('setManualStartMarkerBtn');
         if (setManualStartMarkerBtn) setManualStartMarkerBtn.addEventListener('click', () => setVideoManualMarker('start'));
         const setManualEndMarkerBtn = document.getElementById('setManualEndMarkerBtn');
