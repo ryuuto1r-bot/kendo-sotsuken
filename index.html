@@ -1306,6 +1306,8 @@
             currentAngleQuality: 0,
             liveOverlayValues: null,
             lastPoseFrameTimeMs: 0,
+            lastPoseAttemptAt: 0,
+            lastPoseResultAt: 0,
             simplePracticeMode: true,
             practiceFocus: false,
             replayFrames: [],
@@ -3928,6 +3930,7 @@
 
         function onResults(results) {
             const frameTimeMs = results.frameTimeMs || AppState.currentFrameTimeMs || performance.now();
+            AppState.lastPoseResultAt = performance.now();
             if (AppState.lastFrameTimeMs && frameTimeMs > AppState.lastFrameTimeMs) {
                 AppState.frameDtMs = frameTimeMs - AppState.lastFrameTimeMs;
                 AppState.frameFps = 1000 / AppState.frameDtMs;
@@ -4428,12 +4431,13 @@
         }
 
         async function initLegacyPose() {
+            const ios = isIOSLikeBrowser();
             pose = new Pose({locateFile: (file) => `./vendor/mediapipe/pose/${file}`});
             pose.setOptions({ 
-                modelComplexity: 1, 
+                modelComplexity: ios ? 0 : 1, 
                 smoothLandmarks: true, 
-                minDetectionConfidence: 0.6, 
-                minTrackingConfidence: 0.6,
+                minDetectionConfidence: ios ? 0.35 : 0.6, 
+                minTrackingConfidence: ios ? 0.35 : 0.6,
                 selfieMode: AppState.isFlipped 
             });
             pose.onResults((results) => {
@@ -4678,10 +4682,12 @@
             canvasElement.width = videoElement.videoWidth || 1280;
             canvasElement.height = videoElement.videoHeight || 720;
             drawCameraFrameOnly('カメラ起動中 / AI準備中');
-            AppState.frameSyncMode = videoElement.requestVideoFrameCallback ? 'rVFC' : 'RAF';
+            AppState.frameSyncMode = isIOSLikeBrowser() ? 'RAF/iPhone' : (videoElement.requestVideoFrameCallback ? 'rVFC' : 'RAF');
             AppState.frameLoopRunning = true;
             AppState.lastFrameTimeMs = 0;
             AppState.lastAnalysisFrameTimeMs = 0;
+            AppState.lastPoseAttemptAt = 0;
+            AppState.lastPoseResultAt = 0;
             AppState.skippedAnalysisFrames = 0;
             AppState.angleFilters = {};
             AppState.currentAngleQuality = 0;
@@ -4702,7 +4708,7 @@
 
         function scheduleVideoFrame() {
             if (!AppState.frameLoopRunning) return;
-            if (videoElement.requestVideoFrameCallback) {
+            if (!isIOSLikeBrowser() && videoElement.requestVideoFrameCallback) {
                 videoElement.requestVideoFrameCallback(processVideoFrame);
             } else {
                 requestAnimationFrame((now) => processVideoFrame(now, { expectedDisplayTime: now }));
@@ -4734,6 +4740,7 @@
             AppState.currentFrameTimeMs = frameTimeMs;
             const aiReady = AppState.poseLandmarker || pose;
             drawCameraFrameOnly(aiReady ? '' : 'AI準備中 / カメラ映像のみ表示');
+            if (aiReady) AppState.lastPoseAttemptAt = performance.now();
             const minAnalysisInterval = 1000 / clamp(Params.realtimeAnalysisFps || 24, 8, 60);
             if (aiReady && AppState.lastAnalysisFrameTimeMs && frameTimeMs - AppState.lastAnalysisFrameTimeMs < minAnalysisInterval) {
                 AppState.skippedAnalysisFrames += 1;
@@ -4746,7 +4753,7 @@
                     const taskResult = AppState.poseLandmarker.detectForVideo(videoElement, nextPoseInferenceTimestamp(frameTimeMs));
                     onResults(convertTaskPoseResult(taskResult, frameTimeMs));
                 } else if (pose) {
-                    await pose.send({ image: videoElement });
+                    await withTimeout(pose.send({ image: videoElement }), isIOSLikeBrowser() ? 2500 : 4000, 'Legacy Pose frame');
                 } else {
                     updatePrecisionPanel();
                 }
