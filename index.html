@@ -112,6 +112,64 @@
         .video-check-card.good { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
         .video-check-card.wait { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
         .video-check-card.warn { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+        .video-side-drawer {
+            position: fixed;
+            top: 74px;
+            right: 14px;
+            z-index: 45;
+            width: min(420px, calc(100vw - 28px));
+            max-height: calc(100vh - 92px);
+            overflow: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+            padding: 12px;
+            transform: translateX(calc(100% + 28px));
+            transition: transform 0.22s ease;
+        }
+        .video-side-drawer.open { transform: translateX(0); }
+        .video-side-drawer .drawer-card { margin-top: 10px; }
+        .video-side-drawer #videoResultAuxPanel,
+        .video-side-drawer #videoValidityList,
+        .video-side-drawer #videoVerificationChecklist {
+            grid-template-columns: 1fr !important;
+        }
+        .video-graph-grid { grid-template-columns: 1fr; }
+        @media (min-width: 1024px) {
+            .video-graph-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        .video-analysis-graph canvas {
+            height: 180px !important;
+            min-height: 180px;
+        }
+        .video-frame-master-slider {
+            height: 24px;
+            accent-color: #2563eb;
+        }
+        .video-frame-master-slider::-webkit-slider-thumb {
+            width: 22px;
+            height: 22px;
+        }
+        #videoStep-correct:fullscreen,
+        #videoStep-correct:-webkit-full-screen {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            background: #f8fafc;
+            padding: 14px;
+        }
+        #videoStep-correct:fullscreen .video-correction-preview,
+        #videoStep-correct:-webkit-full-screen .video-correction-preview {
+            min-height: min(78vh, 820px);
+            height: min(78vh, 820px);
+        }
+        #videoStep-correct:fullscreen .video-correction-controls,
+        #videoStep-correct:-webkit-full-screen .video-correction-controls {
+            max-height: min(78vh, 820px);
+            overflow: auto;
+        }
         .video-editor-timeline {
             position: relative;
             border: 1px solid rgba(59, 130, 246, 0.18);
@@ -294,6 +352,7 @@
             .model-analysis-grid { grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr); }
         }
         .model-side-panel { min-width: 0; }
+        .model-frame-card { overflow: hidden; }
         .model-preview-canvas {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -717,7 +776,18 @@
                     <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">1本補正</button>
                     <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">正式結果</button>
                     <button type="button" data-video-section="report" class="video-result-section-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-2 rounded font-black">保存/出力</button>
+                    <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
+                <aside id="videoSideDrawer" class="video-side-drawer" aria-hidden="true">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-sm font-black text-slate-800">補助情報</h3>
+                            <p class="text-[11px] text-slate-500">妥当性チェックや確認リストは必要な時だけ開きます。</p>
+                        </div>
+                        <button id="videoSideDrawerCloseBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded text-xs font-black">閉じる</button>
+                    </div>
+                    <div id="videoSideDrawerBody" class="space-y-3 mt-3"></div>
+                </aside>
                 <div id="videoFormalCandidatePanel" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-black text-emerald-900"><i class="fa-solid fa-certificate mr-1"></i>正式測定候補</h3>
@@ -904,18 +974,18 @@
                             <span class="text-amber-700 font-bold">刃筋</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                        <div class="rounded-lg border border-cyan-100 bg-cyan-50/40 p-2">
+                    <div class="video-graph-grid grid gap-4">
+                        <div class="video-analysis-graph rounded-lg border border-cyan-100 bg-cyan-50/40 p-3">
                             <div class="text-[11px] font-black text-cyan-700 mb-1">速度</div>
-                            <canvas id="videoSyncSpeedCanvas" class="w-full h-32"></canvas>
+                            <canvas id="videoSyncSpeedCanvas" class="w-full h-44"></canvas>
                         </div>
-                        <div class="rounded-lg border border-purple-100 bg-purple-50/40 p-2">
+                        <div class="video-analysis-graph rounded-lg border border-purple-100 bg-purple-50/40 p-3">
                             <div class="text-[11px] font-black text-purple-700 mb-1">右肘角</div>
-                            <canvas id="videoSyncElbowCanvas" class="w-full h-32"></canvas>
+                            <canvas id="videoSyncElbowCanvas" class="w-full h-44"></canvas>
                         </div>
-                        <div class="rounded-lg border border-emerald-100 bg-emerald-50/40 p-2">
+                        <div class="video-analysis-graph rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
                             <div class="text-[11px] font-black text-emerald-700 mb-1">体幹軸 / 刃筋</div>
-                            <canvas id="videoSyncAxisCanvas" class="w-full h-32"></canvas>
+                            <canvas id="videoSyncAxisCanvas" class="w-full h-44"></canvas>
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-500 mt-2">各グラフをクリックすると該当フレームへ移動します。縦線が現在フレームです。</p>
@@ -925,19 +995,25 @@
                     <button type="button" onclick="switchVideoStep('report')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded text-sm font-bold">保存/レポート（任意）</button>
                 </div>
                 </div>
-                <div id="videoStep-correct" class="video-step-panel space-y-3">
+                <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen space-y-3">
                     <div class="official-flow-card rounded-xl border p-3 text-xs leading-relaxed">
                         <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
                         <p><strong>開始</strong>は振り下ろし開始、<strong>終了</strong>は最高速後の減速/停止点として、下の映像・グラフ・3D角度ビューを見ながら1コマ単位で合わせます。</p>
                     </div>
-                    <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="w-full">
+                    <div class="rounded-xl border border-blue-100 bg-white p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
+                            <span class="font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>全フレーム移動</span>
+                            <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
+                        </div>
+                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
+                    </div>
                     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-800">
                             <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
                             <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
                             <div id="videoCorrectionEmpty" class="video-correction-empty">動画を読み込むとここに表示されます。解析後は骨格・角度・マーカーも重なります。</div>
                         </div>
-                        <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
+                        <div class="video-correction-controls bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-sliders text-indigo-500 mr-1"></i>補正操作</h3>
                                 <span id="videoCorrectionModelStatus" class="text-[11px] font-bold text-indigo-700">3D連動待機</span>
@@ -963,6 +1039,7 @@
                                 <button id="videoOpen3DFrameBtn" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-person-rays mr-1"></i>3D</button>
                                 <button id="markStartFrameBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold">現在を開始</button>
                                 <button id="markEndFrameBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-bold">現在を終了</button>
+                                <button id="videoCorrectionFullscreenBtn" type="button" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>全画面補正</button>
                             </div>
                             <div class="grid grid-cols-1 gap-2 text-xs">
                                 <label class="flex items-center gap-2"><input id="videoSkeletonToggle" type="checkbox" checked=""> 骨格表示</label>
@@ -1226,7 +1303,7 @@
                     <p id="modelAngleDefinition" class="text-sm text-slate-600 mt-3">右肩・右肘・右手首の3点で、右肘を中心に測ります。面打ちで腕が伸びているかを見る基本角度です。</p>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl shadow-sm border">
+                <div class="model-frame-card bg-white p-4 rounded-xl shadow-sm border">
                     <div class="flex items-center justify-between gap-2 mb-3">
                         <h3 class="text-sm font-bold text-slate-700">動画フレーム確認</h3>
                         <span id="modelVideoFrameStatus" class="text-[11px] font-bold text-slate-500">動画解析後に表示</span>
@@ -1686,13 +1763,31 @@
             const graph = document.getElementById('videoSyncGraphPanel');
             const formal = document.getElementById('videoFormalCandidatePanel');
             const resultCards = document.getElementById('videoAnalysisResult');
-            const aux = document.getElementById('videoResultAuxPanel');
             if (!preview || !detail || !graph) return;
+            ensureVideoSideDrawer();
             preview.after(detail);
             detail.after(graph);
             if (formal) graph.after(formal);
             if (resultCards && formal) formal.after(resultCards);
-            if (aux && resultCards) resultCards.after(aux);
+        }
+
+        function ensureVideoSideDrawer() {
+            const body = document.getElementById('videoSideDrawerBody');
+            if (!body) return;
+            ['videoResultAuxPanel', 'videoValidityPanel'].forEach(id => {
+                const panel = document.getElementById(id);
+                if (!panel || panel.parentElement === body) return;
+                panel.classList.add('drawer-card');
+                body.appendChild(panel);
+            });
+        }
+
+        function setVideoSideDrawer(open) {
+            ensureVideoSideDrawer();
+            const drawer = document.getElementById('videoSideDrawer');
+            if (!drawer) return;
+            drawer.classList.toggle('open', Boolean(open));
+            drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
         }
 
         function navigateVideoResultSection(section) {
@@ -1803,7 +1898,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v55';
+            const refreshKey = 'kendo-sw-refreshed-v56';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3275,9 +3370,12 @@
         function drawModelVideoFramePreview(frameIndex = AppState.videoModelAngleValues?.frameIndex) {
             const canvas = document.getElementById('modelVideoFrameCanvas');
             if (!canvas) return;
+            const source = document.getElementById('videoAnalysisCanvas');
             const rect = canvas.getBoundingClientRect();
             const width = Math.max(280, Math.round(rect.width || canvas.clientWidth || 360));
-            const height = Math.max(158, Math.round(width * 9 / 16));
+            const sourceAspect = (source?.width && source?.height) ? source.width / source.height : (16 / 9);
+            const height = clamp(Math.round(width / Math.max(0.25, sourceAspect)), 190, 620);
+            canvas.style.aspectRatio = `${width} / ${height}`;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
@@ -3286,9 +3384,11 @@
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = '#020617';
             ctx.fillRect(0, 0, width, height);
-            const source = document.getElementById('videoAnalysisCanvas');
             if (source?.width && source?.height) {
-                ctx.drawImage(source, 0, 0, width, height);
+                const scale = Math.min(width / source.width, height / source.height);
+                const drawW = source.width * scale;
+                const drawH = source.height * scale;
+                ctx.drawImage(source, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
             } else {
                 ctx.fillStyle = '#94a3b8';
                 ctx.font = '13px sans-serif';
@@ -6744,9 +6844,9 @@
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
             const rect = canvas.getBoundingClientRect();
-            const compact = canvasId.includes('Correction') || canvasId.includes('Speed') || canvasId.includes('Elbow') || canvasId.includes('Axis');
+            const compact = canvasId.includes('Correction');
             const width = Math.max(compact ? 240 : 360, Math.round(rect.width || canvas.clientWidth || 760));
-            const height = Math.max(compact ? 92 : 150, Math.round(rect.height || canvas.clientHeight || (compact ? 96 : 192)));
+            const height = Math.max(compact ? 112 : 176, Math.round(rect.height || canvas.clientHeight || (compact ? 118 : 192)));
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
@@ -8593,6 +8693,17 @@
         if (videoResultFullscreenBtn) videoResultFullscreenBtn.addEventListener('click', () => {
             requestElementFullscreen(document.getElementById('videoResultPreviewPanel'));
         });
+        const videoCorrectionFullscreenBtn = document.getElementById('videoCorrectionFullscreenBtn');
+        if (videoCorrectionFullscreenBtn) videoCorrectionFullscreenBtn.addEventListener('click', () => {
+            requestElementFullscreen(document.getElementById('videoStep-correct'));
+        });
+        const videoSideDrawerToggle = document.getElementById('videoSideDrawerToggle');
+        if (videoSideDrawerToggle) videoSideDrawerToggle.addEventListener('click', () => {
+            const drawer = document.getElementById('videoSideDrawer');
+            setVideoSideDrawer(!drawer?.classList.contains('open'));
+        });
+        const videoSideDrawerCloseBtn = document.getElementById('videoSideDrawerCloseBtn');
+        if (videoSideDrawerCloseBtn) videoSideDrawerCloseBtn.addEventListener('click', () => setVideoSideDrawer(false));
         const videoResultTimelineTrack = document.getElementById('videoResultTimelineTrack');
         if (videoResultTimelineTrack) {
             videoResultTimelineTrack.addEventListener('pointerdown', event => {
@@ -8760,6 +8871,19 @@
             const btn = e.target.closest('[data-video-section]');
             if (!btn) return;
             navigateVideoResultSection(btn.dataset.videoSection);
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') setVideoSideDrawer(false);
+            if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+            const active = document.activeElement;
+            if (active && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
+            const videoTab = document.getElementById('tab-video');
+            const correctPanel = document.getElementById('videoStep-correct');
+            if (!videoTab?.classList.contains('active') || !correctPanel?.classList.contains('active')) return;
+            if (!AppState.videoAnalysis?.frames?.length) return;
+            event.preventDefault();
+            stopVideoSlowPlayback();
+            stepVideoAnalysisFrame(event.key === 'ArrowLeft' ? -1 : 1);
         });
         function attachVideoGraphScrubber(canvasId) {
             const canvas = document.getElementById(canvasId);
@@ -9006,6 +9130,7 @@
         updateHistoryTable();
         updateDetailsTab();
         applyCalibrationInputs();
+        ensureVideoSideDrawer();
         checkLaunchEnvironment();
         window.addEventListener('error', event => {
             const message = event?.message || '画面初期化エラー';
