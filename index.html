@@ -2048,7 +2048,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v61';
+            const refreshKey = 'kendo-sw-refreshed-v62';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6688,7 +6688,7 @@
                 return { ok: false, reason: '骨格不足' };
             }
             if (summary.durationMs < 55) return { ok: false, reason: '短すぎる' };
-            if (summary.durationMs > Math.min(1000, Params.timingMaxDurationMs)) return { ok: false, reason: '長すぎる' };
+            if (summary.durationMs > videoFormalMaxDurationMs()) return { ok: false, reason: '長すぎる' };
 	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: 'ピーク不足' };
 	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
             if (summary.avgVisibility && summary.avgVisibility < 0.32) return { ok: false, reason: '検出信頼度不足' };
@@ -6697,6 +6697,87 @@
             const peak = Math.max(summary.peakSpeedMps, 0.001);
             if (summary.startSpeedMps > peak * 0.82 && summary.endSpeedMps > peak * 0.82) return { ok: false, reason: 'ピーク不明瞭' };
             return { ok: true, reason: 'OK' };
+        }
+
+        function videoFormalMaxDurationMs() {
+            return Math.min(800, Number(Params.timingMaxDurationMs || 1200));
+        }
+
+        function normalizeVideoStrikeBuckets(data) {
+            if (!data?.frames?.length) return;
+            const incomingValid = Array.isArray(data.strikes) ? data.strikes : [];
+            const incomingRejected = Array.isArray(data.rejectedStrikes) ? data.rejectedStrikes : [];
+            const valid = [];
+            const rejected = [];
+            const rejectedKeys = new Set();
+            const makeKey = strike => [
+                Number(strike?.startFrame ?? -1),
+                Number(strike?.peakFrame ?? -1),
+                Number(strike?.endFrame ?? -1),
+                strike?.validationReason || strike?.reason || ''
+            ].join(':');
+            const pushRejected = (strike, reason) => {
+                if (!strike) return;
+                const item = {
+                    ...strike,
+                    rejected: true,
+                    validationReason: reason || strike.validationReason || strike.reason || '要確認',
+                    reason: reason || strike.validationReason || strike.reason || '要確認',
+                    score: 0,
+                    savedRecordId: null
+                };
+                const key = makeKey(item);
+                if (rejectedKeys.has(key)) return;
+                rejectedKeys.add(key);
+                rejected.push(item);
+            };
+            const ordered = [...incomingValid].sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0));
+            ordered.forEach(strike => {
+                const validation = validateVideoStrikeSummary(strike, data);
+                const overlaps = valid.some(item => strike.startFrame <= item.endFrame && strike.endFrame >= item.startFrame);
+                if (!validation.ok) {
+                    pushRejected(strike, validation.reason);
+                    return;
+                }
+                if (overlaps) {
+                    pushRejected(strike, '重複');
+                    return;
+                }
+                valid.push({ ...strike, rejected: false, validationReason: 'OK', reason: 'OK', number: valid.length + 1 });
+            });
+            incomingRejected
+                .sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0))
+                .forEach(strike => {
+                    const validation = validateVideoStrikeSummary(strike, data);
+                    if (validation.ok && strike.manualAdjusted) {
+                        const overlaps = valid.some(item => strike.startFrame <= item.endFrame && strike.endFrame >= item.startFrame);
+                        if (overlaps) pushRejected(strike, '重複');
+                        else valid.push({ ...strike, rejected: false, validationReason: 'OK', reason: 'OK', number: valid.length + 1 });
+                    } else {
+                        pushRejected(strike, validation.ok ? (strike.validationReason || strike.reason || '要補正') : validation.reason);
+                    }
+                });
+            data.strikes = valid
+                .sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0))
+                .map((strike, index) => ({ ...strike, number: index + 1 }));
+            data.rejectedStrikes = rejected
+                .sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0))
+                .map((strike, index) => ({ ...strike, rejected: true, number: index + 1 }));
+            if (AppState.videoSelectedStrikeRejected) {
+                if (data.rejectedStrikes.length) AppState.videoSelectedStrikeIndex = clamp(Number(AppState.videoSelectedStrikeIndex || 0), 0, data.rejectedStrikes.length - 1);
+                else {
+                    AppState.videoSelectedStrikeRejected = false;
+                    AppState.videoSelectedStrikeIndex = data.strikes.length ? 0 : null;
+                }
+            } else if (data.strikes.length) {
+                AppState.videoSelectedStrikeIndex = clamp(Number(AppState.videoSelectedStrikeIndex || 0), 0, data.strikes.length - 1);
+            } else if (data.rejectedStrikes.length) {
+                AppState.videoSelectedStrikeRejected = true;
+                AppState.videoSelectedStrikeIndex = 0;
+            } else {
+                AppState.videoSelectedStrikeRejected = false;
+                AppState.videoSelectedStrikeIndex = null;
+            }
         }
 
         function maxReasonableSpeedForSource(source = Params.officialSpeedSource) {
@@ -6708,13 +6789,23 @@
         }
 
         function detectVideoStrikes(data) {
-            if (!data?.frames?.length) return [];
+            if (!data?.frames?.length) {
+                if (data) {
+                    data.strikes = [];
+                    data.rejectedStrikes = [];
+                }
+                return [];
+            }
             data.strikeSensitivity = Params.videoStrikeSensitivity || AppState.videoStrikeSensitivity || 'normal';
             const frames = data.frames;
             const fps = data.fps || Params.targetFps || 60;
             const speeds = frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0);
             const globalPeak = Math.max(...speeds);
-            if (!Number.isFinite(globalPeak) || globalPeak <= 0) return [];
+            if (!Number.isFinite(globalPeak) || globalPeak <= 0) {
+                data.strikes = [];
+                data.rejectedStrikes = [];
+                return [];
+            }
             const sensitivity = videoStrikeSensitivityProfile();
             const threshold = Math.max(globalPeak * sensitivity.peakRatio, sensitivity.minSpeed);
             const minGap = Math.max(6, Math.round(fps * sensitivity.minGapSec));
@@ -6766,8 +6857,8 @@
                     pushRejection(startFrame, peakFrame, endFrame, '重複');
                     return;
                 }
-                if (duration < 45 || duration > Params.timingMaxDurationMs) {
-                    pushRejection(startFrame, peakFrame, endFrame, duration < 45 ? '短すぎる' : '長すぎる');
+                if (duration < 55 || duration > videoFormalMaxDurationMs()) {
+                    pushRejection(startFrame, peakFrame, endFrame, duration < 55 ? '短すぎる' : '長すぎる');
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
@@ -6781,13 +6872,16 @@
             data.rejectedStrikes = rejections
                 .sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0))
                 .map((segment, index) => ({ ...segment, number: index + 1 }));
-            return segments
+            data.strikes = segments
                 .sort((a, b) => a.startFrame - b.startFrame)
                 .map((segment, index) => ({ ...segment, number: index + 1 }));
+            normalizeVideoStrikeBuckets(data);
+            return data.strikes;
         }
 
         function updateVideoMultiStrikePanel(data) {
             const panel = document.getElementById('videoMultiStrikePanel');
+            if (data?.frames?.length) normalizeVideoStrikeBuckets(data);
             const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1 || (data?.rejectedStrikes?.length || 0) > 0;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
             if (!data || !shouldShow) {
@@ -6938,11 +7032,24 @@
                 data.strikes = data.strikes || [];
                 data.strikes.push({ ...updated, rejected: false, validationReason: 'OK', number: data.strikes.length + 1 });
                 data.rejectedStrikes.splice(index, 1);
-                AppState.videoSelectedStrikeIndex = data.strikes.length - 1;
-                AppState.videoSelectedStrikeRejected = false;
                 showToast('補正により正式候補へ移動しました', 'green');
             } else {
                 targetList[index] = updated;
+            }
+            normalizeVideoStrikeBuckets(data);
+            const findSameStrike = strike => strike
+                && Number(strike.startFrame) === Number(updated.startFrame)
+                && Number(strike.peakFrame) === Number(updated.peakFrame)
+                && Number(strike.endFrame) === Number(updated.endFrame);
+            const validIndex = (data.strikes || []).findIndex(findSameStrike);
+            const rejectedIndex = (data.rejectedStrikes || []).findIndex(findSameStrike);
+            if (validIndex >= 0) {
+                AppState.videoSelectedStrikeIndex = validIndex;
+                AppState.videoSelectedStrikeRejected = false;
+            } else if (rejectedIndex >= 0) {
+                AppState.videoSelectedStrikeIndex = rejectedIndex;
+                AppState.videoSelectedStrikeRejected = true;
+                if (!validation.ok) showToast(`補正範囲は${validation.reason}のため除外へ移動しました`, 'yellow');
             }
             updateVideoMultiStrikePanel(data);
         }
@@ -7435,7 +7542,7 @@
             const maxTorsoJump = maxFrameDelta(slice, frame => frame.torsoAng);
             const maxSpeedJump = maxFrameDelta(slice, frame => videoFrameSpeed(frame, data.officialSpeedSource || Params.officialSpeedSource).value);
             const missingRate = slice.length ? slice.filter(frame => !frame.landmarks?.[16] || !frame.landmarks?.[14] || !frame.landmarks?.[12]).length / slice.length : 1;
-            add(Number.isFinite(durationMs) && durationMs >= 55 && durationMs <= Math.min(1000, Params.timingMaxDurationMs), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', '55ms未満や長すぎる値は除外候補');
+            add(Number.isFinite(durationMs) && durationMs >= 55 && durationMs <= videoFormalMaxDurationMs(), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', `55ms未満または${videoFormalMaxDurationMs()}ms超は除外候補`);
 	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), 'ピーク検出', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '検出信号は内部扱い。正式画面ではピーク時刻として確認');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
@@ -8277,6 +8384,9 @@
                 return showToast('開始フレームと終了フレームを指定してください', 'red');
             }
             recomputeVideoAnalysisResult();
+            if (!data.currentValidation?.ok) {
+                return showToast(`正式保存できません: ${data.currentValidation?.reason || '要補正'}。開始/終了フレームを補正してください`, 'yellow');
+            }
             const startFrame = data.frames[data.startFrame];
             const peakFrameData = Number.isFinite(data.peakFrame) ? data.frames[data.peakFrame] : null;
             const endFrame = data.frames[data.endFrame];
@@ -8453,9 +8563,15 @@
 
         function saveVideoStrikeAsRecord(index, options = {}) {
             const data = AppState.videoAnalysis;
+            normalizeVideoStrikeBuckets(data);
             const strike = data?.strikes?.[index];
             if (!data || !strike) {
                 if (!options.silent) showToast('保存する打突がありません', 'yellow');
+                return null;
+            }
+            const validation = validateVideoStrikeSummary(strike, data);
+            if (!validation.ok) {
+                if (!options.silent) showToast(`この打突は${validation.reason}のため保存できません。開始/終了を補正してください`, 'yellow');
                 return null;
             }
             const record = buildVideoRecordFromStrike(data, strike, '動画解析');
@@ -8488,6 +8604,7 @@
 
         function saveAllVideoStrikesAsRecords() {
             const data = AppState.videoAnalysis;
+            normalizeVideoStrikeBuckets(data);
             const strikes = data?.strikes || [];
             if (!strikes.length) return showToast('保存できる複数打突がありません', 'yellow');
             let lastRecord = null;
