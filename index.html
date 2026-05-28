@@ -272,6 +272,28 @@
             color: #fff;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.32), 0 8px 18px rgba(15, 23, 42, 0.28);
         }
+        .video-analysis-fullscreen:fullscreen,
+        .video-analysis-fullscreen:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            background: #020617;
+            padding: 12px;
+        }
+        .video-analysis-fullscreen:fullscreen .video-correction-preview,
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview {
+            min-height: min(72vh, 720px);
+            height: min(72vh, 720px);
+        }
+        .video-result-mini-timeline {
+            margin-top: 10px;
+            background: #f8fafc;
+        }
+        .model-analysis-grid { grid-template-columns: 1fr; }
+        @media (min-width: 1280px) {
+            .model-analysis-grid { grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr); }
+        }
+        .model-side-panel { min-width: 0; }
         .model-preview-canvas {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -642,8 +664,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-3 text-xs">
                     <label class="font-bold text-slate-700">解析方式
                         <select id="videoStrikeModeSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
-                            <option value="single" selected="">単発を精密測定</option>
-                            <option value="multi">複数打突を自動分割</option>
+                            <option value="multi" selected="">複数打突を自動分割</option>
+                            <option value="single">単発を精密測定</option>
                         </select>
                     </label>
                     <label class="font-bold text-slate-700">検出感度
@@ -687,7 +709,7 @@
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">単位の整理:</span> この上段カードは全て <span class="font-mono-num font-black">ms</span> 表示です。速度そのものはグラフ・CSV・記録では m/s として保持します。
+                    <span class="font-black">単位の整理:</span> 正式結果の上段カードは <span class="font-mono-num font-black">ms</span> 表示に統一します。速度値は打突一覧・CSV・記録で確認できます。
                 </div>
                 <div id="videoResultSectionNav" class="sticky top-16 z-10 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
@@ -699,7 +721,10 @@
                 <div id="videoFormalCandidatePanel" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-black text-emerald-900"><i class="fa-solid fa-certificate mr-1"></i>正式測定候補</h3>
-                        <span id="videoFormalStatus" class="text-xs font-bold text-emerald-800">動画解析後に開始/終了を補正</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="videoFormalStatus" class="text-xs font-bold text-emerald-800">動画解析後に開始/終了を補正</span>
+                            <button id="videoFormalEditBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-black"><i class="fa-solid fa-pen-to-square mr-1"></i>修正</button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                         <div class="bg-white/80 border border-emerald-100 rounded p-2"><span class="text-emerald-700">開始</span><div id="videoFormalStart" class="font-black font-mono-num text-emerald-900">---</div></div>
@@ -732,14 +757,16 @@
                         </div>
                     </div>
                 </div>
-                <div id="videoResultPreviewPanel" class="rounded-xl border border-slate-200 bg-white p-3">
+                <div id="videoResultPreviewPanel" class="video-analysis-fullscreen rounded-xl border border-slate-200 bg-white p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-circle-play text-indigo-500 mr-1"></i>解析プレビュー</h3>
                         <span class="text-[11px] text-slate-500">動画・骨格・角度・マーカーを同じ画面で確認</span>
                     </div>
-                    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_300px] gap-3 items-start">
-                        <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
+                    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
+                        <div class="video-correction-preview border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
+                            <video id="videoResultElement" muted="" playsinline="" controls=""></video>
                             <canvas id="videoAnalysisCanvas" class="w-full aspect-video object-contain"></canvas>
+                            <div id="videoResultEmpty" class="video-correction-empty">解析後、ここで動画全体を再生しながら骨格・角度・開始/最高速/終了を確認できます。</div>
                         </div>
                         <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
                             <div class="grid grid-cols-2 gap-2">
@@ -761,6 +788,7 @@
                                 <button id="videoResultJumpPeakBtn" type="button" class="bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-2 rounded font-bold">最高速へ</button>
                                 <button id="videoResultJumpEndBtn" type="button" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded font-bold">終了へ</button>
                                 <button id="videoResultOpen3DBtn" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-person-rays mr-1"></i>3D</button>
+                                <button id="videoResultFullscreenBtn" type="button" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>全画面分析</button>
                             </div>
                             <div class="text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
                                 ここで再生しながら確認し、必要なら「1コマ補正」で開始/終了を置き直します。
@@ -770,6 +798,21 @@
                             </div>
                         </div>
                     </div>
+                    <div id="videoResultEditorTimeline" class="video-editor-timeline video-result-mini-timeline" aria-label="正式結果タイムライン">
+                        <div class="video-editor-timebar">
+                            <span><i class="fa-solid fa-timeline mr-1"></i>正式結果タイムライン</span>
+                            <span id="videoResultTimelineTimeLabel" class="font-mono-num">0:00.000 / ---</span>
+                        </div>
+                        <div id="videoResultTimelineTrack" class="video-editor-track" role="slider" tabindex="0" aria-label="正式結果の再生位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                            <div id="videoResultTimelineRange" class="video-editor-range"></div>
+                            <div id="videoResultTimelineTicks" class="video-editor-ticks"></div>
+                            <div id="videoResultTimelineStrikeMarkers" class="video-editor-strikes"></div>
+                            <button id="videoResultTimelineStartMarker" type="button" class="video-editor-marker start" data-label="開始" hidden="" title="開始マーカーをドラッグ"></button>
+                            <button id="videoResultTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
+                            <div id="videoResultTimelinePlayhead" class="video-editor-playhead"></div>
+                        </div>
+                        <p class="mt-2 text-[11px] text-slate-600">ここでも動画位置の移動、開始/終了マーカーの修正、複数打突へのジャンプができます。</p>
+                    </div>
                 </div>
                 <div id="videoAnalysisResult" class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="videoResultDuration" class="font-black text-blue-700 font-mono-num">---</div></div>
@@ -777,7 +820,7 @@
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">手首ピーク時刻</span><div id="videoResultWristPeak" class="font-black text-slate-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">推定剣先ピーク時刻</span><div id="videoResultTipPeak" class="font-black text-amber-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">テープ剣先ピーク時刻</span><div id="videoResultTapePeak" class="font-black text-lime-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">最大減速</span><div id="videoResultDecel" class="font-black text-red-700 font-mono-num">---</div></div>
+                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">最大減速時刻</span><div id="videoResultDecel" class="font-black text-red-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">右肘角</span><div id="videoResultRightElbow" class="font-black text-purple-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">刃筋</span><div id="videoResultHasuji" class="font-black text-yellow-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">体幹軸</span><div id="videoResultTorso" class="font-black text-emerald-700 font-mono-num">---</div></div>
@@ -794,7 +837,7 @@
                             <div id="videoDetailTiming" class="font-black font-mono-num text-blue-900 mt-1">---</div>
                         </div>
                         <div class="rounded border border-cyan-100 bg-cyan-50 p-2">
-                            <span class="text-cyan-700 font-bold">速度比較</span>
+                            <span class="text-cyan-700 font-bold">ピーク時刻比較（ms）</span>
                             <div id="videoDetailSpeedSet" class="font-black font-mono-num text-cyan-900 mt-1">---</div>
                         </div>
                         <div class="rounded border border-purple-100 bg-purple-50 p-2">
@@ -835,7 +878,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-7 gap-2 text-center text-xs mb-3">
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">本数</span><div id="videoMultiCount" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均時間</span><div id="videoMultiAvgDuration" class="font-black font-mono-num text-amber-900">---</div></div>
-                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最高速度</span><div id="videoMultiTopSpeed" class="font-black font-mono-num text-amber-900">---</div></div>
+                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最速時刻</span><div id="videoMultiTopSpeed" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最良</span><div id="videoMultiBest" class="font-black font-mono-num text-emerald-700">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">要確認</span><div id="videoMultiWorst" class="font-black font-mono-num text-red-700">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均軸</span><div id="videoMultiAvgTorso" class="font-black font-mono-num text-amber-900">---</div></div>
@@ -845,7 +888,7 @@
                     <div class="overflow-x-auto bg-white rounded border border-amber-100 max-h-64">
                         <table class="w-full text-xs text-center">
                             <thead class="bg-amber-100 text-amber-900 sticky top-0">
-                                <tr><th class="p-2">#</th><th class="p-2">開始</th><th class="p-2">最高速</th><th class="p-2">終了</th><th class="p-2">時間</th><th class="p-2">最高速</th><th class="p-2">右肘</th><th class="p-2">体幹</th><th class="p-2">刃筋</th><th class="p-2">評価</th><th class="p-2">移動/補正</th></tr>
+                                <tr><th class="p-2">#</th><th class="p-2">開始</th><th class="p-2">最高速</th><th class="p-2">終了</th><th class="p-2">時間</th><th class="p-2">最高速時刻</th><th class="p-2">右肘</th><th class="p-2">体幹</th><th class="p-2">刃筋</th><th class="p-2">評価</th><th class="p-2">移動/補正</th></tr>
                             </thead>
                             <tbody id="videoStrikeListBody"><tr><td colspan="11" class="p-4 text-amber-700">複数打突モードで解析すると表示されます</td></tr></tbody>
                         </table>
@@ -1148,8 +1191,8 @@
 	            </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-	            <div class="xl:col-span-2 bg-slate-950 rounded-xl shadow-sm border border-slate-800 overflow-hidden">
+        <div class="model-analysis-grid grid gap-6">
+	            <div class="bg-slate-950 rounded-xl shadow-sm border border-slate-800 overflow-hidden min-w-0">
 	                <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center">
 	                    <h3 class="font-bold text-sm text-slate-100">3D人体モデル</h3>
 	                    <span id="modelSourceLabel" class="text-xs text-slate-400">待機姿勢</span>
@@ -1175,7 +1218,7 @@
 	                </div>
 	            </div>
 
-            <div class="space-y-4">
+            <div class="model-side-panel space-y-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-violet-500">
                     <span class="text-xs text-slate-500">選択中の角度</span>
                     <div id="modelAngleTitle" class="text-2xl font-black text-violet-700 mt-1">右肘角</div>
@@ -1197,7 +1240,7 @@
                         <h3 class="text-sm font-bold text-slate-700">角度変化</h3>
                         <span id="modelAngleTimelineStatus" class="text-[11px] font-bold text-slate-500">動画解析後に表示</span>
                     </div>
-                    <canvas id="modelAngleTimelineCanvas" class="w-full h-28"></canvas>
+                    <canvas id="modelAngleTimelineCanvas" class="model-preview-canvas !aspect-[5/2]"></canvas>
                     <p class="text-[11px] text-slate-500 mt-2">縦線が現在フレーム、青=開始、黄=最高速、赤=終了です。</p>
                 </div>
 
@@ -1517,9 +1560,11 @@
             videoAngleOverlay: true,
             videoAngleOverlayTarget: 'all',
             videoDiagnostics: null,
-            videoStrikeMode: 'single',
+            videoStrikeMode: 'multi',
             videoStrikeSensitivity: 'normal',
             videoSelectedStrikeIndex: null,
+            videoResultTimelineTickKey: '',
+            videoResultTimelineDragMode: null,
             videoSlowPlaying: false,
             videoSlowTimer: null,
             videoDrawToken: 0,
@@ -1747,10 +1792,28 @@
             }
         }
 
+        function requestElementFullscreen(element) {
+            if (!element) return;
+            const request = element.requestFullscreen || element.webkitRequestFullscreen || element.msRequestFullscreen;
+            if (!request) return;
+            const result = request.call(element);
+            if (result?.catch) result.catch(() => {});
+        }
+
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+            const refreshKey = 'kendo-sw-refreshed-v54';
+            let refreshedByServiceWorker = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
+                refreshedByServiceWorker = true;
+                sessionStorage.setItem(refreshKey, '1');
+                window.location.reload();
+            });
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {});
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => registration.update?.())
+                    .catch(() => {});
             });
         }
 
@@ -1951,7 +2014,7 @@
 	            AppState.angleTarget = 'all';
             AppState.videoAngleOverlay = true;
             AppState.videoAngleOverlayTarget = 'all';
-            AppState.videoStrikeMode = 'single';
+            AppState.videoStrikeMode = 'multi';
             AppState.videoStrikeSensitivity = 'normal';
             Params.videoStrikeSensitivity = 'normal';
             AppState.showGuide = true;
@@ -1992,7 +2055,7 @@
 	            if (angleTarget) angleTarget.value = 'all';
             if (videoOfficialSpeed) videoOfficialSpeed.value = 'tip';
             if (angleReference) angleReference.value = 'torso';
-            if (videoStrikeMode) videoStrikeMode.value = 'single';
+            if (videoStrikeMode) videoStrikeMode.value = 'multi';
             if (videoStrikeSensitivity) videoStrikeSensitivity.value = 'normal';
             if (videoAnalysisFps) videoAnalysisFps.value = '60';
             if (videoAngleOverlay) videoAngleOverlay.checked = true;
@@ -2001,7 +2064,7 @@
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
             safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
-            setVideoStrikeMode('single');
+            setVideoStrikeMode('multi');
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
                 const values = [42, 120, 250, 60];
                 const el = document.getElementById(id);
@@ -2378,6 +2441,7 @@
             let peakSpeed = 0;
             let maxDecel = 0;
             let peakIndex = 0;
+            let maxDecelIndex = 0;
             for (let i = 0; i < speeds.length; i++) {
                 if (speeds[i] > peakSpeed) {
                     peakSpeed = speeds[i];
@@ -2385,17 +2449,26 @@
                 }
                 if (i > 0) {
                     const dt = Math.max((samples[i + 1]?.timeMs - samples[i]?.timeMs) / 1000, 1 / 240);
-                    maxDecel = Math.max(maxDecel, (speeds[i - 1] - speeds[i]) / dt);
+                    const decel = (speeds[i - 1] - speeds[i]) / dt;
+                    if (decel > maxDecel) {
+                        maxDecel = decel;
+                        maxDecelIndex = i;
+                    }
                 }
             }
             const avgVisibility = samples.reduce((sum, s) => sum + (s.visibility || 0), 0) / samples.length;
+            const peakSample = samples[Math.min(samples.length - 1, peakIndex + 1)] || samples[0];
+            const decelSample = samples[Math.min(samples.length - 1, maxDecelIndex + 1)] || peakSample;
             return {
                 durationMs: Math.round(samples[samples.length - 1].timeMs - samples[0].timeMs),
                 peakSpeedMps: peakSpeed,
                 maxDecelMps2: maxDecel,
+                maxDecelIndex,
+                maxDecelTimeMs: decelSample.timeMs,
+                maxDecelOffsetMs: Math.round(decelSample.timeMs - samples[0].timeMs),
                 peakIndex,
-                peakTimeMs: samples[Math.min(samples.length - 1, peakIndex + 1)]?.timeMs ?? samples[0].timeMs,
-                peakOffsetMs: Math.round((samples[Math.min(samples.length - 1, peakIndex + 1)]?.timeMs ?? samples[0].timeMs) - samples[0].timeMs),
+                peakTimeMs: peakSample.timeMs,
+                peakOffsetMs: Math.round(peakSample.timeMs - samples[0].timeMs),
                 avgVisibility
             };
         }
@@ -5296,6 +5369,100 @@
             }).join('');
         }
 
+        function renderVideoResultTimelineTicks(data) {
+            const ticks = document.getElementById('videoResultTimelineTicks');
+            if (!ticks) return;
+            if (!data?.frames?.length) {
+                AppState.videoResultTimelineTickKey = '';
+                ticks.innerHTML = '';
+                return;
+            }
+            const frameCount = data.frames.length;
+            const totalTicks = Math.round(clamp(frameCount / 8, 18, 72));
+            const labelEvery = Math.max(1, Math.round(totalTicks / 8));
+            const key = `${frameCount}:${Math.round(data.fps || 0)}:${totalTicks}:${labelEvery}`;
+            if (AppState.videoResultTimelineTickKey === key) return;
+            AppState.videoResultTimelineTickKey = key;
+            const html = [];
+            for (let i = 0; i <= totalTicks; i++) {
+                const pct = (i / totalTicks) * 100;
+                const frameIndex = Math.round((frameCount - 1) * i / totalTicks);
+                const frame = data.frames[frameIndex];
+                const isMajor = i === 0 || i === totalTicks || i % labelEvery === 0;
+                html.push(`<div class="video-editor-tick${isMajor ? ' major' : ''}" style="left:${pct.toFixed(3)}%">${isMajor ? `<span>${frame ? Math.round(frame.timeMs) + 'ms' : '#' + frameIndex}</span>` : ''}</div>`);
+            }
+            ticks.innerHTML = html.join('');
+        }
+
+        function updateVideoResultTimeline(frameIndex = null) {
+            const data = AppState.videoAnalysis;
+            const track = document.getElementById('videoResultTimelineTrack');
+            const playhead = document.getElementById('videoResultTimelinePlayhead');
+            const startMarker = document.getElementById('videoResultTimelineStartMarker');
+            const endMarker = document.getElementById('videoResultTimelineEndMarker');
+            const range = document.getElementById('videoResultTimelineRange');
+            const strikeBox = document.getElementById('videoResultTimelineStrikeMarkers');
+            const label = document.getElementById('videoResultTimelineTimeLabel');
+            if (!track) return;
+            if (!data?.frames?.length) {
+                [startMarker, endMarker].forEach(marker => { if (marker) marker.hidden = true; });
+                if (range) range.hidden = true;
+                if (strikeBox) strikeBox.innerHTML = '';
+                if (label) label.textContent = '0:00.000 / ---';
+                return;
+            }
+            const maxFrame = data.frames.length - 1;
+            const current = clamp(Math.round(Number(frameIndex ?? document.getElementById('videoFrameSlider')?.value ?? data.startFrame ?? 0)), 0, maxFrame);
+            const frame = data.frames[current];
+            const pctForFrame = index => `${clamp((Number(index || 0) / Math.max(1, maxFrame)) * 100, 0, 100).toFixed(3)}%`;
+            renderVideoResultTimelineTicks(data);
+            if (label) label.textContent = `${frame ? formatTimelineClock(frame.timeMs / 1000) : '---'} / ${formatTimelineClock((data.frames[maxFrame]?.timeMs || 0) / 1000)}`;
+            track.setAttribute('aria-valuemax', String(maxFrame));
+            track.setAttribute('aria-valuenow', String(current));
+            track.setAttribute('aria-valuetext', frame ? `frame ${current} / ${Math.round(frame.timeMs)} ms` : `frame ${current}`);
+            if (playhead) playhead.style.left = pctForFrame(current);
+            if (startMarker) {
+                const show = Number.isFinite(data.startFrame);
+                startMarker.hidden = !show;
+                if (show) {
+                    startMarker.style.left = pctForFrame(data.startFrame);
+                    startMarker.title = `開始 #${data.startFrame}`;
+                }
+            }
+            if (endMarker) {
+                const show = Number.isFinite(data.endFrame);
+                endMarker.hidden = !show;
+                if (show) {
+                    endMarker.style.left = pctForFrame(data.endFrame);
+                    endMarker.title = `終了 #${data.endFrame}`;
+                }
+            }
+            if (range) {
+                if (Number.isFinite(data.startFrame) && Number.isFinite(data.endFrame) && data.endFrame > data.startFrame) {
+                    const startPct = clamp((data.startFrame / Math.max(1, maxFrame)) * 100, 0, 100);
+                    const endPct = clamp((data.endFrame / Math.max(1, maxFrame)) * 100, 0, 100);
+                    range.style.left = `${startPct.toFixed(3)}%`;
+                    range.style.width = `${Math.max(0.3, endPct - startPct).toFixed(3)}%`;
+                    range.hidden = false;
+                } else {
+                    range.hidden = true;
+                }
+            }
+            if (strikeBox) {
+                const strikes = data.strikes || [];
+                strikeBox.innerHTML = strikes.map((strike, index) => {
+                    const startPct = clamp((strike.startFrame / Math.max(1, maxFrame)) * 100, 0, 100);
+                    const endPct = clamp((strike.endFrame / Math.max(1, maxFrame)) * 100, 0, 100);
+                    const peakPct = clamp((strike.peakFrame / Math.max(1, maxFrame)) * 100, 0, 100);
+                    const active = index === AppState.videoSelectedStrikeIndex;
+                    return `
+                        <div class="video-editor-strike-range" style="left:${startPct.toFixed(3)}%;width:${Math.max(0.35, endPct - startPct).toFixed(3)}%"></div>
+                        <button type="button" class="video-editor-strike${active ? ' active' : ''}" data-index="${index}" style="left:${peakPct.toFixed(3)}%" title="#${strike.number || index + 1} へ移動">#${strike.number || index + 1}</button>
+                    `;
+                }).join('');
+            }
+        }
+
         function getVideoTimelineSecondsFromEvent(event) {
             const track = document.getElementById('videoTimelineTrack');
             const video = document.getElementById('analysisVideoElement');
@@ -5343,6 +5510,54 @@
             }
         }
 
+        function videoFrameIndexFromSourceSecond(sourceSecond) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return null;
+            const relativeMs = (Number(sourceSecond || 0) - Number(data.sourceStartSec || 0)) * 1000;
+            if (!Number.isFinite(relativeMs)) return null;
+            const fps = Math.max(1, data.fps || Params.targetFps || 60);
+            let guess = clamp(Math.round(relativeMs / (1000 / fps)), 0, data.frames.length - 1);
+            let bestIndex = guess;
+            let bestDiff = Math.abs(Number(data.frames[guess]?.timeMs || 0) - relativeMs);
+            const from = Math.max(0, guess - 3);
+            const to = Math.min(data.frames.length - 1, guess + 3);
+            for (let i = from; i <= to; i++) {
+                const diff = Math.abs(Number(data.frames[i]?.timeMs || 0) - relativeMs);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    bestIndex = i;
+                }
+            }
+            return bestIndex;
+        }
+
+        function syncVideoPreviewTimeToAnalysis(video) {
+            if (!video || !AppState.videoAnalysis?.frames?.length) return;
+            const frameIndex = videoFrameIndexFromSourceSecond(video.currentTime);
+            if (!Number.isFinite(frameIndex)) return;
+            const current = Number(document.getElementById('videoFrameSlider')?.value || 0);
+            if (Math.abs(current - frameIndex) < 1) return;
+            setVideoAnalysisFrame(frameIndex);
+        }
+
+        function startNativePreviewFrameSync(video) {
+            if (!video || video._kendoFrameSyncActive) return;
+            video._kendoFrameSyncActive = true;
+            const tick = () => {
+                if (!video || video.paused || video.ended) {
+                    if (video) video._kendoFrameSyncActive = false;
+                    return;
+                }
+                syncVideoPreviewTimeToAnalysis(video);
+                if (video.requestVideoFrameCallback) {
+                    video.requestVideoFrameCallback(tick);
+                } else {
+                    setTimeout(tick, 50);
+                }
+            };
+            tick();
+        }
+
         function jumpVideoTimelineStrike(index) {
             const data = AppState.videoAnalysis;
             const strike = data?.strikes?.[index];
@@ -5352,6 +5567,66 @@
             if (Number.isFinite(peakSec)) seekManualVideoToSeconds(peakSec);
             applyVideoStrikeSelection(index, 'peak');
             showToast(`#${strike.number || index + 1} の最高速フレームへ移動しました`, 'blue');
+        }
+
+        function getVideoResultTimelineFrameFromEvent(event) {
+            const data = AppState.videoAnalysis;
+            const track = document.getElementById('videoResultTimelineTrack');
+            if (!data?.frames?.length || !track) return null;
+            const rect = track.getBoundingClientRect();
+            const ratio = rect.width > 0 ? clamp((event.clientX - rect.left) / rect.width, 0, 1) : 0;
+            return Math.round(ratio * (data.frames.length - 1));
+        }
+
+        function setVideoResultMarkerFrame(kind, frameIndex) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return;
+            const maxFrame = data.frames.length - 1;
+            let frame = clamp(Math.round(Number(frameIndex || 0)), 0, maxFrame);
+            if (kind === 'start') {
+                if (Number.isFinite(data.endFrame)) frame = Math.min(frame, Math.max(0, data.endFrame - 1));
+                data.startFrame = frame;
+            } else {
+                if (Number.isFinite(data.startFrame)) frame = Math.max(frame, Math.min(maxFrame, data.startFrame + 1));
+                data.endFrame = frame;
+            }
+            updateSelectedVideoStrikeFromCurrent();
+            recomputeVideoAnalysisResult();
+            setVideoAnalysisFrame(frame);
+        }
+
+        function applyVideoResultTimelinePointer(event) {
+            const mode = AppState.videoResultTimelineDragMode || 'playhead';
+            const frame = getVideoResultTimelineFrameFromEvent(event);
+            if (!Number.isFinite(frame)) return;
+            if (mode === 'start' || mode === 'end') {
+                setVideoResultMarkerFrame(mode, frame);
+            } else {
+                stopVideoSlowPlayback();
+                setVideoAnalysisFrame(frame);
+            }
+        }
+
+        function startVideoResultTimelineDrag(event, mode = 'playhead') {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            AppState.videoResultTimelineDragMode = mode;
+            applyVideoResultTimelinePointer(event);
+        }
+
+        function handleVideoResultTimelineKey(event) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return;
+            let current = Number(document.getElementById('videoFrameSlider')?.value || data.startFrame || 0);
+            if (event.key === 'ArrowLeft') current -= event.shiftKey ? 10 : 1;
+            else if (event.key === 'ArrowRight') current += event.shiftKey ? 10 : 1;
+            else if (event.key === 'Home') current = 0;
+            else if (event.key === 'End') current = data.frames.length - 1;
+            else return;
+            event.preventDefault();
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(clamp(current, 0, data.frames.length - 1));
         }
 
         function setVideoManualMarkerSeconds(kind, seconds) {
@@ -5746,26 +6021,33 @@
         function syncCorrectionVideoSource(timeSec = null) {
             const sourceVideo = document.getElementById('analysisVideoElement');
             const correctionVideo = document.getElementById('videoCorrectionElement');
+            const resultVideo = document.getElementById('videoResultElement');
             const empty = document.getElementById('videoCorrectionEmpty');
-            if (!correctionVideo) return;
+            const resultEmpty = document.getElementById('videoResultEmpty');
+            if (!correctionVideo && !resultVideo) return;
             const src = sourceVideo?.currentSrc || sourceVideo?.src || AppState.videoAnalysisUrl || AppState.videoUrlSource?.url || '';
             if (!src) {
-                correctionVideo.removeAttribute('src');
+                [correctionVideo, resultVideo].forEach(video => video?.removeAttribute('src'));
                 if (empty) empty.classList.remove('hidden');
+                if (resultEmpty) resultEmpty.classList.remove('hidden');
                 return;
-            }
-            if (correctionVideo.src !== src) {
-                correctionVideo.src = src;
-                correctionVideo.muted = true;
-                correctionVideo.playsInline = true;
             }
             const targetTime = Number.isFinite(Number(timeSec))
                 ? Number(timeSec)
-                : Number(sourceVideo?.currentTime || correctionVideo.currentTime || 0);
-            if (Number.isFinite(targetTime) && Math.abs((correctionVideo.currentTime || 0) - targetTime) > 0.04) {
-                try { correctionVideo.currentTime = targetTime; } catch (err) {}
-            }
+                : Number(sourceVideo?.currentTime || correctionVideo?.currentTime || resultVideo?.currentTime || 0);
+            [correctionVideo, resultVideo].forEach(video => {
+                if (!video) return;
+                if (video.src !== src) {
+                    video.src = src;
+                    video.muted = true;
+                    video.playsInline = true;
+                }
+                if (Number.isFinite(targetTime) && Math.abs((video.currentTime || 0) - targetTime) > 0.04) {
+                    try { video.currentTime = targetTime; } catch (err) {}
+                }
+            });
             if (empty) empty.classList.add('hidden');
+            if (resultEmpty) resultEmpty.classList.add('hidden');
         }
 
         function setVideoAnalysisFrame(index) {
@@ -6203,7 +6485,7 @@
             const avgTorso = strikes.reduce((sum, s) => sum + Math.abs(s.torsoAng || 0), 0) / strikes.length;
             safeText('videoMultiCount', `${strikes.length}本`);
             safeText('videoMultiAvgDuration', `${Math.round(avgDuration)} ms`);
-            safeText('videoMultiTopSpeed', `${top.peakSpeedMps.toFixed(2)} ${top.speedUnit}`);
+            safeText('videoMultiTopSpeed', `#${top.number} / ${Math.round(Number(top.peakTimeMs || 0) - Number(top.startTimeMs || 0))}ms`);
             safeText('videoMultiBest', `#${best.number} / ${best.score}`);
             safeText('videoMultiWorst', `#${worst.number} / ${worst.score}`);
             safeText('videoMultiAvgTorso', `${avgTorso.toFixed(1)}°`);
@@ -6225,7 +6507,7 @@
                         <td class="p-2 font-mono-num text-amber-700">${s.peakFrame}</td>
                         <td class="p-2 font-mono-num">${s.endFrame}</td>
                         <td class="p-2 font-mono-num">${s.durationMs}ms</td>
-                        <td class="p-2 font-mono-num">${s.peakSpeedMps.toFixed(2)} ${s.speedUnit}</td>
+                        <td class="p-2 font-mono-num">${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))}ms</td>
                         <td class="p-2 font-mono-num">${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</td>
                         <td class="p-2 font-mono-num">${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</td>
                         <td class="p-2 font-mono-num">${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</td>
@@ -6540,6 +6822,7 @@
                 ? `現在 #${current} / ${frame.timeMs.toFixed(1)}ms / 速度 ${officialSpeed.toFixed(2)} ${officialUnit} / 右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
                 : '現在フレーム: ---'
             );
+            updateVideoResultTimeline(current);
             updateVideoCorrectionDiffPanel(data);
             updateVideoVerificationChecklist(data);
             updateVideoDetailMetricsPanel(data);
@@ -6590,6 +6873,11 @@
             return `${Math.round(Number(metrics.peakOffsetMs))} ms`;
         }
 
+        function videoDecelTimeLabel(metrics) {
+            if (!metrics || !Number.isFinite(Number(metrics.maxDecelOffsetMs))) return '---';
+            return `${Math.round(Number(metrics.maxDecelOffsetMs))} ms`;
+        }
+
         function videoDegreeText(value) {
             const num = Number(value);
             return Number.isFinite(num) && num !== 0 ? `${num.toFixed(1)}°` : '---';
@@ -6620,7 +6908,7 @@
             const metrics = data.metricsBySource || {};
             safeText('videoDetailExclusion', data.exclusionReason ? `要確認: ${data.exclusionReason}（補正後フレームで再計算）` : '正式保存可能');
             safeText('videoDetailTiming', `開始 ${data.startFrame ?? '---'} / 最高速 ${data.peakFrame ?? '---'} / 終了 ${data.endFrame ?? '---'} / ${duration !== null ? duration + 'ms' : '---'}`);
-            safeText('videoDetailSpeedSet', `正式(${officialSpeedLabel(data.actualOfficialSpeedSource || data.officialSpeedSource || Params.officialSpeedSource)}) ${videoSpeedText(data.metrics, data.actualOfficialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit)} / 手首 ${videoSpeedText(metrics.wrist, data.speedUnit)} / 推定 ${videoSpeedText(metrics.tip, data.speedUnit)} / テープ ${videoSpeedText(metrics.tape, 'm/s*')}`);
+            safeText('videoDetailSpeedSet', `正式 ${videoPeakTimeLabel(data.metrics)} / 手首 ${videoPeakTimeLabel(metrics.wrist)} / 推定 ${videoPeakTimeLabel(metrics.tip)} / テープ ${videoPeakTimeLabel(metrics.tape)}`);
             safeText('videoDetailRightElbowSet', videoFrameSummaryText(data, 'rightAng'));
             safeText('videoDetailTorsoSet', videoFrameSummaryText(data, 'torsoAng'));
             safeText('videoDetailHasujiSet', videoFrameSummaryText(data, 'hasuji'));
@@ -6637,7 +6925,7 @@
             safeText('videoResultWristPeak', videoPeakTimeLabel(metricsBySource.wrist));
             safeText('videoResultTipPeak', videoPeakTimeLabel(metricsBySource.tip));
             safeText('videoResultTapePeak', videoPeakTimeLabel(metricsBySource.tape));
-            safeText('videoResultDecel', officialMetrics ? `${officialMetrics.maxDecelMps2.toFixed(1)} m/s²` : '---');
+            safeText('videoResultDecel', videoDecelTimeLabel(officialMetrics));
             data.metrics = officialMetrics;
             data.metricsBySource = metricsBySource;
             data.officialSpeedSource = officialSource;
@@ -6733,9 +7021,9 @@
             }
             const durationMs = data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs;
             const endFrame = data.frames[data.endFrame];
-            safeText('videoResultDuration', `${Math.round(durationMs)} ms`);
             updateVideoResultCards(data, metricsBySource, Params.officialSpeedSource);
-            updateCurrentVideoValidation(data);
+            const validation = updateCurrentVideoValidation(data);
+            safeText('videoResultDuration', validation?.ok || AppState.videoSelectedStrikeIndex !== null ? `${Math.round(durationMs)} ms` : `除外（${validation?.reason || '要確認'}）`);
             updateVideoValidityPanel(data);
             safeText('videoResultRightElbow', endFrame?.rightAng ? `${endFrame.rightAng.toFixed(1)}°` : '---');
             safeText('videoResultHasuji', endFrame?.hasuji ? `${endFrame.hasuji.toFixed(1)}°` : '---');
@@ -6771,7 +7059,12 @@
             await seekVideoTo(video, seekSec).catch(() => {});
             if (drawToken !== AppState.videoDrawToken) return false;
             ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(video, 0, 0, w, h);
+            try {
+                ctx.drawImage(video, 0, 0, w, h);
+            } catch (err) {
+                ctx.fillStyle = 'rgba(2, 6, 23, 0.18)';
+                ctx.fillRect(0, 0, w, h);
+            }
             if (document.getElementById('videoSkeletonToggle')?.checked) drawNormalizedSkeleton(ctx, frame.landmarks, w, h);
             if (frame.landmarks?.[16]) {
                 const trailStart = Math.max(0, frameIndex - 18);
@@ -6843,6 +7136,7 @@
             drawVideoFrameMarkers(ctx, data, frameIndex, w, h);
             updateVideoAnalysisLabels();
             syncVideoAnalysisSliders(frameIndex);
+            updateVideoResultTimeline(frameIndex);
             drawVideoResultGraphs(frameIndex);
             drawVideoCorrectionGraphs(frameIndex);
             copyVideoPreviewToCorrection(canvas, frameIndex);
@@ -7297,7 +7591,12 @@
                 metricsBySource: {}
             };
             AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
-            if (AppState.videoStrikeMode === 'multi' && AppState.videoAnalysis.strikes.length) {
+            const shouldUseDetectedStrike = AppState.videoAnalysis.strikes.length && (
+                AppState.videoStrikeMode === 'multi' ||
+                AppState.videoAnalysis.strikes.length > 1 ||
+                !manualRange
+            );
+            if (shouldUseDetectedStrike) {
                 AppState.videoSelectedStrikeIndex = 0;
                 const firstStrike = AppState.videoAnalysis.strikes[0];
                 startFrame = firstStrike.startFrame;
@@ -7306,6 +7605,11 @@
                 AppState.videoAnalysis.startFrame = startFrame;
                 AppState.videoAnalysis.endFrame = endFrame;
                 AppState.videoAnalysis.peakFrame = peakFrame;
+                AppState.videoAnalysis.autoStartFrame = startFrame;
+                AppState.videoAnalysis.autoPeakFrame = peakFrame;
+                AppState.videoAnalysis.autoEndFrame = endFrame;
+                startTimeMs = frames[startFrame]?.timeMs ?? startTimeMs;
+                endTimeMs = frames[endFrame]?.timeMs ?? endTimeMs;
             } else {
                 AppState.videoSelectedStrikeIndex = null;
                 if (startFrame !== null && endFrame !== null && endFrame > startFrame) {
@@ -7337,9 +7641,9 @@
                 tape: metricsForVideoSource(sliceForMetrics, 'tape')
             };
             if (startTimeMs !== null && endTimeMs !== null) {
-                safeText('videoResultDuration', `${Math.round(endTimeMs - startTimeMs)} ms`);
                 updateVideoResultCards(AppState.videoAnalysis, metricsBySource, Params.officialSpeedSource);
-                updateCurrentVideoValidation(AppState.videoAnalysis);
+                const validation = updateCurrentVideoValidation(AppState.videoAnalysis);
+                safeText('videoResultDuration', validation?.ok || AppState.videoSelectedStrikeIndex !== null ? `${Math.round(endTimeMs - startTimeMs)} ms` : `除外（${validation?.reason || '要確認'}）`);
                 const end = frames[endFrame];
                 safeText('videoResultRightElbow', end?.rightAng ? `${end.rightAng.toFixed(1)}°` : '---');
                 safeText('videoResultHasuji', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---');
@@ -7377,18 +7681,22 @@
             if (data.startFrame !== null && data.endFrame !== null && data.endFrame > data.startFrame) {
                 csv += `打突時間(ms),${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}\n`;
             }
-            csv += `正式最高速,${data.metrics ? data.metrics.peakSpeedMps.toFixed(3) : ''} ${data.officialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}\n`;
-            csv += `手首最高速,${data.metricsBySource?.wrist ? data.metricsBySource.wrist.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `推定剣先最高速,${data.metricsBySource?.tip ? data.metricsBySource.tip.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `テープ剣先最高速,${data.metricsBySource?.tape ? data.metricsBySource.tape.peakSpeedMps.toFixed(3) : ''} m/s*\n`;
-            csv += `最大減速,${data.metrics ? data.metrics.maxDecelMps2.toFixed(3) : ''} m/s^2\n\n`;
+            csv += `正式最高速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.peakOffsetMs || 0)) : ''}\n`;
+            csv += `手首ピーク時刻(ms),${data.metricsBySource?.wrist ? Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0)) : ''}\n`;
+            csv += `推定剣先ピーク時刻(ms),${data.metricsBySource?.tip ? Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0)) : ''}\n`;
+            csv += `テープ剣先ピーク時刻(ms),${data.metricsBySource?.tape ? Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0)) : ''}\n`;
+            csv += `正式速度値,${data.metrics ? data.metrics.peakSpeedMps.toFixed(3) : ''} ${data.officialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}\n`;
+            csv += `手首速度値,${data.metricsBySource?.wrist ? data.metricsBySource.wrist.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
+            csv += `推定剣先速度値,${data.metricsBySource?.tip ? data.metricsBySource.tip.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
+            csv += `テープ剣先速度値,${data.metricsBySource?.tape ? data.metricsBySource.tape.peakSpeedMps.toFixed(3) : ''} m/s*\n`;
+            csv += `最大減速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.maxDecelOffsetMs || 0)) : ''}\n\n`;
             csv += `測定除外数,${data.rejectedStrikes?.length || 0}\n`;
             csv += `除外理由,${(data.rejectedStrikes || []).map(item => `${item.peakFrame}:${item.reason}`).join(' / ')}\n\n`;
             if (data.strikes?.length) {
                 csv += '複数打突一覧\n';
-                csv += 'no,startFrame,endFrame,durationMs,peakSpeed,unit,rightElbow,torso,hasuji,score\n';
+                csv += 'no,startFrame,peakFrame,endFrame,durationMs,peakTimeMs,peakSpeed,unit,rightElbow,torso,hasuji,score\n';
                 data.strikes.forEach(s => {
-                    csv += `${s.number},${s.startFrame},${s.endFrame},${s.durationMs},${s.peakSpeedMps.toFixed(4)},${s.speedUnit},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${s.score}\n`;
+                    csv += `${s.number},${s.startFrame},${s.peakFrame},${s.endFrame},${s.durationMs},${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))},${s.peakSpeedMps.toFixed(4)},${s.speedUnit},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${s.score}\n`;
                 });
                 csv += '\n';
             }
@@ -7444,11 +7752,11 @@
                 ['最高速時刻', peak ? `${peak.timeMs.toFixed(1)} ms` : '---'],
                 ['終了時刻', end ? `${end.timeMs.toFixed(1)} ms` : '---'],
                 ['打突時間', duration !== null ? `${duration} ms` : '---'],
-                ['正式速度', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
-                ['正式最高速', official.metrics ? `${official.metrics.peakSpeedMps.toFixed(2)} ${official.key === 'tape' ? 'm/s*' : data.speedUnit}` : '---'],
-                ['手首最高速', data.metricsBySource?.wrist ? `${data.metricsBySource.wrist.peakSpeedMps.toFixed(2)} ${data.speedUnit}` : '---'],
-                ['推定剣先最高速', data.metricsBySource?.tip ? `${data.metricsBySource.tip.peakSpeedMps.toFixed(2)} ${data.speedUnit}` : '---'],
-                ['テープ剣先最高速', data.metricsBySource?.tape ? `${data.metricsBySource.tape.peakSpeedMps.toFixed(2)} m/s*` : '---'],
+                ['採用速度種別', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
+                ['正式最高速時刻', official.metrics ? `${Math.round(Number(official.metrics.peakOffsetMs || 0))} ms` : '---'],
+                ['手首ピーク時刻', data.metricsBySource?.wrist ? `${Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0))} ms` : '---'],
+                ['推定剣先ピーク時刻', data.metricsBySource?.tip ? `${Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0))} ms` : '---'],
+                ['テープ剣先ピーク時刻', data.metricsBySource?.tape ? `${Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0))} ms` : '---'],
                 ['右肘角', end?.rightAng ? `${end.rightAng.toFixed(1)}°` : '---'],
                 ['体幹軸', end?.torsoAng ? `${end.torsoAng.toFixed(1)}°` : '---'],
                 ['刃筋', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---'],
@@ -7458,7 +7766,7 @@
                 ['測定メモ', '開始/終了フレームは動画解析タブで手動補正可能。正式値は補正後フレームで再計算し、最高速フレームも補正範囲内で再検出。']
             ];
             const strikeRows = data.strikes?.length
-                ? `<h3 class="text-sm font-black mt-5 mb-2">複数打突一覧</h3><table><thead><tr><th>#</th><th>時間</th><th>最高速</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>評価</th></tr></thead><tbody>${data.strikes.map(s => `<tr><td>#${s.number}</td><td>${s.durationMs}ms</td><td>${s.peakSpeedMps.toFixed(2)} ${s.speedUnit}</td><td>${s.rightAng.toFixed(1)}°</td><td>${s.torsoAng.toFixed(1)}°</td><td>${s.hasuji.toFixed(1)}°</td><td>${s.score}</td></tr>`).join('')}</tbody></table>`
+                ? `<h3 class="text-sm font-black mt-5 mb-2">複数打突一覧</h3><table><thead><tr><th>#</th><th>時間</th><th>最高速時刻</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>評価</th></tr></thead><tbody>${data.strikes.map(s => `<tr><td>#${s.number}</td><td>${s.durationMs}ms</td><td>${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))}ms</td><td>${s.rightAng.toFixed(1)}°</td><td>${s.torsoAng.toFixed(1)}°</td><td>${s.hasuji.toFixed(1)}°</td><td>${s.score}</td></tr>`).join('')}</tbody></table>`
                 : '';
             panel.innerHTML = `
                 <div class="flex items-start justify-between gap-4 mb-4">
@@ -7470,13 +7778,13 @@
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-center">
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">打突時間</div><div class="text-2xl font-black text-blue-700 font-mono-num">${duration !== null ? `${duration}ms` : '---'}</div></div>
-                    <div class="border rounded p-3"><div class="text-xs text-slate-500">正式最高速</div><div class="text-2xl font-black text-cyan-700 font-mono-num">${official.metrics ? official.metrics.peakSpeedMps.toFixed(2) : '---'}</div></div>
+                    <div class="border rounded p-3"><div class="text-xs text-slate-500">正式最高速時刻</div><div class="text-2xl font-black text-cyan-700 font-mono-num">${official.metrics ? Math.round(Number(official.metrics.peakOffsetMs || 0)) + 'ms' : '---'}</div></div>
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">右肘角</div><div class="text-2xl font-black text-purple-700 font-mono-num">${end?.rightAng ? end.rightAng.toFixed(1) : '---'}°</div></div>
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">検出信頼度</div><div class="text-2xl font-black text-emerald-700 font-mono-num">${confidence ? Math.round(confidence * 100) : '---'}%</div></div>
                 </div>
                 <table><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join('')}</tbody></table>
                 ${strikeRows}
-                <p class="text-xs text-slate-500 mt-4">* m/s はMediaPipe world座標または校正値に基づく推定、m/s* は画面/テープ検出由来の相対推定を含みます。</p>
+                <p class="text-xs text-slate-500 mt-4">* このレポートの上段はms中心です。速度の数値そのものはCSVや記録データに保持され、必要時に比較できます。</p>
             `;
             panel.classList.remove('hidden');
             showToast('レポートを作成しました', 'green');
@@ -7975,6 +8283,17 @@
                 analysisVideoElement.addEventListener(eventName, updateVideoManualRangeUi);
             });
         }
+        ['videoResultElement', 'videoCorrectionElement'].forEach(id => {
+            const previewVideo = document.getElementById(id);
+            if (!previewVideo) return;
+            previewVideo.addEventListener('play', () => startNativePreviewFrameSync(previewVideo));
+            ['seeked', 'timeupdate'].forEach(eventName => {
+                previewVideo.addEventListener(eventName, () => {
+                    if (!previewVideo.paused && eventName === 'timeupdate') return;
+                    syncVideoPreviewTimeToAnalysis(previewVideo);
+                });
+            });
+        });
         const videoManualScrubSlider = document.getElementById('videoManualScrubSlider');
         if (videoManualScrubSlider) {
             const scrubHandler = event => {
@@ -8020,15 +8339,23 @@
             });
         }
         window.addEventListener('pointermove', event => {
-            if (!AppState.videoTimelineDragMode) return;
-            event.preventDefault();
-            applyVideoTimelinePointer(event);
+            if (AppState.videoTimelineDragMode) {
+                event.preventDefault();
+                applyVideoTimelinePointer(event);
+                return;
+            }
+            if (AppState.videoResultTimelineDragMode) {
+                event.preventDefault();
+                applyVideoResultTimelinePointer(event);
+            }
         }, { passive: false });
         window.addEventListener('pointerup', () => {
             AppState.videoTimelineDragMode = null;
+            AppState.videoResultTimelineDragMode = null;
         });
         window.addEventListener('pointercancel', () => {
             AppState.videoTimelineDragMode = null;
+            AppState.videoResultTimelineDragMode = null;
         });
         const setManualStartMarkerBtn = document.getElementById('setManualStartMarkerBtn');
         if (setManualStartMarkerBtn) setManualStartMarkerBtn.addEventListener('click', () => setVideoManualMarker('start'));
@@ -8148,6 +8475,53 @@
         if (videoResultJumpEndBtn) videoResultJumpEndBtn.addEventListener('click', () => jumpVideoAnalysisFrame('end'));
         const videoResultOpen3DBtn = document.getElementById('videoResultOpen3DBtn');
         if (videoResultOpen3DBtn) videoResultOpen3DBtn.addEventListener('click', openCurrentVideoFrameInModel);
+        const videoFormalEditBtn = document.getElementById('videoFormalEditBtn');
+        if (videoFormalEditBtn) videoFormalEditBtn.addEventListener('click', () => {
+            if (!AppState.videoAnalysis?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
+            switchVideoStep('correct');
+            syncVideoAnalysisSliders(Number(AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0));
+            setVideoAnalysisFrame(Number(AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0));
+        });
+        const videoResultFullscreenBtn = document.getElementById('videoResultFullscreenBtn');
+        if (videoResultFullscreenBtn) videoResultFullscreenBtn.addEventListener('click', () => {
+            requestElementFullscreen(document.getElementById('videoResultPreviewPanel'));
+        });
+        const videoResultTimelineTrack = document.getElementById('videoResultTimelineTrack');
+        if (videoResultTimelineTrack) {
+            videoResultTimelineTrack.addEventListener('pointerdown', event => {
+                if (event.target?.closest?.('.video-editor-marker, .video-editor-strike')) return;
+                startVideoResultTimelineDrag(event, 'playhead');
+            });
+            videoResultTimelineTrack.addEventListener('keydown', handleVideoResultTimelineKey);
+        }
+        const videoResultTimelineStartMarker = document.getElementById('videoResultTimelineStartMarker');
+        if (videoResultTimelineStartMarker) {
+            videoResultTimelineStartMarker.addEventListener('pointerdown', event => startVideoResultTimelineDrag(event, 'start'));
+            videoResultTimelineStartMarker.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                jumpVideoAnalysisFrame('start');
+            });
+        }
+        const videoResultTimelineEndMarker = document.getElementById('videoResultTimelineEndMarker');
+        if (videoResultTimelineEndMarker) {
+            videoResultTimelineEndMarker.addEventListener('pointerdown', event => startVideoResultTimelineDrag(event, 'end'));
+            videoResultTimelineEndMarker.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                jumpVideoAnalysisFrame('end');
+            });
+        }
+        const videoResultTimelineStrikeMarkers = document.getElementById('videoResultTimelineStrikeMarkers');
+        if (videoResultTimelineStrikeMarkers) {
+            videoResultTimelineStrikeMarkers.addEventListener('click', event => {
+                const btn = event.target.closest('.video-editor-strike');
+                if (!btn) return;
+                event.preventDefault();
+                event.stopPropagation();
+                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true });
+            });
+        }
         const markStartFrameBtn = document.getElementById('markStartFrameBtn');
         if (markStartFrameBtn) markStartFrameBtn.addEventListener('click', () => {
             if (!AppState.videoAnalysis) return;
