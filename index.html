@@ -80,11 +80,10 @@
         .video-correction-preview {
             position: relative;
             aspect-ratio: 16 / 9;
-            min-height: clamp(360px, 58vh, 720px);
+            min-height: 240px;
             background: #020617;
-            border-radius: 14px;
+            border-radius: 10px;
             overflow: visible;
-            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
         }
         .video-correction-preview video,
         .video-correction-preview canvas {
@@ -138,16 +137,8 @@
         .video-side-drawer #videoVerificationChecklist {
             grid-template-columns: 1fr !important;
         }
-        .video-result-preview-grid { align-items: stretch; }
-        #videoResultPreviewPanel .video-correction-preview {
-            min-height: clamp(500px, 74vh, 940px);
-        }
-        #videoResultPreviewPanel .video-result-controls {
-            align-self: stretch;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
-        }
         .video-graph-grid { grid-template-columns: 1fr; }
-        @media (min-width: 1536px) {
+        @media (min-width: 1024px) {
             .video-graph-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
         .video-sync-graph-panel {
@@ -159,8 +150,7 @@
             position: relative;
             overflow: hidden;
             border-radius: 14px;
-            min-height: 292px;
-            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
         }
         .video-analysis-graph::before {
             content: "";
@@ -170,8 +160,8 @@
             background: linear-gradient(180deg, rgba(255,255,255,0.58), transparent 42%);
         }
         .video-analysis-graph canvas {
-            height: 248px !important;
-            min-height: 248px;
+            height: 220px !important;
+            min-height: 220px;
             display: block;
             border-radius: 10px;
         }
@@ -179,8 +169,8 @@
             grid-template-columns: 1fr !important;
         }
         .video-sync-graph-panel.graph-zoomed .video-analysis-graph canvas {
-            height: min(52vh, 520px) !important;
-            min-height: 400px;
+            height: min(46vh, 420px) !important;
+            min-height: 320px;
         }
         .video-sync-graph-panel:fullscreen,
         .video-sync-graph-panel:-webkit-full-screen {
@@ -196,25 +186,8 @@
         }
         .video-sync-graph-panel:fullscreen .video-analysis-graph canvas,
         .video-sync-graph-panel:-webkit-full-screen .video-analysis-graph canvas {
-            height: min(38vh, 460px) !important;
-            min-height: 340px;
-        }
-        #videoStep-correct .video-correction-controls canvas {
-            height: 152px !important;
-            min-height: 152px;
-        }
-        @media (max-width: 768px) {
-            .video-correction-preview,
-            #videoResultPreviewPanel .video-correction-preview {
-                min-height: min(66vh, 560px);
-            }
-            .video-analysis-graph {
-                min-height: 240px;
-            }
-            .video-analysis-graph canvas {
-                height: 196px !important;
-                min-height: 196px;
-            }
+            height: min(34vh, 360px) !important;
+            min-height: 280px;
         }
         .video-graph-action {
             border: 1px solid #cbd5e1;
@@ -260,13 +233,11 @@
         }
         .video-editor-timeline {
             position: relative;
-            border: 1px solid rgba(59, 130, 246, 0.22);
-            background:
-                radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.16), transparent 32%),
-                linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
-            border-radius: 16px;
-            padding: 12px 12px 14px;
-            box-shadow: 0 18px 52px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(59, 130, 246, 0.18);
+            background: rgba(255, 255, 255, 0.82);
+            border-radius: 12px;
+            padding: 10px 10px 12px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
         }
         .video-editor-timebar {
             display: flex;
@@ -280,17 +251,16 @@
         }
         .video-editor-track {
             position: relative;
-            height: 88px;
-            border: 1px solid rgba(147, 197, 253, 0.92);
-            border-radius: 14px;
+            height: 76px;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
             background:
-                linear-gradient(to bottom, rgba(15, 23, 42, 0.08), rgba(255, 255, 255, 0.08)),
-                repeating-linear-gradient(to right, #eff6ff 0, #eff6ff 18px, #dbeafe 19px, #eff6ff 38px);
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.02)),
+                repeating-linear-gradient(to right, #eff6ff 0, #eff6ff 15px, #dbeafe 16px, #eff6ff 32px);
             overflow: hidden;
             cursor: pointer;
             touch-action: none;
             user-select: none;
-            box-shadow: inset 0 8px 20px rgba(15, 23, 42, 0.05);
         }
         .video-editor-track:focus {
             outline: 2px solid #2563eb;
@@ -298,12 +268,12 @@
         }
         .video-editor-range {
             position: absolute;
-            top: 20px;
-            bottom: 20px;
+            top: 18px;
+            bottom: 18px;
             left: 0;
             width: 0;
-            border-radius: 999px;
-            background: linear-gradient(90deg, rgba(37, 99, 235, 0.3), rgba(245, 158, 11, 0.24), rgba(239, 68, 68, 0.26));
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(239, 68, 68, 0.18));
             border: 1px solid rgba(59, 130, 246, 0.25);
             z-index: 1;
             pointer-events: none;
@@ -337,13 +307,13 @@
         }
         .video-editor-playhead {
             position: absolute;
-            top: 7px;
-            bottom: 7px;
+            top: 8px;
+            bottom: 8px;
             left: 0;
-            width: 4px;
+            width: 3px;
             border-radius: 999px;
             background: #f8fafc;
-            box-shadow: 0 0 0 1px #0f172a, 0 0 0 5px rgba(15, 23, 42, 0.1), 0 0 18px rgba(15, 23, 42, 0.32);
+            box-shadow: 0 0 0 1px #0f172a, 0 0 12px rgba(15, 23, 42, 0.28);
             transform: translateX(-50%);
             z-index: 5;
             pointer-events: none;
@@ -361,15 +331,15 @@
         }
         .video-editor-marker {
             position: absolute;
-            top: 13px;
-            width: 22px;
-            height: 62px;
+            top: 12px;
+            width: 18px;
+            height: 52px;
             border: 2px solid #fff;
             border-radius: 999px;
             transform: translateX(-50%);
             z-index: 6;
             cursor: ew-resize;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
         }
         .video-editor-marker.start { background: #2563eb; }
         .video-editor-marker.end { background: #ef4444; }
@@ -1000,7 +970,7 @@
                         <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-circle-play text-indigo-500 mr-1"></i>解析プレビュー</h3>
                         <span class="text-[11px] text-slate-500">動画・骨格・角度・マーカーを同じ画面で確認</span>
                     </div>
-                    <div class="video-result-preview-grid grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px] gap-4">
+                    <div class="video-result-preview-grid grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
                             <video id="videoResultElement" muted="" playsinline=""></video>
                             <canvas id="videoAnalysisCanvas" class="w-full aspect-video object-contain"></canvas>
@@ -1156,18 +1126,18 @@
                             <button id="videoGraphFullscreenBtn" type="button" class="video-graph-action"><i class="fa-solid fa-expand mr-1"></i>全画面</button>
                         </div>
                     </div>
-                    <div class="video-graph-grid grid gap-5">
+                    <div class="video-graph-grid grid gap-4">
                         <div class="video-analysis-graph rounded-lg border border-cyan-100 bg-cyan-50/40 p-3">
                             <div class="text-[11px] font-black text-cyan-700 mb-1">ピーク検出（参考）</div>
-                            <canvas id="videoSyncSpeedCanvas" class="w-full h-56"></canvas>
+                            <canvas id="videoSyncSpeedCanvas" class="w-full h-44"></canvas>
                         </div>
                         <div class="video-analysis-graph rounded-lg border border-purple-100 bg-purple-50/40 p-3">
                             <div class="text-[11px] font-black text-purple-700 mb-1">右肘角</div>
-                            <canvas id="videoSyncElbowCanvas" class="w-full h-56"></canvas>
+                            <canvas id="videoSyncElbowCanvas" class="w-full h-44"></canvas>
                         </div>
                         <div class="video-analysis-graph rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
                             <div class="text-[11px] font-black text-emerald-700 mb-1">体幹軸 / 刃筋</div>
-                            <canvas id="videoSyncAxisCanvas" class="w-full h-56"></canvas>
+                            <canvas id="videoSyncAxisCanvas" class="w-full h-44"></canvas>
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-500 mt-2">各グラフをクリックすると該当フレームへ移動します。縦線が現在フレームです。</p>
@@ -1189,13 +1159,13 @@
                         </div>
                         <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
                     </div>
-                    <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+                    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-800">
                             <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
                             <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
                             <div id="videoCorrectionEmpty" class="video-correction-empty">動画を読み込むとここに表示されます。解析後は骨格・角度・マーカーも重なります。</div>
                         </div>
-                        <div class="video-correction-controls bg-white border border-slate-200 rounded-xl p-3 space-y-3 2xl:sticky 2xl:top-20">
+                        <div class="video-correction-controls bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-sliders text-indigo-500 mr-1"></i>補正操作</h3>
                                 <span id="videoCorrectionModelStatus" class="text-[11px] font-bold text-indigo-700">3D連動待機</span>
@@ -1237,15 +1207,15 @@
                             <div class="space-y-2">
                                 <div class="rounded-lg border border-cyan-100 bg-cyan-50/50 p-2">
                                     <div class="text-[11px] font-black text-cyan-700 mb-1">ピーク検出（参考）</div>
-                                    <canvas id="videoCorrectionSpeedGraphCanvas" class="w-full h-32"></canvas>
+                                    <canvas id="videoCorrectionSpeedGraphCanvas" class="w-full h-24"></canvas>
                                 </div>
                                 <div class="rounded-lg border border-purple-100 bg-purple-50/50 p-2">
                                     <div class="text-[11px] font-black text-purple-700 mb-1">右肘角</div>
-                                    <canvas id="videoCorrectionElbowGraphCanvas" class="w-full h-32"></canvas>
+                                    <canvas id="videoCorrectionElbowGraphCanvas" class="w-full h-24"></canvas>
                                 </div>
                                 <div class="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2">
                                     <div class="text-[11px] font-black text-emerald-700 mb-1">体幹軸 / 刃筋</div>
-                                    <canvas id="videoCorrectionAxisGraphCanvas" class="w-full h-32"></canvas>
+                                    <canvas id="videoCorrectionAxisGraphCanvas" class="w-full h-24"></canvas>
                                 </div>
                                 <span class="block bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[11px] text-slate-600">青=開始 / 黄=最高速 / 赤=終了。グラフクリックでもフレーム移動できます。</span>
                             </div>
@@ -2079,7 +2049,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v65';
+            const refreshKey = 'kendo-sw-refreshed-v64';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -7332,8 +7302,8 @@
             const rect = canvas.getBoundingClientRect();
             const compact = canvasId.includes('Correction');
             const zoomed = !!AppState.videoGraphZoomed && !compact;
-            const width = Math.max(compact ? 300 : 520, Math.round(rect.width || canvas.clientWidth || 900));
-            const height = Math.max(compact ? 152 : (zoomed ? 400 : 260), Math.round(rect.height || canvas.clientHeight || (compact ? 152 : (zoomed ? 430 : 270))));
+            const width = Math.max(compact ? 260 : 420, Math.round(rect.width || canvas.clientWidth || 820));
+            const height = Math.max(compact ? 128 : (zoomed ? 320 : 220), Math.round(rect.height || canvas.clientHeight || (compact ? 128 : (zoomed ? 340 : 230))));
             const dpr = Math.min(window.devicePixelRatio || 1, 3);
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
@@ -7354,7 +7324,7 @@
                 return;
             }
             const frames = data.frames;
-            const pad = { left: compact ? 42 : 58, right: compact ? 18 : 24, top: 26, bottom: compact ? 32 : 40 };
+            const pad = { left: compact ? 40 : 52, right: 20, top: 22, bottom: compact ? 28 : 34 };
             const plotW = width - pad.left - pad.right;
             const plotH = height - pad.top - pad.bottom;
             const maxSpeed = Math.max(1, ...frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0));
@@ -7795,11 +7765,11 @@
             const previewRect = canvas.getBoundingClientRect();
             const sourceW = Math.max(1, video.videoWidth || 640);
             const sourceH = Math.max(1, video.videoHeight || 360);
-            const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const previewPanel = document.getElementById('videoResultPreviewPanel');
             const fullscreenPreview = document.fullscreenElement === previewPanel || document.webkitFullscreenElement === previewPanel;
-            const targetCssW = Math.max(previewRect.width || 0, fullscreenPreview ? 1500 : 980);
-            const w = Math.round(clamp(targetCssW * dpr, 860, Math.min(3200, Math.max(sourceW * dpr, 1440))));
+            const targetCssW = Math.max(previewRect.width || 0, fullscreenPreview ? 1200 : 760);
+	            const w = Math.round(clamp(targetCssW * dpr, 720, Math.min(2560, Math.max(sourceW, 1280))));
             const h = Math.max(360, Math.round(w * sourceH / sourceW));
             if (canvas.width !== w || canvas.height !== h) {
                 canvas.width = w;
