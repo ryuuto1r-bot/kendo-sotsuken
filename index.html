@@ -485,9 +485,9 @@
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-lime-300">テープ剣先:</span><span id="overlayTapeSpeed" class="font-mono font-bold text-lime-300">OFF</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-slate-300">Δt:</span><span id="overlayFrameDt" class="font-mono font-bold text-slate-200">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-yellow-300">刃筋:</span><span id="overlayHasuji" class="font-mono font-bold text-yellow-300">---°</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-green-300">歩幅:</span><span id="overlayStride" class="font-mono font-bold text-green-300">---</span></div>
+                        <div class="hidden"><span>補助:</span><span id="overlayStride">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-blue-300">軌道ブレ:</span><span id="overlaySway" class="font-mono font-bold text-blue-300">---%</span></div>
-                        <div class="flex justify-between gap-4 detail-only"><span class="text-red-300">冴え:</span><span id="overlaySae" class="font-mono font-bold text-red-300">---</span></div>
+                        <div class="hidden"><span>補助:</span><span id="overlaySae">---</span></div>
                     </div>
 
                     <div id="upperBodyModeIndicator" class="absolute bottom-4 right-4 bg-slate-800/80 border border-slate-500 px-3 py-1 rounded text-slate-300 hidden text-xs shadow-lg z-30">
@@ -516,15 +516,15 @@
                             <span class="text-[10px] text-slate-500" id="timeLabel">打突時間</span>
                             <div id="latestTime" class="text-lg md:text-xl font-black text-blue-600 font-mono-num">---</div>
                         </div>
-                        <div class="hidden"><span class="text-[10px] text-slate-500">手足ズレ</span><div id="latestSync" class="text-lg md:text-xl font-black text-yellow-600 font-mono-num">---</div></div>
-                        <div class="hidden"><span class="text-[10px] text-slate-500">冴え</span><div id="latestSae" class="text-lg md:text-xl font-black text-red-600 font-mono-num">---</div></div>
-                        <div class="hidden"><span class="text-[10px] text-slate-500">歩幅比</span><div id="latestStride" class="text-lg md:text-xl font-black text-green-600 font-mono-num">---</div></div>
-	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">参考ピーク</span><div id="latestPeakSpeed" class="text-lg md:text-xl font-black text-cyan-600 font-mono-num">---</div></div>
+                        <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestSync" class="text-lg md:text-xl font-black text-yellow-600 font-mono-num">---</div></div>
+                        <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestSae" class="text-lg md:text-xl font-black text-red-600 font-mono-num">---</div></div>
+                        <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestStride" class="text-lg md:text-xl font-black text-green-600 font-mono-num">---</div></div>
+		                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">ピーク時刻</span><div id="latestPeakSpeed" class="text-lg md:text-xl font-black text-cyan-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">刃筋角度</span><div id="latestHasuji" class="text-lg md:text-xl font-black text-teal-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">右肘角度</span><div id="latestRightAng" class="text-lg md:text-xl font-black text-purple-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">体幹軸</span><div id="latestTorso" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
-	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">推定剣先</span><div id="latestTipSpeed" class="text-lg md:text-xl font-black text-amber-600 font-mono-num">---</div></div>
-	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">テープ剣先</span><div id="latestTapeSpeed" class="text-lg md:text-xl font-black text-lime-600 font-mono-num">---</div></div>
+		                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">推定ピーク</span><div id="latestTipSpeed" class="text-lg md:text-xl font-black text-amber-600 font-mono-num">---</div></div>
+		                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">テープピーク</span><div id="latestTapeSpeed" class="text-lg md:text-xl font-black text-lime-600 font-mono-num">---</div></div>
 	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">検出信頼度</span><div id="latestVisibility" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
 	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">同期方式</span><div id="latestFrameMode" class="text-sm md:text-base font-black text-slate-700 font-mono-num">---</div></div>
 	                    </div>
@@ -567,14 +567,14 @@
 	                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 	                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 	                    <div class="space-y-2 text-xs text-slate-700">
-	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下方向速度が0.55m/s相当以上になった状態が2フレーム続いた最初のフレーム</p>
+	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下方向ピーク検出信号が閾値を2フレーム続けて超えた最初のフレーム</p>
 	                        <p><span class="font-bold text-slate-900">終了:</span> 右手首ピーク後、急減速またはピーク値の38%未満になったフレーム</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">終了</span><div id="timingEndStatus" class="font-bold">---</div></div>
 	                        </div>
-	                        <p class="text-[11px] text-slate-500">速度値は開始/終了・ピーク検出のための参考値です。正式記録は補正後の打突時間と角度を中心に扱います。</p>
+	                        <p class="text-[11px] text-slate-500">ピーク検出の信号は内部処理に限定します。正式記録は補正後の打突時間・ピーク時刻・角度を中心に扱います。</p>
 	                    </div>
 	                </div>
 
@@ -583,7 +583,7 @@
                     <div class="overflow-y-auto max-h-64 flex-grow">
                         <table class="w-full text-xs text-center">
                             <thead class="bg-white sticky top-0 shadow-sm text-slate-500">
-                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">ズレ</th><th class="px-1 py-2">歩幅</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2 text-left">評価</th><th class="px-1 py-2">操作</th></tr>
+	                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">ピーク</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2">体幹</th><th class="px-1 py-2 text-left">評価</th><th class="px-1 py-2">操作</th></tr>
                             </thead>
                             <tbody id="recentHistoryBody" class="font-mono-num"><tr><td colspan="8" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr></tbody>
                         </table>
@@ -609,7 +609,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間 ＆ 参考ピーク推移</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間 ＆ ピーク時刻推移</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border">
@@ -624,7 +624,7 @@
         <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画解析 / 正式測定</h2>
-                <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式記録用。速度値はピーク検出の参考値として扱い、開始/終了フレームを1コマ単位で補正して保存します。</p>
+                <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式記録用。ピーク検出信号は内部処理に限定し、開始/終了フレームを1コマ単位で補正して保存します。</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><i class="fa-solid fa-certificate mr-1"></i>正式測定モード</span>
@@ -790,7 +790,7 @@
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">単位の整理:</span> 正式結果は <span class="font-mono-num font-black">ms</span> と角度を中心に表示します。速度値はピーク検出用の参考値としてCSV・記録に保持します。
+                    <span class="font-black">単位の整理:</span> 正式結果・保存記録・CSVは <span class="font-mono-num font-black">ms</span> と角度を中心に表示します。ピーク検出信号は内部計算だけで使います。
                 </div>
                 <div id="videoResultSectionNav" class="sticky top-16 z-10 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
@@ -1143,7 +1143,7 @@
             <div class="official-flow-card p-4 rounded-xl border">
                 <h3 class="text-sm font-bold text-indigo-900 mb-2"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</h3>
                 <div class="space-y-2 text-xs text-indigo-900 leading-relaxed">
-                    <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・角度・参考ピークだけを見る。</p>
+                    <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・ピーク時刻・角度だけを見る。</p>
                     <p><span class="font-bold">動画解析:</span> 正式測定用。開始/終了フレームを補正し、保存・CSV・レポートに反映します。</p>
                 </div>
             </div>
@@ -1213,10 +1213,10 @@
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式参考ピーク</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首参考ピーク</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-amber-500"><span class="text-xs text-slate-500">推定剣先参考</span><div id="detailLatestTipSpeed" class="text-2xl font-black text-amber-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープ剣先参考</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式ピーク時刻</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首ピーク時刻</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-amber-500"><span class="text-xs text-slate-500">推定剣先ピーク</span><div id="detailLatestTipSpeed" class="text-2xl font-black text-amber-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープピーク</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -1235,7 +1235,7 @@
             <div class="grid grid-cols-2 md:grid-cols-7 gap-3 p-4">
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">本数カウント</span><div id="summaryCount" class="text-xl font-black text-slate-900 font-mono-num">0本</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均打突時間</span><div id="summaryAvgTime" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
-                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">参考ピーク最大</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最短ピーク時刻</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も良かった1本</span><div id="summaryBest" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も悪かった1本</span><div id="summaryWorst" class="text-xl font-black text-red-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">軸ブレ平均</span><div id="summaryAvgAxis" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
@@ -1245,7 +1245,7 @@
 
         <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div class="bg-slate-50 px-4 py-3 border-b flex items-center justify-between">
-                <h3 class="font-bold text-sm text-slate-700">打突ごとの参考ピーク・角度</h3>
+                <h3 class="font-bold text-sm text-slate-700">打突ごとのピーク時刻・角度</h3>
                 <span class="text-xs text-slate-500">練習中は非表示、練習後に確認</span>
             </div>
             <div class="overflow-x-auto">
@@ -1254,18 +1254,16 @@
                         <tr>
                             <th class="px-2 py-2">#</th>
                             <th class="px-2 py-2">時間</th>
-                            <th class="px-2 py-2">手首参考</th>
-                            <th class="px-2 py-2">推定剣先</th>
-                            <th class="px-2 py-2">テープ剣先</th>
+                            <th class="px-2 py-2">ピーク</th>
                             <th class="px-2 py-2">右肘</th>
                             <th class="px-2 py-2">左肘</th>
-                            <th class="px-2 py-2">体幹</th>
+	                            <th class="px-2 py-2">体幹</th>
                             <th class="px-2 py-2">刃筋</th>
                             <th class="px-2 py-2">肩ライン</th>
                             <th class="px-2 py-2 text-left">評価/メモ</th>
                         </tr>
                     </thead>
-                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
+	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="9" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -1364,7 +1362,7 @@
                     <h3 class="text-sm font-bold text-slate-700 mb-3">最新打突の詳細</h3>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="modelLatestTime" class="font-black text-blue-700 font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">参考ピーク</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
+                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">ピーク時刻</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">角度品質</span><div id="modelAngleQuality" class="font-black text-purple-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">終了理由</span><div id="modelEndReason" class="font-bold text-slate-700">---</div></div>
 	                        <div class="bg-violet-50 border border-violet-100 rounded p-2 col-span-2"><span class="text-violet-700">選択角度の変化率</span><div id="modelAngleRate" class="font-black text-violet-800 font-mono-num">動画解析フレームで表示</div></div>
@@ -1425,7 +1423,7 @@
 	                        <input type="checkbox" id="paramTsukiMode" class="w-5 h-5 text-red-600 rounded border-gray-300">
                         <span class="text-base font-bold text-red-900">突き（ツキ）モードを有効にする</span>
                     </label>
-	                    <p class="text-xs text-red-700 mt-2 ml-8">振りかぶりではなく、「肘の急激な伸び」と「伸びきった瞬間の停止」を検知して突きの速度と冴えを計測します。</p>
+	                    <p class="text-xs text-red-700 mt-2 ml-8">振りかぶりではなく、「肘の急激な伸び」と「伸びきった瞬間の停止」を使って突き動作の打突時間と角度を確認します。</p>
 	                </div>
 
 	                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
@@ -1461,7 +1459,7 @@
 
 	                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
 	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>実測キャリブレーション</h4>
-	                    <p class="text-xs text-emerald-700 mb-3">ピーク検出の参考値を安定させるため、体格・竹刀・撮影条件を登録します。速度値は絶対測定値ではなく、同じ条件で比較する補助指標として扱います。</p>
+	                    <p class="text-xs text-emerald-700 mb-3">ピーク検出を安定させるため、体格・竹刀・撮影条件を登録します。正式記録は打突時間・ピーク時刻・角度を中心に扱います。</p>
 	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 	                        <label class="text-xs font-bold text-emerald-900">肩幅(cm)
 	                            <input id="paramShoulderWidthCm" type="number" min="30" max="60" step="0.5" value="42" class="mt-1 w-full border border-emerald-200 rounded px-2 py-2 bg-white font-mono-num">
@@ -1505,7 +1503,7 @@
                     </div>
                 </div>
                 
-                <div class="border-t border-slate-100 pt-4">
+	                <div class="border-t border-slate-100 pt-4">
                     <label class="block text-sm font-bold text-slate-700 mb-1">スイング開始速度閾値</label>
                     <div class="flex items-center gap-4">
                         <input type="range" id="paramSwingVel" min="0.005" max="0.05" step="0.005" value="0.015" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -1513,9 +1511,9 @@
                     </div>
                 </div>
 
-                <div class="border-t border-slate-100 pt-4">
+	                <div class="hidden">
                     <div class="flex justify-between items-end mb-2">
-                        <label class="block text-sm font-bold text-slate-700">気合検出音量閾値</label>
+                        <label class="block text-sm font-bold text-slate-700">補助音量閾値</label>
                         <button type="button" id="calibrateKiaiBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-bold transition">自動設定</button>
                     </div>
                     <div class="flex items-center gap-4">
@@ -1864,7 +1862,7 @@
                     ? (hasManualRange ? '手動マーカー範囲だけを解析します。解析開始を押してください。' : 'マーカー未設定のため自動検出で解析します。必要なら前の手順で開始/終了を置いてください。')
                     : '先に動画を読み込んでください。',
                 result: hasAnalysis
-                    ? '解析結果の概要です。正式表示はmsと角度中心です。速度値はピーク検出用の参考値として内部に保持します。必要ならフレーム補正へ進んでください。'
+                    ? '解析結果の概要です。正式表示・CSV・記録はmsと角度中心です。ピーク検出信号は内部計算だけで使います。必要ならフレーム補正へ進んでください。'
                     : 'まだ解析結果がありません。先に読み込み手順で動画を解析してください。',
                 correct: hasAnalysis
                     ? '開始・終了フレームを1コマ単位で補正します。補正後打突時間が正式記録に反映されます。'
@@ -1932,7 +1930,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v59';
+            const refreshKey = 'kendo-sw-refreshed-v60';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2330,15 +2328,14 @@
 
         function scoreRecord(record) {
             const time = Number(record.timeMs || 0);
-            const speed = Math.max(Number(record.peakSpeedMps || 0), Number(record.peakTipSpeedMps || 0), Number(record.peakTapeSpeedMps || 0));
             const axis = Math.abs(Number(record.torsoAng || 0));
             const elbow = Number(record.rightAng || 0);
-            const sae = Number(record.saeScore || 0);
-            const timeScore = clamp(100 - Math.max(0, time - 180) * 0.22, 0, 100);
-            const speedScore = clamp(speed / 8 * 100, 0, 100);
+            const hasuji = Math.abs(Number(record.hasujiAngle || 0));
+            const timeScore = clamp(100 - Math.abs(time - 180) * 0.28, 0, 100);
             const axisScore = clamp(100 - axis * 6, 0, 100);
             const elbowScore = elbow ? clamp(100 - Math.max(0, 152 - elbow) * 3, 0, 100) : 50;
-            return Math.round(timeScore * 0.25 + speedScore * 0.25 + axisScore * 0.2 + elbowScore * 0.2 + clamp(sae, 0, 100) * 0.1);
+            const hasujiScore = clamp(100 - hasuji * 2.8, 0, 100);
+            return Math.round(timeScore * 0.35 + axisScore * 0.25 + elbowScore * 0.25 + hasujiScore * 0.15);
         }
 
         function persistRecords() {
@@ -2545,6 +2542,37 @@
 
         function speedLabel(value, unit) {
             return value ? `${value.toFixed(2)} ${unit === 'm/s' ? 'm/s' : 'm/s*'}` : '---';
+        }
+
+        function normalizeMs(value) {
+            const numeric = Number(value);
+            return Number.isFinite(numeric) ? Math.max(0, Math.round(numeric)) : null;
+        }
+
+        function msLabel(value) {
+            const numeric = normalizeMs(value);
+            return numeric === null ? '---' : `${numeric} ms`;
+        }
+
+        function recordPeakOffsetMs(record, source = 'official') {
+            if (!record) return null;
+            const key = source === 'official' ? 'officialPeakOffsetMs' : `${source}PeakOffsetMs`;
+            const direct = normalizeMs(record[key]);
+            if (direct !== null) return direct;
+            if (source === 'official') {
+                const preferred = record.actualOfficialSpeedSource || record.officialSpeedSource || 'wrist';
+                const fallback = recordPeakOffsetMs(record, preferred);
+                if (fallback !== null) return fallback;
+            }
+            if (source !== 'wrist' && source !== 'official') return null;
+            const peak = Number(record.peakTimeMs);
+            const start = Number(record.startTimeMs);
+            if (Number.isFinite(peak) && Number.isFinite(start) && peak >= start) return Math.round(peak - start);
+            return null;
+        }
+
+        function recordPeakOffsetText(record, source = 'official') {
+            return msLabel(recordPeakOffsetMs(record, source));
         }
 
         function smoothSavitzkyGolay5(values) {
@@ -3781,17 +3809,15 @@
             const selectedRate = useVideo ? videoAngleRateDegPerSec(AppState.videoModelAngleValues?.frameIndex, def.valueKey) : null;
             safeText('modelAngleRate', Number.isFinite(selectedRate) ? `${rateText(selectedRate)}（動画フレーム差分）` : '動画解析フレームで表示');
             drawModelAngleTimeline(AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0);
-            if (useVideo && AppState.videoModelAngleValues) {
-                const frame = AppState.videoAnalysis?.frames?.[AppState.videoModelAngleValues.frameIndex];
-                const speed = frame ? videoFrameSpeed(frame, Params.officialSpeedSource) : null;
-                safeText('modelLatestTime', frame ? `${frame.timeMs.toFixed(1)} ms` : '動画フレーム');
-                safeText('modelLatestSpeed', speed ? `${speed.value.toFixed(2)} ${speed.unit}` : '---');
-                safeText('modelAngleQuality', frame?.poseConfidence ? `${Math.round(frame.poseConfidence * 100)}%` : (frame?.visibility ? `${Math.round(frame.visibility * 100)}%` : '---'));
-                safeText('modelEndReason', '動画フレーム連動');
-            } else if (latest) {
-                safeText('modelLatestTime', `${latest.timeMs} ms`);
-                const topSpeed = getRecordTopSpeed(latest);
-                safeText('modelLatestSpeed', topSpeed.value ? `${topSpeed.value.toFixed(2)} ${topSpeed.unit === 'm/s' ? 'm/s' : 'm/s*'}` : '---');
+	            if (useVideo && AppState.videoModelAngleValues) {
+	                const frame = AppState.videoAnalysis?.frames?.[AppState.videoModelAngleValues.frameIndex];
+	                safeText('modelLatestTime', frame ? `${frame.timeMs.toFixed(1)} ms` : '動画フレーム');
+	                safeText('modelLatestSpeed', videoPeakTimeLabel(AppState.videoAnalysis?.metrics));
+	                safeText('modelAngleQuality', frame?.poseConfidence ? `${Math.round(frame.poseConfidence * 100)}%` : (frame?.visibility ? `${Math.round(frame.visibility * 100)}%` : '---'));
+	                safeText('modelEndReason', '動画フレーム連動');
+	            } else if (latest) {
+	                safeText('modelLatestTime', `${latest.timeMs} ms`);
+	                safeText('modelLatestSpeed', recordPeakOffsetText(latest, 'official'));
                 safeText('modelAngleQuality', latest.angleQuality ? `${Math.round(Number(latest.angleQuality) * 100)}%` : '---');
                 safeText('modelEndReason', latest.endReason || '---');
             } else {
@@ -4080,26 +4106,20 @@
             AppState.feedbackFadeUntil = now + 2300;
         }
 
-        function saveRecord(timeMs, rawSyncDiffMs, saeScore, hasujiAngle, rightAng, torsoAng, kiaiVolume, trajectorySway, strideRatio, metrics = {}) {
-            const isUpperOnly = true;
-            const kiaiOK = true; 
-            
+        function saveRecord(timeMs, rawSyncDiffMs, _impactSignal, hasujiAngle, rightAng, torsoAng, _unusedAudioVolume, trajectorySway, _unusedFootRatio, metrics = {}) {
             let comment = "", shortLabel = "";
             const hasujiAbs = Math.abs(Number(hasujiAngle || 0));
             
             if (Math.abs(Number(torsoAng || 0)) > 15) { comment = "体幹軸が傾いています。上半身の軸を立てて振り下ろしましょう。"; shortLabel = "姿勢注意"; }
             else if (rightAng < 150) { comment = "肘が曲がっています。剣先に力を伝えるよう腕を伸ばしましょう。"; shortLabel = "肘曲がり"; }
             else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。右肘から手首の線を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
-            else if (timeMs > (Params.signalMode ? 800 : 350)) { comment = Params.signalMode ? "反応が遅いです。音に集中して！" : "振り下ろしが遅いです。もっと鋭く！"; shortLabel = "速度不足"; }
-            else if (saeScore < 30) { comment = "冴えが足りません。インパクトの瞬間にピタッと止める意識を。"; shortLabel = "冴え不足"; }
+            else if (timeMs > (Params.signalMode ? 800 : 350)) { comment = Params.signalMode ? "反応が遅いです。音に集中して！" : "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
             else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
 
             document.getElementById('aiComment').innerText = comment;
             if(AppState.enableAudio) {
                 const u = new SpeechSynthesisUtterance(shortLabel); u.lang='ja-JP'; u.rate=1.2; window.speechSynthesis.speak(u);
             }
-
-            const displaySyncStr = '対象外';
 
             // 練習中の中央GOOD/CHECK表示は点滅ノイズになりやすいため使わず、数値と履歴に集約する。
             const officialSpeed = chooseOfficialSpeed({
@@ -4108,23 +4128,26 @@
                 tape: metrics.peakTapeSpeedMps || 0,
                 unit: metrics.speedUnit || AppState.currentSpeedUnit
             }, Params.officialSpeedSource);
+            const startTimeMs = Number(metrics.startTimeMs || AppState.swingStartFrameTimeMs || 0);
+            const peakTimeMs = Number(metrics.peakTimeMs || AppState.swingPeakFrameTimeMs || 0);
+            const endTimeMs = Number(metrics.endTimeMs || AppState.swingEndFrameTimeMs || 0);
+            const peakOffsets = {
+                wrist: normalizeMs(metrics.peakOffsetMs ?? (peakTimeMs && startTimeMs ? peakTimeMs - startTimeMs : null)),
+                tip: normalizeMs(metrics.peakTipOffsetMs),
+                tape: normalizeMs(metrics.peakTapeOffsetMs)
+            };
+            const officialPeakOffsetMs = peakOffsets[officialSpeed.key] ?? peakOffsets.wrist;
 
             const record = {
                 id: AppState.records.length + 1,
                 timeMs: timeMs, 
-                syncDiffRaw: -2,
-                displaySync: displaySyncStr,
-                saeScore: saeScore, 
-                strideRatio: isUpperOnly ? 0 : strideRatio, 
                 hasujiAngle: hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
                 rightAng: rightAng.toFixed(1), 
                 leftAng: Number(metrics.leftAng || 0).toFixed(1),
                 torsoAng: parseFloat(torsoAng), 
                 shoulderLineAng: Number(metrics.shoulderLineAng || 0).toFixed(1),
-                kiaiOK: kiaiOK, 
                 shortLabel: shortLabel,
-                peakSpeedMps: metrics.peakSpeedMps || 0,
                 avgVisibility: metrics.avgVisibility || AppState.currentWristVisibility || 0,
                 frameDtMs: metrics.frameDtMs || AppState.frameDtMs || 0,
                 frameSyncMode: AppState.frameSyncMode,
@@ -4133,15 +4156,15 @@
                 angleQuality: metrics.angleQuality || AppState.currentAngleQuality || 0,
                 officialSpeedSource: Params.officialSpeedSource,
                 actualOfficialSpeedSource: officialSpeed.key,
-                officialPeakSpeedMps: officialSpeed.value,
-                startTimeMs: metrics.startTimeMs || AppState.swingStartFrameTimeMs || 0,
-                peakTimeMs: metrics.peakTimeMs || AppState.swingPeakFrameTimeMs || 0,
-                endTimeMs: metrics.endTimeMs || AppState.swingEndFrameTimeMs || 0,
+                officialPeakOffsetMs,
+                wristPeakOffsetMs: peakOffsets.wrist,
+                tipPeakOffsetMs: peakOffsets.tip,
+                tapePeakOffsetMs: peakOffsets.tape,
+                startTimeMs,
+                peakTimeMs,
+                endTimeMs,
                 endReason: metrics.endReason || AppState.swingEndReason || '',
-                measurementMethod: metrics.measurementMethod || `${AppState.frameSyncMode} / ${AppState.currentSpeedUnit}`,
-                peakTipSpeedMps: metrics.peakTipSpeedMps || 0,
-                peakTapeSpeedMps: metrics.peakTapeSpeedMps || 0,
-                speedUnit: metrics.speedUnit || AppState.currentSpeedUnit,
+                measurementMethod: metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, leftAng: Number(metrics.leftAng || 0), torsoAng, hasuji: hasujiAngle, shoulderLineAng: Number(metrics.shoulderLineAng || 0) },
@@ -4155,22 +4178,22 @@
             persistRecords();
             
             document.getElementById('latestTime').innerText = timeMs + ' ms';
-            document.getElementById('latestSync').innerText = displaySyncStr;
-            document.getElementById('latestSae').innerText = saeScore;
-            document.getElementById('latestStride').innerText = isUpperOnly ? '---' : strideRatio + '倍'; 
+            document.getElementById('latestSync').innerText = '---';
+            document.getElementById('latestSae').innerText = '---';
+            document.getElementById('latestStride').innerText = '---';
             document.getElementById('latestHasuji').innerText = hasujiAngle.toFixed(1) + '°';
             document.getElementById('latestRightAng').innerText = rightAng.toFixed(1) + '°';
             safeText('latestTorso', `${Number(torsoAng || 0).toFixed(1)}°`);
-            safeText('latestPeakSpeed', speedLabel(record.officialPeakSpeedMps || record.peakSpeedMps, record.actualOfficialSpeedSource === 'tape' ? 'm/s*' : record.speedUnit));
-            safeText('latestTipSpeed', speedLabel(record.peakTipSpeedMps, record.speedUnit));
-            safeText('latestTapeSpeed', record.peakTapeSpeedMps ? `${record.peakTapeSpeedMps.toFixed(2)} m/s*` : '---');
+            safeText('latestPeakSpeed', recordPeakOffsetText(record, 'official'));
+            safeText('latestTipSpeed', recordPeakOffsetText(record, 'tip'));
+            safeText('latestTapeSpeed', recordPeakOffsetText(record, 'tape'));
             safeText('latestVisibility', record.avgVisibility ? `${Math.round(record.avgVisibility * 100)}%` : '---');
             safeText('latestFrameMode', record.frameSyncMode === 'rVFC' ? 'rVFC' : record.frameSyncMode);
 
             // 【★追加】右上のオーバーレイUIにも打突結果を反映
-            document.getElementById('overlaySae').innerText = saeScore;
+            document.getElementById('overlaySae').innerText = '---';
             document.getElementById('overlaySway').innerText = trajectorySway + '%';
-            document.getElementById('overlayStride').innerText = isUpperOnly ? '---' : strideRatio + '倍';
+            document.getElementById('overlayStride').innerText = '---';
             
             updateHistoryTable();
             updateDetailsTab();
@@ -4209,15 +4232,15 @@
             recent.forEach(record => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="px-1 py-2 text-slate-500">${record.id}</td>
-                    <td class="px-1 py-2 text-blue-600 font-bold">${record.timeMs}ms</td>
-                    <td class="px-1 py-2 text-yellow-600 font-bold">${record.displaySync}</td>
-                    <td class="px-1 py-2 text-green-600 font-bold">${record.strideRatio>0 ? record.strideRatio+'x' : '-'}</td>
-                    <td class="px-1 py-2 text-teal-600 font-bold">${record.hasujiAngle}°</td>
-                    <td class="px-1 py-2 text-purple-600 font-bold">${record.rightAng}°</td>
-                    <td class="px-1 py-2 text-left font-bold text-slate-700">
-                        <div>${record.shortLabel}</div>
+	                tr.innerHTML = `
+	                    <td class="px-1 py-2 text-slate-500">${record.id}</td>
+	                    <td class="px-1 py-2 text-blue-600 font-bold">${record.timeMs}ms</td>
+	                    <td class="px-1 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
+	                    <td class="px-1 py-2 text-teal-600 font-bold">${record.hasujiAngle}°</td>
+	                    <td class="px-1 py-2 text-purple-600 font-bold">${record.rightAng}°</td>
+	                    <td class="px-1 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
+	                    <td class="px-1 py-2 text-left font-bold text-slate-700">
+	                        <div>${record.shortLabel}</div>
                         <div class="text-[10px] text-slate-400 font-normal">${record.memo ? record.memo : ''}</div>
                     </td>
                     <td class="px-1 py-2">
@@ -4232,21 +4255,6 @@
             });
         }
 
-        function getRecordTopSpeed(record) {
-            if (Number(record.officialPeakSpeedMps || 0) > 0) {
-                return {
-                    value: Number(record.officialPeakSpeedMps),
-                    unit: record.officialSpeedSource === 'tape' ? 'm/s*' : (record.speedUnit || 'm/s')
-                };
-            }
-            const wrist = Number(record.peakSpeedMps || 0);
-            const tip = Number(record.peakTipSpeedMps || 0);
-            const tape = Number(record.peakTapeSpeedMps || 0);
-            const best = Math.max(wrist, tip, tape);
-            const unit = best === tape && tape > 0 ? 'm/s*' : (record.speedUnit || 'm/s');
-            return { value: best, unit };
-        }
-
         function updateSessionSummary() {
             const records = AppState.records || [];
             safeText('summaryCount', `${records.length}本`);
@@ -4258,13 +4266,13 @@
             const times = records.map(r => Number(r.timeMs || 0)).filter(Number.isFinite);
             const axis = records.map(r => Math.abs(Number(r.torsoAng || 0))).filter(Number.isFinite);
             const elbows = records.map(r => Number(r.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
-            const speeds = records.map(record => ({ record, ...getRecordTopSpeed(record) })).filter(item => item.value > 0);
-            const maxSpeed = speeds.reduce((best, item) => !best || item.value > best.value ? item : best, null);
+	            const peaks = records.map(record => ({ record, value: recordPeakOffsetMs(record, 'official') })).filter(item => item.value !== null);
+	            const shortestPeak = peaks.reduce((best, item) => !best || item.value < best.value ? item : best, null);
             const ranked = [...records].sort((a, b) => scoreRecord(b) - scoreRecord(a));
             const best = ranked[0];
             const worst = ranked[ranked.length - 1];
             safeText('summaryAvgTime', `${Math.round(avg(times))} ms`);
-            safeText('summaryMaxSpeed', maxSpeed ? `${maxSpeed.value.toFixed(2)} ${maxSpeed.unit === 'm/s' ? 'm/s' : 'm/s*'}` : '---');
+	            safeText('summaryMaxSpeed', shortestPeak ? `#${shortestPeak.record.id} / ${shortestPeak.value} ms` : '---');
             safeText('summaryBest', best ? `#${best.id} ${scoreRecord(best)}` : '---');
             safeText('summaryWorst', worst ? `#${worst.id} ${scoreRecord(worst)}` : '---');
             safeText('summaryAvgAxis', `${avg(axis).toFixed(1)}°`);
@@ -4277,15 +4285,14 @@
             if (!latest) {
                 ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestWristSpeed', 'detailLatestTipSpeed', 'detailLatestTapeSpeed', 'detailRightElbow', 'detailLeftElbow', 'detailTorso', 'detailHasuji', 'detailShoulderLine'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
-                if (body) body.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
-                return;
-            }
-            safeText('detailLatestTime', `${latest.timeMs} ms`);
-            const officialLatest = getRecordTopSpeed(latest);
-            safeText('detailLatestOfficialSpeed', officialLatest.value ? `${officialLatest.value.toFixed(2)} ${officialLatest.unit === 'm/s' ? 'm/s' : 'm/s*'}` : '---');
-            safeText('detailLatestWristSpeed', speedLabel(Number(latest.peakSpeedMps || 0), latest.speedUnit || 'm/s'));
-            safeText('detailLatestTipSpeed', speedLabel(Number(latest.peakTipSpeedMps || 0), latest.speedUnit || 'm/s'));
-            safeText('detailLatestTapeSpeed', latest.peakTapeSpeedMps ? `${Number(latest.peakTapeSpeedMps).toFixed(2)} m/s*` : '---');
+	                if (body) body.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
+	                return;
+	            }
+	            safeText('detailLatestTime', `${latest.timeMs} ms`);
+	            safeText('detailLatestOfficialSpeed', recordPeakOffsetText(latest, 'official'));
+	            safeText('detailLatestWristSpeed', recordPeakOffsetText(latest, 'wrist'));
+	            safeText('detailLatestTipSpeed', recordPeakOffsetText(latest, 'tip'));
+	            safeText('detailLatestTapeSpeed', recordPeakOffsetText(latest, 'tape'));
             safeText('detailRightElbow', `${latest.rightAng || '---'}°`);
             safeText('detailLeftElbow', latest.leftAng && Number(latest.leftAng) ? `${latest.leftAng}°` : '---');
             safeText('detailTorso', `${Number(latest.torsoAng || 0).toFixed(1)}°`);
@@ -4299,13 +4306,11 @@
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition';
                 tr.innerHTML = `
-                    <td class="px-2 py-2 text-slate-500">${record.id}</td>
-                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
-                    <td class="px-2 py-2 text-cyan-700 font-bold">${speedLabel(Number(record.peakSpeedMps || 0), record.speedUnit || 'm/s')}</td>
-                    <td class="px-2 py-2 text-amber-700 font-bold">${speedLabel(Number(record.peakTipSpeedMps || 0), record.speedUnit || 'm/s')}</td>
-                    <td class="px-2 py-2 text-lime-700 font-bold">${record.peakTapeSpeedMps ? Number(record.peakTapeSpeedMps).toFixed(2) + ' m/s*' : '---'}</td>
-                    <td class="px-2 py-2 text-purple-700 font-bold">${record.rightAng || '---'}°</td>
-                    <td class="px-2 py-2 text-blue-700 font-bold">${record.leftAng && Number(record.leftAng) ? record.leftAng + '°' : '---'}</td>
+	                    <td class="px-2 py-2 text-slate-500">${record.id}</td>
+	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
+	                    <td class="px-2 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
+	                    <td class="px-2 py-2 text-purple-700 font-bold">${record.rightAng || '---'}°</td>
+	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.leftAng && Number(record.leftAng) ? record.leftAng + '°' : '---'}</td>
                     <td class="px-2 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
                     <td class="px-2 py-2 text-yellow-700 font-bold">${record.hasujiAngle || '---'}°</td>
                     <td class="px-2 py-2 text-rose-700 font-bold">${record.shoulderLineAng && Number(record.shoulderLineAng) ? record.shoulderLineAng + '°' : '---'}</td>
@@ -4352,7 +4357,7 @@
                 return;
             }
             const images = frames.map((frame, index) => `<img src="${frame.image}" alt="frame ${index + 1}">`).join('\n');
-            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms / 評価: ${record.shortLabel}</p><p>手首参考ピーク: ${record.peakSpeedMps || 0} ${record.speedUnit || ''}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
+            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms / 評価: ${record.shortLabel}</p><p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -4662,29 +4667,22 @@
                         const refinedTipMetrics = analyzeSwingSamples(AppState.tipSwingSamples);
                         const refinedTapeMetrics = analyzeSwingSamples(AppState.tapeSwingSamples);
                         AppState.lastSwingMetrics = refinedMetrics;
-                        const legacySaeScore = Math.min(100, Math.round(maxDecel * 1000));
-                        const refinedSaeScore = refinedMetrics ? Math.min(100, Math.round(refinedMetrics.maxDecelMps2 * 1.6)) : 0;
-                        const saeScore = Math.max(legacySaeScore, refinedSaeScore);
+                        const legacyImpactSignal = Math.min(100, Math.round(maxDecel * 1000));
+	                        const refinedImpactSignal = refinedMetrics ? Math.min(100, Math.round(refinedMetrics.maxDecelMps2 * 1.6)) : 0;
+	                        const impactSignal = Math.max(legacyImpactSignal, refinedImpactSignal);
                         
                         let maxX = Math.max(...AppState.swingWristXHistory);
                         let minX = Math.min(...AppState.swingWristXHistory);
                         let trajectorySway = ((maxX - minX) * 100).toFixed(1);
                         
-                        let strideRatio = 0;
-                        if (AppState.isFootVisible && lShoulder && rShoulder && lHeel && rHeel) {
-                            let shoulderWidth = Math.abs(lShoulder.x - rShoulder.x);
-                            let strideWidth = Math.abs(lHeel.x - rHeel.x);
-                            if(shoulderWidth > 0) {
-                                strideRatio = (strideWidth / shoulderWidth).toFixed(2);
-                            }
-                        }
-	                        
 	                        if(duration > Params.timingMinDurationMs && duration < (Params.signalMode ? 3000 : Params.timingMaxDurationMs)) {
-	                            saveRecord(duration, rawSyncDiff, saeScore, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, strideRatio, {
-	                                ...(refinedMetrics || {}),
-	                                peakTipSpeedMps: refinedTipMetrics ? refinedTipMetrics.peakSpeedMps : AppState.currentEstimatedTipSpeed,
-	                                peakTapeSpeedMps: refinedTapeMetrics ? refinedTapeMetrics.peakSpeedMps : AppState.currentTapeTipSpeed,
-	                                leftAng,
+	                            saveRecord(duration, rawSyncDiff, impactSignal, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, 0, {
+		                                ...(refinedMetrics || {}),
+		                                peakTipSpeedMps: refinedTipMetrics ? refinedTipMetrics.peakSpeedMps : AppState.currentEstimatedTipSpeed,
+		                                peakTapeSpeedMps: refinedTapeMetrics ? refinedTapeMetrics.peakSpeedMps : AppState.currentTapeTipSpeed,
+		                                peakTipOffsetMs: refinedTipMetrics ? refinedTipMetrics.peakOffsetMs : null,
+		                                peakTapeOffsetMs: refinedTapeMetrics ? refinedTapeMetrics.peakOffsetMs : null,
+		                                leftAng,
 	                                shoulderLineAng,
 	                                speedUnit: AppState.currentSpeedUnit,
 	                                frameDtMs: AppState.frameDtMs,
@@ -5211,14 +5209,14 @@
                 type: 'line',
                 data: { labels: [], datasets: [
                     { label: '打突時間 (ms)', data: [], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.3, yAxisID: 'y' },
-                    { label: '参考ピーク値', data: [], borderColor: '#0891b2', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' }
+	                    { label: 'ピーク時刻 (ms)', data: [], borderColor: '#0891b2', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' }
                 ]},
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         y: { beginAtZero: true, title: { display: true, text: 'ms' } },
-                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '参考値' } }
+	                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'ms' } }
                     }
                 }
             });
@@ -5238,7 +5236,7 @@
             radarChart = new Chart(ctxRadar, {
                 type: 'radar',
                 data: {
-	                    labels: ['打突時間', '速度', '右肘', '体幹軸', '刃筋'],
+		                    labels: ['打突時間', 'ピーク時刻', '右肘', '体幹軸', '刃筋'],
                     datasets: [
                         {
                             label: '自分の平均',
@@ -5270,15 +5268,15 @@
                 updateHistoryTable();
                 const latest = AppState.records[AppState.records.length - 1];
                 document.getElementById('latestTime').innerText = latest.timeMs + ' ms';
-                document.getElementById('latestSync').innerText = latest.displaySync;
-                document.getElementById('latestSae').innerText = latest.saeScore;
-	                document.getElementById('latestStride').innerText = latest.strideRatio > 0 ? latest.strideRatio + '倍' : '---';
+	                document.getElementById('latestSync').innerText = '---';
+	                document.getElementById('latestSae').innerText = '---';
+		                document.getElementById('latestStride').innerText = '---';
 	                document.getElementById('latestHasuji').innerText = latest.hasujiAngle + '°';
 	                document.getElementById('latestRightAng').innerText = latest.rightAng + '°';
 	                safeText('latestTorso', `${Number(latest.torsoAng || 0).toFixed(1)}°`);
-	                safeText('latestPeakSpeed', speedLabel(Number(latest.officialPeakSpeedMps || latest.peakSpeedMps || 0), latest.actualOfficialSpeedSource === 'tape' ? 'm/s*' : (latest.speedUnit || 'm/s')));
-	                safeText('latestTipSpeed', speedLabel(Number(latest.peakTipSpeedMps || 0), latest.speedUnit || 'm/s'));
-	                safeText('latestTapeSpeed', latest.peakTapeSpeedMps ? `${Number(latest.peakTapeSpeedMps).toFixed(2)} m/s*` : '---');
+		                safeText('latestPeakSpeed', recordPeakOffsetText(latest, 'official'));
+		                safeText('latestTipSpeed', recordPeakOffsetText(latest, 'tip'));
+		                safeText('latestTapeSpeed', recordPeakOffsetText(latest, 'tape'));
 	                safeText('latestVisibility', latest.avgVisibility ? `${Math.round(latest.avgVisibility * 100)}%` : '---');
 	                safeText('latestFrameMode', latest.frameSyncMode || '---');
 	                updateDetailsTab();
@@ -5292,7 +5290,7 @@
             
             timeChart.data.labels = labels;
             timeChart.data.datasets[0].data = AppState.records.map(r => r.timeMs);
-            timeChart.data.datasets[1].data = AppState.records.map(r => getRecordTopSpeed(r).value || 0);
+	            timeChart.data.datasets[1].data = AppState.records.map(r => recordPeakOffsetMs(r, 'official') || 0);
             timeChart.update();
 
             strideChart.data.labels = labels;
@@ -5302,24 +5300,24 @@
             strideChart.update();
 
             if (AppState.records.length > 0) {
-                let avgTime = 0, avgSpeed = 0, avgRightElbow = 0, avgTorso = 0, avgHasuji = 0;
+	                let avgTime = 0, avgPeak = 0, avgRightElbow = 0, avgTorso = 0, avgHasuji = 0;
 
-                AppState.records.forEach(r => {
-                    const topSpeed = getRecordTopSpeed(r).value || 0;
-                    const right = Number(r.rightAng || 0);
-                    const torso = Math.abs(Number(r.torsoAng || 0));
-                    const hasuji = Math.abs(Number(r.hasujiAngle || 0));
-                    avgTime += clamp(100 - Math.abs(Number(r.timeMs || 0) - 260) / 3.4, 0, 100);
-                    avgSpeed += clamp(topSpeed / 8 * 100, 0, 100);
-                    avgRightElbow += right ? clamp(100 - Math.abs(158 - right) * 2.1, 0, 100) : 0;
+	                AppState.records.forEach(r => {
+	                    const peakOffset = recordPeakOffsetMs(r, 'official');
+	                    const right = Number(r.rightAng || 0);
+	                    const torso = Math.abs(Number(r.torsoAng || 0));
+	                    const hasuji = Math.abs(Number(r.hasujiAngle || 0));
+	                    avgTime += clamp(100 - Math.abs(Number(r.timeMs || 0) - 260) / 3.4, 0, 100);
+	                    avgPeak += peakOffset !== null ? clamp(100 - Math.abs(peakOffset - 80) / 2.5, 0, 100) : 0;
+	                    avgRightElbow += right ? clamp(100 - Math.abs(158 - right) * 2.1, 0, 100) : 0;
                     avgTorso += clamp(100 - torso * 6, 0, 100);
                     avgHasuji += clamp(100 - hasuji * 3, 0, 100);
                 });
 
                 const len = AppState.records.length;
                 radarChart.data.datasets[0].data = [
-                    Math.round(avgTime / len),
-                    Math.round(avgSpeed / len),
+	                    Math.round(avgTime / len),
+	                    Math.round(avgPeak / len),
                     Math.round(avgRightElbow / len),
                     Math.round(avgTorso / len),
                     Math.round(avgHasuji / len)
@@ -6486,15 +6484,16 @@
             return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
         }
 
-        function scoreVideoStrike(durationMs, metrics, endFrame, avgVisibility) {
-            const speedScore = Math.min(35, Number(metrics?.peakSpeedMps || 0) * 4.5);
-            const durationScore = Math.max(0, 20 - Math.abs(durationMs - 260) / 18);
-            const elbowScore = Math.max(0, 18 - Math.abs(Number(endFrame?.rightAng || 0) - 158) / 2.2);
-            const torsoScore = Math.max(0, 14 - Math.abs(Number(endFrame?.torsoAng || 0)) * 1.3);
-            const hasujiScore = Math.max(0, 8 - Math.abs(Number(endFrame?.hasuji || 0)) * 0.35);
-            const confidenceScore = Math.min(5, Number(avgVisibility || 0) * 5);
-            return Math.round(clamp(speedScore + durationScore + elbowScore + torsoScore + hasujiScore + confidenceScore, 0, 100));
-        }
+	        function scoreVideoStrike(durationMs, metrics, endFrame, avgVisibility) {
+	            const peakOffset = normalizeMs(metrics?.peakOffsetMs);
+	            const durationScore = Math.max(0, 36 - Math.abs(durationMs - 180) / 8);
+	            const peakScore = peakOffset !== null ? Math.max(0, 22 - Math.abs(peakOffset - 80) / 5) : 0;
+	            const elbowScore = Math.max(0, 20 - Math.abs(Number(endFrame?.rightAng || 0) - 152) / 2.4);
+	            const torsoScore = Math.max(0, 14 - Math.abs(Number(endFrame?.torsoAng || 0)) * 1.3);
+	            const hasujiScore = Math.max(0, 8 - Math.abs(Number(endFrame?.hasuji || 0)) * 0.35);
+	            const confidenceScore = Math.min(5, Number(avgVisibility || 0) * 5);
+	            return Math.round(clamp(durationScore + peakScore + elbowScore + torsoScore + hasujiScore + confidenceScore, 0, 100));
+	        }
 
         function summarizeVideoStrike(data, startFrame, peakFrame, endFrame, number) {
             if (!data?.frames?.length || endFrame <= startFrame) return null;
@@ -6563,8 +6562,8 @@
             }
             if (summary.durationMs < 55) return { ok: false, reason: '短すぎる' };
             if (summary.durationMs > Math.min(1000, Params.timingMaxDurationMs)) return { ok: false, reason: '長すぎる' };
-            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: '速度不足' };
-            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: '速度異常' };
+	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: 'ピーク不足' };
+	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
             if (summary.avgVisibility && summary.avgVisibility < 0.32) return { ok: false, reason: '検出信頼度不足' };
             if (!summary.rightAng || summary.rightAng < 55 || summary.rightAng > 185) return { ok: false, reason: '右肘角異常' };
             if (Math.abs(summary.torsoAng || 0) > 55) return { ok: false, reason: '体幹検出異常' };
@@ -6687,7 +6686,11 @@
                 return;
             }
             const avgDuration = strikes.length ? strikes.reduce((sum, s) => sum + s.durationMs, 0) / strikes.length : null;
-            const top = strikes.length ? strikes.reduce((best, s) => s.peakSpeedMps > best.peakSpeedMps ? s : best, strikes[0]) : null;
+	            const top = strikes.length ? strikes.reduce((best, s) => {
+	                const value = Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0));
+	                const bestValue = Math.round(Number(best.peakTimeMs || 0) - Number(best.startTimeMs || 0));
+	                return value < bestValue ? s : best;
+	            }, strikes[0]) : null;
             const best = strikes.length ? strikes.reduce((current, s) => s.score > current.score ? s : current, strikes[0]) : null;
             const worst = strikes.length ? strikes.reduce((current, s) => s.score < current.score ? s : current, strikes[0]) : null;
             const avgTorso = strikes.length ? strikes.reduce((sum, s) => sum + Math.abs(s.torsoAng || 0), 0) / strikes.length : null;
@@ -7145,10 +7148,6 @@
             return Number.isFinite(num) && num !== 0 ? `${num.toFixed(1)}°` : '---';
         }
 
-        function videoSpeedText(metrics, unit = 'm/s') {
-            return metrics && Number.isFinite(Number(metrics.peakSpeedMps)) ? `${Number(metrics.peakSpeedMps).toFixed(2)} ${unit}` : '---';
-        }
-
         function videoFrameSummaryText(data, key) {
             if (!data?.frames?.length) return '---';
             const start = data.startFrame !== null ? data.frames[data.startFrame] : null;
@@ -7226,7 +7225,7 @@
             if (!list) return;
             if (!data?.frames?.length) {
                 safeText('videoValiditySummary', '未解析');
-                list.innerHTML = '<div class="rounded border border-slate-100 bg-slate-50 p-2 text-slate-500">動画解析後に、時間・速度・骨格・体幹変化を確認します。</div>';
+                list.innerHTML = '<div class="rounded border border-slate-100 bg-slate-50 p-2 text-slate-500">動画解析後に、時間・ピーク検出・骨格・体幹変化を確認します。</div>';
                 return;
             }
             const checks = [];
@@ -7244,11 +7243,11 @@
             const maxSpeedJump = maxFrameDelta(slice, frame => videoFrameSpeed(frame, data.officialSpeedSource || Params.officialSpeedSource).value);
             const missingRate = slice.length ? slice.filter(frame => !frame.landmarks?.[16] || !frame.landmarks?.[14] || !frame.landmarks?.[12]).length / slice.length : 1;
             add(Number.isFinite(durationMs) && durationMs >= 55 && durationMs <= Math.min(1000, Params.timingMaxDurationMs), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', '55ms未満や長すぎる値は除外候補');
-            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), 'ピーク検出', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '速度値は参考扱い。正式画面では最高速時刻として確認');
+	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), 'ピーク検出', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '検出信号は内部扱い。正式画面ではピーク時刻として確認');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
             add(maxTorsoJump <= 28, '体幹角の急変', `${maxTorsoJump.toFixed(1)}°`, '大きい場合は検出飛びの可能性');
-            add(maxSpeedJump <= Math.max(6, speedLimit * 0.65), 'ピーク安定性', maxSpeedJump <= Math.max(6, speedLimit * 0.65) ? '安定' : '要確認', '速度の数値ではなく、ピーク検出が飛んでいないかを確認');
+	            add(maxSpeedJump <= Math.max(6, speedLimit * 0.65), 'ピーク安定性', maxSpeedJump <= Math.max(6, speedLimit * 0.65) ? '安定' : '要確認', 'ピーク検出信号が飛んでいないかを確認');
             add(missingRate <= 0.25, '主要点の欠落', `${Math.round(missingRate * 100)}%`, '右肩・右肘・右手首の欠落率');
             const badCount = checks.filter(check => !check.ok).length;
             safeText('videoValiditySummary', badCount ? `要確認 ${badCount}件` : '測定に使いやすい');
@@ -7377,7 +7376,7 @@
             ctx.fillStyle = '#ffffff';
             ctx.font = '14px sans-serif';
             ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms`, 22, 34);
-            ctx.fillText(`ピーク検出基準: ${officialSpeedLabel(Params.officialSpeedSource)}（速度値は参考）`, 22, 56);
+            ctx.fillText(`ピーク検出基準: ${officialSpeedLabel(Params.officialSpeedSource)}（内部信号）`, 22, 56);
             if (frame.rightAng || frame.hasuji || frame.torsoAng) {
                 ctx.fillStyle = 'rgba(255,255,255,0.92)';
                 ctx.fillText(`肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}°`, 22, 76);
@@ -7971,27 +7970,22 @@
             csv += `手首ピーク時刻(ms),${data.metricsBySource?.wrist ? Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0)) : ''}\n`;
             csv += `推定剣先ピーク時刻(ms),${data.metricsBySource?.tip ? Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0)) : ''}\n`;
             csv += `テープ剣先ピーク時刻(ms),${data.metricsBySource?.tape ? Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0)) : ''}\n`;
-            csv += `参考ピーク値,${data.metrics ? data.metrics.peakSpeedMps.toFixed(3) : ''} ${data.officialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}\n`;
-            csv += `参考手首ピーク値,${data.metricsBySource?.wrist ? data.metricsBySource.wrist.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `参考推定剣先ピーク値,${data.metricsBySource?.tip ? data.metricsBySource.tip.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `参考テープ剣先ピーク値,${data.metricsBySource?.tape ? data.metricsBySource.tape.peakSpeedMps.toFixed(3) : ''} m/s*\n`;
-            csv += `最大減速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.maxDecelOffsetMs || 0)) : ''}\n\n`;
+	            csv += `最大減速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.maxDecelOffsetMs || 0)) : ''}\n\n`;
             csv += `測定除外数,${data.rejectedStrikes?.length || 0}\n`;
             csv += `除外理由,${(data.rejectedStrikes || []).map(item => `${item.peakFrame}:${item.reason}`).join(' / ')}\n\n`;
             if (data.strikes?.length) {
                 csv += '複数打突一覧\n';
-                csv += 'no,startFrame,peakFrame,endFrame,durationMs,peakTimeMs,peakSpeed,unit,rightElbow,torso,hasuji,score\n';
-                data.strikes.forEach(s => {
-                    csv += `${s.number},${s.startFrame},${s.peakFrame},${s.endFrame},${s.durationMs},${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))},${s.peakSpeedMps.toFixed(4)},${s.speedUnit},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${s.score}\n`;
-                });
-                csv += '\n';
-            }
-            csv += 'frame,timeMs,wristSpeed,tipSpeed,tapeSpeed,officialSpeed,rightElbow,hasuji,torso,visibility,mark\n';
-            data.frames.forEach(frame => {
-                const mark = frame.index === data.startFrame ? 'START' : (frame.index === data.peakFrame ? 'PEAK' : (frame.index === data.endFrame ? 'END' : ''));
-                const official = videoFrameSpeed(frame, data.officialSpeedSource || Params.officialSpeedSource).value;
-                csv += `${frame.index},${frame.timeMs.toFixed(3)},${Number(frame.speed||0).toFixed(4)},${Number(frame.tipSpeed||0).toFixed(4)},${Number(frame.tapeSpeed||0).toFixed(4)},${official.toFixed(4)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${frame.visibility.toFixed(3)},${mark}\n`;
-            });
+	                csv += 'no,startFrame,peakFrame,endFrame,durationMs,peakTimeMs,rightElbow,torso,hasuji,score\n';
+	                data.strikes.forEach(s => {
+	                    csv += `${s.number},${s.startFrame},${s.peakFrame},${s.endFrame},${s.durationMs},${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${s.score}\n`;
+	                });
+	                csv += '\n';
+	            }
+	            csv += 'frame,timeMs,rightElbow,hasuji,torso,visibility,mark\n';
+	            data.frames.forEach(frame => {
+	                const mark = frame.index === data.startFrame ? 'START' : (frame.index === data.peakFrame ? 'PEAK' : (frame.index === data.endFrame ? 'END' : ''));
+	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${frame.visibility.toFixed(3)},${mark}\n`;
+	            });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -8070,7 +8064,7 @@
                 </div>
                 <table><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join('')}</tbody></table>
                 ${strikeRows}
-                <p class="text-xs text-slate-500 mt-4">* このレポートの上段はms中心です。速度の数値そのものはCSVや記録データに保持され、必要時に比較できます。</p>
+	                <p class="text-xs text-slate-500 mt-4">* ピーク検出信号は内部計算用です。レポート・CSV・正式記録は打突時間、ピーク時刻、角度を中心に整理しています。</p>
             `;
             panel.classList.remove('hidden');
             showToast('レポートを作成しました', 'green');
@@ -8100,33 +8094,27 @@
             const xValues = slice.map(frame => frame.landmarks?.[16]?.x).filter(value => Number.isFinite(value));
             const trajectorySway = xValues.length ? ((Math.max(...xValues) - Math.min(...xValues)) * 100).toFixed(1) : '0.0';
             const avgVisibility = slice.length ? slice.reduce((sum, frame) => sum + Number(frame.visibility || 0), 0) / slice.length : 0;
-            const saeScore = official.metrics ? Math.min(100, Math.round(official.metrics.maxDecelMps2 * 1.6)) : 0;
-            const rightAng = Number(endFrame.rightAng || 0);
+	            const rightAng = Number(endFrame.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || 0);
             const shortLabel = official.metrics && durationMs <= 350 && rightAng >= 150 && torsoAng <= 15 ? '動画良好' : '動画確認';
             const record = {
-                id: AppState.records.length + 1,
-                timeMs: durationMs,
-                syncDiffRaw: -2,
-                displaySync: '動画',
-                saeScore,
-                strideRatio: 0,
-                hasujiAngle: hasuji.toFixed(1),
-                trajectorySway,
-                rightAng: rightAng.toFixed(1),
+	                id: AppState.records.length + 1,
+	                timeMs: durationMs,
+	                hasujiAngle: hasuji.toFixed(1),
+	                trajectorySway,
+	                rightAng: rightAng.toFixed(1),
                 leftAng: Number(endFrame.leftAng || 0).toFixed(1),
-                torsoAng,
-                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
-                kiaiOK: true,
-                shortLabel,
-                peakSpeedMps: wristMetrics ? wristMetrics.peakSpeedMps : 0,
-                peakTipSpeedMps: tipMetrics ? tipMetrics.peakSpeedMps : 0,
-                peakTapeSpeedMps: tapeMetrics ? tapeMetrics.peakSpeedMps : 0,
-                officialSpeedSource: Params.officialSpeedSource,
-                actualOfficialSpeedSource: official.key,
-                officialPeakSpeedMps: official.metrics ? official.metrics.peakSpeedMps : 0,
-                avgVisibility,
+	                torsoAng,
+	                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
+	                shortLabel,
+	                officialSpeedSource: Params.officialSpeedSource,
+	                actualOfficialSpeedSource: official.key,
+	                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : null,
+	                wristPeakOffsetMs: wristMetrics ? normalizeMs(wristMetrics.peakOffsetMs) : null,
+	                tipPeakOffsetMs: tipMetrics ? normalizeMs(tipMetrics.peakOffsetMs) : null,
+	                tapePeakOffsetMs: tapeMetrics ? normalizeMs(tapeMetrics.peakOffsetMs) : null,
+	                avgVisibility,
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
@@ -8139,8 +8127,7 @@
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : (official.metrics?.peakIndex != null ? slice[Math.min(slice.length - 1, official.metrics.peakIndex + 1)]?.timeMs || 0 : 0),
                 endTimeMs: endFrame.timeMs,
                 endReason: '動画解析・手動補正後',
-                measurementMethod: `動画解析 / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
-                speedUnit: official.key === 'tape' ? 'm/s*' : data.speedUnit,
+	                measurementMethod: `動画解析 / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: '動画解析から正式記録へ保存',
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -8161,15 +8148,15 @@
             updateDetailsTab();
             updateCharts();
             safeText('latestTime', `${record.timeMs} ms`);
-            safeText('latestSync', record.displaySync);
-            safeText('latestSae', record.saeScore);
+	            safeText('latestSync', '---');
+	            safeText('latestSae', '---');
             safeText('latestStride', '---');
             safeText('latestHasuji', `${record.hasujiAngle}°`);
             safeText('latestRightAng', `${record.rightAng}°`);
             safeText('latestTorso', `${Number(record.torsoAng || 0).toFixed(1)}°`);
-            safeText('latestPeakSpeed', speedLabel(record.officialPeakSpeedMps, record.speedUnit));
-            safeText('latestTipSpeed', speedLabel(record.peakTipSpeedMps, data.speedUnit));
-            safeText('latestTapeSpeed', record.peakTapeSpeedMps ? `${record.peakTapeSpeedMps.toFixed(2)} m/s*` : '---');
+	            safeText('latestPeakSpeed', recordPeakOffsetText(record, 'official'));
+	            safeText('latestTipSpeed', recordPeakOffsetText(record, 'tip'));
+	            safeText('latestTapeSpeed', recordPeakOffsetText(record, 'tape'));
             safeText('latestVisibility', record.avgVisibility ? `${Math.round(record.avgVisibility * 100)}%` : '---');
             safeText('latestFrameMode', '動画解析');
             updateVideoVerificationChecklist(data);
@@ -8200,32 +8187,25 @@
             const rightAng = Number(endFrame.rightAng || strike.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || strike.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || strike.hasuji || 0);
-            const officialPeak = official.metrics?.peakSpeedMps || strike.peakSpeedMps || 0;
-            const saeScore = official.metrics ? Math.min(100, Math.round(official.metrics.maxDecelMps2 * 1.6)) : Math.round(strike.score || 0);
-            const validation = validateVideoStrikeSummary(strike, data);
+	            const validation = validateVideoStrikeSummary(strike, data);
             const shortLabel = validation.ok && durationMs <= 350 && rightAng >= 130 && Math.abs(torsoAng) <= 18 ? '動画良好' : '動画確認';
             const numberLabel = strike.number ? ` #${strike.number}` : '';
             return {
-                id: AppState.records.length + 1,
-                timeMs: durationMs,
-                syncDiffRaw: -2,
-                displaySync: `${sourceLabel}${numberLabel}`,
-                saeScore,
-                strideRatio: 0,
-                hasujiAngle: hasuji.toFixed(1),
-                trajectorySway,
+	                id: AppState.records.length + 1,
+	                timeMs: durationMs,
+	                hasujiAngle: hasuji.toFixed(1),
+	                trajectorySway,
                 rightAng: rightAng.toFixed(1),
                 leftAng: Number(endFrame.leftAng || 0).toFixed(1),
-                torsoAng,
-                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
-                kiaiOK: true,
-                shortLabel,
-                peakSpeedMps: wristMetrics ? wristMetrics.peakSpeedMps : 0,
-                peakTipSpeedMps: tipMetrics ? tipMetrics.peakSpeedMps : 0,
-                peakTapeSpeedMps: tapeMetrics ? tapeMetrics.peakSpeedMps : 0,
-                officialSpeedSource: Params.officialSpeedSource,
-                actualOfficialSpeedSource: official.key || strike.actualOfficialSpeedSource || Params.officialSpeedSource,
-                officialPeakSpeedMps: officialPeak,
+	                torsoAng,
+	                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
+	                shortLabel,
+	                officialSpeedSource: Params.officialSpeedSource,
+	                actualOfficialSpeedSource: official.key || strike.actualOfficialSpeedSource || Params.officialSpeedSource,
+	                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : normalizeMs(Number(strike.peakTimeMs || 0) - Number(strike.startTimeMs || 0)),
+	                wristPeakOffsetMs: wristMetrics ? normalizeMs(wristMetrics.peakOffsetMs) : null,
+	                tipPeakOffsetMs: tipMetrics ? normalizeMs(tipMetrics.peakOffsetMs) : null,
+	                tapePeakOffsetMs: tapeMetrics ? normalizeMs(tapeMetrics.peakOffsetMs) : null,
                 avgVisibility,
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
@@ -8239,8 +8219,7 @@
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : strike.peakTimeMs,
                 endTimeMs: endFrame.timeMs,
                 endReason: strike.manualAdjusted ? '複数打突・手動補正後' : '複数打突・自動分割',
-                measurementMethod: `動画解析${numberLabel} / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
-                speedUnit: official.key === 'tape' ? 'm/s*' : data.speedUnit,
+	                measurementMethod: `動画解析${numberLabel} / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
                 memo: `複数打突${numberLabel}を正式記録へ保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -8263,15 +8242,15 @@
             updateDetailsTab();
             updateCharts();
             safeText('latestTime', `${record.timeMs} ms`);
-            safeText('latestSync', record.displaySync);
-            safeText('latestSae', record.saeScore);
+	            safeText('latestSync', '---');
+	            safeText('latestSae', '---');
             safeText('latestStride', '---');
             safeText('latestHasuji', `${record.hasujiAngle}°`);
             safeText('latestRightAng', `${record.rightAng}°`);
             safeText('latestTorso', `${Number(record.torsoAng || 0).toFixed(1)}°`);
-            safeText('latestPeakSpeed', speedLabel(record.officialPeakSpeedMps, record.speedUnit));
-            safeText('latestTipSpeed', speedLabel(record.peakTipSpeedMps, record.speedUnit));
-            safeText('latestTapeSpeed', record.peakTapeSpeedMps ? `${Number(record.peakTapeSpeedMps).toFixed(2)} m/s*` : '---');
+	            safeText('latestPeakSpeed', recordPeakOffsetText(record, 'official'));
+	            safeText('latestTipSpeed', recordPeakOffsetText(record, 'tip'));
+	            safeText('latestTapeSpeed', recordPeakOffsetText(record, 'tape'));
             safeText('latestVisibility', record.avgVisibility ? `${Math.round(record.avgVisibility * 100)}%` : '---');
             safeText('latestFrameMode', '動画解析');
             updateVideoVerificationChecklist(AppState.videoAnalysis);
@@ -8332,14 +8311,13 @@
             showToast(`${savedCount}本の打突を正式記録に保存しました`, 'green');
         }
 
-        function exportCSV() {
-            if(AppState.records.length === 0) return showToast('データがありません', 'red');
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-	            csvContent += "No.,時間(ms),手足ズレ(ms),冴え,歩幅比,軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),参考ピーク値,ピーク検出基準,手首参考ピーク値,参考単位,推定剣先参考ピーク値,テープ参考ピーク値(m/s*),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,気合,AI評価,メモ,打突時間定義\n";
-	            AppState.records.forEach(r => {
-	                const official = getRecordTopSpeed(r);
-	                csvContent += `${r.id},${r.timeMs},${r.displaySync},${r.saeScore},${r.strideRatio||0},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${official.value||0},${r.actualOfficialSpeedSource||r.officialSpeedSource||''},${r.peakSpeedMps||0},${r.speedUnit||''},${r.peakTipSpeedMps||0},${r.peakTapeSpeedMps||0},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.kiaiOK?'OK':'NG'},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
-	            });
+	        function exportCSV() {
+	            if(AppState.records.length === 0) return showToast('データがありません', 'red');
+	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+		            csvContent += "No.,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
+		            AppState.records.forEach(r => {
+		                csvContent += `${r.id},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
             link.setAttribute("download", `kendo_data_${new Date().getTime()}.csv`);
