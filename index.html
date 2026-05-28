@@ -927,7 +927,7 @@
                 </aside>
                 <div id="videoFormalCandidatePanel" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <h3 class="text-sm font-black text-emerald-900"><i class="fa-solid fa-certificate mr-1"></i>正式測定候補</h3>
+                        <h3 class="text-sm font-black text-emerald-900"><i class="fa-solid fa-certificate mr-1"></i>正式測定</h3>
                         <div class="flex flex-wrap items-center gap-2">
                             <span id="videoFormalStatus" class="text-xs font-bold text-emerald-800">動画解析後に開始/終了を補正</span>
                             <button id="videoFormalEditBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-black"><i class="fa-solid fa-pen-to-square mr-1"></i>修正</button>
@@ -939,6 +939,7 @@
                         <div class="bg-white/80 border border-red-100 rounded p-2"><span class="text-red-700">終了</span><div id="videoFormalEnd" class="font-black font-mono-num text-red-800">---</div></div>
                         <div class="bg-white/80 border border-blue-100 rounded p-2"><span class="text-blue-700">補正後時間</span><div id="videoFormalDuration" class="font-black font-mono-num text-blue-800">---</div></div>
                     </div>
+                    <p id="videoFormalGuide" class="mt-2 text-[11px] font-bold text-emerald-900">自動分割は候補です。正式な打突時間は開始/終了フレームを確認してから確定します。</p>
                 </div>
                 <div id="videoResultAuxPanel" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div class="rounded-xl border border-indigo-100 bg-white p-3">
@@ -2048,7 +2049,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v63';
+            const refreshKey = 'kendo-sw-refreshed-v64';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3483,6 +3484,43 @@
             return `${sign}${frameDiff}f / ${timeSign}${Math.round(timeDiff)}ms`;
         }
 
+        function isVideoTimingConfirmed(data = AppState.videoAnalysis) {
+            return !!data?.manualTimingConfirmed;
+        }
+
+        function markVideoTimingAuto(data = AppState.videoAnalysis) {
+            if (!data) return;
+            data.manualTimingConfirmed = false;
+            data.timingSource = 'auto-candidate';
+            data.savedRecordId = null;
+        }
+
+        function markVideoTimingManual(data = AppState.videoAnalysis, source = 'manual-correction') {
+            if (!data) return;
+            data.manualTimingConfirmed = true;
+            data.timingSource = source;
+            data.savedRecordId = null;
+        }
+
+        function videoFormalTimingLabel(data = AppState.videoAnalysis, durationMs = null, validation = null) {
+            if (!data?.frames?.length) return '動画解析後に開始/終了を補正';
+            const duration = Number(durationMs);
+            if (!isVideoTimingConfirmed(data)) {
+                return Number.isFinite(duration)
+                    ? `未確定: 自動候補 ${Math.round(duration)}ms / 開始・終了を確認してください`
+                    : '未確定: 開始・終了を確認してください';
+            }
+            if (validation && !validation.ok) return `要補正: ${validation.reason}`;
+            return '確定済み: 補正後の値を正式保存・レポートに反映';
+        }
+
+        function videoFormalDurationDisplay(data = AppState.videoAnalysis, durationMs = null, validation = null) {
+            const duration = Number(durationMs);
+            if (!Number.isFinite(duration)) return '---';
+            if (!isVideoTimingConfirmed(data)) return '未確定';
+            return videoDurationResultLabel(duration, validation);
+        }
+
         function updateVideoCorrectionDiffPanel(data = AppState.videoAnalysis) {
             if (!data?.frames?.length) {
                 safeText('videoCorrectionDiffSummary', '未解析');
@@ -3506,7 +3544,7 @@
                 : NaN;
             const durationDiff = Number.isFinite(autoDuration) && Number.isFinite(manualDuration) ? Math.round(manualDuration - autoDuration) : null;
             const changed = startDiff !== '0f / 0ms' || endDiff !== '0f / 0ms';
-            safeText('videoCorrectionDiffSummary', changed ? '手動補正あり' : '自動判定のまま');
+            safeText('videoCorrectionDiffSummary', isVideoTimingConfirmed(data) ? (changed ? '手動確定済み' : '手動確定済み') : '自動候補・未確定');
             safeText('videoCorrectionDiffDetail',
                 `開始差分 ${startDiff} / 終了差分 ${endDiff} / 打突時間差 ${durationDiff !== null ? `${durationDiff > 0 ? '+' : ''}${durationDiff}ms` : '---'}`
             );
@@ -3521,6 +3559,7 @@
                 return;
             }
             const validRange = data.startFrame !== null && data.endFrame !== null && data.endFrame > data.startFrame;
+            const timingConfirmed = isVideoTimingConfirmed(data);
             const detectionRate = Number(data.diagnostics?.detectionRate || 0);
             const confidence = Number(data.diagnostics?.confidence || 0);
             const hasPreview = !!document.getElementById('videoAnalysisCanvas')?.width;
@@ -3529,10 +3568,10 @@
             const checks = [
                 { ok: true, label: '動画読み込み', value: data.diagnostics?.fileName || '読み込み済み', detail: `${data.diagnostics?.width || 0}x${data.diagnostics?.height || 0} / ${data.fps || '---'}fps` },
                 { ok: detectionRate >= 0.65 && confidence >= 0.45, warn: detectionRate >= 0.45, label: '姿勢検出', value: detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', detail: `信頼度 ${confidence ? Math.round(confidence * 100) + '%' : '---'}` },
-                { ok: validRange, label: '開始/終了', value: validRange ? `${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}ms` : '未指定', detail: `${frameLabelForDiff(data, data.startFrame)} -> ${frameLabelForDiff(data, data.endFrame)}` },
+                { ok: validRange && timingConfirmed, warn: validRange, label: '開始/終了', value: validRange ? `${timingConfirmed ? '確定 ' : '未確定 '}${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}ms` : '未指定', detail: `${frameLabelForDiff(data, data.startFrame)} -> ${frameLabelForDiff(data, data.endFrame)}` },
                 { ok: hasPreview, label: '映像確認', value: hasPreview ? '表示OK' : '未表示', detail: '骨格・角度・マーカー重ね表示' },
                 { ok: checked3d, warn: !!AppState.videoModelAngleValues, label: '3D確認', value: checked3d ? '確認済み' : '未確認', detail: '3Dボタンまたは3Dタブで角度確認' },
-                { ok: saved, warn: validRange, label: '正式保存', value: saved ? `#${data.savedRecordId}` : '未保存', detail: '保存すると記録・比較に反映' }
+                { ok: saved, warn: validRange && timingConfirmed, label: '正式保存', value: saved ? `#${data.savedRecordId}` : '未保存', detail: timingConfirmed ? '保存すると記録・比較に反映' : '開始/終了確定後に保存できます' }
             ];
             const okCount = checks.filter(check => check.ok).length;
             safeText('videoVerificationSummary', `${okCount}/${checks.length} OK`);
@@ -5858,6 +5897,7 @@
                 if (Number.isFinite(data.startFrame)) frame = Math.max(frame, Math.min(maxFrame, data.startFrame + 1));
                 data.endFrame = frame;
             }
+            markVideoTimingManual(data, 'timeline-marker');
             updateSelectedVideoStrikeFromCurrent();
             recomputeVideoAnalysisResult();
             setVideoAnalysisFrame(frame);
@@ -6008,6 +6048,7 @@
                 if (Number.isFinite(AppState.videoManualStartSec) && AppState.videoManualStartSec >= current) AppState.videoManualStartSec = null;
                 showToast('終了マーカーを置きました', 'blue');
             }
+            if (AppState.videoAnalysis?.frames?.length) markVideoTimingManual(AppState.videoAnalysis, 'pre-analysis-marker');
             updateVideoManualRangeUi();
             updateVideoStepHint('mark');
         }
@@ -6466,6 +6507,7 @@
                     data.startFrame = Math.max(0, current - 1);
                 }
             }
+            markVideoTimingManual(data, 'frame-button');
             recomputeVideoAnalysisResult();
             updateSelectedVideoStrikeFromCurrent();
             syncVideoAnalysisSliders(current);
@@ -7107,6 +7149,8 @@
             data.startFrame = strike.startFrame;
             data.endFrame = strike.endFrame;
             data.peakFrame = strike.peakFrame;
+            if (strike.manualAdjusted) markVideoTimingManual(data, 'strike-correction');
+            else markVideoTimingAuto(data);
             recomputeVideoAnalysisResult();
             const frameMap = { start: data.startFrame, peak: data.peakFrame, end: data.endFrame };
             const targetFrame = frameMap[target] ?? data.peakFrame;
@@ -7472,16 +7516,19 @@
             const end = data.endFrame !== null ? data.frames[data.endFrame] : null;
             const elapsedMs = start && frame ? Number(frame.timeMs || 0) - Number(start.timeMs || 0) : NaN;
             const correctedDurationMs = start && end && data.endFrame > data.startFrame ? Number(end.timeMs || 0) - Number(start.timeMs || 0) : NaN;
+            const validation = data.currentValidation || updateCurrentVideoValidation(data);
+            const confirmed = isVideoTimingConfirmed(data);
             safeText('videoCorrectionModelStatus', frame ? `3D連動 #${current}` : '3D連動待機');
             safeText('videoCurrentElapsedLabel', Number.isFinite(elapsedMs) ? `${Math.round(elapsedMs)}ms` : '---');
             safeText('videoCorrectedDurationLabel', Number.isFinite(correctedDurationMs) ? `${Math.round(correctedDurationMs)}ms` : '---');
-            safeText('videoOfficialMeasurementBadge', Number.isFinite(correctedDurationMs) ? `正式候補 ${Math.round(correctedDurationMs)}ms / 補正後保存` : '開始/終了を補正して正式記録へ');
+            safeText('videoOfficialMeasurementBadge', Number.isFinite(correctedDurationMs) ? (confirmed ? `正式確定 ${Math.round(correctedDurationMs)}ms / 保存可能` : `自動候補 ${Math.round(correctedDurationMs)}ms / 開始・終了を確定`) : '開始/終了を補正して正式記録へ');
             safeText('videoFormalStart', start ? `#${data.startFrame} / ${start.timeMs.toFixed(1)}ms` : '---');
             safeText('videoFormalPeak', peak ? `#${data.peakFrame} / ${peak.timeMs.toFixed(1)}ms` : '---');
             safeText('videoFormalEnd', end ? `#${data.endFrame} / ${end.timeMs.toFixed(1)}ms` : '---');
-            safeText('videoFormalDuration', Number.isFinite(correctedDurationMs) ? `${Math.round(correctedDurationMs)}ms` : '---');
-            safeText('videoFormalStatus', Number.isFinite(correctedDurationMs) ? (data.exclusionReason ? `要確認: ${data.exclusionReason} / 補正後値を表示中` : '補正後の値を正式保存・レポートに反映') : '開始/終了フレームを補正してください');
-            safeText('videoAnalysisStatus', Number.isFinite(correctedDurationMs) ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正可）` : '解析完了') : '開始/終了を補正してください');
+            safeText('videoFormalDuration', videoFormalDurationDisplay(data, correctedDurationMs, validation));
+            safeText('videoFormalStatus', videoFormalTimingLabel(data, correctedDurationMs, validation));
+            safeText('videoFormalGuide', confirmed ? 'この値を正式な打突時間として保存できます。修正したい場合は開始/終了を動かしてください。' : '自動分割は候補です。開始・終了フレームを映像で確認し、「現在を開始」「現在を終了」またはマーカー移動で確定してください。');
+            safeText('videoAnalysisStatus', Number.isFinite(correctedDurationMs) ? (confirmed ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正可）` : '正式値を確定済み') : '自動候補・未確定') : '開始/終了を補正してください');
             safeText('videoPlaybackCurrentMetrics', frame
                 ? `現在 #${current} / ${frame.timeMs.toFixed(1)}ms / 右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
                 : '現在フレーム: ---'
@@ -7573,8 +7620,9 @@
             const end = data.endFrame !== null ? data.frames[data.endFrame] : null;
             const duration = start && end && data.endFrame > data.startFrame ? Math.round(Number(end.timeMs || 0) - Number(start.timeMs || 0)) : null;
             const metrics = data.metricsBySource || {};
-            safeText('videoDetailExclusion', data.exclusionReason ? `要確認: ${data.exclusionReason}（補正後フレームで再計算）` : '正式保存可能');
-            safeText('videoDetailTiming', `開始 ${data.startFrame ?? '---'} / 最高速 ${data.peakFrame ?? '---'} / 終了 ${data.endFrame ?? '---'} / ${duration !== null ? duration + 'ms' : '---'}`);
+            const confirmed = isVideoTimingConfirmed(data);
+            safeText('videoDetailExclusion', confirmed ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正後フレームで再計算）` : '正式保存可能') : '未確定: 開始/終了フレームを映像で確認してください');
+            safeText('videoDetailTiming', `開始 ${data.startFrame ?? '---'} / 最高速 ${data.peakFrame ?? '---'} / 終了 ${data.endFrame ?? '---'} / ${duration !== null ? (confirmed ? duration + 'ms' : `自動候補 ${duration}ms`) : '---'}`);
             safeText('videoDetailSpeedSet', `正式 ${videoPeakTimeLabel(data.metrics)} / 手首 ${videoPeakTimeLabel(metrics.wrist)} / 推定 ${videoPeakTimeLabel(metrics.tip)} / テープ ${videoPeakTimeLabel(metrics.tape)}`);
             safeText('videoDetailRightElbowSet', videoFrameSummaryText(data, 'rightAng'));
             safeText('videoDetailTorsoSet', videoFrameSummaryText(data, 'torsoAng'));
@@ -7691,7 +7739,7 @@
             const endFrame = data.frames[data.endFrame];
             updateVideoResultCards(data, metricsBySource, Params.officialSpeedSource);
             const validation = updateCurrentVideoValidation(data);
-            safeText('videoResultDuration', videoDurationResultLabel(durationMs, validation));
+            safeText('videoResultDuration', videoFormalDurationDisplay(data, durationMs, validation));
             updateVideoValidityPanel(data);
             safeText('videoResultRightElbow', endFrame?.rightAng ? `${endFrame.rightAng.toFixed(1)}°` : '---');
             safeText('videoResultHasuji', endFrame?.hasuji ? `${endFrame.hasuji.toFixed(1)}°` : '---');
@@ -8264,15 +8312,18 @@
                 strikeMode: AppState.videoStrikeMode,
                 strikes: [],
                 metrics: null,
-                metricsBySource: {}
+                metricsBySource: {},
+                manualTimingConfirmed: !!manualRange,
+                timingSource: manualRange ? 'manual-range' : 'auto-candidate'
             };
             AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
-            const shouldUseDetectedStrike = AppState.videoAnalysis.strikes.length && (
+            const shouldUseDetectedStrike = !manualRange && AppState.videoAnalysis.strikes.length && (
                 AppState.videoStrikeMode === 'multi' ||
                 AppState.videoAnalysis.strikes.length > 1 ||
                 !manualRange
             );
             if (shouldUseDetectedStrike) {
+                markVideoTimingAuto(AppState.videoAnalysis);
                 AppState.videoSelectedStrikeIndex = 0;
                 AppState.videoSelectedStrikeRejected = false;
                 const firstStrike = AppState.videoAnalysis.strikes[0];
@@ -8288,6 +8339,7 @@
                 startTimeMs = frames[startFrame]?.timeMs ?? startTimeMs;
                 endTimeMs = frames[endFrame]?.timeMs ?? endTimeMs;
             } else if (AppState.videoAnalysis.rejectedStrikes?.length) {
+                markVideoTimingAuto(AppState.videoAnalysis);
                 AppState.videoSelectedStrikeIndex = 0;
                 AppState.videoSelectedStrikeRejected = true;
                 const firstRejected = AppState.videoAnalysis.rejectedStrikes[0];
@@ -8336,7 +8388,7 @@
             if (startTimeMs !== null && endTimeMs !== null) {
                 updateVideoResultCards(AppState.videoAnalysis, metricsBySource, Params.officialSpeedSource);
                 const validation = updateCurrentVideoValidation(AppState.videoAnalysis);
-                safeText('videoResultDuration', videoDurationResultLabel(endTimeMs - startTimeMs, validation));
+                safeText('videoResultDuration', videoFormalDurationDisplay(AppState.videoAnalysis, endTimeMs - startTimeMs, validation));
                 const end = frames[endFrame];
                 safeText('videoResultRightElbow', end?.rightAng ? `${end.rightAng.toFixed(1)}°` : '---');
                 safeText('videoResultHasuji', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---');
@@ -8488,6 +8540,9 @@
             if (!data || !data.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             if (data.startFrame === null || data.endFrame === null || data.endFrame <= data.startFrame) {
                 return showToast('開始フレームと終了フレームを指定してください', 'red');
+            }
+            if (!isVideoTimingConfirmed(data)) {
+                return showToast('自動候補は正式保存できません。映像を見ながら開始/終了フレームを確定してください', 'yellow');
             }
             recomputeVideoAnalysisResult();
             if (!data.currentValidation?.ok) {
@@ -8675,6 +8730,10 @@
                 if (!options.silent) showToast('保存する打突がありません', 'yellow');
                 return null;
             }
+            if (!strike.manualAdjusted) {
+                if (!options.silent) showToast('自動分割候補は保存できません。補正で開始/終了を確定してください', 'yellow');
+                return null;
+            }
             const validation = validateVideoStrikeSummary(strike, data);
             if (!validation.ok) {
                 if (!options.silent) showToast(`この打突は${validation.reason}のため保存できません。開始/終了を補正してください`, 'yellow');
@@ -8715,15 +8774,20 @@
             if (!strikes.length) return showToast('保存できる複数打突がありません', 'yellow');
             let lastRecord = null;
             let savedCount = 0;
+            let skippedUnconfirmed = 0;
             strikes.forEach((strike, index) => {
                 if (strike.savedRecordId) return;
+                if (!strike.manualAdjusted) {
+                    skippedUnconfirmed++;
+                    return;
+                }
                 const record = saveVideoStrikeAsRecord(index, { silent: true, deferRefresh: true });
                 if (record) {
                     savedCount++;
                     lastRecord = record;
                 }
             });
-            if (!savedCount) return showToast('全て保存済みです', 'yellow');
+            if (!savedCount) return showToast(skippedUnconfirmed ? '自動候補は保存できません。各打突の開始/終了を補正してください' : '全て保存済みです', 'yellow');
             refreshAfterVideoRecordSave(lastRecord);
             updateVideoMultiStrikePanel(data);
             showToast(`${savedCount}本の打突を正式記録に保存しました`, 'green');
@@ -9094,6 +9158,7 @@
             if (AppState.videoAnalysis.endFrame !== null && AppState.videoAnalysis.endFrame <= value) {
                 AppState.videoAnalysis.endFrame = Math.min(AppState.videoAnalysis.frames.length - 1, value + 1);
             }
+            markVideoTimingManual(AppState.videoAnalysis, 'frame-slider');
             recomputeVideoAnalysisResult();
             updateSelectedVideoStrikeFromCurrent();
             setVideoAnalysisFrame(value);
@@ -9106,6 +9171,7 @@
             if (AppState.videoAnalysis.startFrame !== null && AppState.videoAnalysis.startFrame >= value) {
                 AppState.videoAnalysis.startFrame = Math.max(0, value - 1);
             }
+            markVideoTimingManual(AppState.videoAnalysis, 'frame-slider');
             recomputeVideoAnalysisResult();
             updateSelectedVideoStrikeFromCurrent();
             setVideoAnalysisFrame(value);
