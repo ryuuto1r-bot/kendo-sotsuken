@@ -2048,7 +2048,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v62';
+            const refreshKey = 'kendo-sw-refreshed-v63';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6638,6 +6638,10 @@
             const peak = data.frames[officialPeakFrame] || data.frames[peakFrame] || data.frames[startFrame];
             const end = data.frames[endFrame];
             const durationMs = Math.round(end.timeMs - start.timeMs);
+            const startWristY = videoWristScreenY(start);
+            const endWristY = videoWristScreenY(end);
+            const shoulderWidthRatio = videoShoulderWidthRatio(peak) || videoShoulderWidthRatio(start) || 0;
+            const wristDropRatio = Number.isFinite(startWristY) && Number.isFinite(endWristY) ? endWristY - startWristY : NaN;
             const avgVisibility = segmentAverage(slice, 'poseConfidence') || segmentAverage(slice, 'visibility');
             const startSpeedMps = videoFrameSpeed(start, Params.officialSpeedSource).value || 0;
             const endSpeedMps = videoFrameSpeed(end, Params.officialSpeedSource).value || 0;
@@ -6658,6 +6662,8 @@
                 startSpeedMps,
                 endSpeedMps,
                 speedUnit: official.key === 'tape' ? 'm/s*' : data.speedUnit,
+                wristDropRatio,
+                shoulderWidthRatio,
                 rightAng: Number(end.rightAng || 0),
                 torsoAng: Number(end.torsoAng || 0),
                 hasuji: Number(end.hasuji || 0),
@@ -6687,20 +6693,138 @@
             if (!data?.frames?.[summary.startFrame]?.landmarks || !data?.frames?.[summary.peakFrame]?.landmarks || !data?.frames?.[summary.endFrame]?.landmarks) {
                 return { ok: false, reason: '骨格不足' };
             }
-            if (summary.durationMs < 55) return { ok: false, reason: '短すぎる' };
+            if (summary.durationMs < videoFormalMinDurationMs()) return { ok: false, reason: '短すぎる' };
             if (summary.durationMs > videoFormalMaxDurationMs()) return { ok: false, reason: '長すぎる' };
 	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: 'ピーク不足' };
 	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
             if (summary.avgVisibility && summary.avgVisibility < 0.32) return { ok: false, reason: '検出信頼度不足' };
             if (!summary.rightAng || summary.rightAng < 55 || summary.rightAng > 185) return { ok: false, reason: '右肘角異常' };
             if (Math.abs(summary.torsoAng || 0) > 55) return { ok: false, reason: '体幹検出異常' };
+            if (Number.isFinite(summary.wristDropRatio) && summary.wristDropRatio < Math.max(0.018, Number(summary.shoulderWidthRatio || 0) * 0.10)) return { ok: false, reason: '下降量不足' };
             const peak = Math.max(summary.peakSpeedMps, 0.001);
             if (summary.startSpeedMps > peak * 0.82 && summary.endSpeedMps > peak * 0.82) return { ok: false, reason: 'ピーク不明瞭' };
             return { ok: true, reason: 'OK' };
         }
 
+        function videoFormalMinDurationMs() {
+            return 120;
+        }
+
         function videoFormalMaxDurationMs() {
             return Math.min(800, Number(Params.timingMaxDurationMs || 1200));
+        }
+
+        function videoWristScreenY(frame) {
+            const value = Number(frame?.landmarks?.[16]?.y);
+            return Number.isFinite(value) ? value : null;
+        }
+
+        function videoShoulderWidthRatio(frame) {
+            if (!frame?.landmarks?.[11] || !frame?.landmarks?.[12]) return 0;
+            return distance2d(frame.landmarks[11], frame.landmarks[12]) || 0;
+        }
+
+        function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
+            const frames = data.frames || [];
+            const fps = data.fps || Params.targetFps || 60;
+            const peakSpeed = Number(speeds[peakFrame] || 0);
+            const maxBack = Math.max(10, Math.round(fps * 0.85));
+            const maxForward = Math.max(10, Math.round(fps * 0.62));
+            const minLeadFrames = Math.max(4, Math.round(fps * 0.08));
+            const minAfterFrames = Math.max(4, Math.round(fps * 0.07));
+            const downVelocityThreshold = Math.max(0.10, Params.timingStartDownVelocityMps * 0.28);
+            let startFrame = Math.max(0, peakFrame - maxBack);
+            let quietFrames = 0;
+            for (let i = peakFrame; i >= Math.max(1, peakFrame - maxBack); i--) {
+                const y = videoWristScreenY(frames[i]);
+                const prevY = videoWristScreenY(frames[i - 1]);
+                const screenDown = Number.isFinite(y) && Number.isFinite(prevY) ? y - prevY : 0;
+                const movingDown = screenDown > 0.0015 || Number(frames[i]?.downVelocity || 0) >= downVelocityThreshold;
+                const activeSpeed = Number(speeds[i] || 0) >= peakSpeed * Math.max(0.10, sensitivity.startSpeedRatio * 0.55);
+                if (movingDown || activeSpeed) {
+                    startFrame = i - 1;
+                    quietFrames = 0;
+                } else {
+                    quietFrames += 1;
+                    if (quietFrames >= 2 && peakFrame - startFrame >= minLeadFrames) break;
+                }
+            }
+
+            const visualStartLimit = Math.max(0, peakFrame - maxBack);
+            const visualStartEnd = Math.max(visualStartLimit, peakFrame - minLeadFrames);
+            let visualStartFrame = null;
+            let minY = Infinity;
+            for (let i = visualStartLimit; i <= visualStartEnd; i++) {
+                const y = videoWristScreenY(frames[i]);
+                if (!Number.isFinite(y)) continue;
+                // 同じ高さが続く場合はピークに近い方を採用し、前の打突を巻き込みにくくする。
+                if (y <= minY + 0.003) {
+                    minY = y;
+                    visualStartFrame = i;
+                }
+            }
+            if (Number.isFinite(visualStartFrame) && visualStartFrame < peakFrame) {
+                const peakY = videoWristScreenY(frames[peakFrame]);
+                const startY = videoWristScreenY(frames[visualStartFrame]);
+                const shoulder = videoShoulderWidthRatio(frames[peakFrame]);
+                const minDrop = Math.max(0.018, shoulder * 0.10);
+                if (Number.isFinite(peakY) && Number.isFinite(startY) && peakY - startY >= minDrop * 0.45) {
+                    startFrame = visualStartFrame;
+                }
+            }
+
+            let endFrame = Math.min(frames.length - 1, peakFrame + maxForward);
+            let settleFrames = 0;
+            for (let i = peakFrame + 1; i <= Math.min(frames.length - 1, peakFrame + maxForward); i++) {
+                const y = videoWristScreenY(frames[i]);
+                const prevY = videoWristScreenY(frames[i - 1]);
+                const screenDown = Number.isFinite(y) && Number.isFinite(prevY) ? y - prevY : 0;
+                const dt = Math.max((frames[i].timeMs - frames[i - 1].timeMs) / 1000, 1 / fps);
+                const decel = (Number(speeds[i - 1] || 0) - Number(speeds[i] || 0)) / dt;
+                const afterMin = i - peakFrame >= minAfterFrames;
+                const slowEnough = Number(speeds[i] || 0) <= peakSpeed * Math.max(0.22, sensitivity.endSpeedRatio * 0.72);
+                const noLongerDescending = screenDown <= 0.0006 || Number(frames[i]?.downVelocity || 0) <= downVelocityThreshold * 0.65;
+                if (afterMin && (slowEnough || noLongerDescending || decel >= Params.timingEndDecelMps2 * sensitivity.endDecelRatio)) {
+                    settleFrames += 1;
+                    if (settleFrames >= 2) {
+                        endFrame = i;
+                        break;
+                    }
+                } else {
+                    settleFrames = 0;
+                }
+            }
+
+            const visualEndLimit = Math.min(frames.length - 1, peakFrame + maxForward);
+            const visualEndStart = Math.min(visualEndLimit, peakFrame + minAfterFrames);
+            let visualEndFrame = null;
+            let maxY = -Infinity;
+            for (let i = visualEndStart; i <= visualEndLimit; i++) {
+                const y = videoWristScreenY(frames[i]);
+                if (!Number.isFinite(y)) continue;
+                if (y > maxY + 0.002) {
+                    maxY = y;
+                    visualEndFrame = i;
+                }
+            }
+            if (Number.isFinite(visualEndFrame) && visualEndFrame > peakFrame) {
+                const startY = videoWristScreenY(frames[startFrame]);
+                const endY = videoWristScreenY(frames[visualEndFrame]);
+                const shoulder = videoShoulderWidthRatio(frames[peakFrame]);
+                const minDrop = Math.max(0.018, shoulder * 0.10);
+                const visualDuration = frames[visualEndFrame].timeMs - frames[startFrame].timeMs;
+                if (Number.isFinite(startY) && Number.isFinite(endY) && endY - startY >= minDrop && visualDuration <= videoFormalMaxDurationMs() * 1.15) {
+                    endFrame = visualEndFrame;
+                }
+            }
+
+            const minFrameSpan = Math.max(2, Math.ceil(videoFormalMinDurationMs() / Math.max(1000 / fps, 1)));
+            if (endFrame - startFrame < minFrameSpan) {
+                startFrame = Math.max(0, peakFrame - Math.ceil(minFrameSpan * 0.65));
+                endFrame = Math.min(frames.length - 1, startFrame + minFrameSpan);
+            }
+            if (endFrame <= startFrame) endFrame = Math.min(frames.length - 1, startFrame + 1);
+            return { startFrame, peakFrame, endFrame };
         }
 
         function normalizeVideoStrikeBuckets(data) {
@@ -6809,8 +6933,6 @@
             const sensitivity = videoStrikeSensitivityProfile();
             const threshold = Math.max(globalPeak * sensitivity.peakRatio, sensitivity.minSpeed);
             const minGap = Math.max(6, Math.round(fps * sensitivity.minGapSec));
-            const maxBack = Math.max(8, Math.round(fps * 0.75));
-            const maxForward = Math.max(10, Math.round(fps * 1.15));
             const candidates = [];
             for (let i = 2; i < speeds.length - 2; i++) {
                 if (speeds[i] < threshold) continue;
@@ -6834,31 +6956,15 @@
             };
             candidates.forEach((candidate, idx) => {
                 const peakFrame = candidate.peakFrame;
-                const peakSpeed = speeds[peakFrame];
-                let startFrame = Math.max(0, peakFrame - maxBack);
-                for (let i = peakFrame - 1; i >= Math.max(0, peakFrame - maxBack); i--) {
-                    if (speeds[i] <= peakSpeed * sensitivity.startSpeedRatio || Number(frames[i].downVelocity || 0) <= Params.timingStartDownVelocityMps * sensitivity.startDownRatio) {
-                        startFrame = i;
-                        break;
-                    }
-                }
-                let endFrame = Math.min(frames.length - 1, peakFrame + maxForward);
-                for (let i = peakFrame + 1; i <= Math.min(frames.length - 1, peakFrame + maxForward); i++) {
-                    const dt = Math.max((frames[i].timeMs - frames[i - 1].timeMs) / 1000, 1 / fps);
-                    const decel = (speeds[i - 1] - speeds[i]) / dt;
-                    if ((i - peakFrame) >= 2 && (speeds[i] <= peakSpeed * sensitivity.endSpeedRatio || decel >= Params.timingEndDecelMps2 * sensitivity.endDecelRatio)) {
-                        endFrame = i;
-                        break;
-                    }
-                }
+                const { startFrame, endFrame } = resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity);
                 const duration = frames[endFrame].timeMs - frames[startFrame].timeMs;
                 const overlaps = segments.some(segment => startFrame <= segment.endFrame && endFrame >= segment.startFrame);
                 if (overlaps) {
                     pushRejection(startFrame, peakFrame, endFrame, '重複');
                     return;
                 }
-                if (duration < 55 || duration > videoFormalMaxDurationMs()) {
-                    pushRejection(startFrame, peakFrame, endFrame, duration < 55 ? '短すぎる' : '長すぎる');
+                if (duration < videoFormalMinDurationMs() || duration > videoFormalMaxDurationMs()) {
+                    pushRejection(startFrame, peakFrame, endFrame, duration < videoFormalMinDurationMs() ? '短すぎる' : '長すぎる');
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
@@ -7542,7 +7648,7 @@
             const maxTorsoJump = maxFrameDelta(slice, frame => frame.torsoAng);
             const maxSpeedJump = maxFrameDelta(slice, frame => videoFrameSpeed(frame, data.officialSpeedSource || Params.officialSpeedSource).value);
             const missingRate = slice.length ? slice.filter(frame => !frame.landmarks?.[16] || !frame.landmarks?.[14] || !frame.landmarks?.[12]).length / slice.length : 1;
-            add(Number.isFinite(durationMs) && durationMs >= 55 && durationMs <= videoFormalMaxDurationMs(), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', `55ms未満または${videoFormalMaxDurationMs()}ms超は除外候補`);
+            add(Number.isFinite(durationMs) && durationMs >= videoFormalMinDurationMs() && durationMs <= videoFormalMaxDurationMs(), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', `${videoFormalMinDurationMs()}ms未満または${videoFormalMaxDurationMs()}ms超は除外候補`);
 	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), 'ピーク検出', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '検出信号は内部扱い。正式画面ではピーク時刻として確認');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
