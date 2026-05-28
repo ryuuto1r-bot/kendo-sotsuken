@@ -458,7 +458,7 @@
                     <div id="canvasOverlayData" class="absolute top-4 right-4 bg-black/50 border border-slate-600 p-3 rounded-lg text-white hidden flex-col gap-2 backdrop-blur-md text-sm shadow-lg z-30">
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>右肘角:</span><span id="overlayRightAng" class="font-mono font-bold">---°</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>体幹傾斜:</span><span id="overlayTorsoAng" class="font-mono font-bold">---°</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-cyan-300">手首速度:</span><span id="overlaySpeed3d" class="font-mono font-bold text-cyan-300">---</span></div>
+                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-cyan-300">手首参考:</span><span id="overlaySpeed3d" class="font-mono font-bold text-cyan-300">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-amber-300">推定剣先:</span><span id="overlayTipSpeed" class="font-mono font-bold text-amber-300">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-lime-300">テープ剣先:</span><span id="overlayTapeSpeed" class="font-mono font-bold text-lime-300">OFF</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-slate-300">Δt:</span><span id="overlayFrameDt" class="font-mono font-bold text-slate-200">---</span></div>
@@ -497,7 +497,7 @@
                         <div class="hidden"><span class="text-[10px] text-slate-500">手足ズレ</span><div id="latestSync" class="text-lg md:text-xl font-black text-yellow-600 font-mono-num">---</div></div>
                         <div class="hidden"><span class="text-[10px] text-slate-500">冴え</span><div id="latestSae" class="text-lg md:text-xl font-black text-red-600 font-mono-num">---</div></div>
                         <div class="hidden"><span class="text-[10px] text-slate-500">歩幅比</span><div id="latestStride" class="text-lg md:text-xl font-black text-green-600 font-mono-num">---</div></div>
-	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">正式速度</span><div id="latestPeakSpeed" class="text-lg md:text-xl font-black text-cyan-600 font-mono-num">---</div></div>
+	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">参考ピーク</span><div id="latestPeakSpeed" class="text-lg md:text-xl font-black text-cyan-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">刃筋角度</span><div id="latestHasuji" class="text-lg md:text-xl font-black text-teal-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">右肘角度</span><div id="latestRightAng" class="text-lg md:text-xl font-black text-purple-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">体幹軸</span><div id="latestTorso" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
@@ -529,9 +529,9 @@
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">AI</span><div id="precisionEngineStatus" class="font-bold text-slate-800">Pose Landmarker</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">フレーム同期</span><div id="precisionFrameSync" class="font-bold text-slate-800">未開始</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">現在速度</span><div id="precisionSpeed3d" class="font-bold text-cyan-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">推定剣先速度</span><div id="precisionTipSpeed" class="font-bold text-amber-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">テープ剣先速度</span><div id="precisionTapeSpeed" class="font-bold text-lime-700 font-mono-num">OFF</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">現在参考値</span><div id="precisionSpeed3d" class="font-bold text-cyan-700 font-mono-num">---</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">推定剣先参考</span><div id="precisionTipSpeed" class="font-bold text-amber-700 font-mono-num">---</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">テープ剣先参考</span><div id="precisionTapeSpeed" class="font-bold text-lime-700 font-mono-num">OFF</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Δt / FPS</span><div id="precisionFrameDt" class="font-bold text-slate-800 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">手首信頼度</span><div id="precisionVisibility" class="font-bold text-emerald-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">角度品質</span><div id="precisionAngleQuality" class="font-bold text-purple-700 font-mono-num">---</div></div>
@@ -546,13 +546,13 @@
 	                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 	                    <div class="space-y-2 text-xs text-slate-700">
 	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下方向速度が0.55m/s相当以上になった状態が2フレーム続いた最初のフレーム</p>
-	                        <p><span class="font-bold text-slate-900">終了:</span> 最高速度後、急減速または最高速の38%未満になったフレーム</p>
+	                        <p><span class="font-bold text-slate-900">終了:</span> 右手首ピーク後、急減速またはピーク値の38%未満になったフレーム</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">終了</span><div id="timingEndStatus" class="font-bold">---</div></div>
 	                        </div>
-	                        <p class="text-[11px] text-slate-500">m/s はMediaPipe world座標、m/s* は肩幅などの実測値から換算した推定値です。</p>
+	                        <p class="text-[11px] text-slate-500">速度値は開始/終了・ピーク検出のための参考値です。正式記録は補正後の打突時間と角度を中心に扱います。</p>
 	                    </div>
 	                </div>
 
@@ -587,7 +587,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間 ＆ 最高速度推移</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間 ＆ 参考ピーク推移</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border">
@@ -602,7 +602,7 @@
         <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画解析 / 正式測定</h2>
-                <p class="text-xs text-slate-500 mt-1">打突時間・速度・角度の正式記録用。開始/終了フレームを1コマ単位で補正して保存します。</p>
+                <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式記録用。速度値はピーク検出の参考値として扱い、開始/終了フレームを1コマ単位で補正して保存します。</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><i class="fa-solid fa-certificate mr-1"></i>正式測定モード</span>
@@ -736,9 +736,9 @@
                     </label>
                     <label class="font-bold text-slate-700">ピーク検出基準
                         <select id="videoOfficialSpeedSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
-                            <option value="wrist" selected="">右手首速度でピーク検出（推奨）</option>
-                            <option value="tip">推定剣先速度でピーク検出（参考）</option>
-                            <option value="tape">テープ検出剣先速度でピーク検出</option>
+                            <option value="wrist" selected="">右手首ピークで検出（推奨）</option>
+                            <option value="tip">推定剣先ピークで検出（参考）</option>
+                            <option value="tape">テープ剣先ピークで検出</option>
                         </select>
                     </label>
                     <label class="font-bold text-slate-700">角度基準
@@ -886,7 +886,7 @@
                 </div>
                 <div id="videoAnalysisResult" class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="videoResultDuration" class="font-black text-blue-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">正式最高速時刻</span><div id="videoResultPeak" class="font-black text-cyan-700 font-mono-num">---</div></div>
+                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">正式ピーク時刻</span><div id="videoResultPeak" class="font-black text-cyan-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">手首ピーク時刻</span><div id="videoResultWristPeak" class="font-black text-slate-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">推定剣先ピーク時刻</span><div id="videoResultTipPeak" class="font-black text-amber-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">テープ剣先ピーク時刻</span><div id="videoResultTapePeak" class="font-black text-lime-700 font-mono-num">---</div></div>
@@ -894,11 +894,11 @@
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">右肘角</span><div id="videoResultRightElbow" class="font-black text-purple-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">刃筋</span><div id="videoResultHasuji" class="font-black text-yellow-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">体幹軸</span><div id="videoResultTorso" class="font-black text-emerald-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">採用基準</span><div id="videoResultBasis" class="font-bold text-slate-700">右手首速度 / 体幹基準</div></div>
+                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">採用基準</span><div id="videoResultBasis" class="font-bold text-slate-700">右手首ピーク / 体幹基準</div></div>
                 </div>
                 <div id="videoDetailMetricsPanel" class="rounded-xl border border-slate-200 bg-white p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-table-list text-indigo-500 mr-1"></i>詳細分析（時間・速度・角度）</h3>
+                        <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-table-list text-indigo-500 mr-1"></i>詳細分析（時間・ピーク時刻・角度）</h3>
                         <span id="videoDetailExclusion" class="text-xs font-bold text-slate-500">未解析</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -1109,7 +1109,7 @@
             <div class="official-flow-card p-4 rounded-xl border">
                 <h3 class="text-sm font-bold text-indigo-900 mb-2"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</h3>
                 <div class="space-y-2 text-xs text-indigo-900 leading-relaxed">
-                    <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・速度・角度の目安だけを見る。</p>
+                    <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・角度・参考ピークだけを見る。</p>
                     <p><span class="font-bold">動画解析:</span> 正式測定用。開始/終了フレームを補正し、保存・CSV・レポートに反映します。</p>
                 </div>
             </div>
@@ -1131,7 +1131,7 @@
                     <label class="block font-bold text-slate-700">竹刀延長倍率 <span id="videoShinaiExtensionValue" class="font-mono-num text-lime-700">2.40</span>
                         <input id="videoShinaiExtensionSlider" type="range" min="1.6" max="3.2" step="0.05" value="2.4" class="w-full accent-lime-600 mt-1">
                     </label>
-                    <p class="text-slate-500 leading-relaxed">剣先に色テープを貼る場合だけ使います。テープ速度は照明と背景の影響を受けるため、推定剣先速度と並べて比較します。</p>
+                    <p class="text-slate-500 leading-relaxed">剣先に色テープを貼る場合だけ使います。テープ検出値は照明と背景の影響を受けるため、推定剣先の参考値と並べて確認します。</p>
                 </div>
             </div>
 
@@ -1179,10 +1179,10 @@
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式最高速</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首最高速</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-amber-500"><span class="text-xs text-slate-500">推定剣先速度</span><div id="detailLatestTipSpeed" class="text-2xl font-black text-amber-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープ剣先速度</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式参考ピーク</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首参考ピーク</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-amber-500"><span class="text-xs text-slate-500">推定剣先参考</span><div id="detailLatestTipSpeed" class="text-2xl font-black text-amber-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープ剣先参考</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -1201,7 +1201,7 @@
             <div class="grid grid-cols-2 md:grid-cols-7 gap-3 p-4">
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">本数カウント</span><div id="summaryCount" class="text-xl font-black text-slate-900 font-mono-num">0本</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均打突時間</span><div id="summaryAvgTime" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
-                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最高速度</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">参考ピーク最大</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も良かった1本</span><div id="summaryBest" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も悪かった1本</span><div id="summaryWorst" class="text-xl font-black text-red-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">軸ブレ平均</span><div id="summaryAvgAxis" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
@@ -1211,7 +1211,7 @@
 
         <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div class="bg-slate-50 px-4 py-3 border-b flex items-center justify-between">
-                <h3 class="font-bold text-sm text-slate-700">打突ごとの速度・角度</h3>
+                <h3 class="font-bold text-sm text-slate-700">打突ごとの参考ピーク・角度</h3>
                 <span class="text-xs text-slate-500">練習中は非表示、練習後に確認</span>
             </div>
             <div class="overflow-x-auto">
@@ -1220,7 +1220,7 @@
                         <tr>
                             <th class="px-2 py-2">#</th>
                             <th class="px-2 py-2">時間</th>
-                            <th class="px-2 py-2">手首最高速</th>
+                            <th class="px-2 py-2">手首参考</th>
                             <th class="px-2 py-2">推定剣先</th>
                             <th class="px-2 py-2">テープ剣先</th>
                             <th class="px-2 py-2">右肘</th>
@@ -1330,7 +1330,7 @@
                     <h3 class="text-sm font-bold text-slate-700 mb-3">最新打突の詳細</h3>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="modelLatestTime" class="font-black text-blue-700 font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">最高速度</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
+                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">参考ピーク</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">角度品質</span><div id="modelAngleQuality" class="font-black text-purple-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">終了理由</span><div id="modelEndReason" class="font-bold text-slate-700">---</div></div>
 	                        <div class="bg-violet-50 border border-violet-100 rounded p-2 col-span-2"><span class="text-violet-700">選択角度の変化率</span><div id="modelAngleRate" class="font-black text-violet-800 font-mono-num">動画解析フレームで表示</div></div>
@@ -1427,7 +1427,7 @@
 
 	                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
 	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>実測キャリブレーション</h4>
-	                    <p class="text-xs text-emerald-700 mb-3">速度を「測定器風」に説明するため、体格・竹刀・撮影条件を登録します。world座標が取れない時は m/s* として換算表示します。</p>
+	                    <p class="text-xs text-emerald-700 mb-3">ピーク検出の参考値を安定させるため、体格・竹刀・撮影条件を登録します。速度値は絶対測定値ではなく、同じ条件で比較する補助指標として扱います。</p>
 	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 	                        <label class="text-xs font-bold text-emerald-900">肩幅(cm)
 	                            <input id="paramShoulderWidthCm" type="number" min="30" max="60" step="0.5" value="42" class="mt-1 w-full border border-emerald-200 rounded px-2 py-2 bg-white font-mono-num">
@@ -1898,7 +1898,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v57';
+            const refreshKey = 'kendo-sw-refreshed-v58';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2774,7 +2774,7 @@
         }
 
         function officialSpeedLabel(source) {
-            return { wrist: '右手首速度', tip: '推定剣先速度', tape: 'テープ剣先速度' }[source] || '推定剣先速度';
+            return { wrist: '右手首ピーク', tip: '推定剣先ピーク', tape: 'テープ剣先ピーク' }[source] || '推定剣先ピーク';
         }
 
         function chooseOfficialMetrics(metricsBySource, preferred = Params.officialSpeedSource) {
@@ -4058,7 +4058,7 @@
             else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。右肘から手首の線を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
             else if (timeMs > (Params.signalMode ? 800 : 350)) { comment = Params.signalMode ? "反応が遅いです。音に集中して！" : "振り下ろしが遅いです。もっと鋭く！"; shortLabel = "速度不足"; }
             else if (saeScore < 30) { comment = "冴えが足りません。インパクトの瞬間にピタッと止める意識を。"; shortLabel = "冴え不足"; }
-            else { comment = "上半身の打突動作は良好です。打突時間・速度・角度の基準を維持しましょう。"; shortLabel = "良好"; }
+            else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
 
             document.getElementById('aiComment').innerText = comment;
             if(AppState.enableAudio) {
@@ -4111,7 +4111,7 @@
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, leftAng: Number(metrics.leftAng || 0), torsoAng, hasuji: hasujiAngle, shoulderLineAng: Number(metrics.shoulderLineAng || 0) },
-                timingDefinition: '開始=右手首下方向速度0.55m/s相当以上が2フレーム継続した最初のフレーム / 終了=最高速度後の急減速または最高速比38%未満'
+                timingDefinition: '開始=右手首下方向の参考値が閾値を2フレーム継続して超えた最初のフレーム / 終了=右手首ピーク後の急減速またはピーク比38%未満'
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(24, Math.round((AppState.frameFps || Params.targetFps) * 1.5)));
             record.clipFrames = clipFrames;
@@ -4318,7 +4318,7 @@
                 return;
             }
             const images = frames.map((frame, index) => `<img src="${frame.image}" alt="frame ${index + 1}">`).join('\n');
-            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms / 評価: ${record.shortLabel}</p><p>手首最高速: ${record.peakSpeedMps || 0} ${record.speedUnit || ''}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
+            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms / 評価: ${record.shortLabel}</p><p>手首参考ピーク: ${record.peakSpeedMps || 0} ${record.speedUnit || ''}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -5177,14 +5177,14 @@
                 type: 'line',
                 data: { labels: [], datasets: [
                     { label: '打突時間 (ms)', data: [], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.3, yAxisID: 'y' },
-                    { label: '最高速度 (m/s)', data: [], borderColor: '#0891b2', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' }
+                    { label: '参考ピーク値', data: [], borderColor: '#0891b2', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' }
                 ]},
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         y: { beginAtZero: true, title: { display: true, text: 'ms' } },
-                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'm/s' } }
+                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '参考値' } }
                     }
                 }
             });
@@ -6443,8 +6443,11 @@
                 tape: metricsForVideoSource(slice, 'tape')
             };
             const official = chooseOfficialMetrics(metricsBySource, Params.officialSpeedSource);
+            const officialPeakFrame = official.metrics && Number.isFinite(Number(official.metrics.peakIndex))
+                ? clamp(startFrame + Number(official.metrics.peakIndex) + 1, startFrame, endFrame)
+                : peakFrame;
             const start = data.frames[startFrame];
-            const peak = data.frames[peakFrame] || data.frames[startFrame];
+            const peak = data.frames[officialPeakFrame] || data.frames[peakFrame] || data.frames[startFrame];
             const end = data.frames[endFrame];
             const durationMs = Math.round(end.timeMs - start.timeMs);
             const avgVisibility = segmentAverage(slice, 'poseConfidence') || segmentAverage(slice, 'visibility');
@@ -6454,7 +6457,7 @@
             return {
                 number,
                 startFrame,
-                peakFrame,
+                peakFrame: officialPeakFrame,
                 endFrame,
                 startTimeMs: start.timeMs,
                 peakTimeMs: peak.timeMs,
@@ -7890,7 +7893,7 @@
             if (data.startFrame !== null && data.endFrame !== null && data.endFrame > data.startFrame) {
                 csv += `打突時間(ms),${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}\n`;
             }
-            csv += `正式最高速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.peakOffsetMs || 0)) : ''}\n`;
+            csv += `正式ピーク時刻(ms),${data.metrics ? Math.round(Number(data.metrics.peakOffsetMs || 0)) : ''}\n`;
             csv += `手首ピーク時刻(ms),${data.metricsBySource?.wrist ? Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0)) : ''}\n`;
             csv += `推定剣先ピーク時刻(ms),${data.metricsBySource?.tip ? Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0)) : ''}\n`;
             csv += `テープ剣先ピーク時刻(ms),${data.metricsBySource?.tape ? Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0)) : ''}\n`;
@@ -7962,7 +7965,7 @@
                 ['終了時刻', end ? `${end.timeMs.toFixed(1)} ms` : '---'],
                 ['打突時間', duration !== null ? `${duration} ms` : '---'],
                 ['ピーク検出基準', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
-                ['正式最高速時刻', official.metrics ? `${Math.round(Number(official.metrics.peakOffsetMs || 0))} ms` : '---'],
+                ['正式ピーク時刻', official.metrics ? `${Math.round(Number(official.metrics.peakOffsetMs || 0))} ms` : '---'],
                 ['手首ピーク時刻', data.metricsBySource?.wrist ? `${Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0))} ms` : '---'],
                 ['推定剣先ピーク時刻', data.metricsBySource?.tip ? `${Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0))} ms` : '---'],
                 ['テープ剣先ピーク時刻', data.metricsBySource?.tape ? `${Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0))} ms` : '---'],
@@ -7981,13 +7984,13 @@
                 <div class="flex items-start justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-xl font-black">Kendo Virtual Coach 動画解析レポート</h2>
-                        <p class="text-xs text-slate-500 mt-1">打突時間・速度・角度の正式確認用</p>
+                        <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式確認用</p>
                     </div>
                     <div class="text-right text-xs text-slate-500">${new Date().toLocaleString('ja-JP')}</div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-center">
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">打突時間</div><div class="text-2xl font-black text-blue-700 font-mono-num">${duration !== null ? `${duration}ms` : '---'}</div></div>
-                    <div class="border rounded p-3"><div class="text-xs text-slate-500">正式最高速時刻</div><div class="text-2xl font-black text-cyan-700 font-mono-num">${official.metrics ? Math.round(Number(official.metrics.peakOffsetMs || 0)) + 'ms' : '---'}</div></div>
+                    <div class="border rounded p-3"><div class="text-xs text-slate-500">正式ピーク時刻</div><div class="text-2xl font-black text-cyan-700 font-mono-num">${official.metrics ? Math.round(Number(official.metrics.peakOffsetMs || 0)) + 'ms' : '---'}</div></div>
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">右肘角</div><div class="text-2xl font-black text-purple-700 font-mono-num">${end?.rightAng ? end.rightAng.toFixed(1) : '---'}°</div></div>
                     <div class="border rounded p-3"><div class="text-xs text-slate-500">検出信頼度</div><div class="text-2xl font-black text-emerald-700 font-mono-num">${confidence ? Math.round(confidence * 100) : '---'}%</div></div>
                 </div>
@@ -8258,7 +8261,7 @@
         function exportCSV() {
             if(AppState.records.length === 0) return showToast('データがありません', 'red');
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-	            csvContent += "No.,時間(ms),手足ズレ(ms),冴え,歩幅比,軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),正式最高速,正式速度種別,手首最高速,速度単位,推定剣先最高速,テープ剣先最高速(m/s*),手首信頼度,角度品質,開始フレーム,最高速フレーム,終了フレーム,開始時刻(ms),最高速時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,気合,AI評価,メモ,打突時間定義\n";
+	            csvContent += "No.,時間(ms),手足ズレ(ms),冴え,歩幅比,軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),参考ピーク値,ピーク検出基準,手首参考ピーク値,参考単位,推定剣先参考ピーク値,テープ参考ピーク値(m/s*),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,気合,AI評価,メモ,打突時間定義\n";
 	            AppState.records.forEach(r => {
 	                const official = getRecordTopSpeed(r);
 	                csvContent += `${r.id},${r.timeMs},${r.displaySync},${r.saeScore},${r.strideRatio||0},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${official.value||0},${r.actualOfficialSpeedSource||r.officialSpeedSource||''},${r.peakSpeedMps||0},${r.speedUnit||''},${r.peakTipSpeedMps||0},${r.peakTapeSpeedMps||0},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.kiaiOK?'OK':'NG'},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;

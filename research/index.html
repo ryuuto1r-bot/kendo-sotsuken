@@ -649,7 +649,7 @@
                 <div class="hero-stat"><strong>対象</strong><span>素振り・打突動作</span></div>
                 <div class="hero-stat"><strong>本採用</strong><span>MediaPipe版</span></div>
                 <div class="hero-stat"><strong>正式測定</strong><span>高fps動画解析</span></div>
-                <div class="hero-stat"><strong>主指標</strong><span>時間・速度・角度</span></div>
+                <div class="hero-stat"><strong>主指標</strong><span>時間・ピーク時刻・角度</span></div>
             </div>
         </div>
     </div>
@@ -835,7 +835,7 @@
                             <li>右肘角度</li>
                             <li>体幹軸</li>
                             <li>刃筋</li>
-                            <li>手首速度・推定剣先速度</li>
+                            <li>手首ピーク時刻・推定剣先ピーク時刻</li>
                         </ul>
                     </div>
                     <div class="card">
@@ -1063,12 +1063,12 @@
                         </tr>
                         <tr>
                             <td>最高速フレーム</td>
-                            <td>採用速度が最大になったフレーム。</td>
-                            <td>手首速度、推定剣先速度、テープ剣先速度のいずれを正式値にするかで変わる。</td>
+                            <td>採用したピーク検出基準が最大になったフレーム。</td>
+                            <td>正式値は時刻として扱い、速度値そのものは参考値として記録する。</td>
                         </tr>
                         <tr>
                             <td>終了フレーム</td>
-                            <td>最高速度後に急減速したフレーム、または手動で指定した終了位置。</td>
+                            <td>ピーク後に急減速したフレーム、または手動で指定した終了位置。</td>
                             <td>正式測定では、スロー確認後の補正値を採用する。</td>
                         </tr>
                     </tbody>
@@ -1392,7 +1392,7 @@
                     <div class="term"><strong>刃筋</strong><span>右肘から右手首方向の線。打突方向の安定性を確認するための指標。</span></div>
                     <div class="term"><strong>MediaPipe</strong><span>Google系の姿勢推定ライブラリ。ブラウザ上で人体ランドマークを取得できる。</span></div>
                     <div class="term"><strong>YOLO Pose</strong><span>YOLO系の姿勢推定方式。本研究では比較・将来検証用として残している。</span></div>
-                    <div class="term"><strong>m/s*</strong><span>肩幅などから換算した推定速度。絶対測定値ではなく、条件を揃えた比較に使う。</span></div>
+                    <div class="term"><strong>m/s*</strong><span>肩幅などから換算した参考値。絶対測定値ではなく、同じ条件でのピーク検出や比較に使う。</span></div>
                     <div class="term"><strong>異常値除外</strong><span>短すぎる打突時間、速度の急な跳ね、低信頼度などを要確認として扱う処理。</span></div>
                     <div class="term"><strong>PWA</strong><span>WebアプリをスマホやPCに追加し、アプリのように使う仕組み。</span></div>
                 </div>
