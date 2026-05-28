@@ -1557,7 +1557,7 @@
 	                        <input type="checkbox" id="paramTipTracking" class="w-5 h-5 text-amber-600 rounded border-gray-300">
 	                        <span class="text-base font-bold text-amber-900">竹刀先端テープ検出を使う</span>
 	                    </label>
-	                    <p class="text-xs text-amber-700 mt-2 ml-8">右肘→右手首の延長線だけをROI探索します。竹刀先端に黄色テープを貼ると、剣先速度の補助指標として使えます。</p>
+	                    <p class="text-xs text-amber-700 mt-2 ml-8">両手首から推定した竹刀方向の先をROI探索します。竹刀先端に黄色テープを貼ると、刃筋と剣先速度の補助指標として使えます。</p>
 	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
 	                        <div>
 	                            <label class="block text-xs font-bold text-amber-900 mb-1">テープ色</label>
@@ -1607,7 +1607,7 @@
 	                        <option value="rightElbow">右肘角: 右肩-右肘-右手首</option>
 	                        <option value="leftElbow">左肘角: 左肩-左肘-左手首</option>
 	                        <option value="torso">体幹軸: 肩中点-腰中点</option>
-	                        <option value="hasuji">刃筋: 右肘-右手首</option>
+	                        <option value="hasuji">刃筋: 両手首/剣先推定</option>
 	                        <option value="shoulders">肩ライン: 左肩-右肩</option>
 	                    </select>
 	                    <p id="angleOverlayHint" class="text-xs text-violet-700 mt-2">黄色の点が基準点、色つき線が計算に使う線です。</p>
@@ -2049,7 +2049,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v64';
+            const refreshKey = 'kendo-sw-refreshed-v66';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2619,19 +2619,34 @@
         }
 
         function estimateShinaiTipMetric(landmarks, worldLandmarks) {
-            const elbowMetric = getMetricLandmark(landmarks[14], worldLandmarks?.[14], landmarks, worldLandmarks);
-            const wristMetric = getMetricLandmark(landmarks[16], worldLandmarks?.[16], landmarks, worldLandmarks);
-            if (!elbowMetric || !wristMetric) return null;
-            const vx = wristMetric.x - elbowMetric.x;
-            const vy = wristMetric.y - elbowMetric.y;
-            const vz = wristMetric.z - elbowMetric.z;
-            const armLen = Math.hypot(vx, vy, vz) || 1;
-            const scale = Params.shinaiLengthMeters / armLen;
+            const rightWristMetric = getMetricLandmark(landmarks?.[16], worldLandmarks?.[16], landmarks, worldLandmarks);
+            if (!rightWristMetric) return null;
+            const leftWristMetric = getMetricLandmark(landmarks?.[15], worldLandmarks?.[15], landmarks, worldLandmarks);
+            const rightElbowMetric = getMetricLandmark(landmarks?.[14], worldLandmarks?.[14], landmarks, worldLandmarks);
+            let baseMetric = null;
+            let sourceMetric = null;
+            if (leftWristMetric && visibilityOf(landmarks?.[15]) >= Params.minAngleVisibility && visibilityOf(landmarks?.[16]) >= Params.minAngleVisibility) {
+                const gripLen = Math.hypot(rightWristMetric.x - leftWristMetric.x, rightWristMetric.y - leftWristMetric.y, rightWristMetric.z - leftWristMetric.z);
+                if (gripLen > 0.035) {
+                    sourceMetric = leftWristMetric;
+                    baseMetric = rightWristMetric;
+                }
+            }
+            if (!sourceMetric && rightElbowMetric) {
+                sourceMetric = rightElbowMetric;
+                baseMetric = rightWristMetric;
+            }
+            if (!sourceMetric || !baseMetric) return null;
+            const vx = baseMetric.x - sourceMetric.x;
+            const vy = baseMetric.y - sourceMetric.y;
+            const vz = baseMetric.z - sourceMetric.z;
+            const axisLen = Math.hypot(vx, vy, vz) || 1;
+            const scale = Params.shinaiLengthMeters / axisLen;
             return {
-                x: wristMetric.x + vx * scale,
-                y: wristMetric.y + vy * scale,
-                z: wristMetric.z + vz * scale,
-                unit: wristMetric.unit
+                x: baseMetric.x + vx * scale,
+                y: baseMetric.y + vy * scale,
+                z: baseMetric.z + vz * scale,
+                unit: baseMetric.unit
             };
         }
 
@@ -2803,17 +2818,15 @@
                 AppState.lastTapePoint = null;
                 return null;
             }
-            const elbow = landmarks[14];
-            const wrist = landmarks[16];
-            const ex = elbow.x * canvasElement.width;
-            const ey = elbow.y * canvasElement.height;
-            const wx = wrist.x * canvasElement.width;
-            const wy = wrist.y * canvasElement.height;
-            const vx = wx - ex;
-            const vy = wy - ey;
-            const cx = wx + vx * Params.shinaiExtension;
-            const cy = wy + vy * Params.shinaiExtension;
-            const shoulderPx = Math.max(40, distance2d(landmarks[11], landmarks[12]) * canvasElement.width);
+            const roi = shinaiRoiCenter(landmarks, canvasElement.width, canvasElement.height);
+            if (!roi) {
+                AppState.roiStatus = '探索待ち';
+                AppState.lastTapePoint = null;
+                return null;
+            }
+            const cx = roi.x;
+            const cy = roi.y;
+            const shoulderPx = roi.shoulderPx;
             const radius = clamp(shoulderPx * Params.tipRoiRatio, 20, 90);
             const hit = detectTapeInRoi(canvasCtx, cx, cy, radius, Params.tapeColor);
 
@@ -2826,7 +2839,7 @@
             canvasCtx.stroke();
             canvasCtx.setLineDash([]);
             canvasCtx.beginPath();
-            canvasCtx.moveTo(wx, wy);
+            canvasCtx.moveTo(roi.start.x, roi.start.y);
             canvasCtx.lineTo(cx, cy);
             canvasCtx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
             canvasCtx.stroke();
@@ -2840,7 +2853,7 @@
                 canvasCtx.fillText('tape tip', hit.x + 10, hit.y - 10);
             }
             canvasCtx.restore();
-            AppState.roiStatus = hit ? `検出 ${hit.count}` : '探索中';
+            AppState.roiStatus = hit ? `検出 ${hit.count} / ${roi.source}` : `探索中 / ${roi.source}`;
             AppState.lastTapePoint = hit;
             return hit;
         }
@@ -2905,11 +2918,16 @@
             safeText('realtimeConditionAdvice', advice);
         }
 
+        function axisTiltFromVertical(dx, dy) {
+            if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.hypot(dx, dy) < 0.0001) return 0;
+            let angle = Math.abs(Math.atan2(dx, dy) * 180 / Math.PI);
+            if (angle > 90) angle = 180 - angle;
+            return Math.abs(angle);
+        }
+
         function calculateHasuji(rightElbow, rightWrist) {
-            const dx = rightWrist.x - rightElbow.x;
-            const dy = rightWrist.y - rightElbow.y;
-            let angle = Math.atan2(dx, dy) * 180 / Math.PI; 
-            return Math.abs(angle); 
+            if (!rightElbow || !rightWrist) return 0;
+            return axisTiltFromVertical(rightWrist.x - rightElbow.x, rightWrist.y - rightElbow.y);
         }
 
         function angleBetweenVectors2d(ax, ay, bx, by) {
@@ -2935,10 +2953,83 @@
             return { x: shoulderMid.x - hipMid.x, y: shoulderMid.y - hipMid.y };
         }
 
-        function calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks) {
+        function shinaiAxisFromLandmarks(landmarks, tapePoint = null) {
+            const rightWrist = landmarks?.[16];
+            const leftWrist = landmarks?.[15];
+            const rightElbow = landmarks?.[14];
+            if (tapePoint && rightWrist && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
+                return { start: rightWrist, end: tapePoint, source: 'tape' };
+            }
+            if (leftWrist && rightWrist && visibilityOf(leftWrist) >= Params.minAngleVisibility && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
+                const shoulderWidth = landmarks?.[11] && landmarks?.[12] ? distance2d(landmarks[11], landmarks[12]) : 0;
+                const gripLen = distance2d(leftWrist, rightWrist);
+                if (gripLen > Math.max(0.018, shoulderWidth * 0.08)) {
+                    return { start: leftWrist, end: rightWrist, source: 'grip' };
+                }
+            }
+            if (rightElbow && rightWrist && visibilityOf(rightElbow) >= Params.minAngleVisibility && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
+                return { start: rightElbow, end: rightWrist, source: 'forearm' };
+            }
+            return null;
+        }
+
+        function calculateShinaiHasuji(landmarks, tapePoint = null) {
+            const axis = shinaiAxisFromLandmarks(landmarks, tapePoint);
+            if (!axis) return 0;
+            return axisTiltFromVertical(axis.end.x - axis.start.x, axis.end.y - axis.start.y);
+        }
+
+        function calculateShinaiAxisQuality(landmarks, tapePoint = null) {
+            const axis = shinaiAxisFromLandmarks(landmarks, tapePoint);
+            if (!axis) return 0;
+            if (axis.source === 'tape') return Math.min(0.9, Math.max(0.55, visibilityOf(landmarks?.[16]) || 0.7));
+            const startQuality = visibilityOf(axis.start);
+            const endQuality = visibilityOf(axis.end);
+            return clamp((startQuality + endQuality) / 2, 0, 1);
+        }
+
+        function shinaiAxisCanvasLine(landmarks, width, height, tapePoint = null, extensionPx = 110) {
+            const axis = shinaiAxisFromLandmarks(landmarks, tapePoint);
+            if (!axis) return null;
+            const start = { x: axis.start.x * width, y: axis.start.y * height };
+            const baseEnd = { x: axis.end.x * width, y: axis.end.y * height };
+            const dx = baseEnd.x - start.x;
+            const dy = baseEnd.y - start.y;
+            const len = Math.hypot(dx, dy);
+            if (len < 1) return null;
+            const extend = axis.source === 'tape' ? 0 : extensionPx;
+            return {
+                start,
+                end: { x: baseEnd.x + (dx / len) * extend, y: baseEnd.y + (dy / len) * extend },
+                source: axis.source
+            };
+        }
+
+        function shinaiRoiCenter(landmarks, width, height) {
+            const axis = shinaiAxisFromLandmarks(landmarks);
+            if (!axis) return null;
+            const start = { x: axis.start.x * width, y: axis.start.y * height };
+            const baseEnd = { x: axis.end.x * width, y: axis.end.y * height };
+            const dx = baseEnd.x - start.x;
+            const dy = baseEnd.y - start.y;
+            const len = Math.hypot(dx, dy);
+            if (len < 1) return null;
+            const shoulderPx = landmarks?.[11] && landmarks?.[12] ? Math.max(40, distance2d(landmarks[11], landmarks[12]) * width) : 80;
+            const extensionPx = clamp(Math.max(len * Params.shinaiExtension, shoulderPx * 1.15), 40, shoulderPx * 3.2);
+            return {
+                x: baseEnd.x + (dx / len) * extensionPx,
+                y: baseEnd.y + (dy / len) * extensionPx,
+                start: baseEnd,
+                source: axis.source,
+                shoulderPx
+            };
+        }
+
+        function calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks, tapePoint = null) {
             const axis = bodyAxisVector(landmarks);
-            if (!rightElbow || !rightWrist || !axis) return calculateHasuji(rightElbow, rightWrist);
-            return angleBetweenVectors2d(rightWrist.x - rightElbow.x, rightWrist.y - rightElbow.y, axis.x, axis.y);
+            const shinaiAxis = shinaiAxisFromLandmarks(landmarks, tapePoint);
+            if (!shinaiAxis || !axis) return calculateHasuji(rightElbow, rightWrist);
+            return angleBetweenVectors2d(shinaiAxis.end.x - shinaiAxis.start.x, shinaiAxis.end.y - shinaiAxis.start.y, axis.x, axis.y);
         }
 
         function chooseOfficialSpeed(values, preferred = Params.officialSpeedSource) {
@@ -2991,7 +3082,7 @@
                 rightElbow: { label: `右肘 ${values.rightAng.toFixed(1)}°`, points: [12, 14, 16], color: '#a78bfa' },
                 leftElbow: { label: `左肘 ${(values.leftAng || 0).toFixed(1)}°`, points: [11, 13, 15], color: '#60a5fa' },
                 torso: { label: `体幹 ${values.torsoAng.toFixed(1)}°`, points: ['shoulderMid', 'hipMid'], color: '#34d399' },
-                hasuji: { label: `刃筋 ${values.hasuji.toFixed(1)}°`, points: [14, 16], color: '#facc15' },
+                hasuji: { label: `刃筋 ${values.hasuji.toFixed(1)}°`, points: ['shinaiAxis'], color: '#facc15' },
                 shoulders: { label: `肩ライン ${(values.shoulderLineAng || 0).toFixed(1)}°`, points: [11, 12], color: '#fb7185' }
             };
             const extra = {
@@ -3007,6 +3098,38 @@
             canvasCtx.shadowColor = 'rgba(15, 23, 42, 0.65)';
             canvasCtx.shadowBlur = 8;
             targets.forEach((def, defIndex) => {
+                if (def.points[0] === 'shinaiAxis') {
+                    const tapePoint = Params.tipTracking && AppState.lastTapePoint
+                        ? { x: AppState.lastTapePoint.x / canvasElement.width, y: AppState.lastTapePoint.y / canvasElement.height, visibility: 0.85 }
+                        : null;
+                    const axisLine = shinaiAxisCanvasLine(landmarks, canvasElement.width, canvasElement.height, tapePoint, Math.max(70, canvasElement.width * 0.08));
+                    if (!axisLine) return;
+                    canvasCtx.lineWidth = Math.max(5, canvasElement.width * 0.005);
+                    canvasCtx.strokeStyle = def.color;
+                    canvasCtx.fillStyle = def.color;
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(axisLine.start.x, axisLine.start.y);
+                    canvasCtx.lineTo(axisLine.end.x, axisLine.end.y);
+                    canvasCtx.stroke();
+                    [axisLine.start, axisLine.end].forEach((p, i) => {
+                        canvasCtx.beginPath();
+                        canvasCtx.fillStyle = i === 0 ? '#fde68a' : def.color;
+                        canvasCtx.arc(p.x, p.y, i === 0 ? 8 : 7, 0, Math.PI * 2);
+                        canvasCtx.fill();
+                    });
+                    const anchor = axisLine.end;
+                    canvasCtx.font = `${Math.max(14, canvasElement.width * 0.016)}px sans-serif`;
+                    canvasCtx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+                    const sourceLabel = axisLine.source === 'tape' ? '実剣先' : (axisLine.source === 'grip' ? '両手' : '腕推定');
+                    const label = `${def.label} / ${sourceLabel}`;
+                    const labelWidth = canvasCtx.measureText(label).width + 18;
+                    const labelX = clamp(anchor.x + 12, 6, canvasElement.width - labelWidth - 6);
+                    const labelY = clamp(anchor.y - 30 + defIndex * 30, 12, canvasElement.height - 32);
+                    canvasCtx.fillRect(labelX, labelY, labelWidth, 26);
+                    canvasCtx.fillStyle = '#ffffff';
+                    canvasCtx.fillText(label, labelX + 9, labelY + 18);
+                    return;
+                }
                 const pts = def.points.map(key => pointPx(typeof key === 'number' ? landmarks[key] : extra[key])).filter(Boolean);
                 if (pts.length < 2) return;
                 canvasCtx.lineWidth = Math.max(4, canvasElement.width * 0.004);
@@ -3063,10 +3186,10 @@
             hasuji: {
                 title: '刃筋',
                 color: '#facc15',
-                points: [14, 16],
-                labels: ['右肘', '右手首', '右肘→右手首の方向'],
+                points: [15, 16],
+                labels: ['左手首', '右手首', '両手首→推定剣先の方向'],
                 valueKey: 'hasuji',
-                definition: '右肘から右手首へ向かうベクトルの傾きを見ます。現状は竹刀そのものではなく、腕の方向から刃筋を推定します。'
+                definition: '竹刀先端テープが取れる場合は右手首からテープ方向、取れない場合は左手首から右手首方向を優先します。両手首が重なって不安定な時だけ右肘から右手首方向に戻します。'
             },
             shoulders: {
                 title: '肩ライン',
@@ -3775,6 +3898,7 @@
             const rElbow = getModelLandmarkPoint(pose, 14, THREE);
             const rWrist = getModelLandmarkPoint(pose, 16, THREE);
             const lShoulder = getModelLandmarkPoint(pose, 11, THREE);
+            const lWrist = getModelLandmarkPoint(pose, 15, THREE);
             const shoulderMid = getModelLandmarkPoint(pose, 'shoulderMid', THREE);
             const hipMid = getModelLandmarkPoint(pose, 'hipMid', THREE);
 
@@ -3805,11 +3929,12 @@
                 label.position.copy(shoulderMid.clone().add(new THREE.Vector3(-0.46, 0.16, 0)));
             }
 
-            if (rElbow && rWrist) {
-                const dir = rWrist.clone().sub(rElbow);
-                if (dir.length() > 0.02) {
+            if ((lWrist || rElbow) && rWrist) {
+                const axisStart = lWrist && lWrist.distanceTo(rWrist) > 0.025 ? lWrist : rElbow;
+                const dir = axisStart ? rWrist.clone().sub(axisStart) : null;
+                if (dir && dir.length() > 0.02) {
                     const guideEnd = rWrist.clone().add(dir.clone().normalize().multiplyScalar(0.7));
-                    alignModelSegment(THREE, analysisSegments.hasuji, rElbow, rWrist, 0.02);
+                    alignModelSegment(THREE, analysisSegments.hasuji, axisStart, rWrist, 0.02);
                     alignModelSegment(THREE, analysisSegments.hasujiGuide, rWrist, guideEnd, 0.0);
                     const label = analysisLabels.hasuji;
                     setModelTextSprite(label, `刃筋 ${modelValueText(values.hasuji)}`, '#facc15');
@@ -3862,10 +3987,14 @@
             }
             const rElbowPoint = getModelLandmarkPoint(pose, 14, THREE);
             const rWristPoint = getModelLandmarkPoint(pose, 16, THREE);
-            if (rElbowPoint && rWristPoint && shinaiMesh && shinaiTip) {
-                const dir = rWristPoint.clone().sub(rElbowPoint);
-                const len = dir.length();
-                if (len > 0.02) {
+            const lWristPoint = getModelLandmarkPoint(pose, 15, THREE);
+            if ((lWristPoint || rElbowPoint) && rWristPoint && shinaiMesh && shinaiTip) {
+                const axisStart = lWristPoint && lWristPoint.distanceTo(rWristPoint) > 0.025 ? lWristPoint : rElbowPoint;
+                const dir = axisStart ? rWristPoint.clone().sub(axisStart) : null;
+                if (!dir) {
+                    shinaiMesh.visible = false;
+                    shinaiTip.visible = false;
+                } else if (dir.length() > 0.02) {
                     const tipPoint = rWristPoint.clone().add(dir.clone().normalize().multiplyScalar(1.05));
                     alignModelSegment(THREE, shinaiMesh, rWristPoint, tipPoint, 0.0);
                     shinaiTip.visible = true;
@@ -4269,7 +4398,7 @@
             
             if (Math.abs(Number(torsoAng || 0)) > 15) { comment = "体幹軸が傾いています。上半身の軸を立てて振り下ろしましょう。"; shortLabel = "姿勢注意"; }
             else if (rightAng < 150) { comment = "肘が曲がっています。剣先に力を伝えるよう腕を伸ばしましょう。"; shortLabel = "肘曲がり"; }
-            else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。右肘から手首の線を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
+            else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。両手首と竹刀方向を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
             else if (timeMs > (Params.signalMode ? 800 : 350)) { comment = Params.signalMode ? "反応が遅いです。音に集中して！" : "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
             else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
 
@@ -4597,10 +4726,13 @@
             }
             
             let rightAng = 0, leftAng = 0, torsoAng = 0, hasuji = 0, shoulderLineAng = 0;
+            const previousTapePoint = Params.tipTracking && AppState.lastTapePoint
+                ? { x: AppState.lastTapePoint.x / canvasElement.width, y: AppState.lastTapePoint.y / canvasElement.height, visibility: 0.85 }
+                : null;
             
             if(rShoulder && rElbow && rWrist && visibilityOf(rShoulder) > 0.35 && visibilityOf(rElbow) > 0.35 && visibilityOf(rWrist) > 0.35) {
                 rightAng = calculateJointAngle(rShoulder, rElbow, rWrist);
-                hasuji = calculateHasuji(rElbow, rWrist);
+                hasuji = calculateShinaiHasuji(lm, previousTapePoint);
                 
                 // 【★追加】リアルタイムの角度をオーバーレイに反映
                 document.getElementById('overlayRightAng').innerText = rightAng.toFixed(1) + '°';
@@ -4636,16 +4768,17 @@
             const torsoQuality = landmarkQuality(lShoulder, rShoulder, lHip, rHip);
             const shoulderQuality = landmarkQuality(lShoulder, rShoulder);
             const screenHasuji = hasuji;
-            const bodyHasuji = calculateBodyReferencedHasuji(rElbow, rWrist, lm);
+            const bodyHasuji = calculateBodyReferencedHasuji(rElbow, rWrist, lm, previousTapePoint);
+            const hasujiQuality = calculateShinaiAxisQuality(lm, previousTapePoint);
             if (Params.angleReference === 'torso') hasuji = bodyHasuji;
             AppState.currentScreenHasuji = screenHasuji;
             AppState.currentBodyReferencedHasuji = bodyHasuji;
             rightAng = smoothMeasuredValue('rightAng', rightAng, rightAngleQuality);
             leftAng = smoothMeasuredValue('leftAng', leftAng, leftAngleQuality);
             torsoAng = smoothMeasuredValue('torsoAng', torsoAng, torsoQuality, 0.16, 0.65);
-            hasuji = smoothMeasuredValue('hasuji', hasuji, rightAngleQuality, 0.22, 0.76);
+            hasuji = smoothMeasuredValue('hasuji', hasuji, hasujiQuality || rightAngleQuality, 0.22, 0.76);
             shoulderLineAng = smoothMeasuredValue('shoulderLineAng', shoulderLineAng, shoulderQuality);
-            const qualityValues = [rightAngleQuality, torsoQuality, shoulderQuality].filter(v => v > 0);
+            const qualityValues = [rightAngleQuality, torsoQuality, shoulderQuality, hasujiQuality].filter(v => v > 0);
             AppState.currentAngleQuality = qualityValues.length ? qualityValues.reduce((sum, v) => sum + v, 0) / qualityValues.length : 0;
             AppState.modelPoseSnapshot = clonePoseSnapshot(lm);
             AppState.modelAngleValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
@@ -6190,14 +6323,8 @@
                 }
             }
             if (shouldDraw('hasuji')) {
-                const elbow = p(14), wrist = p(16);
-                if (elbow && wrist) {
-                    const vx = wrist.x - elbow.x;
-                    const vy = wrist.y - elbow.y;
-                    const len = Math.max(42, Math.hypot(vx, vy));
-                    const tip = { x: wrist.x + (vx / len) * 90, y: wrist.y + (vy / len) * 90 };
-                    drawVideoAngleLine(ctx, elbow, tip, '#f59e0b', `刃筋 ${Number(frame.hasuji || 0).toFixed(1)}°`);
-                }
+                const axisLine = shinaiAxisCanvasLine(lm, width, height, frame.tapePoint, 90);
+                if (axisLine) drawVideoAngleLine(ctx, axisLine.start, axisLine.end, '#f59e0b', `刃筋 ${Number(frame.hasuji || 0).toFixed(1)}°`);
             }
         }
 
@@ -7721,8 +7848,8 @@
             if (!data || data.startFrame === null || data.endFrame === null || data.endFrame <= data.startFrame) return;
             data.frames.forEach(frame => {
                 if (!frame.landmarks?.[14] || !frame.landmarks?.[16]) return;
-                frame.hasujiScreen = calculateHasuji(frame.landmarks[14], frame.landmarks[16]);
-                frame.hasujiBody = calculateBodyReferencedHasuji(frame.landmarks[14], frame.landmarks[16], frame.landmarks);
+                frame.hasujiScreen = calculateShinaiHasuji(frame.landmarks, frame.tapePoint);
+                frame.hasujiBody = calculateBodyReferencedHasuji(frame.landmarks[14], frame.landmarks[16], frame.landmarks, frame.tapePoint);
                 frame.hasuji = Params.angleReference === 'torso' ? frame.hasujiBody : frame.hasujiScreen;
             });
             const slice = data.frames.slice(data.startFrame, data.endFrame + 1);
@@ -8124,6 +8251,7 @@
                 let frameTipPosition = null;
                 let frameTapeSpeed = 0;
                 let frameTapePosition = null;
+                let frameTapePoint = null;
                 let frameRightAng = 0;
                 let frameLeftAng = 0;
                 let frameTorsoAng = 0;
@@ -8152,17 +8280,13 @@
                     if (lm[11] && lm[12]) {
                         try {
                             videoScanCtx.drawImage(video, 0, 0, videoScanCanvas.width, videoScanCanvas.height);
-                            const ex = lm[14].x * videoScanCanvas.width;
-                            const ey = lm[14].y * videoScanCanvas.height;
-                            const wx = lm[16].x * videoScanCanvas.width;
-                            const wy = lm[16].y * videoScanCanvas.height;
-                            const vx = wx - ex;
-                            const vy = wy - ey;
                             const shoulderPx = Math.max(40, distance2d(lm[11], lm[12]) * videoScanCanvas.width);
                             const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
-                            const tapeHit = detectTapeInCanvas(videoScanCtx, videoScanCanvas.width, videoScanCanvas.height, wx + vx * Params.shinaiExtension, wy + vy * Params.shinaiExtension, radius, Params.tapeColor);
+                            const roi = shinaiRoiCenter(lm, videoScanCanvas.width, videoScanCanvas.height);
+                            const tapeHit = roi ? detectTapeInCanvas(videoScanCtx, videoScanCanvas.width, videoScanCanvas.height, roi.x, roi.y, radius, Params.tapeColor) : null;
                             if (tapeHit) {
                                 tapeHitFrames += 1;
+                                frameTapePoint = { x: tapeHit.x / videoScanCanvas.width, y: tapeHit.y / videoScanCanvas.height, visibility: 0.85 };
                                 const tapeMetric = metricFromFramePoint(tapeHit, lm, videoScanCanvas.width, videoScanCanvas.height);
                                 const tapeFiltered = tapeFilter.update(tapeMetric, timeMs, 0.85);
                                 frameTapeSpeed = tapeFiltered.speed || 0;
@@ -8176,8 +8300,8 @@
                     }
                     if (lm[12] && lm[14] && lm[16]) {
                         frameRightAng = calculateJointAngle(lm[12], lm[14], lm[16]);
-                        frameHasujiScreen = calculateHasuji(lm[14], lm[16]);
-                        frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm);
+                        frameHasujiScreen = calculateShinaiHasuji(lm, frameTapePoint);
+                        frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm, frameTapePoint);
                         frameHasuji = Params.angleReference === 'torso' ? frameHasujiBody : frameHasujiScreen;
                     }
                     if (lm[11] && lm[13] && lm[15]) {
@@ -8237,6 +8361,7 @@
                     tipPosition: frameTipPosition,
                     tipSpeed: frameTipSpeed,
                     tapePosition: frameTapePosition,
+                    tapePoint: frameTapePoint,
                     tapeSpeed: frameTapeSpeed,
                     officialSpeed: chooseOfficialSpeed({ wrist: frameSpeed, tip: frameTipSpeed, tape: frameTapeSpeed, unit: speedUnit }, Params.officialSpeedSource).value,
                     speedUnit,
