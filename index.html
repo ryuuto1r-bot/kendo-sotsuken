@@ -19,6 +19,8 @@
 
     <style>
         .font-mono-num { font-family: 'Courier New', Courier, monospace; }
+        html { -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }
+        canvas, video { image-rendering: auto; transform: translateZ(0); }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
@@ -139,9 +141,68 @@
         @media (min-width: 1024px) {
             .video-graph-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
+        .video-sync-graph-panel {
+            background:
+                radial-gradient(circle at 8% 0%, rgba(14, 165, 233, 0.08), transparent 30%),
+                linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .video-analysis-graph {
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
+        .video-analysis-graph::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(255,255,255,0.58), transparent 42%);
+        }
         .video-analysis-graph canvas {
-            height: 180px !important;
-            min-height: 180px;
+            height: 220px !important;
+            min-height: 220px;
+            display: block;
+            border-radius: 10px;
+        }
+        .video-sync-graph-panel.graph-zoomed .video-graph-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .video-sync-graph-panel.graph-zoomed .video-analysis-graph canvas {
+            height: min(46vh, 420px) !important;
+            min-height: 320px;
+        }
+        .video-sync-graph-panel:fullscreen,
+        .video-sync-graph-panel:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            padding: 18px;
+            background: #f8fafc;
+        }
+        .video-sync-graph-panel:fullscreen .video-graph-grid,
+        .video-sync-graph-panel:-webkit-full-screen .video-graph-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .video-sync-graph-panel:fullscreen .video-analysis-graph canvas,
+        .video-sync-graph-panel:-webkit-full-screen .video-analysis-graph canvas {
+            height: min(34vh, 360px) !important;
+            min-height: 280px;
+        }
+        .video-graph-action {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 0.45rem 0.7rem;
+            font-weight: 900;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        }
+        .video-graph-action:hover {
+            transform: translateY(-1px);
+            border-color: #60a5fa;
+            background: #eff6ff;
         }
         .video-frame-master-slider {
             height: 24px;
@@ -362,7 +423,61 @@
         }
         .video-result-mini-timeline {
             margin-top: 10px;
-            background: #f8fafc;
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            background:
+                radial-gradient(circle at 6% 0%, rgba(59, 130, 246, 0.16), transparent 32%),
+                linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.95));
+            box-shadow: 0 16px 45px rgba(15, 23, 42, 0.09);
+        }
+        .video-result-mini-timeline .video-editor-timebar {
+            color: #0f172a;
+            font-size: 12px;
+        }
+        .video-result-mini-timeline .video-editor-track {
+            height: 96px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            border-radius: 18px;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(255, 255, 255, 0.1)),
+                repeating-linear-gradient(to right, rgba(15, 23, 42, 0.05) 0, rgba(15, 23, 42, 0.05) 1px, transparent 1px, transparent 20px),
+                linear-gradient(90deg, #eff6ff, #f8fafc 48%, #fff7ed);
+        }
+        .video-result-mini-timeline .video-editor-range {
+            top: 22px;
+            bottom: 22px;
+            border-radius: 14px;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.28), rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.24));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+        }
+        .video-result-mini-timeline .video-editor-playhead {
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            background: #020617;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.96), 0 0 24px rgba(15,23,42,0.28);
+        }
+        .video-result-mini-timeline .video-editor-playhead::before {
+            width: 18px;
+            height: 18px;
+            top: -9px;
+            border-radius: 6px;
+        }
+        .video-result-mini-timeline .video-editor-marker {
+            top: 16px;
+            height: 64px;
+            width: 20px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.22);
+        }
+        .video-result-mini-timeline .video-editor-strike-range {
+            top: 33px;
+            height: 30px;
+            background: rgba(245, 158, 11, 0.22);
+            border-color: rgba(245, 158, 11, 0.38);
+        }
+        .video-result-mini-timeline .video-editor-strike {
+            top: 28px;
+            width: 42px;
+            height: 42px;
         }
         .video-analysis-fullscreen:fullscreen .video-result-mini-timeline,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
@@ -998,14 +1113,16 @@
                         </table>
                     </div>
                 </div>
-                <div id="videoSyncGraphPanel" class="mt-4 bg-white border border-slate-200 rounded-xl p-3">
+                <div id="videoSyncGraphPanel" class="video-sync-graph-panel mt-4 bg-white border border-slate-200 rounded-xl p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-chart-simple text-cyan-500 mr-2"></i>同期グラフ</h3>
-                        <div class="flex flex-wrap gap-2 text-[11px]">
+                        <div class="flex flex-wrap items-center gap-2 text-[11px]">
                             <span class="text-cyan-700 font-bold">ピーク検出</span>
                             <span class="text-purple-700 font-bold">右肘</span>
                             <span class="text-emerald-700 font-bold">体幹</span>
                             <span class="text-amber-700 font-bold">刃筋</span>
+                            <button id="videoGraphZoomBtn" type="button" class="video-graph-action"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i>拡大</button>
+                            <button id="videoGraphFullscreenBtn" type="button" class="video-graph-action"><i class="fa-solid fa-expand mr-1"></i>全画面</button>
                         </div>
                     </div>
                     <div class="video-graph-grid grid gap-4">
@@ -1675,6 +1792,7 @@
             videoSelectedStrikeRejected: false,
             videoResultTimelineTickKey: '',
             videoResultTimelineDragMode: null,
+            videoGraphZoomed: false,
             videoSlowPlaying: false,
             videoSlowTimer: null,
             videoDrawToken: 0,
@@ -1930,7 +2048,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v60';
+            const refreshKey = 'kendo-sw-refreshed-v61';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3442,7 +3560,7 @@
             const sourceAspect = (source?.width && source?.height) ? source.width / source.height : (16 / 9);
             const height = clamp(Math.round(width / Math.max(0.25, sourceAspect)), 190, 620);
             canvas.style.aspectRatio = `${width} / ${height}`;
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+	            const dpr = Math.min(window.devicePixelRatio || 1, 3);
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             const ctx = canvas.getContext('2d');
@@ -5931,8 +6049,13 @@
         function drawNormalizedSkeleton(ctx, landmarks, width, height, color = '#38bdf8') {
             if (!landmarks) return;
             ctx.save();
-            ctx.lineWidth = Math.max(2, width * 0.004);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.lineWidth = Math.max(3, width * 0.0048);
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = 'rgba(2, 6, 23, 0.45)';
+            ctx.shadowBlur = Math.max(4, width * 0.002);
             ctx.strokeStyle = color;
             POSE_CONNECTIONS.forEach(([a, b]) => {
                 const pa = landmarks[a];
@@ -5943,12 +6066,16 @@
                 ctx.lineTo(pb.x * width, pb.y * height);
                 ctx.stroke();
             });
+            ctx.shadowBlur = 0;
             ctx.fillStyle = '#facc15';
             landmarks.forEach(point => {
                 if (visibilityOf(point) < 0.35) return;
                 ctx.beginPath();
-                ctx.arc(point.x * width, point.y * height, Math.max(3, width * 0.006), 0, Math.PI * 2);
+                ctx.arc(point.x * width, point.y * height, Math.max(4, width * 0.0065), 0, Math.PI * 2);
                 ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+                ctx.lineWidth = Math.max(1.5, width * 0.0015);
+                ctx.stroke();
             });
             ctx.restore();
         }
@@ -6917,24 +7044,30 @@
             if (!canvas) return;
             const rect = canvas.getBoundingClientRect();
             const compact = canvasId.includes('Correction');
-            const width = Math.max(compact ? 240 : 360, Math.round(rect.width || canvas.clientWidth || 760));
-            const height = Math.max(compact ? 112 : 176, Math.round(rect.height || canvas.clientHeight || (compact ? 118 : 192)));
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const zoomed = !!AppState.videoGraphZoomed && !compact;
+            const width = Math.max(compact ? 260 : 420, Math.round(rect.width || canvas.clientWidth || 820));
+            const height = Math.max(compact ? 128 : (zoomed ? 320 : 220), Math.round(rect.height || canvas.clientHeight || (compact ? 128 : (zoomed ? 340 : 230))));
+            const dpr = Math.min(window.devicePixelRatio || 1, 3);
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             const ctx = canvas.getContext('2d');
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.clearRect(0, 0, width, height);
-            ctx.fillStyle = '#f8fafc';
+            const bg = ctx.createLinearGradient(0, 0, 0, height);
+            bg.addColorStop(0, '#ffffff');
+            bg.addColorStop(1, '#f8fafc');
+            ctx.fillStyle = bg;
             ctx.fillRect(0, 0, width, height);
             if (!data?.frames?.length) {
                 ctx.fillStyle = '#64748b';
-                ctx.font = '13px sans-serif';
+                ctx.font = '600 13px system-ui, sans-serif';
                 ctx.fillText('動画解析後に表示します', 18, 32);
                 return;
             }
             const frames = data.frames;
-            const pad = { left: 40, right: 18, top: 18, bottom: 26 };
+            const pad = { left: compact ? 40 : 52, right: 20, top: 22, bottom: compact ? 28 : 34 };
             const plotW = width - pad.left - pad.right;
             const plotH = height - pad.top - pad.bottom;
             const maxSpeed = Math.max(1, ...frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0));
@@ -6947,7 +7080,7 @@
             if (Array.isArray(visibleKeys) && visibleKeys.length) {
                 series = series.filter(s => visibleKeys.includes(s.key));
             }
-            ctx.strokeStyle = '#cbd5e1';
+            ctx.strokeStyle = '#dbe3ee';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 4; i++) {
                 const y = pad.top + (plotH * i / 4);
@@ -6956,15 +7089,27 @@
                 ctx.lineTo(width - pad.right, y);
                 ctx.stroke();
             }
+            ctx.fillStyle = '#64748b';
+            ctx.font = '700 10px system-ui, sans-serif';
+            if (!compact) {
+                ctx.fillText('100', 14, pad.top + 4);
+                ctx.fillText('50', 20, pad.top + plotH / 2 + 4);
+                ctx.fillText('0', 26, pad.top + plotH + 4);
+            }
             data.strikes?.forEach(strike => {
                 const x1 = pad.left + (strike.startFrame / Math.max(1, frames.length - 1)) * plotW;
                 const x2 = pad.left + (strike.endFrame / Math.max(1, frames.length - 1)) * plotW;
-                ctx.fillStyle = 'rgba(251, 191, 36, 0.16)';
+                ctx.fillStyle = 'rgba(251, 191, 36, 0.13)';
                 ctx.fillRect(x1, pad.top, Math.max(2, x2 - x1), plotH);
             });
             series.forEach(s => {
+                const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+                grad.addColorStop(0, `${s.color}26`);
+                grad.addColorStop(1, `${s.color}03`);
                 ctx.strokeStyle = s.color;
-                ctx.lineWidth = s.key === 'speed' ? 2.5 : 1.8;
+                ctx.lineWidth = compact ? 2.2 : (s.key === 'speed' ? 3.2 : 2.7);
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
                 ctx.beginPath();
                 s.values.forEach((value, index) => {
                     const x = pad.left + (index / Math.max(1, frames.length - 1)) * plotW;
@@ -6973,44 +7118,59 @@
                     else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
+                if (!compact && series.length === 1) {
+                    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+                    ctx.lineTo(pad.left, pad.top + plotH);
+                    ctx.closePath();
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
             });
             getVideoFrameMarkers(data).forEach((marker, order) => {
                 const x = pad.left + (marker.index / Math.max(1, frames.length - 1)) * plotW;
                 ctx.save();
                 ctx.strokeStyle = marker.color;
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 4]);
+                ctx.lineWidth = compact ? 2 : 2.5;
+                ctx.setLineDash([6, 5]);
                 ctx.beginPath();
                 ctx.moveTo(x, pad.top);
                 ctx.lineTo(x, pad.top + plotH);
                 ctx.stroke();
                 ctx.setLineDash([]);
                 ctx.fillStyle = marker.color;
-                ctx.font = 'bold 10px sans-serif';
+                ctx.font = '800 10px system-ui, sans-serif';
                 if (!compact) ctx.fillText(marker.labelJa, clamp(x - 12, pad.left, width - pad.right - 32), pad.top + 12 + order * 12);
                 ctx.restore();
             });
             const currentX = pad.left + (clamp(currentIndex, 0, frames.length - 1) / Math.max(1, frames.length - 1)) * plotW;
             ctx.strokeStyle = '#111827';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = compact ? 2 : 3;
             ctx.beginPath();
             ctx.moveTo(currentX, pad.top);
             ctx.lineTo(currentX, pad.top + plotH);
             ctx.stroke();
             ctx.fillStyle = '#0f172a';
-            ctx.font = '11px sans-serif';
+            ctx.font = '800 11px system-ui, sans-serif';
             const frame = frames[clamp(currentIndex, 0, frames.length - 1)];
             const info = visibleKeys?.includes('right')
                 ? `${Math.round(frame.timeMs)}ms / ${Number(frame.rightAng || 0).toFixed(1)}°`
                 : (visibleKeys?.includes('torso') || visibleKeys?.includes('hasuji')
                     ? `${Math.round(frame.timeMs)}ms / 軸${Number(frame.torsoAng || 0).toFixed(1)} 刃${Number(frame.hasuji || 0).toFixed(1)}`
                     : `${Math.round(frame.timeMs)}ms / ピーク参考`);
-            ctx.fillText(info, pad.left, height - 8);
+            const pillW = Math.min(width - pad.left - pad.right, ctx.measureText(info).width + 18);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(pad.left, height - pad.bottom + 6, pillW, 22, 11);
+            else ctx.rect(pad.left, height - pad.bottom + 6, pillW, 22);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(info, pad.left + 9, height - pad.bottom + 21);
             const legendX = Math.max(pad.left + 120, width - series.length * 58 - 12);
             series.forEach((s, i) => {
                 ctx.fillStyle = s.color;
                 ctx.fillRect(legendX + i * 54, 8, 10, 10);
                 ctx.fillStyle = '#334155';
+                ctx.font = '800 11px system-ui, sans-serif';
                 ctx.fillText(s.label, legendX + i * 54 + 14, 17);
             });
         }
@@ -7027,6 +7187,39 @@
             drawVideoSyncGraph(currentIndex, 'videoCorrectionElbowGraphCanvas', ['right']);
             drawVideoSyncGraph(currentIndex, 'videoCorrectionAxisGraphCanvas', ['torso', 'hasuji']);
             drawVideoSyncGraph(currentIndex, 'videoCorrectionGraphCanvas');
+        }
+
+        function currentVideoGraphFrameIndex() {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return 0;
+            return clamp(Math.round(Number(document.getElementById('videoFrameSlider')?.value ?? data.startFrame ?? 0)), 0, data.frames.length - 1);
+        }
+
+        function refreshVideoGraphResolution() {
+            if (!AppState.videoAnalysis?.frames?.length) return;
+            const frameIndex = currentVideoGraphFrameIndex();
+            requestAnimationFrame(() => drawVideoResultGraphs(frameIndex));
+        }
+
+        function setVideoGraphZoom(zoomed = !AppState.videoGraphZoomed) {
+            AppState.videoGraphZoomed = !!zoomed;
+            const panel = document.getElementById('videoSyncGraphPanel');
+            const btn = document.getElementById('videoGraphZoomBtn');
+            if (panel) panel.classList.toggle('graph-zoomed', AppState.videoGraphZoomed);
+            if (btn) btn.innerHTML = AppState.videoGraphZoomed
+                ? '<i class="fa-solid fa-magnifying-glass-minus mr-1"></i>縮小'
+                : '<i class="fa-solid fa-magnifying-glass-plus mr-1"></i>拡大';
+            refreshVideoGraphResolution();
+        }
+
+        function openVideoGraphFullscreen() {
+            const panel = document.getElementById('videoSyncGraphPanel');
+            if (!panel) return;
+            setVideoGraphZoom(true);
+            const request = panel.requestFullscreen || panel.webkitRequestFullscreen;
+            if (request) request.call(panel);
+            else showToast('このブラウザでは全画面表示に対応していません', 'yellow');
+            setTimeout(refreshVideoGraphResolution, 120);
         }
 
         function updateVideoAnalysisLabels() {
@@ -7315,20 +7508,22 @@
             const previewPanel = document.getElementById('videoResultPreviewPanel');
             const fullscreenPreview = document.fullscreenElement === previewPanel || document.webkitFullscreenElement === previewPanel;
             const targetCssW = Math.max(previewRect.width || 0, fullscreenPreview ? 1200 : 760);
-            const w = Math.round(clamp(targetCssW * dpr, 720, Math.min(1920, Math.max(sourceW, 960))));
+	            const w = Math.round(clamp(targetCssW * dpr, 720, Math.min(2560, Math.max(sourceW, 1280))));
             const h = Math.max(360, Math.round(w * sourceH / sourceW));
             if (canvas.width !== w || canvas.height !== h) {
                 canvas.width = w;
                 canvas.height = h;
             }
-            const sourceStartSec = Number(data.sourceStartSec || 0);
+	            const sourceStartSec = Number(data.sourceStartSec || 0);
             const sourceEndSec = Number(data.sourceEndSec || sourceStartSec + data.duration || 0);
             const seekSec = Math.min(sourceStartSec + frame.timeMs / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
             syncCorrectionVideoSource(seekSec);
             await seekVideoTo(video, seekSec).catch(() => {});
             if (drawToken !== AppState.videoDrawToken) return false;
-            ctx.clearRect(0, 0, w, h);
-            try {
+	            ctx.clearRect(0, 0, w, h);
+	            ctx.imageSmoothingEnabled = true;
+	            ctx.imageSmoothingQuality = 'high';
+	            try {
                 ctx.drawImage(video, 0, 0, w, h);
             } catch (err) {
                 ctx.fillStyle = 'rgba(2, 6, 23, 0.18)';
@@ -8925,6 +9120,10 @@
             if (!btn) return;
             navigateVideoResultSection(btn.dataset.videoSection);
         });
+        const videoGraphZoomBtn = document.getElementById('videoGraphZoomBtn');
+        if (videoGraphZoomBtn) videoGraphZoomBtn.addEventListener('click', () => setVideoGraphZoom());
+        const videoGraphFullscreenBtn = document.getElementById('videoGraphFullscreenBtn');
+        if (videoGraphFullscreenBtn) videoGraphFullscreenBtn.addEventListener('click', openVideoGraphFullscreen);
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') setVideoSideDrawer(false);
             if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -9206,7 +9405,11 @@
             if (AppState.videoAnalysis?.frames?.length) {
                 const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
                 setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
+                setTimeout(refreshVideoGraphResolution, 120);
             }
+        });
+        window.addEventListener('resize', () => {
+            if (AppState.videoAnalysis?.frames?.length) setTimeout(refreshVideoGraphResolution, 120);
         });
         
         window.switchTab = switchTab;
