@@ -337,15 +337,37 @@
             overflow: auto;
             background: #020617;
             padding: 12px;
+            color: #e2e8f0;
+        }
+        .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
+            grid-template-columns: 1fr !important;
         }
         .video-analysis-fullscreen:fullscreen .video-correction-preview,
         .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview {
-            min-height: min(72vh, 720px);
-            height: min(72vh, 720px);
+            min-height: min(78vh, 880px);
+            height: min(78vh, 880px);
+            border-color: rgba(148, 163, 184, 0.42);
+        }
+        .video-analysis-fullscreen:fullscreen .video-result-controls,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
+            background: rgba(15, 23, 42, 0.92) !important;
+            border-color: rgba(148, 163, 184, 0.38) !important;
+            color: #e2e8f0;
+        }
+        .video-analysis-fullscreen:fullscreen .video-result-frame-controls,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-frame-controls {
+            background: rgba(15, 23, 42, 0.82) !important;
+            border-color: rgba(59, 130, 246, 0.36) !important;
         }
         .video-result-mini-timeline {
             margin-top: 10px;
             background: #f8fafc;
+        }
+        .video-analysis-fullscreen:fullscreen .video-result-mini-timeline,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
+            background: rgba(15, 23, 42, 0.92);
+            border-color: rgba(59, 130, 246, 0.36);
         }
         .model-analysis-grid { grid-template-columns: 1fr; }
         @media (min-width: 1280px) {
@@ -832,13 +854,13 @@
                         <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-circle-play text-indigo-500 mr-1"></i>解析プレビュー</h3>
                         <span class="text-[11px] text-slate-500">動画・骨格・角度・マーカーを同じ画面で確認</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
+                    <div class="video-result-preview-grid grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
-                            <video id="videoResultElement" muted="" playsinline="" controls=""></video>
+                            <video id="videoResultElement" muted="" playsinline=""></video>
                             <canvas id="videoAnalysisCanvas" class="w-full aspect-video object-contain"></canvas>
                             <div id="videoResultEmpty" class="video-correction-empty">解析後、ここで動画全体を再生しながら骨格・角度・開始/最高速/終了を確認できます。</div>
                         </div>
-                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
+                        <div class="video-result-controls rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
                             <div class="grid grid-cols-2 gap-2">
                                 <button id="videoResultSlowPlayBtn" type="button" class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i> 解析再生</button>
                                 <select id="videoResultSlowRateSelect" class="col-span-2 border border-slate-200 rounded px-2 py-2 bg-white font-bold">
@@ -852,6 +874,18 @@
                                     <option value="full" selected="">動画全体を再生</option>
                                     <option value="strike">開始〜終了だけ再生</option>
                                 </select>
+                                <div class="video-result-frame-controls col-span-2 rounded-lg border border-blue-100 bg-white p-2">
+                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                        <span class="font-black text-blue-700"><i class="fa-solid fa-clapperboard mr-1"></i>全フレーム確認</span>
+                                        <span id="videoResultFrameSummary" class="font-black font-mono-num text-slate-700">#---</span>
+                                    </div>
+                                    <input id="videoResultFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
+                                    <div id="videoResultFrameDetail" class="mt-1 text-[11px] text-slate-500 font-mono-num">1コマずつ確認できます</div>
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <button id="videoResultMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag mr-1"></i>現在を開始</button>
+                                        <button id="videoResultMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>現在を終了</button>
+                                    </div>
+                                </div>
                                 <button id="videoResultPrevFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 戻る</button>
                                 <button id="videoResultNextFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold">進む <i class="fa-solid fa-forward-step"></i></button>
                                 <button id="videoResultJumpStartBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded font-bold">開始へ</button>
@@ -1898,7 +1932,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v58';
+            const refreshKey = 'kendo-sw-refreshed-v59';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6124,6 +6158,7 @@
             const current = index ?? Number(document.getElementById('videoFrameSlider')?.value || data?.startFrame || 0);
             const pairs = [
                 ['videoFrameSlider', clamp(current, 0, frameMax)],
+                ['videoResultFrameSlider', clamp(current, 0, frameMax)],
                 ['videoStartFrameSlider', clamp(data?.startFrame ?? 0, 0, frameMax)],
                 ['videoEndFrameSlider', clamp(data?.endFrame ?? frameMax, 0, frameMax)]
             ];
@@ -6284,6 +6319,33 @@
                 end: data.endFrame ?? data.peakFrame ?? 0
             };
             setVideoAnalysisFrame(targets[kind] ?? 0);
+        }
+
+        function markVideoCurrentFrame(kind) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
+            stopVideoSlowPlayback();
+            const current = clamp(
+                Number(document.getElementById('videoFrameSlider')?.value || document.getElementById('videoResultFrameSlider')?.value || 0),
+                0,
+                data.frames.length - 1
+            );
+            if (kind === 'start') {
+                data.startFrame = current;
+                if (Number.isFinite(data.endFrame) && data.endFrame <= current) {
+                    data.endFrame = Math.min(data.frames.length - 1, current + 1);
+                }
+            } else {
+                data.endFrame = current;
+                if (Number.isFinite(data.startFrame) && data.startFrame >= current) {
+                    data.startFrame = Math.max(0, current - 1);
+                }
+            }
+            recomputeVideoAnalysisResult();
+            updateSelectedVideoStrikeFromCurrent();
+            syncVideoAnalysisSliders(current);
+            setVideoAnalysisFrame(current);
+            showToast(kind === 'start' ? '現在フレームを開始にしました' : '現在フレームを終了にしました', 'blue');
         }
 
         function stopVideoSlowPlayback() {
@@ -6987,6 +7049,11 @@
             const frame = data.frames[current];
             const activeMarker = getVideoFrameMarkers(data).find(marker => marker.index === current);
             safeText('videoCurrentFrameLabel', frame ? `${current} / ${frame.timeMs.toFixed(1)}ms${activeMarker ? ` / ${activeMarker.labelJa}` : ''}` : '---');
+            safeText('videoResultFrameSummary', frame ? `#${current} / ${frame.timeMs.toFixed(1)}ms${activeMarker ? ` / ${activeMarker.labelJa}` : ''}` : '#---');
+            safeText('videoResultFrameDetail', frame
+                ? `右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
+                : '1コマずつ確認できます'
+            );
             safeText('videoStartFrameLabel', data.startFrame !== null ? `${data.startFrame} / ${data.frames[data.startFrame]?.timeMs.toFixed(1)}ms` : '---');
             safeText('videoPeakFrameLabel', Number.isFinite(data.peakFrame) ? `${data.peakFrame} / ${data.frames[data.peakFrame]?.timeMs.toFixed(1)}ms` : '---');
             safeText('videoEndFrameLabel', data.endFrame !== null ? `${data.endFrame} / ${data.frames[data.endFrame]?.timeMs.toFixed(1)}ms` : '---');
@@ -7242,8 +7309,15 @@
             setVideoModelSnapshotFromFrame(frame, frameIndex);
             syncModelFrameControls(frameIndex);
             const ctx = canvas.getContext('2d');
-            const w = 640;
-            const h = Math.max(360, Math.round(w * (video.videoHeight || 360) / (video.videoWidth || 640)));
+            const previewRect = canvas.getBoundingClientRect();
+            const sourceW = Math.max(1, video.videoWidth || 640);
+            const sourceH = Math.max(1, video.videoHeight || 360);
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const previewPanel = document.getElementById('videoResultPreviewPanel');
+            const fullscreenPreview = document.fullscreenElement === previewPanel || document.webkitFullscreenElement === previewPanel;
+            const targetCssW = Math.max(previewRect.width || 0, fullscreenPreview ? 1200 : 760);
+            const w = Math.round(clamp(targetCssW * dpr, 720, Math.min(1920, Math.max(sourceW, 960))));
+            const h = Math.max(360, Math.round(w * sourceH / sourceW));
             if (canvas.width !== w || canvas.height !== h) {
                 canvas.width = w;
                 canvas.height = h;
@@ -8611,6 +8685,11 @@
             stopVideoSlowPlayback();
             setVideoAnalysisFrame(parseInt(e.target.value, 10) || 0);
         });
+        const videoResultFrameSlider = document.getElementById('videoResultFrameSlider');
+        if (videoResultFrameSlider) videoResultFrameSlider.addEventListener('input', e => {
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(parseInt(e.target.value, 10) || 0);
+        });
         const videoStartFrameSlider = document.getElementById('videoStartFrameSlider');
         if (videoStartFrameSlider) videoStartFrameSlider.addEventListener('input', e => {
             if (!AppState.videoAnalysis) return;
@@ -8685,6 +8764,10 @@
         if (videoResultJumpPeakBtn) videoResultJumpPeakBtn.addEventListener('click', () => jumpVideoAnalysisFrame('peak'));
         const videoResultJumpEndBtn = document.getElementById('videoResultJumpEndBtn');
         if (videoResultJumpEndBtn) videoResultJumpEndBtn.addEventListener('click', () => jumpVideoAnalysisFrame('end'));
+        const videoResultMarkStartBtn = document.getElementById('videoResultMarkStartBtn');
+        if (videoResultMarkStartBtn) videoResultMarkStartBtn.addEventListener('click', () => markVideoCurrentFrame('start'));
+        const videoResultMarkEndBtn = document.getElementById('videoResultMarkEndBtn');
+        if (videoResultMarkEndBtn) videoResultMarkEndBtn.addEventListener('click', () => markVideoCurrentFrame('end'));
         const videoResultOpen3DBtn = document.getElementById('videoResultOpen3DBtn');
         if (videoResultOpen3DBtn) videoResultOpen3DBtn.addEventListener('click', openCurrentVideoFrameInModel);
         const videoFormalEditBtn = document.getElementById('videoFormalEditBtn');
@@ -8747,24 +8830,11 @@
         }
         const markStartFrameBtn = document.getElementById('markStartFrameBtn');
         if (markStartFrameBtn) markStartFrameBtn.addEventListener('click', () => {
-            if (!AppState.videoAnalysis) return;
-            stopVideoSlowPlayback();
-            AppState.videoAnalysis.startFrame = Number(document.getElementById('videoFrameSlider')?.value || 0);
-            if (AppState.videoAnalysis.endFrame !== null && AppState.videoAnalysis.endFrame <= AppState.videoAnalysis.startFrame) AppState.videoAnalysis.endFrame = null;
-            recomputeVideoAnalysisResult();
-            updateSelectedVideoStrikeFromCurrent();
-            syncVideoAnalysisSliders(AppState.videoAnalysis.startFrame);
-            setVideoAnalysisFrame(AppState.videoAnalysis.startFrame);
+            markVideoCurrentFrame('start');
         });
         const markEndFrameBtn = document.getElementById('markEndFrameBtn');
         if (markEndFrameBtn) markEndFrameBtn.addEventListener('click', () => {
-            if (!AppState.videoAnalysis) return;
-            stopVideoSlowPlayback();
-            AppState.videoAnalysis.endFrame = Number(document.getElementById('videoFrameSlider')?.value || 0);
-            recomputeVideoAnalysisResult();
-            updateSelectedVideoStrikeFromCurrent();
-            syncVideoAnalysisSliders(AppState.videoAnalysis.endFrame);
-            setVideoAnalysisFrame(AppState.videoAnalysis.endFrame);
+            markVideoCurrentFrame('end');
         });
         const videoSkeletonToggle = document.getElementById('videoSkeletonToggle');
         if (videoSkeletonToggle) videoSkeletonToggle.addEventListener('change', () => drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0)));
@@ -9154,6 +9224,10 @@
                 document.body.classList.remove('practice-focus');
                 const btn = document.getElementById('practiceFocusBtn');
                 if (btn) btn.innerText = '練習画面最大化';
+            }
+            if (AppState.videoAnalysis?.frames?.length) {
+                const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
+                setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
             }
         });
         
