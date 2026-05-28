@@ -1159,6 +1159,30 @@
                         </div>
                         <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
                     </div>
+                    <div id="videoStrikeDetailPanel" class="rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div>
+                                <div class="font-black text-indigo-900"><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作だけを詳細コマ解析</div>
+                                <div id="videoStrikeDetailRangeLabel" class="text-indigo-700 font-bold mt-1">開始/終了を置くと、その区間だけを1コマ単位で確認できます。</div>
+                            </div>
+                            <div id="videoStrikeDetailCurrentLabel" class="font-black font-mono-num text-indigo-900">#---</div>
+                        </div>
+                        <input id="videoStrikeDetailFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full accent-indigo-600">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                            <button id="videoDetailPrevFrameBtn" type="button" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 1コマ戻る</button>
+                            <button id="videoDetailNextFrameBtn" type="button" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-2 rounded font-bold">1コマ進む <i class="fa-solid fa-forward-step"></i></button>
+                            <button id="videoDetailMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold">このコマを開始</button>
+                            <button id="videoDetailMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold">このコマを終了</button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-center">
+                            <div class="bg-white/80 border border-indigo-100 rounded p-2"><span class="text-indigo-500">区間内時刻</span><div id="videoStrikeDetailOffset" class="font-black font-mono-num text-indigo-900">---</div></div>
+                            <div class="bg-white/80 border border-cyan-100 rounded p-2"><span class="text-cyan-600">現在時刻</span><div id="videoStrikeDetailSpeed" class="font-black font-mono-num text-cyan-800">---</div></div>
+                            <div class="bg-white/80 border border-purple-100 rounded p-2"><span class="text-purple-600">右肘</span><div id="videoStrikeDetailRightElbow" class="font-black font-mono-num text-purple-800">---</div></div>
+                            <div class="bg-white/80 border border-emerald-100 rounded p-2"><span class="text-emerald-600">体幹</span><div id="videoStrikeDetailTorso" class="font-black font-mono-num text-emerald-800">---</div></div>
+                            <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-600">刃筋</span><div id="videoStrikeDetailHasuji" class="font-black font-mono-num text-amber-800">---</div></div>
+                        </div>
+                        <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">例: 3000msの動画で打突が1200〜1800msなら、この600msだけをスライダーとグラフで拡大確認します。</p>
+                    </div>
                     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-800">
                             <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
@@ -1180,8 +1204,8 @@
                                     <option value="1">1x</option>
                                 </select>
                                 <select id="videoPlaybackScopeSelect" class="col-span-2 border border-slate-200 rounded px-2 py-2 bg-white font-bold">
-                                    <option value="full" selected="">動画全体を再生</option>
-                                    <option value="strike">開始〜終了だけ再生</option>
+                                    <option value="full">動画全体を再生</option>
+                                    <option value="strike" selected="">開始〜終了だけ再生</option>
                                 </select>
                                 <button id="videoPrevFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 戻る</button>
                                 <button id="videoNextFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold">進む <i class="fa-solid fa-forward-step"></i></button>
@@ -2049,7 +2073,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v66';
+            const refreshKey = 'kendo-sw-refreshed-v67';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6445,10 +6469,74 @@
             });
         }
 
+        function currentVideoStrikeDetailRange(data = AppState.videoAnalysis) {
+            if (!data?.frames?.length || !Number.isFinite(Number(data.startFrame)) || !Number.isFinite(Number(data.endFrame)) || data.endFrame <= data.startFrame) {
+                return null;
+            }
+            const maxFrame = data.frames.length - 1;
+            const start = clamp(Math.round(Number(data.startFrame)), 0, maxFrame);
+            const end = clamp(Math.round(Number(data.endFrame)), start + 1, maxFrame);
+            const peak = Number.isFinite(Number(data.peakFrame)) ? clamp(Math.round(Number(data.peakFrame)), start, end) : start;
+            const startMs = Number(data.frames[start]?.timeMs || 0);
+            const endMs = Number(data.frames[end]?.timeMs || startMs);
+            return { start, end, peak, startMs, endMs, durationMs: Math.max(0, endMs - startMs) };
+        }
+
+        function activeVideoFrameBounds() {
+            const data = AppState.videoAnalysis;
+            const maxFrame = data?.frames?.length ? data.frames.length - 1 : 0;
+            const correctionActive = document.getElementById('videoStep-correct')?.classList.contains('active');
+            const range = correctionActive ? currentVideoStrikeDetailRange(data) : null;
+            return range ? { min: range.start, max: range.end } : { min: 0, max: maxFrame };
+        }
+
+        function updateVideoStrikeDetailPanel(currentIndex = null) {
+            const data = AppState.videoAnalysis;
+            const slider = document.getElementById('videoStrikeDetailFrameSlider');
+            const range = currentVideoStrikeDetailRange(data);
+            if (!data?.frames?.length || !range) {
+                if (slider) {
+                    slider.min = 0;
+                    slider.max = 0;
+                    slider.value = 0;
+                    slider.disabled = true;
+                }
+                safeText('videoStrikeDetailRangeLabel', '開始/終了を置くと、その区間だけを1コマ単位で確認できます。');
+                safeText('videoStrikeDetailCurrentLabel', '#---');
+                safeText('videoStrikeDetailOffset', '---');
+                safeText('videoStrikeDetailSpeed', '---');
+                safeText('videoStrikeDetailRightElbow', '---');
+                safeText('videoStrikeDetailTorso', '---');
+                safeText('videoStrikeDetailHasuji', '---');
+                safeText('videoCorrectionFrameHint', '左右キーでも1コマ移動できます');
+                return;
+            }
+            const current = clamp(Math.round(Number(currentIndex ?? document.getElementById('videoFrameSlider')?.value ?? range.start)), range.start, range.end);
+            const frame = data.frames[current];
+            if (slider) {
+                slider.disabled = false;
+                slider.min = range.start;
+                slider.max = range.end;
+                slider.value = current;
+            }
+            const selectedText = AppState.videoSelectedStrikeIndex !== null && AppState.videoSelectedStrikeIndex !== undefined
+                ? `${AppState.videoSelectedStrikeRejected ? '除外候補' : '打突'}#${Number(AppState.videoSelectedStrikeIndex) + 1}`
+                : '選択中の打突';
+            safeText('videoStrikeDetailRangeLabel', `${selectedText}: #${range.start} ${Math.round(range.startMs)}ms → #${range.end} ${Math.round(range.endMs)}ms / ${Math.round(range.durationMs)}ms`);
+            safeText('videoStrikeDetailCurrentLabel', frame ? `#${current} / ${Math.round(frame.timeMs)}ms` : '#---');
+            safeText('videoCorrectionFrameHint', `詳細範囲内を移動中 #${range.start}〜#${range.end}`);
+            safeText('videoStrikeDetailOffset', frame ? `${Math.round(Number(frame.timeMs || 0) - range.startMs)} ms` : '---');
+            safeText('videoStrikeDetailSpeed', frame ? `${Math.round(Number(frame.timeMs || 0))} ms` : '---');
+            safeText('videoStrikeDetailRightElbow', frame?.rightAng ? `${frame.rightAng.toFixed(1)}°` : '---');
+            safeText('videoStrikeDetailTorso', frame?.torsoAng ? `${frame.torsoAng.toFixed(1)}°` : '---');
+            safeText('videoStrikeDetailHasuji', frame?.hasuji ? `${frame.hasuji.toFixed(1)}°` : '---');
+        }
+
         function syncVideoAnalysisSliders(index = null) {
             const data = AppState.videoAnalysis;
             const frameMax = data?.frames?.length ? data.frames.length - 1 : 0;
             const current = index ?? Number(document.getElementById('videoFrameSlider')?.value || data?.startFrame || 0);
+            const bounds = activeVideoFrameBounds();
             const pairs = [
                 ['videoFrameSlider', clamp(current, 0, frameMax)],
                 ['videoResultFrameSlider', clamp(current, 0, frameMax)],
@@ -6458,10 +6546,18 @@
             pairs.forEach(([id, value]) => {
                 const el = document.getElementById(id);
                 if (!el) return;
+                if (id === 'videoFrameSlider') {
+                    el.min = bounds.min;
+                    el.max = bounds.max;
+                    el.value = clamp(value, bounds.min, bounds.max);
+                    return;
+                }
+                el.min = 0;
                 el.max = frameMax;
                 el.value = value;
             });
             updateVideoAnalysisLabels();
+            updateVideoStrikeDetailPanel(current);
         }
 
         function syncCorrectionVideoSource(timeSec = null) {
@@ -6499,7 +6595,8 @@
         function setVideoAnalysisFrame(index) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return Promise.resolve(false);
-            const frameIndex = clamp(Math.round(index || 0), 0, data.frames.length - 1);
+            const bounds = activeVideoFrameBounds();
+            const frameIndex = clamp(Math.round(index || 0), bounds.min, bounds.max);
             syncVideoAnalysisSliders(frameIndex);
             return drawVideoAnalysisFrame(frameIndex);
         }
@@ -6598,7 +6695,8 @@
             stopVideoSlowPlayback();
             const slider = document.getElementById('videoFrameSlider');
             if (!slider) return;
-            slider.value = clamp(Number(slider.value || 0) + delta, 0, Number(slider.max || 0));
+            const bounds = activeVideoFrameBounds();
+            slider.value = clamp(Number(slider.value || 0) + delta, bounds.min, bounds.max);
             setVideoAnalysisFrame(Number(slider.value));
         }
 
@@ -6620,8 +6718,8 @@
             stopVideoSlowPlayback();
             const current = clamp(
                 Number(document.getElementById('videoFrameSlider')?.value || document.getElementById('videoResultFrameSlider')?.value || 0),
-                0,
-                data.frames.length - 1
+                activeVideoFrameBounds().min,
+                activeVideoFrameBounds().max
             );
             if (kind === 'start') {
                 data.startFrame = current;
@@ -7450,7 +7548,11 @@
                 ctx.fillText('動画解析後に表示します', 18, 32);
                 return;
             }
-            const frames = data.frames;
+            const fullFrames = data.frames;
+            const detailRange = compact ? currentVideoStrikeDetailRange(data) : null;
+            const viewStart = detailRange ? detailRange.start : 0;
+            const viewEnd = detailRange ? detailRange.end : fullFrames.length - 1;
+            const frames = fullFrames.slice(viewStart, viewEnd + 1);
             const pad = { left: compact ? 40 : 52, right: 20, top: 22, bottom: compact ? 28 : 34 };
             const plotW = width - pad.left - pad.right;
             const plotH = height - pad.top - pad.bottom;
@@ -7479,10 +7581,13 @@
                 ctx.fillText('100', 14, pad.top + 4);
                 ctx.fillText('50', 20, pad.top + plotH / 2 + 4);
                 ctx.fillText('0', 26, pad.top + plotH + 4);
+            } else if (detailRange) {
+                ctx.fillText(`${Math.round(detailRange.durationMs)}ms`, 10, pad.top + 4);
             }
             data.strikes?.forEach(strike => {
-                const x1 = pad.left + (strike.startFrame / Math.max(1, frames.length - 1)) * plotW;
-                const x2 = pad.left + (strike.endFrame / Math.max(1, frames.length - 1)) * plotW;
+                if (strike.endFrame < viewStart || strike.startFrame > viewEnd) return;
+                const x1 = pad.left + ((clamp(strike.startFrame, viewStart, viewEnd) - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
+                const x2 = pad.left + ((clamp(strike.endFrame, viewStart, viewEnd) - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
                 ctx.fillStyle = 'rgba(251, 191, 36, 0.13)';
                 ctx.fillRect(x1, pad.top, Math.max(2, x2 - x1), plotH);
             });
@@ -7511,7 +7616,8 @@
                 }
             });
             getVideoFrameMarkers(data).forEach((marker, order) => {
-                const x = pad.left + (marker.index / Math.max(1, frames.length - 1)) * plotW;
+                if (marker.index < viewStart || marker.index > viewEnd) return;
+                const x = pad.left + ((marker.index - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
                 ctx.save();
                 ctx.strokeStyle = marker.color;
                 ctx.lineWidth = compact ? 2 : 2.5;
@@ -7526,7 +7632,8 @@
                 if (!compact) ctx.fillText(marker.labelJa, clamp(x - 12, pad.left, width - pad.right - 32), pad.top + 12 + order * 12);
                 ctx.restore();
             });
-            const currentX = pad.left + (clamp(currentIndex, 0, frames.length - 1) / Math.max(1, frames.length - 1)) * plotW;
+            const currentGlobal = clamp(currentIndex, viewStart, viewEnd);
+            const currentX = pad.left + ((currentGlobal - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
             ctx.strokeStyle = '#111827';
             ctx.lineWidth = compact ? 2 : 3;
             ctx.beginPath();
@@ -7535,7 +7642,7 @@
             ctx.stroke();
             ctx.fillStyle = '#0f172a';
             ctx.font = '800 11px system-ui, sans-serif';
-            const frame = frames[clamp(currentIndex, 0, frames.length - 1)];
+            const frame = fullFrames[currentGlobal];
             const info = visibleKeys?.includes('right')
                 ? `${Math.round(frame.timeMs)}ms / ${Number(frame.rightAng || 0).toFixed(1)}°`
                 : (visibleKeys?.includes('torso') || visibleKeys?.includes('hasuji')
@@ -9275,6 +9382,19 @@
             stopVideoSlowPlayback();
             setVideoAnalysisFrame(parseInt(e.target.value, 10) || 0);
         });
+        const videoStrikeDetailFrameSlider = document.getElementById('videoStrikeDetailFrameSlider');
+        if (videoStrikeDetailFrameSlider) videoStrikeDetailFrameSlider.addEventListener('input', e => {
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(parseInt(e.target.value, 10) || 0);
+        });
+        const videoDetailPrevFrameBtn = document.getElementById('videoDetailPrevFrameBtn');
+        if (videoDetailPrevFrameBtn) videoDetailPrevFrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(-1));
+        const videoDetailNextFrameBtn = document.getElementById('videoDetailNextFrameBtn');
+        if (videoDetailNextFrameBtn) videoDetailNextFrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(1));
+        const videoDetailMarkStartBtn = document.getElementById('videoDetailMarkStartBtn');
+        if (videoDetailMarkStartBtn) videoDetailMarkStartBtn.addEventListener('click', () => markVideoCurrentFrame('start'));
+        const videoDetailMarkEndBtn = document.getElementById('videoDetailMarkEndBtn');
+        if (videoDetailMarkEndBtn) videoDetailMarkEndBtn.addEventListener('click', () => markVideoCurrentFrame('end'));
         const videoStartFrameSlider = document.getElementById('videoStartFrameSlider');
         if (videoStartFrameSlider) videoStartFrameSlider.addEventListener('input', e => {
             if (!AppState.videoAnalysis) return;
@@ -9559,7 +9679,10 @@
                 if (!data?.frames?.length) return;
                 const rect = canvas.getBoundingClientRect();
                 const ratio = clamp((e.clientX - rect.left - 40) / Math.max(1, rect.width - 58), 0, 1);
-                const frameIndex = Math.round(ratio * (data.frames.length - 1));
+                const range = canvasId.includes('Correction') ? currentVideoStrikeDetailRange(data) : null;
+                const start = range ? range.start : 0;
+                const end = range ? range.end : data.frames.length - 1;
+                const frameIndex = Math.round(start + ratio * Math.max(1, end - start));
                 stopVideoSlowPlayback();
                 setVideoAnalysisFrame(frameIndex);
             });
