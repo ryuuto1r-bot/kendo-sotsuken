@@ -480,6 +480,12 @@
             height: 42px;
         }
         .video-editor-marker.peak { background: #f59e0b; }
+        .video-strike-detail-panel {
+            background:
+                radial-gradient(circle at 8% 0%, rgba(99, 102, 241, 0.12), transparent 32%),
+                linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%);
+            box-shadow: 0 16px 42px rgba(79, 70, 229, 0.08);
+        }
         .video-strike-detail-scale {
             border-color: rgba(99, 102, 241, 0.28);
             background:
@@ -518,6 +524,76 @@
             width: 4px;
             background: #020617;
             box-shadow: 0 0 0 2px rgba(255,255,255,0.95), 0 0 18px rgba(15,23,42,0.3);
+        }
+        .video-detail-edit-toolbar {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            border: 1px solid rgba(99, 102, 241, 0.16);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.72);
+            padding: 10px;
+        }
+        @media (min-width: 900px) {
+            .video-detail-edit-toolbar {
+                grid-template-columns: 1.05fr 1fr 1.15fr;
+            }
+        }
+        .video-detail-edit-group {
+            min-width: 0;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.85);
+            padding: 9px;
+        }
+        .video-detail-edit-title {
+            margin-bottom: 6px;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 1000;
+            letter-spacing: 0.04em;
+        }
+        .video-detail-edit-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+        }
+        @media (min-width: 640px) {
+            .video-detail-edit-buttons.four {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .video-detail-edit-buttons.three {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        .video-detail-edit-btn {
+            min-height: 38px;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #3730a3;
+            font-weight: 1000;
+            transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+        .video-detail-edit-btn:hover {
+            transform: translateY(-1px);
+            border-color: #818cf8;
+            background: #eef2ff;
+        }
+        .video-detail-edit-btn.start {
+            border-color: #93c5fd;
+            background: #2563eb;
+            color: #ffffff;
+        }
+        .video-detail-edit-btn.end {
+            border-color: #fca5a5;
+            background: #dc2626;
+            color: #ffffff;
+        }
+        .video-detail-edit-btn.peak {
+            border-color: #fcd34d;
+            color: #92400e;
+            background: #fffbeb;
         }
         .video-analysis-fullscreen:fullscreen .video-result-mini-timeline,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
@@ -1199,7 +1275,7 @@
                         </div>
                         <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
                     </div>
-                    <div id="videoStrikeDetailPanel" class="rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs">
+                    <div id="videoStrikeDetailPanel" class="video-strike-detail-panel rounded-xl border border-indigo-100 p-3 text-xs">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                             <div>
                                 <div class="font-black text-indigo-900"><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作だけを詳細コマ解析</div>
@@ -1223,11 +1299,31 @@
                             </div>
                             <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">目盛りをクリック/ドラッグすると、そのコマへ移動します。開始/終了マーカーはドラッグで微調整できます。</p>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                            <button id="videoDetailPrevFrameBtn" type="button" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 1コマ戻る</button>
-                            <button id="videoDetailNextFrameBtn" type="button" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-2 rounded font-bold">1コマ進む <i class="fa-solid fa-forward-step"></i></button>
-                            <button id="videoDetailMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold">このコマを開始</button>
-                            <button id="videoDetailMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold">このコマを終了</button>
+                        <div class="video-detail-edit-toolbar mt-3">
+                            <div class="video-detail-edit-group">
+                                <div class="video-detail-edit-title">コマ送り</div>
+                                <div class="video-detail-edit-buttons four">
+                                    <button id="videoDetailPrev5FrameBtn" type="button" class="video-detail-edit-btn">-5</button>
+                                    <button id="videoDetailPrevFrameBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-backward-step mr-1"></i>-1</button>
+                                    <button id="videoDetailNextFrameBtn" type="button" class="video-detail-edit-btn">+1<i class="fa-solid fa-forward-step ml-1"></i></button>
+                                    <button id="videoDetailNext5FrameBtn" type="button" class="video-detail-edit-btn">+5</button>
+                                </div>
+                            </div>
+                            <div class="video-detail-edit-group">
+                                <div class="video-detail-edit-title">マーカーへ移動</div>
+                                <div class="video-detail-edit-buttons three">
+                                    <button id="videoDetailJumpStartBtn" type="button" class="video-detail-edit-btn start">開始へ</button>
+                                    <button id="videoDetailJumpPeakBtn" type="button" class="video-detail-edit-btn peak">最高速へ</button>
+                                    <button id="videoDetailJumpEndBtn" type="button" class="video-detail-edit-btn end">終了へ</button>
+                                </div>
+                            </div>
+                            <div class="video-detail-edit-group">
+                                <div class="video-detail-edit-title">現在コマを正式マーカーにする</div>
+                                <div class="video-detail-edit-buttons">
+                                    <button id="videoDetailMarkStartBtn" type="button" class="video-detail-edit-btn start">このコマを開始</button>
+                                    <button id="videoDetailMarkEndBtn" type="button" class="video-detail-edit-btn end">このコマを終了</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-center">
                             <div class="bg-white/80 border border-indigo-100 rounded p-2"><span class="text-indigo-500">区間内時刻</span><div id="videoStrikeDetailOffset" class="font-black font-mono-num text-indigo-900">---</div></div>
@@ -2130,7 +2226,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v68';
+            const refreshKey = 'kendo-sw-refreshed-v69';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6162,6 +6258,14 @@
             setVideoAnalysisFrame(clamp(current, range.start, range.end));
         }
 
+        function jumpVideoStrikeDetailMarker(kind) {
+            const range = currentVideoStrikeDetailRange(AppState.videoAnalysis);
+            if (!range) return;
+            const frame = kind === 'start' ? range.markStart : (kind === 'end' ? range.markEnd : range.markPeak);
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(frame);
+        }
+
         function applyVideoResultTimelinePointer(event) {
             const mode = AppState.videoResultTimelineDragMode || 'playhead';
             const frame = getVideoResultTimelineFrameFromEvent(event);
@@ -9631,6 +9735,16 @@
         if (videoDetailPrevFrameBtn) videoDetailPrevFrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(-1));
         const videoDetailNextFrameBtn = document.getElementById('videoDetailNextFrameBtn');
         if (videoDetailNextFrameBtn) videoDetailNextFrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(1));
+        const videoDetailPrev5FrameBtn = document.getElementById('videoDetailPrev5FrameBtn');
+        if (videoDetailPrev5FrameBtn) videoDetailPrev5FrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(-5));
+        const videoDetailNext5FrameBtn = document.getElementById('videoDetailNext5FrameBtn');
+        if (videoDetailNext5FrameBtn) videoDetailNext5FrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(5));
+        const videoDetailJumpStartBtn = document.getElementById('videoDetailJumpStartBtn');
+        if (videoDetailJumpStartBtn) videoDetailJumpStartBtn.addEventListener('click', () => jumpVideoStrikeDetailMarker('start'));
+        const videoDetailJumpPeakBtn = document.getElementById('videoDetailJumpPeakBtn');
+        if (videoDetailJumpPeakBtn) videoDetailJumpPeakBtn.addEventListener('click', () => jumpVideoStrikeDetailMarker('peak'));
+        const videoDetailJumpEndBtn = document.getElementById('videoDetailJumpEndBtn');
+        if (videoDetailJumpEndBtn) videoDetailJumpEndBtn.addEventListener('click', () => jumpVideoStrikeDetailMarker('end'));
         const videoDetailMarkStartBtn = document.getElementById('videoDetailMarkStartBtn');
         if (videoDetailMarkStartBtn) videoDetailMarkStartBtn.addEventListener('click', () => markVideoCurrentFrame('start'));
         const videoDetailMarkEndBtn = document.getElementById('videoDetailMarkEndBtn');
