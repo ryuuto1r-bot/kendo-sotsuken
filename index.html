@@ -1563,6 +1563,7 @@
             videoStrikeMode: 'multi',
             videoStrikeSensitivity: 'normal',
             videoSelectedStrikeIndex: null,
+            videoSelectedStrikeRejected: false,
             videoResultTimelineTickKey: '',
             videoResultTimelineDragMode: null,
             videoSlowPlaying: false,
@@ -1802,7 +1803,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v54';
+            const refreshKey = 'kendo-sw-refreshed-v55';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2016,6 +2017,8 @@
             AppState.videoAngleOverlayTarget = 'all';
             AppState.videoStrikeMode = 'multi';
             AppState.videoStrikeSensitivity = 'normal';
+            AppState.videoSelectedStrikeIndex = null;
+            AppState.videoSelectedStrikeRejected = false;
             Params.videoStrikeSensitivity = 'normal';
             AppState.showGuide = true;
 
@@ -5345,7 +5348,10 @@
             const box = document.getElementById('videoTimelineStrikeMarkers');
             if (!box) return;
             const data = AppState.videoAnalysis;
-            const strikes = data?.strikes || [];
+            const strikes = [
+                ...(data?.strikes || []).map((strike, index) => ({ ...strike, sourceIndex: index, sourceKind: 'valid' })),
+                ...(data?.rejectedStrikes || []).map((strike, index) => ({ ...strike, sourceIndex: index, sourceKind: 'rejected' }))
+            ].sort((a, b) => a.startFrame - b.startFrame);
             const safeDuration = Number(duration || 0);
             if (!data?.frames?.length || !strikes.length || !Number.isFinite(safeDuration) || safeDuration <= 0) {
                 box.innerHTML = '';
@@ -5359,10 +5365,12 @@
                 const startPct = Number.isFinite(startSec) ? clamp((startSec / safeDuration) * 100, 0, 100) : clamp((peakSec / safeDuration) * 100, 0, 100);
                 const endPct = Number.isFinite(endSec) ? clamp((endSec / safeDuration) * 100, 0, 100) : startPct;
                 const peakPct = clamp((peakSec / safeDuration) * 100, 0, 100);
-                const active = index === AppState.videoSelectedStrikeIndex;
+                const active = strike.sourceIndex === AppState.videoSelectedStrikeIndex && (strike.sourceKind === 'rejected') === !!AppState.videoSelectedStrikeRejected;
+                const rejectedClass = strike.sourceKind === 'rejected' ? ' opacity-70' : '';
+                const title = strike.sourceKind === 'rejected' ? `除外候補 #${strike.number || index + 1}: ${strike.validationReason || strike.reason || '要確認'}` : `#${strike.number || index + 1} へ移動`;
                 return `
                     <div class="video-editor-strike-range" style="left:${startPct.toFixed(3)}%;width:${Math.max(0.35, endPct - startPct).toFixed(3)}%"></div>
-                    <button type="button" class="video-editor-strike${active ? ' active' : ''}" data-index="${index}" style="left:${peakPct.toFixed(3)}%" title="#${strike.number || index + 1} へ移動">
+                    <button type="button" class="video-editor-strike${active ? ' active' : ''}${rejectedClass}" data-kind="${strike.sourceKind}" data-index="${strike.sourceIndex}" style="left:${peakPct.toFixed(3)}%" title="${title}">
                         #${strike.number || index + 1}
                     </button>
                 `;
@@ -5449,15 +5457,19 @@
                 }
             }
             if (strikeBox) {
-                const strikes = data.strikes || [];
+                const strikes = [
+                    ...(data.strikes || []).map((strike, index) => ({ ...strike, sourceIndex: index, sourceKind: 'valid' })),
+                    ...(data.rejectedStrikes || []).map((strike, index) => ({ ...strike, sourceIndex: index, sourceKind: 'rejected' }))
+                ].sort((a, b) => a.startFrame - b.startFrame);
                 strikeBox.innerHTML = strikes.map((strike, index) => {
                     const startPct = clamp((strike.startFrame / Math.max(1, maxFrame)) * 100, 0, 100);
                     const endPct = clamp((strike.endFrame / Math.max(1, maxFrame)) * 100, 0, 100);
                     const peakPct = clamp((strike.peakFrame / Math.max(1, maxFrame)) * 100, 0, 100);
-                    const active = index === AppState.videoSelectedStrikeIndex;
+                    const active = strike.sourceIndex === AppState.videoSelectedStrikeIndex && (strike.sourceKind === 'rejected') === !!AppState.videoSelectedStrikeRejected;
+                    const rejectedClass = strike.sourceKind === 'rejected' ? ' opacity-70' : '';
                     return `
                         <div class="video-editor-strike-range" style="left:${startPct.toFixed(3)}%;width:${Math.max(0.35, endPct - startPct).toFixed(3)}%"></div>
-                        <button type="button" class="video-editor-strike${active ? ' active' : ''}" data-index="${index}" style="left:${peakPct.toFixed(3)}%" title="#${strike.number || index + 1} へ移動">#${strike.number || index + 1}</button>
+                        <button type="button" class="video-editor-strike${active ? ' active' : ''}${rejectedClass}" data-kind="${strike.sourceKind}" data-index="${strike.sourceIndex}" style="left:${peakPct.toFixed(3)}%" title="${strike.sourceKind === 'rejected' ? '除外候補を補正' : '打突へ移動'}">#${strike.number || index + 1}</button>
                     `;
                 }).join('');
             }
@@ -5558,15 +5570,17 @@
             tick();
         }
 
-        function jumpVideoTimelineStrike(index) {
+        function jumpVideoTimelineStrike(index, options = {}) {
             const data = AppState.videoAnalysis;
-            const strike = data?.strikes?.[index];
+            const rejected = !!options.rejected;
+            const strike = rejected ? data?.rejectedStrikes?.[index] : data?.strikes?.[index];
             if (!data || !strike) return;
             const peakSec = videoStrikeSourceSecond(data, strike, 'peakFrame');
             AppState.videoSelectedStrikeIndex = index;
+            AppState.videoSelectedStrikeRejected = rejected;
             if (Number.isFinite(peakSec)) seekManualVideoToSeconds(peakSec);
-            applyVideoStrikeSelection(index, 'peak');
-            showToast(`#${strike.number || index + 1} の最高速フレームへ移動しました`, 'blue');
+            applyVideoStrikeSelection(index, 'peak', { rejected });
+            showToast(`${rejected ? '除外候補' : ''}#${strike.number || index + 1} の最高速フレームへ移動しました`, 'blue');
         }
 
         function getVideoResultTimelineFrameFromEvent(event) {
@@ -6357,6 +6371,22 @@
             };
         }
 
+        function buildRejectedVideoStrike(data, startFrame, peakFrame, endFrame, reason, number) {
+            const maxFrame = Math.max(0, (data?.frames?.length || 1) - 1);
+            const safeStart = clamp(Math.round(Number(startFrame || 0)), 0, maxFrame);
+            const safePeak = clamp(Math.round(Number(peakFrame ?? safeStart)), safeStart, maxFrame);
+            const safeEnd = clamp(Math.round(Number(endFrame ?? safePeak)), Math.min(maxFrame, safeStart + 1), maxFrame);
+            const summary = summarizeVideoStrike(data, safeStart, safePeak, safeEnd, number);
+            if (!summary) return null;
+            return {
+                ...summary,
+                rejected: true,
+                validationReason: reason || '要確認',
+                reason: reason || '要確認',
+                score: 0
+            };
+        }
+
         function validateVideoStrikeSummary(summary, data) {
             if (!summary) return { ok: false, reason: '要約不可' };
             if (!data?.frames?.[summary.startFrame]?.landmarks || !data?.frames?.[summary.peakFrame]?.landmarks || !data?.frames?.[summary.endFrame]?.landmarks) {
@@ -6411,6 +6441,11 @@
             }
             const segments = [];
             const rejections = [];
+            const pushRejection = (startFrame, peakFrame, endFrame, reason) => {
+                const rejected = buildRejectedVideoStrike(data, startFrame, peakFrame, endFrame, reason, rejections.length + 1);
+                if (rejected) rejections.push(rejected);
+                else rejections.push({ startFrame, peakFrame, endFrame, reason, validationReason: reason, rejected: true, number: rejections.length + 1 });
+            };
             candidates.forEach((candidate, idx) => {
                 const peakFrame = candidate.peakFrame;
                 const peakSpeed = speeds[peakFrame];
@@ -6433,11 +6468,11 @@
                 const duration = frames[endFrame].timeMs - frames[startFrame].timeMs;
                 const overlaps = segments.some(segment => startFrame <= segment.endFrame && endFrame >= segment.startFrame);
                 if (overlaps) {
-                    rejections.push({ peakFrame, reason: '重複' });
+                    pushRejection(startFrame, peakFrame, endFrame, '重複');
                     return;
                 }
                 if (duration < 45 || duration > Params.timingMaxDurationMs) {
-                    rejections.push({ peakFrame, reason: '時間範囲外' });
+                    pushRejection(startFrame, peakFrame, endFrame, duration < 45 ? '短すぎる' : '長すぎる');
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
@@ -6445,10 +6480,12 @@
                 if (validation.ok) {
                     segments.push(summary);
                 } else {
-                    rejections.push({ peakFrame, reason: validation.reason });
+                    pushRejection(startFrame, peakFrame, endFrame, validation.reason);
                 }
             });
-            data.rejectedStrikes = rejections;
+            data.rejectedStrikes = rejections
+                .sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0))
+                .map((segment, index) => ({ ...segment, number: index + 1 }));
             return segments
                 .sort((a, b) => a.startFrame - b.startFrame)
                 .map((segment, index) => ({ ...segment, number: index + 1 }));
@@ -6456,21 +6493,23 @@
 
         function updateVideoMultiStrikePanel(data) {
             const panel = document.getElementById('videoMultiStrikePanel');
-            const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1;
+            const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1 || (data?.rejectedStrikes?.length || 0) > 0;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
             if (!data || !shouldShow) {
                 updateVideoManualRangeUi();
                 return;
             }
             const strikes = data.strikes || [];
-            if (!strikes.length) {
-                safeText('videoMultiCount', '0');
+            const rejected = data.rejectedStrikes || [];
+            const candidateCount = strikes.length + rejected.length;
+            if (!strikes.length && !rejected.length) {
+                safeText('videoMultiCount', '0本');
                 safeText('videoMultiAvgDuration', '---');
                 safeText('videoMultiTopSpeed', '---');
                 safeText('videoMultiBest', '---');
                 safeText('videoMultiWorst', '---');
                 safeText('videoMultiAvgTorso', '---');
-                safeText('videoMultiRejected', `${data.rejectedStrikes?.length || 0}本`);
+                safeText('videoMultiRejected', '0本');
                 const body = document.getElementById('videoStrikeListBody');
                 const jumpBox = document.getElementById('videoStrikeJumpButtons');
                 if (jumpBox) jumpBox.innerHTML = '';
@@ -6478,30 +6517,36 @@
                 updateVideoManualRangeUi();
                 return;
             }
-            const avgDuration = strikes.reduce((sum, s) => sum + s.durationMs, 0) / strikes.length;
-            const top = strikes.reduce((best, s) => s.peakSpeedMps > best.peakSpeedMps ? s : best, strikes[0]);
-            const best = strikes.reduce((current, s) => s.score > current.score ? s : current, strikes[0]);
-            const worst = strikes.reduce((current, s) => s.score < current.score ? s : current, strikes[0]);
-            const avgTorso = strikes.reduce((sum, s) => sum + Math.abs(s.torsoAng || 0), 0) / strikes.length;
-            safeText('videoMultiCount', `${strikes.length}本`);
-            safeText('videoMultiAvgDuration', `${Math.round(avgDuration)} ms`);
-            safeText('videoMultiTopSpeed', `#${top.number} / ${Math.round(Number(top.peakTimeMs || 0) - Number(top.startTimeMs || 0))}ms`);
-            safeText('videoMultiBest', `#${best.number} / ${best.score}`);
-            safeText('videoMultiWorst', `#${worst.number} / ${worst.score}`);
-            safeText('videoMultiAvgTorso', `${avgTorso.toFixed(1)}°`);
-            safeText('videoMultiRejected', `${data.rejectedStrikes?.length || 0}本`);
+            const avgDuration = strikes.length ? strikes.reduce((sum, s) => sum + s.durationMs, 0) / strikes.length : null;
+            const top = strikes.length ? strikes.reduce((best, s) => s.peakSpeedMps > best.peakSpeedMps ? s : best, strikes[0]) : null;
+            const best = strikes.length ? strikes.reduce((current, s) => s.score > current.score ? s : current, strikes[0]) : null;
+            const worst = strikes.length ? strikes.reduce((current, s) => s.score < current.score ? s : current, strikes[0]) : null;
+            const avgTorso = strikes.length ? strikes.reduce((sum, s) => sum + Math.abs(s.torsoAng || 0), 0) / strikes.length : null;
+            safeText('videoMultiCount', `${strikes.length}本 / 候補${candidateCount}`);
+            safeText('videoMultiAvgDuration', avgDuration !== null ? `${Math.round(avgDuration)} ms` : '補正待ち');
+            safeText('videoMultiTopSpeed', top ? `#${top.number} / ${Math.round(Number(top.peakTimeMs || 0) - Number(top.startTimeMs || 0))}ms` : '補正待ち');
+            safeText('videoMultiBest', best ? `#${best.number} / ${best.score}` : '補正待ち');
+            safeText('videoMultiWorst', worst ? `#${worst.number} / ${worst.score}` : '補正待ち');
+            safeText('videoMultiAvgTorso', avgTorso !== null ? `${avgTorso.toFixed(1)}°` : '補正待ち');
+            safeText('videoMultiRejected', `${rejected.length}本`);
             const jumpBox = document.getElementById('videoStrikeJumpButtons');
             if (jumpBox) {
-                jumpBox.innerHTML = strikes.map((s, index) => `
-                    <button type="button" data-action="select" data-index="${index}" class="video-strike-action ${index === AppState.videoSelectedStrikeIndex ? 'bg-amber-600 text-white' : 'bg-white text-amber-800'} hover:bg-amber-100 border border-amber-200 px-3 py-2 rounded font-black">
+                const validButtons = strikes.map((s, index) => `
+                    <button type="button" data-action="select" data-kind="valid" data-index="${index}" class="video-strike-action ${!AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-amber-600 text-white' : 'bg-white text-amber-800'} hover:bg-amber-100 border border-amber-200 px-3 py-2 rounded font-black">
                         #${s.number} ${Math.round(s.startTimeMs)}-${Math.round(s.endTimeMs)}ms${s.savedRecordId ? ' / 保存済' : ''}
                     </button>
-                `).join('');
+                `);
+                const rejectedButtons = rejected.map((s, index) => `
+                    <button type="button" data-action="select" data-kind="rejected" data-index="${index}" class="video-strike-action ${AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700'} hover:bg-red-100 border border-red-200 px-3 py-2 rounded font-black">
+                        除外#${s.number} ${Math.round(s.startTimeMs || 0)}-${Math.round(s.endTimeMs || 0)}ms
+                    </button>
+                `);
+                jumpBox.innerHTML = [...validButtons, ...rejectedButtons].join('');
             }
             const body = document.getElementById('videoStrikeListBody');
             if (body) {
-                body.innerHTML = strikes.map((s, index) => `
-                    <tr class="video-strike-row cursor-pointer hover:bg-amber-50 ${index === AppState.videoSelectedStrikeIndex ? 'bg-amber-100' : ''}" data-index="${index}">
+                const validRows = strikes.map((s, index) => `
+                    <tr class="video-strike-row cursor-pointer hover:bg-amber-50 ${!AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-amber-100' : ''}" data-kind="valid" data-index="${index}">
                         <td class="p-2 font-black">#${s.number}</td>
                         <td class="p-2 font-mono-num">${s.startFrame}</td>
                         <td class="p-2 font-mono-num text-amber-700">${s.peakFrame}</td>
@@ -6517,23 +6562,49 @@
                                 <button type="button" data-action="jump-start" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
                                 <button type="button" data-action="jump-peak" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
                                 <button type="button" data-action="jump-end" data-index="${index}" class="video-strike-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded font-bold">終了</button>
-                                <button type="button" data-action="model" data-index="${index}" class="video-strike-action bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold">3D再生</button>
-                                <button type="button" data-action="edit" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
-                                <button type="button" data-action="save" data-index="${index}" class="video-strike-action ${s.savedRecordId ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${s.savedRecordId ? `記録#${s.savedRecordId}` : '保存'}</button>
+                                <button type="button" data-action="model" data-kind="valid" data-index="${index}" class="video-strike-action bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold">3D再生</button>
+                                <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                                <button type="button" data-action="save" data-kind="valid" data-index="${index}" class="video-strike-action ${s.savedRecordId ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${s.savedRecordId ? `記録#${s.savedRecordId}` : '保存'}</button>
                             </div>
                             ${s.manualAdjusted ? '<div class="mt-1 text-[10px] font-bold text-indigo-700">補正済み</div>' : ''}
                         </td>
                     </tr>
-                `).join('');
+                `);
+                const rejectedRows = rejected.map((s, index) => `
+                    <tr class="video-strike-row cursor-pointer hover:bg-red-50 ${AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-red-100' : 'bg-red-50/60'}" data-kind="rejected" data-index="${index}">
+                        <td class="p-2 font-black text-red-700">除外#${s.number}</td>
+                        <td class="p-2 font-mono-num">${s.startFrame ?? '---'}</td>
+                        <td class="p-2 font-mono-num text-amber-700">${s.peakFrame ?? '---'}</td>
+                        <td class="p-2 font-mono-num">${s.endFrame ?? '---'}</td>
+                        <td class="p-2 font-mono-num">${Number.isFinite(Number(s.durationMs)) ? s.durationMs + 'ms' : '---'}</td>
+                        <td class="p-2 font-mono-num">${Number.isFinite(Number(s.peakTimeMs)) && Number.isFinite(Number(s.startTimeMs)) ? Math.round(Number(s.peakTimeMs) - Number(s.startTimeMs)) + 'ms' : '---'}</td>
+                        <td class="p-2 font-mono-num">${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</td>
+                        <td class="p-2 font-mono-num">${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</td>
+                        <td class="p-2 font-mono-num">${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</td>
+                        <td class="p-2 font-black text-red-700">要補正<br><span class="text-[10px]">${s.validationReason || s.reason || '要確認'}</span></td>
+                        <td class="p-2">
+                            <div class="flex flex-wrap justify-center gap-1">
+                                <button type="button" data-action="jump-start" data-kind="rejected" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
+                                <button type="button" data-action="jump-peak" data-kind="rejected" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
+                                <button type="button" data-action="jump-end" data-kind="rejected" data-index="${index}" class="video-strike-action bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-bold">終了</button>
+                                <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                            </div>
+                            <div class="mt-1 text-[10px] font-bold text-red-700">開始/終了を直すと正式候補になります</div>
+                        </td>
+                    </tr>
+                `);
+                body.innerHTML = [...validRows, ...rejectedRows].join('');
             }
             updateVideoManualRangeUi();
         }
 
         function applyVideoStrikeSelection(index, target = 'peak', options = {}) {
             const data = AppState.videoAnalysis;
-            const strike = data?.strikes?.[index];
+            const rejected = !!options.rejected;
+            const strike = rejected ? data?.rejectedStrikes?.[index] : data?.strikes?.[index];
             if (!data || !strike) return;
             AppState.videoSelectedStrikeIndex = index;
+            AppState.videoSelectedStrikeRejected = rejected;
             data.startFrame = strike.startFrame;
             data.endFrame = strike.endFrame;
             data.peakFrame = strike.peakFrame;
@@ -6550,18 +6621,30 @@
         function updateSelectedVideoStrikeFromCurrent() {
             const data = AppState.videoAnalysis;
             const index = AppState.videoSelectedStrikeIndex;
-            if (!data?.strikes?.length || index === null || index === undefined || !data.strikes[index]) return;
+            const targetList = AppState.videoSelectedStrikeRejected ? data?.rejectedStrikes : data?.strikes;
+            if (!targetList?.length || index === null || index === undefined || !targetList[index]) return;
             if (data.startFrame === null || data.endFrame === null || data.endFrame <= data.startFrame) return;
-            const summary = summarizeVideoStrike(data, data.startFrame, data.peakFrame ?? data.startFrame, data.endFrame, data.strikes[index].number || index + 1);
+            const summary = summarizeVideoStrike(data, data.startFrame, data.peakFrame ?? data.startFrame, data.endFrame, targetList[index].number || index + 1);
             if (!summary) return;
             const validation = validateVideoStrikeSummary(summary, data);
-            data.strikes[index] = {
-                ...data.strikes[index],
+            const updated = {
+                ...targetList[index],
                 ...summary,
-                number: data.strikes[index].number || index + 1,
+                number: targetList[index].number || index + 1,
                 manualAdjusted: true,
-                validationReason: validation.reason
+                validationReason: validation.reason,
+                rejected: !validation.ok
             };
+            if (AppState.videoSelectedStrikeRejected && validation.ok) {
+                data.strikes = data.strikes || [];
+                data.strikes.push({ ...updated, rejected: false, validationReason: 'OK', number: data.strikes.length + 1 });
+                data.rejectedStrikes.splice(index, 1);
+                AppState.videoSelectedStrikeIndex = data.strikes.length - 1;
+                AppState.videoSelectedStrikeRejected = false;
+                showToast('補正により正式候補へ移動しました', 'green');
+            } else {
+                targetList[index] = updated;
+            }
             updateVideoMultiStrikePanel(data);
         }
 
@@ -6873,6 +6956,13 @@
             return `${Math.round(Number(metrics.peakOffsetMs))} ms`;
         }
 
+        function videoDurationResultLabel(durationMs, validation) {
+            if (!Number.isFinite(Number(durationMs))) return validation?.reason ? `未検出（${validation.reason}）` : '未検出';
+            const value = `${Math.round(Number(durationMs))} ms`;
+            if (!validation || validation.ok) return value;
+            return `${value}（除外: ${validation.reason || '要確認'}）`;
+        }
+
         function videoDecelTimeLabel(metrics) {
             if (!metrics || !Number.isFinite(Number(metrics.maxDecelOffsetMs))) return '---';
             return `${Math.round(Number(metrics.maxDecelOffsetMs))} ms`;
@@ -7023,7 +7113,7 @@
             const endFrame = data.frames[data.endFrame];
             updateVideoResultCards(data, metricsBySource, Params.officialSpeedSource);
             const validation = updateCurrentVideoValidation(data);
-            safeText('videoResultDuration', validation?.ok || AppState.videoSelectedStrikeIndex !== null ? `${Math.round(durationMs)} ms` : `除外（${validation?.reason || '要確認'}）`);
+            safeText('videoResultDuration', videoDurationResultLabel(durationMs, validation));
             updateVideoValidityPanel(data);
             safeText('videoResultRightElbow', endFrame?.rightAng ? `${endFrame.rightAng.toFixed(1)}°` : '---');
             safeText('videoResultHasuji', endFrame?.hasuji ? `${endFrame.hasuji.toFixed(1)}°` : '---');
@@ -7598,6 +7688,7 @@
             );
             if (shouldUseDetectedStrike) {
                 AppState.videoSelectedStrikeIndex = 0;
+                AppState.videoSelectedStrikeRejected = false;
                 const firstStrike = AppState.videoAnalysis.strikes[0];
                 startFrame = firstStrike.startFrame;
                 endFrame = firstStrike.endFrame;
@@ -7610,13 +7701,29 @@
                 AppState.videoAnalysis.autoEndFrame = endFrame;
                 startTimeMs = frames[startFrame]?.timeMs ?? startTimeMs;
                 endTimeMs = frames[endFrame]?.timeMs ?? endTimeMs;
+            } else if (AppState.videoAnalysis.rejectedStrikes?.length) {
+                AppState.videoSelectedStrikeIndex = 0;
+                AppState.videoSelectedStrikeRejected = true;
+                const firstRejected = AppState.videoAnalysis.rejectedStrikes[0];
+                startFrame = firstRejected.startFrame;
+                endFrame = firstRejected.endFrame;
+                peakFrame = firstRejected.peakFrame;
+                AppState.videoAnalysis.startFrame = startFrame;
+                AppState.videoAnalysis.endFrame = endFrame;
+                AppState.videoAnalysis.peakFrame = peakFrame;
+                AppState.videoAnalysis.exclusionReason = firstRejected.validationReason || firstRejected.reason || '要補正';
+                AppState.videoAnalysis.autoExclusionReason = AppState.videoAnalysis.exclusionReason;
+                startTimeMs = frames[startFrame]?.timeMs ?? startTimeMs;
+                endTimeMs = frames[endFrame]?.timeMs ?? endTimeMs;
             } else {
                 AppState.videoSelectedStrikeIndex = null;
+                AppState.videoSelectedStrikeRejected = false;
                 if (startFrame !== null && endFrame !== null && endFrame > startFrame) {
                     const singleSummary = summarizeVideoStrike(AppState.videoAnalysis, startFrame, peakFrame, endFrame, 1);
                     const singleValidation = validateVideoStrikeSummary(singleSummary, AppState.videoAnalysis);
                     if (!singleValidation.ok) {
-                        AppState.videoAnalysis.rejectedStrikes = [...(AppState.videoAnalysis.rejectedStrikes || []), { peakFrame, reason: singleValidation.reason }];
+                        const rejectedSingle = buildRejectedVideoStrike(AppState.videoAnalysis, startFrame, peakFrame, endFrame, singleValidation.reason, 1);
+                        if (rejectedSingle) AppState.videoAnalysis.rejectedStrikes = [...(AppState.videoAnalysis.rejectedStrikes || []), rejectedSingle];
                         AppState.videoAnalysis.exclusionReason = singleValidation.reason;
                         AppState.videoAnalysis.autoExclusionReason = singleValidation.reason;
                         // 自動判定としては除外するが、補正画面で映像・角度を確認して開始/終了を手動修正できるよう候補フレームは残す。
@@ -7643,7 +7750,7 @@
             if (startTimeMs !== null && endTimeMs !== null) {
                 updateVideoResultCards(AppState.videoAnalysis, metricsBySource, Params.officialSpeedSource);
                 const validation = updateCurrentVideoValidation(AppState.videoAnalysis);
-                safeText('videoResultDuration', validation?.ok || AppState.videoSelectedStrikeIndex !== null ? `${Math.round(endTimeMs - startTimeMs)} ms` : `除外（${validation?.reason || '要確認'}）`);
+                safeText('videoResultDuration', videoDurationResultLabel(endTimeMs - startTimeMs, validation));
                 const end = frames[endFrame];
                 safeText('videoResultRightElbow', end?.rightAng ? `${end.rightAng.toFixed(1)}°` : '---');
                 safeText('videoResultHasuji', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---');
@@ -8317,7 +8424,7 @@
                 if (!btn) return;
                 event.preventDefault();
                 event.stopPropagation();
-                jumpVideoTimelineStrike(Number(btn.dataset.index || 0));
+                jumpVideoTimelineStrike(Number(btn.dataset.index || 0), { rejected: btn.dataset.kind === 'rejected' });
             });
         }
         const videoTimelineStartMarker = document.getElementById('videoTimelineStartMarker');
@@ -8519,7 +8626,7 @@
                 if (!btn) return;
                 event.preventDefault();
                 event.stopPropagation();
-                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true });
+                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true, rejected: btn.dataset.kind === 'rejected' });
             });
         }
         const markStartFrameBtn = document.getElementById('markStartFrameBtn');
@@ -8625,23 +8732,26 @@
                 e.stopPropagation();
                 const index = Number(actionBtn.dataset.index || 0);
                 const action = actionBtn.dataset.action || 'select';
-                if (action === 'jump-start') return applyVideoStrikeSelection(index, 'start', { result: true });
-                if (action === 'jump-peak') return applyVideoStrikeSelection(index, 'peak', { result: true });
-                if (action === 'jump-end') return applyVideoStrikeSelection(index, 'end', { result: true });
+                const rejected = actionBtn.dataset.kind === 'rejected';
+                if (action === 'jump-start') return applyVideoStrikeSelection(index, 'start', { result: true, rejected });
+                if (action === 'jump-peak') return applyVideoStrikeSelection(index, 'peak', { result: true, rejected });
+                if (action === 'jump-end') return applyVideoStrikeSelection(index, 'end', { result: true, rejected });
+                if (rejected && action === 'model') return applyVideoStrikeSelection(index, 'peak', { result: true, rejected });
                 if (action === 'model') return openVideoStrikeInModel(index);
-                if (action === 'edit') return applyVideoStrikeSelection(index, 'peak', { correct: true });
+                if (action === 'edit') return applyVideoStrikeSelection(index, 'peak', { correct: true, rejected });
+                if (rejected && action === 'save') return showToast('除外候補は開始/終了を補正してから保存してください', 'yellow');
                 if (action === 'save') return saveVideoStrikeAsRecord(index);
-                return applyVideoStrikeSelection(index, 'peak', { result: true });
+                return applyVideoStrikeSelection(index, 'peak', { result: true, rejected });
             }
             const row = e.target.closest('.video-strike-row');
             if (!row) return;
-            applyVideoStrikeSelection(Number(row.dataset.index || 0), 'peak', { result: true });
+            applyVideoStrikeSelection(Number(row.dataset.index || 0), 'peak', { result: true, rejected: row.dataset.kind === 'rejected' });
         });
         const videoStrikeJumpButtons = document.getElementById('videoStrikeJumpButtons');
         if (videoStrikeJumpButtons) videoStrikeJumpButtons.addEventListener('click', e => {
             const btn = e.target.closest('.video-strike-action');
             if (!btn) return;
-            applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true });
+            applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true, rejected: btn.dataset.kind === 'rejected' });
         });
         const saveAllVideoStrikesBtn = document.getElementById('saveAllVideoStrikesBtn');
         if (saveAllVideoStrikesBtn) saveAllVideoStrikesBtn.addEventListener('click', saveAllVideoStrikesAsRecords);
