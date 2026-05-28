@@ -734,11 +734,11 @@
                             <option value="high">高め（拾いやすい）</option>
                         </select>
                     </label>
-                    <label class="font-bold text-slate-700">正式速度
+                    <label class="font-bold text-slate-700">ピーク検出基準
                         <select id="videoOfficialSpeedSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
-                            <option value="tip" selected="">推定剣先速度を正式値</option>
-                            <option value="wrist">右手首速度を正式値</option>
-                            <option value="tape">テープ検出剣先速度を正式値</option>
+                            <option value="wrist" selected="">右手首速度でピーク検出（推奨）</option>
+                            <option value="tip">推定剣先速度でピーク検出（参考）</option>
+                            <option value="tape">テープ検出剣先速度でピーク検出</option>
                         </select>
                     </label>
                     <label class="font-bold text-slate-700">角度基準
@@ -768,7 +768,7 @@
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">単位の整理:</span> 正式結果の上段カードは <span class="font-mono-num font-black">ms</span> 表示に統一します。速度値は打突一覧・CSV・記録で確認できます。
+                    <span class="font-black">単位の整理:</span> 正式結果は <span class="font-mono-num font-black">ms</span> と角度を中心に表示します。速度値はピーク検出用の参考値としてCSV・記録に保持します。
                 </div>
                 <div id="videoResultSectionNav" class="sticky top-16 z-10 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
@@ -894,7 +894,7 @@
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">右肘角</span><div id="videoResultRightElbow" class="font-black text-purple-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">刃筋</span><div id="videoResultHasuji" class="font-black text-yellow-700 font-mono-num">---</div></div>
                     <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">体幹軸</span><div id="videoResultTorso" class="font-black text-emerald-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">採用基準</span><div id="videoResultBasis" class="font-bold text-slate-700">推定剣先速度 / 体幹基準</div></div>
+                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">採用基準</span><div id="videoResultBasis" class="font-bold text-slate-700">右手首速度 / 体幹基準</div></div>
                 </div>
                 <div id="videoDetailMetricsPanel" class="rounded-xl border border-slate-200 bg-white p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -968,7 +968,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-chart-simple text-cyan-500 mr-2"></i>同期グラフ</h3>
                         <div class="flex flex-wrap gap-2 text-[11px]">
-                            <span class="text-cyan-700 font-bold">速度</span>
+                            <span class="text-cyan-700 font-bold">ピーク検出</span>
                             <span class="text-purple-700 font-bold">右肘</span>
                             <span class="text-emerald-700 font-bold">体幹</span>
                             <span class="text-amber-700 font-bold">刃筋</span>
@@ -976,7 +976,7 @@
                     </div>
                     <div class="video-graph-grid grid gap-4">
                         <div class="video-analysis-graph rounded-lg border border-cyan-100 bg-cyan-50/40 p-3">
-                            <div class="text-[11px] font-black text-cyan-700 mb-1">速度</div>
+                            <div class="text-[11px] font-black text-cyan-700 mb-1">ピーク検出（参考）</div>
                             <canvas id="videoSyncSpeedCanvas" class="w-full h-44"></canvas>
                         </div>
                         <div class="video-analysis-graph rounded-lg border border-purple-100 bg-purple-50/40 p-3">
@@ -1054,7 +1054,7 @@
                             </div>
                             <div class="space-y-2">
                                 <div class="rounded-lg border border-cyan-100 bg-cyan-50/50 p-2">
-                                    <div class="text-[11px] font-black text-cyan-700 mb-1">速度</div>
+                                    <div class="text-[11px] font-black text-cyan-700 mb-1">ピーク検出（参考）</div>
                                     <canvas id="videoCorrectionSpeedGraphCanvas" class="w-full h-24"></canvas>
                                 </div>
                                 <div class="rounded-lg border border-purple-100 bg-purple-50/50 p-2">
@@ -1082,7 +1082,7 @@
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">開始フレーム</span><div id="videoStartFrameLabel" class="font-bold font-mono-num">---</div></div>
                         <div class="bg-amber-50 border border-amber-100 rounded p-2"><span class="text-amber-700">最高速フレーム</span><div id="videoPeakFrameLabel" class="font-bold font-mono-num text-amber-800">---</div></div>
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">終了フレーム</span><div id="videoEndFrameLabel" class="font-bold font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">現在速度</span><div id="videoCurrentSpeedLabel" class="font-bold font-mono-num">---</div></div>
+                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">現在時刻</span><div id="videoCurrentSpeedLabel" class="font-bold font-mono-num">---</div></div>
                         <div class="bg-blue-50 border border-blue-100 rounded p-2"><span class="text-blue-700">開始から</span><div id="videoCurrentElapsedLabel" class="font-bold font-mono-num text-blue-800">---</div></div>
                         <div class="bg-emerald-50 border border-emerald-100 rounded p-2"><span class="text-emerald-700">補正後打突時間</span><div id="videoCorrectedDurationLabel" class="font-bold font-mono-num text-emerald-800">---</div></div>
                     </div>
@@ -1633,7 +1633,7 @@
             videoManualEndSec: null,
             videoTimelineTickKey: '',
             videoTimelineDragMode: null,
-            videoOfficialSpeedSource: 'tip',
+            videoOfficialSpeedSource: 'wrist',
             videoAngleOverlay: true,
             videoAngleOverlayTarget: 'all',
             videoDiagnostics: null,
@@ -1685,7 +1685,7 @@
             tapeColor: 'yellow',
             shinaiExtension: 2.4,
             tipRoiRatio: 0.12,
-            officialSpeedSource: 'tip',
+            officialSpeedSource: 'wrist',
             videoStrikeSensitivity: 'normal',
             angleReference: 'torso',
             timingEndDecelMps2: 28,
@@ -1830,7 +1830,7 @@
                     ? (hasManualRange ? '手動マーカー範囲だけを解析します。解析開始を押してください。' : 'マーカー未設定のため自動検出で解析します。必要なら前の手順で開始/終了を置いてください。')
                     : '先に動画を読み込んでください。',
                 result: hasAnalysis
-                    ? '解析結果の概要です。上段はms表示、速度値そのものはグラフ・CSV・記録に保持しています。必要ならフレーム補正へ進んでください。'
+                    ? '解析結果の概要です。正式表示はmsと角度中心です。速度値はピーク検出用の参考値として内部に保持します。必要ならフレーム補正へ進んでください。'
                     : 'まだ解析結果がありません。先に読み込み手順で動画を解析してください。',
                 correct: hasAnalysis
                     ? '開始・終了フレームを1コマ単位で補正します。補正後打突時間が正式記録に反映されます。'
@@ -1898,7 +1898,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v56';
+            const refreshKey = 'kendo-sw-refreshed-v57';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2099,7 +2099,7 @@
             Params.targetFps = 60;
             AppState.cameraPerformanceMode = 'stable';
             applyCameraPerformanceMode('stable');
-            Params.officialSpeedSource = 'tip';
+            Params.officialSpeedSource = 'wrist';
             Params.angleReference = 'torso';
             Params.timingStartDownVelocityMps = 0.55;
             Params.timingStartConsecutiveFrames = 2;
@@ -2151,7 +2151,7 @@
             if (shinaiExtension) { shinaiExtension.value = Params.shinaiExtension; document.getElementById('valShinaiExtension').innerText = Params.shinaiExtension.toFixed(2); }
             if (angleOverlay) angleOverlay.checked = true;
 	            if (angleTarget) angleTarget.value = 'all';
-            if (videoOfficialSpeed) videoOfficialSpeed.value = 'tip';
+            if (videoOfficialSpeed) videoOfficialSpeed.value = 'wrist';
             if (angleReference) angleReference.value = 'torso';
             if (videoStrikeMode) videoStrikeMode.value = 'multi';
             if (videoStrikeSensitivity) videoStrikeSensitivity.value = 'normal';
@@ -2527,13 +2527,17 @@
             return out;
         }
 
-        function analyzeSwingSamples(samples) {
+        function analyzeSwingSamples(samples, source = Params.officialSpeedSource) {
             if (!samples || samples.length < 4) return null;
             const positions = smoothSavitzkyGolay5(samples.map(s => s.position));
             const speeds = [];
+            const speedLimit = maxReasonableSpeedForSource(source);
             for (let i = 1; i < samples.length; i++) {
                 const dt = Math.max((samples[i].timeMs - samples[i - 1].timeMs) / 1000, 1 / 240);
-                speeds.push(distance3d(positions[i], positions[i - 1]) / dt);
+                const positionSpeed = distance3d(positions[i], positions[i - 1]) / dt;
+                const filteredSpeed = Number(samples[i].speedMps || 0);
+                const speed = Number.isFinite(filteredSpeed) && filteredSpeed > 0 ? filteredSpeed : positionSpeed;
+                speeds.push(clamp(speed, 0, speedLimit));
             }
             if (!speeds.length) return null;
             let peakSpeed = 0;
@@ -2758,8 +2762,8 @@
 
         function chooseOfficialSpeed(values, preferred = Params.officialSpeedSource) {
             const order = preferred === 'tape'
-                ? ['tape', 'tip', 'wrist']
-                : (preferred === 'wrist' ? ['wrist', 'tip', 'tape'] : ['tip', 'tape', 'wrist']);
+                ? ['tape', 'wrist']
+                : (preferred === 'wrist' ? ['wrist'] : ['tip', 'wrist']);
             for (const key of order) {
                 const value = Number(values?.[key] || 0);
                 if (Number.isFinite(value) && value > 0) {
@@ -2775,8 +2779,8 @@
 
         function chooseOfficialMetrics(metricsBySource, preferred = Params.officialSpeedSource) {
             const order = preferred === 'tape'
-                ? ['tape', 'tip', 'wrist']
-                : (preferred === 'wrist' ? ['wrist', 'tip', 'tape'] : ['tip', 'tape', 'wrist']);
+                ? ['tape', 'wrist']
+                : (preferred === 'wrist' ? ['wrist'] : ['tip', 'wrist']);
             for (const key of order) {
                 const metrics = metricsBySource?.[key];
                 if (metrics && Number(metrics.peakSpeedMps) > 0) return { key, metrics };
@@ -6506,9 +6510,9 @@
 
         function maxReasonableSpeedForSource(source = Params.officialSpeedSource) {
             const key = source || Params.officialSpeedSource;
-            if (key === 'wrist') return Math.max(12, Params.maxReasonableSpeedMps * 0.75);
-            if (key === 'tip') return 35;
-            if (key === 'tape') return 45;
+            if (key === 'wrist') return Math.min(12, Params.maxReasonableSpeedMps);
+            if (key === 'tip') return Params.maxReasonableSpeedMps;
+            if (key === 'tape') return 35;
             return Params.maxReasonableSpeedMps;
         }
 
@@ -6867,7 +6871,7 @@
             const plotH = height - pad.top - pad.bottom;
             const maxSpeed = Math.max(1, ...frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0));
             let series = [
-                { key: 'speed', color: '#0891b2', values: frames.map(frame => (videoFrameSpeed(frame, Params.officialSpeedSource).value || 0) / maxSpeed), label: '速度' },
+                { key: 'speed', color: '#0891b2', values: frames.map(frame => (videoFrameSpeed(frame, Params.officialSpeedSource).value || 0) / maxSpeed), label: 'ピーク' },
                 { key: 'right', color: '#7c3aed', values: frames.map(frame => clamp(Number(frame.rightAng || 0) / 180, 0, 1)), label: '右肘' },
                 { key: 'torso', color: '#059669', values: frames.map(frame => clamp(Math.abs(Number(frame.torsoAng || 0)) / 35, 0, 1)), label: '体幹' },
                 { key: 'hasuji', color: '#d97706', values: frames.map(frame => clamp(Math.abs(Number(frame.hasuji || 0)) / 45, 0, 1)), label: '刃筋' }
@@ -6932,7 +6936,7 @@
                 ? `${Math.round(frame.timeMs)}ms / ${Number(frame.rightAng || 0).toFixed(1)}°`
                 : (visibleKeys?.includes('torso') || visibleKeys?.includes('hasuji')
                     ? `${Math.round(frame.timeMs)}ms / 軸${Number(frame.torsoAng || 0).toFixed(1)} 刃${Number(frame.hasuji || 0).toFixed(1)}`
-                    : `${Math.round(frame.timeMs)}ms / ${videoFrameSpeed(frame, Params.officialSpeedSource).value.toFixed(2)}`);
+                    : `${Math.round(frame.timeMs)}ms / ピーク参考`);
             ctx.fillText(info, pad.left, height - 8);
             const legendX = Math.max(pad.left + 120, width - series.length * 58 - 12);
             series.forEach((s, i) => {
@@ -6978,14 +6982,12 @@
             if (data.metricsBySource && Object.keys(data.metricsBySource).length) updateCurrentVideoValidation(data);
             const current = Number(document.getElementById('videoFrameSlider')?.value || 0);
             const frame = data.frames[current];
-            const officialSpeed = frame ? videoFrameSpeed(frame, Params.officialSpeedSource).value : 0;
-            const officialUnit = frame ? videoFrameSpeed(frame, Params.officialSpeedSource).unit : data.speedUnit;
             const activeMarker = getVideoFrameMarkers(data).find(marker => marker.index === current);
             safeText('videoCurrentFrameLabel', frame ? `${current} / ${frame.timeMs.toFixed(1)}ms${activeMarker ? ` / ${activeMarker.labelJa}` : ''}` : '---');
             safeText('videoStartFrameLabel', data.startFrame !== null ? `${data.startFrame} / ${data.frames[data.startFrame]?.timeMs.toFixed(1)}ms` : '---');
             safeText('videoPeakFrameLabel', Number.isFinite(data.peakFrame) ? `${data.peakFrame} / ${data.frames[data.peakFrame]?.timeMs.toFixed(1)}ms` : '---');
             safeText('videoEndFrameLabel', data.endFrame !== null ? `${data.endFrame} / ${data.frames[data.endFrame]?.timeMs.toFixed(1)}ms` : '---');
-            safeText('videoCurrentSpeedLabel', frame ? `${officialSpeed.toFixed(2)} ${officialUnit}` : '---');
+            safeText('videoCurrentSpeedLabel', frame ? `${Math.round(Number(frame.timeMs || 0))} ms` : '---');
             const start = data.startFrame !== null ? data.frames[data.startFrame] : null;
             const peak = Number.isFinite(data.peakFrame) ? data.frames[data.peakFrame] : null;
             const end = data.endFrame !== null ? data.frames[data.endFrame] : null;
@@ -7002,7 +7004,7 @@
             safeText('videoFormalStatus', Number.isFinite(correctedDurationMs) ? (data.exclusionReason ? `要確認: ${data.exclusionReason} / 補正後値を表示中` : '補正後の値を正式保存・レポートに反映') : '開始/終了フレームを補正してください');
             safeText('videoAnalysisStatus', Number.isFinite(correctedDurationMs) ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正可）` : '解析完了') : '開始/終了を補正してください');
             safeText('videoPlaybackCurrentMetrics', frame
-                ? `現在 #${current} / ${frame.timeMs.toFixed(1)}ms / 速度 ${officialSpeed.toFixed(2)} ${officialUnit} / 右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
+                ? `現在 #${current} / ${frame.timeMs.toFixed(1)}ms / 右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
                 : '現在フレーム: ---'
             );
             updateVideoResultTimeline(current);
@@ -7048,7 +7050,7 @@
                     visibility: frame.visibility
                 }))
                 .filter(sample => sample.position && Number(sample.speedMps) >= 0);
-            return analyzeSwingSamples(samples);
+            return analyzeSwingSamples(samples, source);
         }
 
         function videoPeakTimeLabel(metrics) {
@@ -7104,8 +7106,8 @@
             safeText('videoDetailHasujiSet', videoFrameSummaryText(data, 'hasuji'));
             const confidence = Number(data.diagnostics?.confidence || 0);
             const detectionRate = Number(data.diagnostics?.detectionRate || 0);
-            const currentSpeed = peak ? videoFrameSpeed(peak, data.officialSpeedSource || Params.officialSpeedSource).value : NaN;
-            safeText('videoDetailQualitySet', `信頼度 ${confidence ? Math.round(confidence * 100) + '%' : '---'} / 検出率 ${detectionRate ? Math.round(detectionRate * 100) + '%' : '---'} / 最高速 ${Number.isFinite(currentSpeed) ? currentSpeed.toFixed(2) : '---'}`);
+            const peakOffset = data.metrics && Number.isFinite(Number(data.metrics.peakOffsetMs)) ? Math.round(Number(data.metrics.peakOffsetMs)) : null;
+            safeText('videoDetailQualitySet', `信頼度 ${confidence ? Math.round(confidence * 100) + '%' : '---'} / 検出率 ${detectionRate ? Math.round(detectionRate * 100) + '%' : '---'} / 最高速時刻 ${peakOffset !== null ? peakOffset + 'ms' : '---'}`);
         }
 
         function updateVideoResultCards(data, metricsBySource, officialSource) {
@@ -7163,6 +7165,7 @@
             const end = data.endFrame !== null ? data.frames[data.endFrame] : null;
             const durationMs = start && end ? Number(end.timeMs || 0) - Number(start.timeMs || 0) : NaN;
             const peakSpeed = Number(data.metrics?.peakSpeedMps || 0);
+            const peakOffset = data.metrics && Number.isFinite(Number(data.metrics.peakOffsetMs)) ? Math.round(Number(data.metrics.peakOffsetMs)) : NaN;
             const speedLimit = maxReasonableSpeedForSource(data.actualOfficialSpeedSource || data.officialSpeedSource || Params.officialSpeedSource);
             const confidence = Number(data.diagnostics?.confidence || 0);
             const detectionRate = Number(data.diagnostics?.detectionRate || 0);
@@ -7171,11 +7174,11 @@
             const maxSpeedJump = maxFrameDelta(slice, frame => videoFrameSpeed(frame, data.officialSpeedSource || Params.officialSpeedSource).value);
             const missingRate = slice.length ? slice.filter(frame => !frame.landmarks?.[16] || !frame.landmarks?.[14] || !frame.landmarks?.[12]).length / slice.length : 1;
             add(Number.isFinite(durationMs) && durationMs >= 55 && durationMs <= Math.min(1000, Params.timingMaxDurationMs), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', '55ms未満や長すぎる値は除外候補');
-            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit, '速度範囲', peakSpeed ? `${peakSpeed.toFixed(2)} ${data.actualOfficialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}` : '未検出', `採用速度の上限目安 ${speedLimit.toFixed(0)}m/s`);
+            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), 'ピーク検出', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '速度値は参考扱い。正式画面では最高速時刻として確認');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
             add(maxTorsoJump <= 28, '体幹角の急変', `${maxTorsoJump.toFixed(1)}°`, '大きい場合は検出飛びの可能性');
-            add(maxSpeedJump <= Math.max(6, speedLimit * 0.65), '速度の急変', `${maxSpeedJump.toFixed(2)}`, 'フレーム間で速度が飛びすぎていないか');
+            add(maxSpeedJump <= Math.max(6, speedLimit * 0.65), 'ピーク安定性', maxSpeedJump <= Math.max(6, speedLimit * 0.65) ? '安定' : '要確認', '速度の数値ではなく、ピーク検出が飛んでいないかを確認');
             add(missingRate <= 0.25, '主要点の欠落', `${Math.round(missingRate * 100)}%`, '右肩・右肘・右手首の欠落率');
             const badCount = checks.filter(check => !check.ok).length;
             safeText('videoValiditySummary', badCount ? `要確認 ${badCount}件` : '測定に使いやすい');
@@ -7296,9 +7299,8 @@
             ctx.fillRect(10, 10, Math.min(560, w - 20), 128);
             ctx.fillStyle = '#ffffff';
             ctx.font = '14px sans-serif';
-            const official = videoFrameSpeed(frame, Params.officialSpeedSource);
             ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms`, 22, 34);
-            ctx.fillText(`${officialSpeedLabel(official.key)} ${official.value.toFixed(2)} ${official.unit}`, 22, 56);
+            ctx.fillText(`ピーク検出基準: ${officialSpeedLabel(Params.officialSpeedSource)}（速度値は参考）`, 22, 56);
             if (frame.rightAng || frame.hasuji || frame.torsoAng) {
                 ctx.fillStyle = 'rgba(255,255,255,0.92)';
                 ctx.fillText(`肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}°`, 22, 76);
@@ -7880,7 +7882,7 @@
             let csv = '\uFEFF';
             csv += '項目,値\n';
             csv += `fps,${data.fps}\n`;
-            csv += `正式速度,${officialSpeedLabel(data.officialSpeedSource || Params.officialSpeedSource)}\n`;
+            csv += `ピーク検出基準,${officialSpeedLabel(data.officialSpeedSource || Params.officialSpeedSource)}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
             csv += `最高速フレーム,${data.peakFrame ?? ''}\n`;
@@ -7892,10 +7894,10 @@
             csv += `手首ピーク時刻(ms),${data.metricsBySource?.wrist ? Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0)) : ''}\n`;
             csv += `推定剣先ピーク時刻(ms),${data.metricsBySource?.tip ? Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0)) : ''}\n`;
             csv += `テープ剣先ピーク時刻(ms),${data.metricsBySource?.tape ? Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0)) : ''}\n`;
-            csv += `正式速度値,${data.metrics ? data.metrics.peakSpeedMps.toFixed(3) : ''} ${data.officialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}\n`;
-            csv += `手首速度値,${data.metricsBySource?.wrist ? data.metricsBySource.wrist.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `推定剣先速度値,${data.metricsBySource?.tip ? data.metricsBySource.tip.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
-            csv += `テープ剣先速度値,${data.metricsBySource?.tape ? data.metricsBySource.tape.peakSpeedMps.toFixed(3) : ''} m/s*\n`;
+            csv += `参考ピーク値,${data.metrics ? data.metrics.peakSpeedMps.toFixed(3) : ''} ${data.officialSpeedSource === 'tape' ? 'm/s*' : data.speedUnit}\n`;
+            csv += `参考手首ピーク値,${data.metricsBySource?.wrist ? data.metricsBySource.wrist.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
+            csv += `参考推定剣先ピーク値,${data.metricsBySource?.tip ? data.metricsBySource.tip.peakSpeedMps.toFixed(3) : ''} ${data.speedUnit}\n`;
+            csv += `参考テープ剣先ピーク値,${data.metricsBySource?.tape ? data.metricsBySource.tape.peakSpeedMps.toFixed(3) : ''} m/s*\n`;
             csv += `最大減速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.maxDecelOffsetMs || 0)) : ''}\n\n`;
             csv += `測定除外数,${data.rejectedStrikes?.length || 0}\n`;
             csv += `除外理由,${(data.rejectedStrikes || []).map(item => `${item.peakFrame}:${item.reason}`).join(' / ')}\n\n`;
@@ -7959,7 +7961,7 @@
                 ['最高速時刻', peak ? `${peak.timeMs.toFixed(1)} ms` : '---'],
                 ['終了時刻', end ? `${end.timeMs.toFixed(1)} ms` : '---'],
                 ['打突時間', duration !== null ? `${duration} ms` : '---'],
-                ['採用速度種別', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
+                ['ピーク検出基準', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
                 ['正式最高速時刻', official.metrics ? `${Math.round(Number(official.metrics.peakOffsetMs || 0))} ms` : '---'],
                 ['手首ピーク時刻', data.metricsBySource?.wrist ? `${Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0))} ms` : '---'],
                 ['推定剣先ピーク時刻', data.metricsBySource?.tip ? `${Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0))} ms` : '---'],
@@ -8073,7 +8075,7 @@
                     shoulderLineAng: Number(endFrame.shoulderLineAng || 0)
                 },
                 clipFrames: [],
-                timingDefinition: `動画解析: 開始frame ${data.startFrame} / 最高速frame ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレームを手動補正後、正式速度は選択した速度種別で再計算。`
+                timingDefinition: `動画解析: 開始frame ${data.startFrame} / 最高速frame ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレームを手動補正後、ピーク検出基準で再計算。`
             };
             AppState.records.push(record);
             data.savedRecordId = record.id;
