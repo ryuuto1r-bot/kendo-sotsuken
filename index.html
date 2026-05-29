@@ -2481,7 +2481,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v77';
+            const refreshKey = 'kendo-sw-refreshed-v78';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -4081,8 +4081,9 @@
         function videoFormalDurationDisplay(data = AppState.videoAnalysis, durationMs = null, validation = null) {
             const duration = Number(durationMs);
             if (!Number.isFinite(duration)) return '---';
-            if (!isVideoTimingConfirmed(data)) return '未確定';
-            return videoDurationResultLabel(duration, validation);
+            const label = videoDurationResultLabel(duration, validation);
+            if (!isVideoTimingConfirmed(data)) return `候補 ${label}`;
+            return label;
         }
 
         function updateVideoCorrectionDiffPanel(data = AppState.videoAnalysis) {
