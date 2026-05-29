@@ -5596,18 +5596,24 @@
 
         async function initLegacyPose() {
             const ios = isIOSLikeBrowser();
+            const lightweightLegacy = ios || !window.crossOriginIsolated;
             pose = new Pose({locateFile: (file) => `./vendor/mediapipe/pose/${file}`});
             pose.setOptions({ 
-                modelComplexity: ios ? 0 : 1, 
+                modelComplexity: lightweightLegacy ? 0 : 1, 
                 smoothLandmarks: true, 
-                minDetectionConfidence: ios ? 0.35 : 0.6, 
-                minTrackingConfidence: ios ? 0.35 : 0.6,
+                minDetectionConfidence: lightweightLegacy ? 0.4 : 0.6, 
+                minTrackingConfidence: lightweightLegacy ? 0.4 : 0.6,
                 selfieMode: AppState.isFlipped 
             });
             pose.onResults((results) => {
                 results.frameTimeMs = AppState.currentFrameTimeMs || performance.now();
                 onResults(results);
             });
+            if (typeof pose.initialize === 'function') {
+                AppState.landmarkerDiag = lightweightLegacy ? 'Legacy Pose軽量モデル準備中' : 'Legacy Pose準備中';
+                updatePrecisionPanel();
+                await withTimeout(pose.initialize(), lightweightLegacy ? 14000 : 18000, 'Legacy Pose initialize');
+            }
             AppState.poseEngine = 'Legacy Pose';
             if (!AppState.landmarkerDiag || AppState.landmarkerDiag === 'Tasks確認中') AppState.landmarkerDiag = 'Legacy Pose使用中';
             AppState.poseReady = true;
@@ -5963,7 +5969,7 @@
                     const taskResult = AppState.poseLandmarker.detectForVideo(videoElement, nextPoseInferenceTimestamp(frameTimeMs));
                     onResults(convertTaskPoseResult(taskResult, frameTimeMs));
                 } else if (pose) {
-                    await withTimeout(pose.send({ image: videoElement }), isIOSLikeBrowser() ? 2500 : 4000, 'Legacy Pose frame');
+                    await withTimeout(pose.send({ image: videoElement }), isIOSLikeBrowser() || !window.crossOriginIsolated ? 6000 : 5000, 'Legacy Pose frame');
                 } else {
                     updatePrecisionPanel();
                 }
