@@ -5974,6 +5974,15 @@
                 }
             } catch (err) {
                 const now = performance.now();
+                const isLegacyWarmupTimeout = pose
+                    && String(err && (err.message || err)).includes('Legacy Pose frame timeout')
+                    && now - (AppState.legacyPoseCreatedAt || 0) < 32000;
+                if (isLegacyWarmupTimeout) {
+                    safeText('cameraDeviceStatus', 'AI準備中 / 映像表示OK');
+                    drawCameraFrameOnly('AI準備中 / カメラ映像のみ表示');
+                    updatePrecisionPanel();
+                    return;
+                }
                 if (!AppState.lastRuntimePoseErrorAt || now - AppState.lastRuntimePoseErrorAt > 2500) {
                     AppState.lastRuntimePoseErrorAt = now;
                     console.warn('リアルタイム解析を一時スキップしました', err);
