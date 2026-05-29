@@ -712,9 +712,16 @@
             min-height: 150px;
         }
         .video-formal-duration-value {
-            font-size: clamp(34px, 4.4vw, 64px);
-            line-height: 0.95;
+            font-size: clamp(30px, 3.2vw, 48px);
+            line-height: 1.02;
             letter-spacing: 0;
+            overflow-wrap: anywhere;
+            word-break: keep-all;
+        }
+        #videoFormalStatus {
+            max-width: min(100%, 420px);
+            white-space: normal;
+            line-height: 1.35;
         }
         .video-formal-frame-grid {
             display: grid;
@@ -765,7 +772,9 @@
             font-weight: 1000;
         }
         .video-result-kpi-card.primary .video-result-kpi-value {
-            font-size: clamp(32px, 4vw, 54px);
+            font-size: clamp(30px, 3.1vw, 46px);
+            overflow-wrap: anywhere;
+            word-break: keep-all;
         }
         @media (max-width: 760px) {
             .video-formal-layout {
@@ -2515,7 +2524,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v80';
+            const refreshKey = 'kendo-sw-refreshed-v81';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -4156,9 +4165,10 @@
             if (!data?.frames?.length) return '動画解析後に開始/終了を補正';
             const duration = Number(durationMs);
             if (!isVideoTimingConfirmed(data)) {
-                return Number.isFinite(duration)
-                    ? `未確定: 自動候補 ${Math.round(duration)}ms / 開始・終了を確認してください`
-                    : '未確定: 開始・終了を確認してください';
+                if (!Number.isFinite(duration)) return '未確定: 開始・終了を確認してください';
+                return validation && !validation.ok
+                    ? `自動候補: ${Math.round(duration)}ms / 要確認: ${validation.reason || '補正推奨'}`
+                    : `自動候補: ${Math.round(duration)}ms / 開始・終了を確認してください`;
             }
             if (validation && !validation.ok) return `要補正: ${validation.reason}`;
             return '確定済み: 補正後の値を正式保存・レポートに反映';
@@ -4166,10 +4176,8 @@
 
         function videoFormalDurationDisplay(data = AppState.videoAnalysis, durationMs = null, validation = null) {
             const duration = Number(durationMs);
-            if (!Number.isFinite(duration)) return '---';
-            const label = videoDurationResultLabel(duration, validation);
-            if (!isVideoTimingConfirmed(data)) return `候補 ${label}`;
-            return label;
+            if (!Number.isFinite(duration)) return validation?.reason ? '未検出' : '---';
+            return `${Math.round(duration)} ms`;
         }
 
         function updateVideoCorrectionDiffPanel(data = AppState.videoAnalysis) {
