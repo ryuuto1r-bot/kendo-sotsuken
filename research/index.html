@@ -683,6 +683,7 @@
             </details>
             <details class="menu-group" open>
                 <summary>測定・評価</summary>
+                <a href="#measurement-flow">測定フロー図</a>
                 <a href="#method">測定方法</a>
                 <a href="#timing">打突時間の定義</a>
                 <a href="#metrics">評価指標</a>
@@ -989,6 +990,46 @@
                     測定は、リアルタイム計測と動画解析に分ける。練習中の即時確認にはリアルタイム計測を使い、
                     打突時間や角度の正式確認には、iPhone等で撮影した高fps動画を読み込む動画解析を用いる。
                 </p>
+                <div id="measurement-flow" class="apple-process">
+                    <div class="apple-process-head">
+                        <span>測定方法の図解</span>
+                        <strong>撮影から正式値までを4段階で確認する</strong>
+                    </div>
+                    <div class="apple-process-rail" aria-label="測定方法の流れ">
+                        <article class="apple-process-step">
+                            <div class="apple-step-number">1</div>
+                            <div class="apple-step-icon">撮</div>
+                            <h3>撮影</h3>
+                            <p>上半身、肩、肘、手首が映るように、同じ距離・同じ向きで高fps動画を撮る。</p>
+                            <small>推奨: 正面からやや斜め正面 / 120fps以上</small>
+                        </article>
+                        <article class="apple-process-step">
+                            <div class="apple-step-number">2</div>
+                            <div class="apple-step-icon">読</div>
+                            <h3>動画読み込み</h3>
+                            <p>動画解析タブでmp4/movを読み込み、骨格、右肘角、体幹軸、推定刃筋を取得する。</p>
+                            <small>正式確認は動画解析を使う</small>
+                        </article>
+                        <article class="apple-process-step">
+                            <div class="apple-step-number">3</div>
+                            <div class="apple-step-icon">補</div>
+                            <h3>開始/終了補正</h3>
+                            <p>スロー再生とフレーム送りで、打突動作の開始フレームと終了フレームを手動で補正する。</p>
+                            <small>自動候補を映像で確認する</small>
+                        </article>
+                        <article class="apple-process-step">
+                            <div class="apple-step-number">4</div>
+                            <div class="apple-step-icon">出</div>
+                            <h3>結果出力</h3>
+                            <p>補正後の打突時間、ピーク時刻、右肘角、体幹軸、推定刃筋を正式記録として確認する。</p>
+                            <small>卒研では補正後の値を中心に扱う</small>
+                        </article>
+                    </div>
+                    <div class="apple-process-note">
+                        <strong>正式値の考え方</strong>
+                        <span>打突時間は「開始フレームから終了フレームまで」。ピーク時刻は「開始フレームからピークが来るまで」。角度は同じフレームの骨格から計算する。</span>
+                    </div>
+                </div>
                 <table>
                     <thead>
                         <tr><th>項目</th><th>推奨条件</th><th>理由</th></tr>

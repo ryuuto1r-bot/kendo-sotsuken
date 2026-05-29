@@ -421,6 +421,161 @@ th {
     padding: 18px 20px !important;
 }
 
+.apple-process {
+    margin: 28px 0 30px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 32px;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(0, 113, 227, 0.12), transparent 24rem),
+        linear-gradient(180deg, #ffffff, #f5f5f7);
+    padding: clamp(20px, 3vw, 34px);
+    overflow: hidden;
+}
+
+.apple-process-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.apple-process-head span {
+    color: #86868b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.apple-process-head strong {
+    max-width: 620px;
+    color: #1d1d1f;
+    font-size: clamp(24px, 3.4vw, 42px);
+    line-height: 1.06;
+    letter-spacing: -0.018em;
+    text-align: right;
+}
+
+.apple-process-rail {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.apple-process-rail::before {
+    content: "";
+    position: absolute;
+    left: 7%;
+    right: 7%;
+    top: 58px;
+    height: 2px;
+    background: linear-gradient(90deg, #0071e3, #34c759, #ff9f0a, #1d1d1f);
+    opacity: 0.25;
+}
+
+.apple-process-step {
+    position: relative;
+    min-height: 300px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.78);
+    padding: 18px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.06);
+}
+
+.apple-process-step::after {
+    content: "›";
+    position: absolute;
+    right: -16px;
+    top: 48px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #86868b;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 26px;
+    line-height: 1;
+    z-index: 2;
+}
+
+.apple-process-step:last-child::after {
+    display: none;
+}
+
+.apple-step-number {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #86868b;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.apple-step-icon {
+    width: 76px;
+    height: 76px;
+    display: grid;
+    place-items: center;
+    border-radius: 23px;
+    color: #ffffff;
+    background: #1d1d1f;
+    font-size: 30px;
+    font-weight: 900;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+}
+
+.apple-process-step:nth-child(1) .apple-step-icon { background: #0071e3; }
+.apple-process-step:nth-child(2) .apple-step-icon { background: #34c759; }
+.apple-process-step:nth-child(3) .apple-step-icon { background: #ff9f0a; }
+.apple-process-step:nth-child(4) .apple-step-icon { background: #1d1d1f; }
+
+.apple-process-step h3 {
+    margin: 18px 0 8px;
+    font-size: 22px;
+    line-height: 1.12;
+}
+
+.apple-process-step p {
+    margin: 0;
+    color: #424245;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.apple-process-step small {
+    display: block;
+    margin-top: 14px;
+    color: #6e6e73;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.apple-process-note {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.78);
+    padding: 14px 16px;
+}
+
+.apple-process-note strong {
+    color: #1d1d1f;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.apple-process-note span {
+    color: #424245;
+    font-size: 13px;
+}
+
 .note.warn {
     background: #fff8e8 !important;
 }
@@ -505,6 +660,24 @@ section a {
         position: relative !important;
         top: auto !important;
     }
+
+    .apple-process-head {
+        align-items: start;
+        flex-direction: column;
+    }
+
+    .apple-process-head strong {
+        text-align: left;
+    }
+
+    .apple-process-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .apple-process-rail::before,
+    .apple-process-step::after {
+        display: none;
+    }
 }
 
 @media (max-width: 640px) {
@@ -531,6 +704,18 @@ section a {
 
     .hero-grid {
         grid-template-columns: 1fr !important;
+    }
+
+    .apple-process-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .apple-process-step {
+        min-height: 0;
+    }
+
+    .apple-process-note {
+        grid-template-columns: 1fr;
     }
 
     section {
