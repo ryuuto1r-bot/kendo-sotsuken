@@ -2133,6 +2133,7 @@
             videoLegacyPose: null,
             videoLegacyResolver: null,
             videoLegacyReject: null,
+            legacyPoseCreatedAt: 0,
             frameLoopRunning: false,
             processingFrame: false,
             currentFrameTimeMs: 0,
@@ -5609,11 +5610,7 @@
                 results.frameTimeMs = AppState.currentFrameTimeMs || performance.now();
                 onResults(results);
             });
-            if (typeof pose.initialize === 'function') {
-                AppState.landmarkerDiag = lightweightLegacy ? 'Legacy Pose軽量モデル準備中' : 'Legacy Pose準備中';
-                updatePrecisionPanel();
-                await withTimeout(pose.initialize(), lightweightLegacy ? 14000 : 18000, 'Legacy Pose initialize');
-            }
+            AppState.legacyPoseCreatedAt = performance.now();
             AppState.poseEngine = 'Legacy Pose';
             if (!AppState.landmarkerDiag || AppState.landmarkerDiag === 'Tasks確認中') AppState.landmarkerDiag = 'Legacy Pose使用中';
             AppState.poseReady = true;
@@ -5969,7 +5966,9 @@
                     const taskResult = AppState.poseLandmarker.detectForVideo(videoElement, nextPoseInferenceTimestamp(frameTimeMs));
                     onResults(convertTaskPoseResult(taskResult, frameTimeMs));
                 } else if (pose) {
-                    await withTimeout(pose.send({ image: videoElement }), isIOSLikeBrowser() || !window.crossOriginIsolated ? 6000 : 5000, 'Legacy Pose frame');
+                    const legacyAgeMs = performance.now() - (AppState.legacyPoseCreatedAt || 0);
+                    const legacyTimeoutMs = legacyAgeMs < 20000 ? 16000 : (isIOSLikeBrowser() || !window.crossOriginIsolated ? 7000 : 5000);
+                    await withTimeout(pose.send({ image: videoElement }), legacyTimeoutMs, 'Legacy Pose frame');
                 } else {
                     updatePrecisionPanel();
                 }
