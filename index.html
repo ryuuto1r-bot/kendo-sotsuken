@@ -226,6 +226,18 @@
             min-height: min(78vh, 820px);
             height: min(78vh, 820px);
         }
+        #videoStep-correct:fullscreen .official-flow-card,
+        #videoStep-correct:-webkit-full-screen .official-flow-card {
+            display: none;
+        }
+        #videoStep-correct:fullscreen .video-strike-detail-panel,
+        #videoStep-correct:-webkit-full-screen .video-strike-detail-panel {
+            position: sticky;
+            bottom: 8px;
+            z-index: 25;
+            border-color: rgba(129, 140, 248, 0.42);
+            box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
+        }
         #videoStep-correct:fullscreen .video-correction-controls,
         #videoStep-correct:-webkit-full-screen .video-correction-controls {
             max-height: min(78vh, 820px);
@@ -536,7 +548,7 @@
         }
         @media (min-width: 900px) {
             .video-detail-edit-toolbar {
-                grid-template-columns: 1.05fr 1fr 1.15fr;
+                grid-template-columns: 1.05fr 1fr 1.15fr 1.2fr;
             }
         }
         .video-detail-edit-group {
@@ -561,6 +573,9 @@
         @media (min-width: 640px) {
             .video-detail-edit-buttons.four {
                 grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .video-detail-edit-buttons.five {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
             }
             .video-detail-edit-buttons.three {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -594,6 +609,34 @@
             border-color: #fcd34d;
             color: #92400e;
             background: #fffbeb;
+        }
+        .video-detail-edit-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .video-manual-edit-bar {
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            border-radius: 14px;
+            background: rgba(255, 251, 235, 0.76);
+            padding: 10px;
+        }
+        @media (max-width: 640px) {
+            .video-detail-edit-btn,
+            .video-strike-action,
+            .video-step-btn {
+                min-height: 44px;
+            }
+            .video-detail-edit-buttons,
+            .video-detail-edit-buttons.three,
+            .video-detail-edit-buttons.four,
+            .video-detail-edit-buttons.five {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            #videoStep-correct:fullscreen,
+            #videoStep-correct:-webkit-full-screen {
+                padding: 8px;
+            }
         }
         .video-analysis-fullscreen:fullscreen .video-result-mini-timeline,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
@@ -1026,9 +1069,8 @@
                 <div id="videoResultSectionNav" class="sticky top-16 z-10 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
                     <button type="button" data-video-section="strikes" class="video-result-section-btn bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-100 px-3 py-2 rounded font-black">打突一覧</button>
-                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">1本補正</button>
-                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">正式結果</button>
-                    <button type="button" data-video-section="report" class="video-result-section-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-2 rounded font-black">保存/出力</button>
+                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正</button>
+                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">結果</button>
                     <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
                 <aside id="videoSideDrawer" class="video-side-drawer" aria-hidden="true">
@@ -1221,6 +1263,19 @@
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">除外</span><div id="videoMultiRejected" class="font-black font-mono-num text-slate-700">---</div></div>
                     </div>
                     <div id="videoStrikeJumpButtons" class="flex flex-wrap gap-2 mb-3 text-xs"></div>
+                    <div class="video-manual-edit-bar mb-3 text-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div class="font-black text-amber-900"><i class="fa-solid fa-scissors mr-1"></i>手動分割・統合</div>
+                            <span class="text-amber-800">選択中の打突を、現在コマで編集します。</span>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                            <button id="videoSplitStrikeBtn" type="button" class="video-detail-edit-btn peak"><i class="fa-solid fa-scissors mr-1"></i>ここで分割</button>
+                            <button id="videoMergePrevStrikeBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-object-group mr-1"></i>前と統合</button>
+                            <button id="videoMergeNextStrikeBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-object-group mr-1"></i>次と統合</button>
+                            <button id="videoUndoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
+                            <button id="videoRedoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto bg-white rounded border border-amber-100 max-h-64">
                         <table class="w-full text-xs text-center">
                             <thead class="bg-amber-100 text-amber-900 sticky top-0">
@@ -1324,6 +1379,16 @@
                                     <button id="videoDetailMarkEndBtn" type="button" class="video-detail-edit-btn end">このコマを終了</button>
                                 </div>
                             </div>
+                            <div class="video-detail-edit-group">
+                                <div class="video-detail-edit-title">打突の分割・統合 / 戻す</div>
+                                <div class="video-detail-edit-buttons five">
+                                    <button id="videoDetailSplitStrikeBtn" type="button" class="video-detail-edit-btn peak">分割</button>
+                                    <button id="videoDetailMergePrevStrikeBtn" type="button" class="video-detail-edit-btn">前と統合</button>
+                                    <button id="videoDetailMergeNextStrikeBtn" type="button" class="video-detail-edit-btn">次と統合</button>
+                                    <button id="videoDetailUndoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+                                    <button id="videoDetailRedoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-right"></i> Redo</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-center">
                             <div class="bg-white/80 border border-indigo-100 rounded p-2"><span class="text-indigo-500">区間内時刻</span><div id="videoStrikeDetailOffset" class="font-black font-mono-num text-indigo-900">---</div></div>
@@ -1372,10 +1437,10 @@
                                 <label class="flex items-center gap-2"><input id="videoSkeletonToggle" type="checkbox" checked=""> 骨格表示</label>
                                 <label class="flex items-center gap-2"><input id="videoAngleOverlayToggle" type="checkbox" checked=""> 角度表示</label>
                                 <select id="videoAngleOverlaySelect" class="border border-slate-200 rounded px-2 py-2 bg-white">
-                                    <option value="all" selected="">角度すべて</option>
-                                    <option value="rightElbow">右肘角のみ</option>
+                                    <option value="rightElbow" selected="">右肘角のみ</option>
                                     <option value="torso">体幹軸のみ</option>
                                     <option value="hasuji">刃筋のみ</option>
+                                    <option value="all">角度すべて（薄く）</option>
                                 </select>
                                 <span id="videoOfficialMeasurementBadge" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-bold">補正後の値を正式記録へ保存</span>
                             </div>
@@ -1960,7 +2025,7 @@
             videoTimelineDragMode: null,
             videoOfficialSpeedSource: 'wrist',
             videoAngleOverlay: true,
-            videoAngleOverlayTarget: 'all',
+            videoAngleOverlayTarget: 'rightElbow',
             videoDiagnostics: null,
             videoStrikeMode: 'multi',
             videoStrikeSensitivity: 'normal',
@@ -1970,6 +2035,8 @@
             videoResultTimelineDragMode: null,
             videoStrikeDetailTimelineTickKey: '',
             videoStrikeDetailTimelineDragMode: null,
+            videoEditUndoStack: [],
+            videoEditRedoStack: [],
             videoGraphZoomed: false,
             videoSlowPlaying: false,
             videoSlowTimer: null,
@@ -2226,7 +2293,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v69';
+            const refreshKey = 'kendo-sw-refreshed-v70';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2437,7 +2504,7 @@
             AppState.angleOverlay = true;
 	            AppState.angleTarget = 'all';
             AppState.videoAngleOverlay = true;
-            AppState.videoAngleOverlayTarget = 'all';
+            AppState.videoAngleOverlayTarget = 'rightElbow';
             AppState.videoStrikeMode = 'multi';
             AppState.videoStrikeSensitivity = 'normal';
             AppState.videoSelectedStrikeIndex = null;
@@ -2485,7 +2552,7 @@
             if (videoStrikeSensitivity) videoStrikeSensitivity.value = 'normal';
             if (videoAnalysisFps) videoAnalysisFps.value = '60';
             if (videoAngleOverlay) videoAngleOverlay.checked = true;
-            if (videoAngleOverlaySelect) videoAngleOverlaySelect.value = 'all';
+            if (videoAngleOverlaySelect) videoAngleOverlaySelect.value = 'rightElbow';
             if (videoTapeColor) videoTapeColor.value = 'yellow';
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
@@ -3135,7 +3202,11 @@
             const leftWrist = landmarks?.[15];
             const rightElbow = landmarks?.[14];
             if (tapePoint && rightWrist && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
-                return { start: rightWrist, end: tapePoint, source: 'tape' };
+                const shoulderWidth = landmarks?.[11] && landmarks?.[12] ? distance2d(landmarks[11], landmarks[12]) : 0;
+                const tapeDistance = distance2d(rightWrist, tapePoint);
+                if (tapeDistance > Math.max(0.04, shoulderWidth * 0.18)) {
+                    return { start: rightWrist, end: tapePoint, source: 'tape' };
+                }
             }
             if (leftWrist && rightWrist && visibilityOf(leftWrist) >= Params.minAngleVisibility && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
                 const shoulderWidth = landmarks?.[11] && landmarks?.[12] ? distance2d(landmarks[11], landmarks[12]) : 0;
@@ -6239,6 +6310,7 @@
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             event.preventDefault();
             event.stopPropagation();
+            if (mode === 'start' || mode === 'end') pushVideoEditUndo(mode === 'start' ? '開始マーカー移動' : '終了マーカー移動');
             AppState.videoStrikeDetailTimelineDragMode = mode;
             applyVideoStrikeDetailScalePointer(event);
         }
@@ -6282,6 +6354,7 @@
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             event.preventDefault();
             event.stopPropagation();
+            if (mode === 'start' || mode === 'end') pushVideoEditUndo(mode === 'start' ? '開始マーカー移動' : '終了マーカー移動');
             AppState.videoResultTimelineDragMode = mode;
             applyVideoResultTimelinePointer(event);
         }
@@ -6499,11 +6572,11 @@
             ctx.restore();
         }
 
-        function drawVideoAngleLine(ctx, a, b, color, label) {
+        function drawVideoAngleLine(ctx, a, b, color, label, width = 4) {
             if (!a || !b) return;
             ctx.save();
             ctx.strokeStyle = color;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = width;
             ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
@@ -6536,11 +6609,14 @@
             const lm = frame.landmarks;
             const target = AppState.videoAngleOverlayTarget || 'all';
             const shouldDraw = name => target === 'all' || target === name;
+            const isFocused = name => target === name;
+            const lineWidth = name => isFocused(name) ? 7 : 2.5;
+            const label = (name, text) => isFocused(name) ? text : '';
             const p = idx => visibilityOf(lm[idx]) >= Params.minAngleVisibility ? normalizedToCanvas(lm[idx], width, height) : null;
             if (shouldDraw('rightElbow')) {
                 const shoulder = p(12), elbow = p(14), wrist = p(16);
-                drawVideoAngleLine(ctx, shoulder, elbow, '#a855f7');
-                drawVideoAngleLine(ctx, elbow, wrist, '#a855f7', `右肘 ${Number(frame.rightAng || 0).toFixed(1)}°`);
+                drawVideoAngleLine(ctx, shoulder, elbow, '#a855f7', '', lineWidth('rightElbow'));
+                drawVideoAngleLine(ctx, elbow, wrist, '#a855f7', label('rightElbow', `右肘 ${Number(frame.rightAng || 0).toFixed(1)}°`), lineWidth('rightElbow'));
                 drawVideoAngleArc(ctx, elbow, shoulder, wrist, '#d8b4fe');
             }
             if (shouldDraw('torso')) {
@@ -6548,13 +6624,16 @@
                 if (ls && rs && lh && rh) {
                     const shoulderMid = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 };
                     const hipMid = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 };
-                    drawVideoAngleLine(ctx, hipMid, shoulderMid, '#10b981', `体幹 ${Number(frame.torsoAng || 0).toFixed(1)}°`);
-                    drawVideoAngleLine(ctx, { x: hipMid.x, y: hipMid.y + 80 }, hipMid, 'rgba(16,185,129,0.35)', '垂直基準');
+                    drawVideoAngleLine(ctx, hipMid, shoulderMid, '#10b981', label('torso', `体幹 ${Number(frame.torsoAng || 0).toFixed(1)}°`), lineWidth('torso'));
+                    if (isFocused('torso')) drawVideoAngleLine(ctx, { x: hipMid.x, y: hipMid.y + 80 }, hipMid, 'rgba(16,185,129,0.35)', '垂直基準', 3);
                 }
             }
             if (shouldDraw('hasuji')) {
                 const axisLine = shinaiAxisCanvasLine(lm, width, height, frame.tapePoint, 90);
-                if (axisLine) drawVideoAngleLine(ctx, axisLine.start, axisLine.end, '#f59e0b', `刃筋 ${Number(frame.hasuji || 0).toFixed(1)}°`);
+                if (axisLine) {
+                    const sourceLabel = axisLine.source === 'tape' ? 'テープ' : (axisLine.source === 'grip' ? '握り' : '前腕');
+                    drawVideoAngleLine(ctx, axisLine.start, axisLine.end, '#f59e0b', label('hasuji', `刃筋 ${Number(frame.hasuji || 0).toFixed(1)}° / ${sourceLabel}`), lineWidth('hasuji'));
+                }
             }
         }
 
@@ -6843,7 +6922,8 @@
             safeText('videoStrikeDetailSpeed', frame ? `${Math.round(Number(frame.timeMs || 0))} ms` : '---');
             safeText('videoStrikeDetailRightElbow', frame?.rightAng ? `${frame.rightAng.toFixed(1)}°` : '---');
             safeText('videoStrikeDetailTorso', frame?.torsoAng ? `${frame.torsoAng.toFixed(1)}°` : '---');
-            safeText('videoStrikeDetailHasuji', frame?.hasuji ? `${frame.hasuji.toFixed(1)}°` : '---');
+            const hasujiSourceLabel = frame?.hasujiSource === 'tape' ? 'テープ' : (frame?.hasujiSource === 'grip' ? '握り' : (frame?.hasujiSource === 'forearm' ? '前腕' : ''));
+            safeText('videoStrikeDetailHasuji', frame?.hasuji ? `${frame.hasuji.toFixed(1)}°${hasujiSourceLabel ? ` / ${hasujiSourceLabel}` : ''}` : '---');
             updateVideoStrikeDetailScale(current, range);
         }
 
@@ -7027,10 +7107,119 @@
             setVideoAnalysisFrame(targets[kind] ?? 0);
         }
 
+        function cloneVideoEditPayload(value) {
+            try {
+                return JSON.parse(JSON.stringify(value ?? null));
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function videoEditSnapshot(label = '編集') {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return null;
+            return {
+                label,
+                at: Date.now(),
+                startFrame: data.startFrame,
+                peakFrame: data.peakFrame,
+                endFrame: data.endFrame,
+                manualTiming: data.manualTiming,
+                timingSource: data.timingSource,
+                exclusionReason: data.exclusionReason,
+                currentValidation: cloneVideoEditPayload(data.currentValidation),
+                strikes: cloneVideoEditPayload(data.strikes || []),
+                rejectedStrikes: cloneVideoEditPayload(data.rejectedStrikes || []),
+                selectedStrikeIndex: AppState.videoSelectedStrikeIndex,
+                selectedStrikeRejected: AppState.videoSelectedStrikeRejected,
+                currentFrame: Number(document.getElementById('videoFrameSlider')?.value || data.startFrame || 0)
+            };
+        }
+
+        function updateVideoEditUndoRedoButtons() {
+            const undoDisabled = !AppState.videoEditUndoStack.length;
+            const redoDisabled = !AppState.videoEditRedoStack.length;
+            const refs = videoStrikeRefList(AppState.videoAnalysis);
+            const selected = currentVideoStrikeRef();
+            const pos = selected ? refs.findIndex(item => item.rejected === selected.rejected && item.index === selected.index) : -1;
+            const noSelection = !selected;
+            ['videoUndoEditBtn', 'videoDetailUndoEditBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = undoDisabled;
+            });
+            ['videoRedoEditBtn', 'videoDetailRedoEditBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = redoDisabled;
+            });
+            ['videoSplitStrikeBtn', 'videoDetailSplitStrikeBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = noSelection;
+            });
+            ['videoMergePrevStrikeBtn', 'videoDetailMergePrevStrikeBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = pos <= 0;
+            });
+            ['videoMergeNextStrikeBtn', 'videoDetailMergeNextStrikeBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = pos < 0 || pos >= refs.length - 1;
+            });
+        }
+
+        function pushVideoEditUndo(label = '編集') {
+            const snapshot = videoEditSnapshot(label);
+            if (!snapshot) return;
+            const last = AppState.videoEditUndoStack[AppState.videoEditUndoStack.length - 1];
+            if (last && JSON.stringify(last) === JSON.stringify(snapshot)) return;
+            AppState.videoEditUndoStack.push(snapshot);
+            if (AppState.videoEditUndoStack.length > 40) AppState.videoEditUndoStack.shift();
+            AppState.videoEditRedoStack = [];
+            updateVideoEditUndoRedoButtons();
+        }
+
+        function restoreVideoEditSnapshot(snapshot, direction = 'undo') {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length || !snapshot) return;
+            data.startFrame = snapshot.startFrame;
+            data.peakFrame = snapshot.peakFrame;
+            data.endFrame = snapshot.endFrame;
+            data.manualTiming = snapshot.manualTiming;
+            data.timingSource = snapshot.timingSource;
+            data.exclusionReason = snapshot.exclusionReason;
+            data.currentValidation = cloneVideoEditPayload(snapshot.currentValidation);
+            data.strikes = cloneVideoEditPayload(snapshot.strikes || []);
+            data.rejectedStrikes = cloneVideoEditPayload(snapshot.rejectedStrikes || []);
+            AppState.videoSelectedStrikeIndex = snapshot.selectedStrikeIndex;
+            AppState.videoSelectedStrikeRejected = !!snapshot.selectedStrikeRejected;
+            normalizeVideoStrikeBuckets(data);
+            recomputeVideoAnalysisResult();
+            const target = clamp(Number(snapshot.currentFrame ?? data.peakFrame ?? data.startFrame ?? 0), 0, data.frames.length - 1);
+            syncVideoAnalysisSliders(target);
+            setVideoAnalysisFrame(target);
+            updateVideoEditUndoRedoButtons();
+            showToast(direction === 'redo' ? '編集をやり直しました' : '編集を戻しました', 'blue');
+        }
+
+        function undoVideoEdit() {
+            if (!AppState.videoEditUndoStack.length) return showToast('戻せる編集がありません', 'yellow');
+            const current = videoEditSnapshot('redo-source');
+            const previous = AppState.videoEditUndoStack.pop();
+            if (current) AppState.videoEditRedoStack.push(current);
+            restoreVideoEditSnapshot(previous, 'undo');
+        }
+
+        function redoVideoEdit() {
+            if (!AppState.videoEditRedoStack.length) return showToast('やり直せる編集がありません', 'yellow');
+            const current = videoEditSnapshot('undo-source');
+            const next = AppState.videoEditRedoStack.pop();
+            if (current) AppState.videoEditUndoStack.push(current);
+            restoreVideoEditSnapshot(next, 'redo');
+        }
+
         function markVideoCurrentFrame(kind) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             stopVideoSlowPlayback();
+            pushVideoEditUndo(kind === 'start' ? '開始フレーム変更' : '終了フレーム変更');
             const current = clamp(
                 Number(document.getElementById('videoFrameSlider')?.value || document.getElementById('videoResultFrameSlider')?.value || 0),
                 activeVideoFrameBounds().min,
@@ -7573,6 +7762,7 @@
             const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1 || (data?.rejectedStrikes?.length || 0) > 0;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
             if (!data || !shouldShow) {
+                updateVideoEditUndoRedoButtons();
                 updateVideoManualRangeUi();
                 return;
             }
@@ -7591,6 +7781,7 @@
                 const jumpBox = document.getElementById('videoStrikeJumpButtons');
                 if (jumpBox) jumpBox.innerHTML = '';
                 if (body) body.innerHTML = '<tr><td colspan="11" class="p-4 text-amber-700">打突を分割できませんでした。速度閾値や動画条件を確認してください。</td></tr>';
+                updateVideoEditUndoRedoButtons();
                 updateVideoManualRangeUi();
                 return;
             }
@@ -7676,6 +7867,7 @@
                 `);
                 body.innerHTML = [...validRows, ...rejectedRows].join('');
             }
+            updateVideoEditUndoRedoButtons();
             updateVideoManualRangeUi();
         }
 
@@ -7742,6 +7934,139 @@
                 if (!validation.ok) showToast(`補正範囲は${validation.reason}のため除外へ移動しました`, 'yellow');
             }
             updateVideoMultiStrikePanel(data);
+        }
+
+        function videoStrikePeakInRange(data, startFrame, endFrame) {
+            if (!data?.frames?.length) return startFrame;
+            const start = clamp(Math.round(Number(startFrame || 0)), 0, data.frames.length - 1);
+            const end = clamp(Math.round(Number(endFrame || start)), start, data.frames.length - 1);
+            let bestFrame = start;
+            let bestSpeed = -Infinity;
+            for (let i = start; i <= end; i++) {
+                const value = videoFrameSpeed(data.frames[i], Params.officialSpeedSource).value || 0;
+                if (value > bestSpeed) {
+                    bestSpeed = value;
+                    bestFrame = i;
+                }
+            }
+            return bestFrame;
+        }
+
+        function videoStrikeRefList(data = AppState.videoAnalysis) {
+            if (!data) return [];
+            return [
+                ...(data.strikes || []).map((strike, index) => ({ strike, index, rejected: false })),
+                ...(data.rejectedStrikes || []).map((strike, index) => ({ strike, index, rejected: true }))
+            ].sort((a, b) => Number(a.strike.startFrame || 0) - Number(b.strike.startFrame || 0));
+        }
+
+        function currentVideoStrikeRef() {
+            const data = AppState.videoAnalysis;
+            if (!data) return null;
+            const index = AppState.videoSelectedStrikeIndex;
+            const rejected = !!AppState.videoSelectedStrikeRejected;
+            const list = rejected ? data.rejectedStrikes : data.strikes;
+            if (index === null || index === undefined || !list?.[index]) return null;
+            return { data, strike: list[index], index, rejected };
+        }
+
+        function removeVideoStrikeRefs(data, refs) {
+            const validIndices = refs.filter(ref => !ref.rejected).map(ref => ref.index).sort((a, b) => b - a);
+            const rejectedIndices = refs.filter(ref => ref.rejected).map(ref => ref.index).sort((a, b) => b - a);
+            validIndices.forEach(index => data.strikes?.splice(index, 1));
+            rejectedIndices.forEach(index => data.rejectedStrikes?.splice(index, 1));
+        }
+
+        function addVideoStrikeByRange(data, startFrame, endFrame, numberHint = 1) {
+            const start = clamp(Math.round(Number(startFrame || 0)), 0, data.frames.length - 1);
+            const end = clamp(Math.round(Number(endFrame || start + 1)), start + 1, data.frames.length - 1);
+            const peak = videoStrikePeakInRange(data, start, end);
+            const summary = summarizeVideoStrike(data, start, peak, end, numberHint);
+            if (!summary) return null;
+            const validation = validateVideoStrikeSummary(summary, data);
+            const item = {
+                ...summary,
+                manualAdjusted: true,
+                validationReason: validation.reason,
+                reason: validation.reason,
+                rejected: !validation.ok
+            };
+            if (validation.ok) {
+                data.strikes = data.strikes || [];
+                data.strikes.push(item);
+            } else {
+                data.rejectedStrikes = data.rejectedStrikes || [];
+                data.rejectedStrikes.push({ ...item, rejected: true, score: 0 });
+            }
+            return item;
+        }
+
+        function selectVideoStrikeByRange(data, startFrame, endFrame) {
+            normalizeVideoStrikeBuckets(data);
+            const sameRange = strike => Number(strike.startFrame) === Number(startFrame) && Number(strike.endFrame) === Number(endFrame);
+            const validIndex = (data.strikes || []).findIndex(sameRange);
+            if (validIndex >= 0) {
+                AppState.videoSelectedStrikeIndex = validIndex;
+                AppState.videoSelectedStrikeRejected = false;
+                return data.strikes[validIndex];
+            }
+            const rejectedIndex = (data.rejectedStrikes || []).findIndex(sameRange);
+            if (rejectedIndex >= 0) {
+                AppState.videoSelectedStrikeIndex = rejectedIndex;
+                AppState.videoSelectedStrikeRejected = true;
+                return data.rejectedStrikes[rejectedIndex];
+            }
+            return null;
+        }
+
+        function finalizeManualStrikeEdit(data, targetStrike, toastText) {
+            normalizeVideoStrikeBuckets(data);
+            if (targetStrike) {
+                const selected = selectVideoStrikeByRange(data, targetStrike.startFrame, targetStrike.endFrame);
+                if (selected) {
+                    data.startFrame = selected.startFrame;
+                    data.peakFrame = selected.peakFrame;
+                    data.endFrame = selected.endFrame;
+                }
+            }
+            markVideoTimingManual(data, 'manual-strike-edit');
+            recomputeVideoAnalysisResult();
+            const targetFrame = clamp(Number(data.peakFrame ?? data.startFrame ?? 0), 0, data.frames.length - 1);
+            syncVideoAnalysisSliders(targetFrame);
+            updateVideoMultiStrikePanel(data);
+            setVideoAnalysisFrame(targetFrame);
+            updateVideoEditUndoRedoButtons();
+            if (toastText) showToast(toastText, 'blue');
+        }
+
+        function splitSelectedVideoStrikeAtCurrent() {
+            const ref = currentVideoStrikeRef();
+            const data = ref?.data;
+            if (!data?.frames?.length || !ref?.strike) return showToast('分割する打突を選んでください', 'yellow');
+            const rawCurrent = Number(document.getElementById('videoFrameSlider')?.value || ref.strike.peakFrame || 0);
+            if (rawCurrent <= ref.strike.startFrame || rawCurrent >= ref.strike.endFrame) return showToast('開始と終了の間のコマで分割してください', 'yellow');
+            const current = clamp(Math.round(rawCurrent), ref.strike.startFrame + 1, ref.strike.endFrame - 1);
+            pushVideoEditUndo('打突分割');
+            removeVideoStrikeRefs(data, [ref]);
+            const first = addVideoStrikeByRange(data, ref.strike.startFrame, current, ref.strike.number || 1);
+            addVideoStrikeByRange(data, current, ref.strike.endFrame, (ref.strike.number || 1) + 1);
+            finalizeManualStrikeEdit(data, first, `#${ref.strike.number || ''}を現在コマで分割しました`);
+        }
+
+        function mergeSelectedVideoStrike(direction = 'next') {
+            const ref = currentVideoStrikeRef();
+            const data = ref?.data;
+            if (!data?.frames?.length || !ref?.strike) return showToast('統合する打突を選んでください', 'yellow');
+            const refs = videoStrikeRefList(data);
+            const pos = refs.findIndex(item => item.rejected === ref.rejected && item.index === ref.index);
+            const neighbor = refs[pos + (direction === 'prev' ? -1 : 1)];
+            if (!neighbor) return showToast(direction === 'prev' ? '前の打突がありません' : '次の打突がありません', 'yellow');
+            pushVideoEditUndo('打突統合');
+            const start = Math.min(ref.strike.startFrame, neighbor.strike.startFrame);
+            const end = Math.max(ref.strike.endFrame, neighbor.strike.endFrame);
+            removeVideoStrikeRefs(data, [ref, neighbor]);
+            const merged = addVideoStrikeByRange(data, start, end, Math.min(ref.strike.number || 1, neighbor.strike.number || 1));
+            finalizeManualStrikeEdit(data, merged, direction === 'prev' ? '前の打突と統合しました' : '次の打突と統合しました');
         }
 
         function getVideoFrameMarkers(data) {
@@ -8270,6 +8595,7 @@
             if (!data || data.startFrame === null || data.endFrame === null || data.endFrame <= data.startFrame) return;
             data.frames.forEach(frame => {
                 if (!frame.landmarks?.[14] || !frame.landmarks?.[16]) return;
+                frame.hasujiSource = shinaiAxisFromLandmarks(frame.landmarks, frame.tapePoint)?.source || 'none';
                 frame.hasujiScreen = calculateShinaiHasuji(frame.landmarks, frame.tapePoint);
                 frame.hasujiBody = calculateBodyReferencedHasuji(frame.landmarks[14], frame.landmarks[16], frame.landmarks, frame.tapePoint);
                 frame.hasuji = Params.angleReference === 'torso' ? frame.hasujiBody : frame.hasujiScreen;
@@ -8681,6 +9007,7 @@
                 let frameHasuji = 0;
                 let frameHasujiScreen = 0;
                 let frameHasujiBody = 0;
+                let frameHasujiSource = 'none';
                 let poseConfidence = upperBodyVisibility(lm);
                 if (poseConfidence >= Params.minAngleVisibility) {
                     detectedFrames += 1;
@@ -8722,6 +9049,7 @@
                     }
                     if (lm[12] && lm[14] && lm[16]) {
                         frameRightAng = calculateJointAngle(lm[12], lm[14], lm[16]);
+                        frameHasujiSource = shinaiAxisFromLandmarks(lm, frameTapePoint)?.source || 'none';
                         frameHasujiScreen = calculateShinaiHasuji(lm, frameTapePoint);
                         frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm, frameTapePoint);
                         frameHasuji = Params.angleReference === 'torso' ? frameHasujiBody : frameHasujiScreen;
@@ -8794,6 +9122,7 @@
                     hasuji: frameHasuji,
                     hasujiScreen: frameHasujiScreen,
                     hasujiBody: frameHasujiBody,
+                    hasujiSource: frameHasujiSource,
                     downVelocity: frameDownVelocity,
                     visibility: frameVisibility,
                     poseConfidence
@@ -8863,6 +9192,8 @@
                 manualTimingConfirmed: !!manualRange,
                 timingSource: manualRange ? 'manual-range' : 'auto-candidate'
             };
+            AppState.videoEditUndoStack = [];
+            AppState.videoEditRedoStack = [];
             AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
             const shouldUseDetectedStrike = !manualRange && AppState.videoAnalysis.strikes.length && (
                 AppState.videoStrikeMode === 'multi' ||
@@ -9745,11 +10076,22 @@
         if (videoDetailJumpPeakBtn) videoDetailJumpPeakBtn.addEventListener('click', () => jumpVideoStrikeDetailMarker('peak'));
         const videoDetailJumpEndBtn = document.getElementById('videoDetailJumpEndBtn');
         if (videoDetailJumpEndBtn) videoDetailJumpEndBtn.addEventListener('click', () => jumpVideoStrikeDetailMarker('end'));
+        const videoDetailSplitStrikeBtn = document.getElementById('videoDetailSplitStrikeBtn');
+        if (videoDetailSplitStrikeBtn) videoDetailSplitStrikeBtn.addEventListener('click', splitSelectedVideoStrikeAtCurrent);
+        const videoDetailMergePrevStrikeBtn = document.getElementById('videoDetailMergePrevStrikeBtn');
+        if (videoDetailMergePrevStrikeBtn) videoDetailMergePrevStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('prev'));
+        const videoDetailMergeNextStrikeBtn = document.getElementById('videoDetailMergeNextStrikeBtn');
+        if (videoDetailMergeNextStrikeBtn) videoDetailMergeNextStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('next'));
+        const videoDetailUndoEditBtn = document.getElementById('videoDetailUndoEditBtn');
+        if (videoDetailUndoEditBtn) videoDetailUndoEditBtn.addEventListener('click', undoVideoEdit);
+        const videoDetailRedoEditBtn = document.getElementById('videoDetailRedoEditBtn');
+        if (videoDetailRedoEditBtn) videoDetailRedoEditBtn.addEventListener('click', redoVideoEdit);
         const videoDetailMarkStartBtn = document.getElementById('videoDetailMarkStartBtn');
         if (videoDetailMarkStartBtn) videoDetailMarkStartBtn.addEventListener('click', () => markVideoCurrentFrame('start'));
         const videoDetailMarkEndBtn = document.getElementById('videoDetailMarkEndBtn');
         if (videoDetailMarkEndBtn) videoDetailMarkEndBtn.addEventListener('click', () => markVideoCurrentFrame('end'));
         const videoStartFrameSlider = document.getElementById('videoStartFrameSlider');
+        if (videoStartFrameSlider) videoStartFrameSlider.addEventListener('pointerdown', () => pushVideoEditUndo('開始フレームスライダー'));
         if (videoStartFrameSlider) videoStartFrameSlider.addEventListener('input', e => {
             if (!AppState.videoAnalysis) return;
             const value = Number(e.target.value || 0);
@@ -9763,6 +10105,7 @@
             setVideoAnalysisFrame(value);
         });
         const videoEndFrameSlider = document.getElementById('videoEndFrameSlider');
+        if (videoEndFrameSlider) videoEndFrameSlider.addEventListener('pointerdown', () => pushVideoEditUndo('終了フレームスライダー'));
         if (videoEndFrameSlider) videoEndFrameSlider.addEventListener('input', e => {
             if (!AppState.videoAnalysis) return;
             const value = Number(e.target.value || 0);
@@ -10002,6 +10345,16 @@
         });
         const saveAllVideoStrikesBtn = document.getElementById('saveAllVideoStrikesBtn');
         if (saveAllVideoStrikesBtn) saveAllVideoStrikesBtn.addEventListener('click', saveAllVideoStrikesAsRecords);
+        const videoSplitStrikeBtn = document.getElementById('videoSplitStrikeBtn');
+        if (videoSplitStrikeBtn) videoSplitStrikeBtn.addEventListener('click', splitSelectedVideoStrikeAtCurrent);
+        const videoMergePrevStrikeBtn = document.getElementById('videoMergePrevStrikeBtn');
+        if (videoMergePrevStrikeBtn) videoMergePrevStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('prev'));
+        const videoMergeNextStrikeBtn = document.getElementById('videoMergeNextStrikeBtn');
+        if (videoMergeNextStrikeBtn) videoMergeNextStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('next'));
+        const videoUndoEditBtn = document.getElementById('videoUndoEditBtn');
+        if (videoUndoEditBtn) videoUndoEditBtn.addEventListener('click', undoVideoEdit);
+        const videoRedoEditBtn = document.getElementById('videoRedoEditBtn');
+        if (videoRedoEditBtn) videoRedoEditBtn.addEventListener('click', redoVideoEdit);
         const videoResultSectionNav = document.getElementById('videoResultSectionNav');
         if (videoResultSectionNav) videoResultSectionNav.addEventListener('click', e => {
             const btn = e.target.closest('[data-video-section]');
