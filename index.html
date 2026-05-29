@@ -2129,6 +2129,7 @@
             poseLandmarker: null,
             poseReady: false,
             poseInferenceTimeMs: 0,
+            tasksVisionLoadPromise: null,
             videoLegacyPose: null,
             videoLegacyResolver: null,
             videoLegacyReject: null,
@@ -2479,7 +2480,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v74';
+            const refreshKey = 'kendo-sw-refreshed-v75';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2794,6 +2795,11 @@
             const ua = navigator.userAgent || '';
             const platform = navigator.platform || '';
             return /iPad|iPhone|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function isSafariLikeBrowser() {
+            const ua = navigator.userAgent || '';
+            return /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|Edg|OPR|Firefox|FxiOS/i.test(ua);
         }
 
         function shouldUsePoseLandmarkerRealtime() {
@@ -5608,16 +5614,49 @@
             updatePrecisionPanel();
         }
 
+        function hasVisionTasksModule() {
+            return !!(window.MediaPipeTasksVision?.FilesetResolver && window.MediaPipeTasksVision?.PoseLandmarker);
+        }
+
+        function loadMediaPipeTasksVisionScript(timeoutMs = 12000) {
+            if (hasVisionTasksModule()) return Promise.resolve(window.MediaPipeTasksVision);
+            if (AppState.tasksVisionLoadPromise) return AppState.tasksVisionLoadPromise;
+            AppState.tasksVisionLoadPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                const timer = setTimeout(() => {
+                    script.remove();
+                    AppState.tasksVisionLoadPromise = null;
+                    reject(new Error('MediaPipe Tasks script load timeout'));
+                }, timeoutMs);
+                script.src = `./vendor/mediapipe/tasks-vision/vision_bundle_browser.js?v=${Date.now()}`;
+                script.async = true;
+                script.onload = () => {
+                    clearTimeout(timer);
+                    AppState.tasksVisionLoadPromise = null;
+                    if (hasVisionTasksModule()) resolve(window.MediaPipeTasksVision);
+                    else reject(new Error('MediaPipe Tasks module is incomplete'));
+                };
+                script.onerror = () => {
+                    clearTimeout(timer);
+                    AppState.tasksVisionLoadPromise = null;
+                    reject(new Error('MediaPipe Tasks script load failed'));
+                };
+                document.head.appendChild(script);
+            });
+            return AppState.tasksVisionLoadPromise;
+        }
+
         function waitForVisionTasks(timeoutMs = 5000) {
-            if (window.MediaPipeTasksVision) return Promise.resolve(window.MediaPipeTasksVision);
+            if (hasVisionTasksModule()) return Promise.resolve(window.MediaPipeTasksVision);
             return new Promise((resolve, reject) => {
                 const timer = setTimeout(() => {
                     window.removeEventListener('mediapipeTasksReady', onReady);
-                    reject(new Error('MediaPipe Tasks module timeout'));
+                    loadMediaPipeTasksVisionScript(Math.max(9000, timeoutMs)).then(resolve).catch(reject);
                 }, timeoutMs);
                 function onReady() {
                     clearTimeout(timer);
-                    resolve(window.MediaPipeTasksVision);
+                    if (hasVisionTasksModule()) resolve(window.MediaPipeTasksVision);
+                    else loadMediaPipeTasksVisionScript(Math.max(9000, timeoutMs)).then(resolve).catch(reject);
                 }
                 window.addEventListener('mediapipeTasksReady', onReady, { once: true });
             });
@@ -5626,6 +5665,7 @@
         async function ensurePoseLandmarkerAssets() {
             const paths = [
                 './vendor/mediapipe/tasks-vision/vision_bundle_browser.js',
+                './vendor/mediapipe/tasks-vision/wasm/vision_wasm_internal.js',
                 './vendor/mediapipe/tasks-vision/wasm/vision_wasm_internal.wasm',
                 './vendor/models/pose_landmarker_full.task'
             ];
@@ -5638,11 +5678,27 @@
             updatePrecisionPanel();
         }
 
-        async function initPose() {
+        async function createPoseLandmarkerInstance(vision, delegate = 'CPU') {
+            const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
+            const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
+            const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 12000, 'Vision WASM');
+            const baseOptions = { modelAssetPath: modelPath };
+            if (delegate === 'GPU') baseOptions.delegate = 'GPU';
+            return withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
+                baseOptions,
+                runningMode: 'VIDEO',
+                numPoses: 1,
+                minPoseDetectionConfidence: 0.55,
+                minPosePresenceConfidence: 0.55,
+                minTrackingConfidence: 0.55
+            }), 18000, `Pose Landmarker ${delegate}`);
+        }
+
+        async function initPose(options = {}) {
             AppState.poseEngine = '準備中';
             AppState.landmarkerDiag = 'Tasks確認中';
             updatePrecisionPanel();
-            const useTasks = shouldUsePoseLandmarkerRealtime();
+            const useTasks = options.forceTasks ? !!Params.usePoseLandmarker : shouldUsePoseLandmarkerRealtime();
             if (!useTasks && Params.usePoseLandmarker) {
                 AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
                 updatePrecisionPanel();
@@ -5650,54 +5706,34 @@
             if (useTasks) {
                 try {
                     await withTimeout(ensurePoseLandmarkerAssets(), 12000, 'Pose assets');
-                    const vision = await withTimeout(waitForVisionTasks(10000), 11000, 'MediaPipe Tasks');
-                    const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
-                    const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-                    const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 10000, 'Vision WASM');
-                    AppState.poseLandmarker = await withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
-                        baseOptions: {
-                            modelAssetPath: modelPath,
-                            delegate: 'GPU'
-                        },
-                        runningMode: 'VIDEO',
-                        numPoses: 1,
-                        minPoseDetectionConfidence: 0.6,
-                        minPosePresenceConfidence: 0.6,
-                        minTrackingConfidence: 0.6
-                    }), 14000, 'Pose Landmarker GPU');
-                    AppState.poseEngine = 'Pose Landmarker';
-                    AppState.landmarkerDiag = window.crossOriginIsolated ? 'GPU / 安定サーバ' : 'GPU / 通常HTTP';
-                    AppState.poseReady = true;
-                    updatePrecisionPanel();
-                    return;
-                } catch (gpuError) {
-                    AppState.landmarkerDiag = `GPU失敗: ${gpuError && gpuError.message ? gpuError.message.slice(0, 42) : '詳細不明'}`;
-                    updatePrecisionPanel();
-                    console.warn('Pose Landmarker GPU初期化失敗。CPUへ切り替えます。', gpuError);
-                    try {
-                        const vision = await withTimeout(waitForVisionTasks(10000), 11000, 'MediaPipe Tasks');
-                        const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
-                        const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-                        const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 10000, 'Vision WASM');
-                        AppState.poseLandmarker = await withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
-                            baseOptions: { modelAssetPath: modelPath },
-                            runningMode: 'VIDEO',
-                            numPoses: 1,
-                            minPoseDetectionConfidence: 0.6,
-                            minPosePresenceConfidence: 0.6,
-                            minTrackingConfidence: 0.6
-                        }), 14000, 'Pose Landmarker CPU');
-                        AppState.poseEngine = 'Pose Landmarker CPU';
-                        AppState.landmarkerDiag = window.crossOriginIsolated ? 'CPU / 安定サーバ' : 'CPU / 通常HTTP';
-                        AppState.poseReady = true;
-                        updatePrecisionPanel();
-                        return;
-                    } catch (cpuError) {
-                        AppState.landmarkerDiag = `CPU失敗: ${cpuError && cpuError.message ? cpuError.message.slice(0, 42) : 'Legacyへ退避'}`;
-                        updatePrecisionPanel();
-                        console.warn('Pose Landmarker CPU初期化失敗。従来版へ切り替えます。', cpuError);
-                        showToast('Pose Landmarkerを読み込めないため従来版へ切り替えます。安定起動は serve-kendo.py を使ってください', 'yellow');
+                    const vision = await withTimeout(waitForVisionTasks(10000), 13000, 'MediaPipe Tasks');
+                    const delegates = window.crossOriginIsolated && !isSafariLikeBrowser()
+                        ? ['GPU', 'CPU']
+                        : ['CPU'];
+                    for (const delegate of delegates) {
+                        try {
+                            AppState.landmarkerDiag = `${delegate}初期化中`;
+                            updatePrecisionPanel();
+                            AppState.poseLandmarker = await createPoseLandmarkerInstance(vision, delegate);
+                            AppState.poseEngine = delegate === 'GPU' ? 'Pose Landmarker' : 'Pose Landmarker CPU';
+                            AppState.landmarkerDiag = `${delegate} / ${window.crossOriginIsolated ? '安定サーバ' : '通常HTTP'} / ${options.purpose === 'video' ? '動画解析' : 'リアルタイム'}`;
+                            AppState.poseReady = true;
+                            updatePrecisionPanel();
+                            return;
+                        } catch (delegateError) {
+                            AppState.poseLandmarker = null;
+                            AppState.landmarkerDiag = `${delegate}失敗: ${delegateError && delegateError.message ? delegateError.message.slice(0, 46) : '詳細不明'}`;
+                            updatePrecisionPanel();
+                            console.warn(`Pose Landmarker ${delegate}初期化失敗`, delegateError);
+                        }
                     }
+                    throw new Error(AppState.landmarkerDiag || 'Pose Landmarker初期化失敗');
+                } catch (taskError) {
+                    AppState.poseLandmarker = null;
+                    AppState.landmarkerDiag = `Tasks失敗: ${taskError && taskError.message ? taskError.message.slice(0, 46) : 'Legacyへ退避'}`;
+                    updatePrecisionPanel();
+                    console.warn('Pose Landmarker初期化失敗。従来版へ切り替えます。', taskError);
+                    showToast('Pose Landmarkerを読み込めないため従来版へ切り替えます。互換モードで続行します', 'yellow');
                 }
             }
             await initLegacyPose();
@@ -9126,7 +9162,7 @@
             if (!AppState.poseLandmarker) {
                 safeText('videoAnalysisStatus', 'Pose Landmarker準備中');
                 AppState.poseLandmarker = null;
-                await initPose();
+                await initPose({ purpose: 'video', forceTasks: Params.usePoseLandmarker });
             }
             if (!AppState.poseLandmarker) {
                 try {
