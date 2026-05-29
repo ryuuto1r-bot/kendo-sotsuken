@@ -8,14 +8,14 @@
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     
-    <script src="./vendor/tailwind/tailwindcss.js"></script>
+    <script defer src="./vendor/tailwind/tailwindcss.js"></script>
     <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css">
-    <script src="./vendor/chartjs/chart.umd.js"></script>
-    <script src="./vendor/mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="./vendor/mediapipe/control_utils/control_utils.js"></script>
-    <script src="./vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="./vendor/mediapipe/pose/pose.js"></script>
-    <script src="./vendor/mediapipe/tasks-vision/vision_bundle_browser.js"></script>
+    <script defer src="./vendor/chartjs/chart.umd.js"></script>
+    <script async src="./vendor/mediapipe/camera_utils/camera_utils.js"></script>
+    <script async src="./vendor/mediapipe/control_utils/control_utils.js"></script>
+    <script async src="./vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script async src="./vendor/mediapipe/pose/pose.js"></script>
+    <script async src="./vendor/mediapipe/tasks-vision/vision_bundle_browser.js"></script>
 
     <style>
         .font-mono-num { font-family: 'Courier New', Courier, monospace; }
@@ -1972,10 +1972,10 @@
 
 	                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
 	                    <label class="flex items-center gap-3 cursor-pointer">
-	                        <input type="checkbox" id="paramUsePoseLandmarker" checked="" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
-	                        <span class="text-base font-bold text-cyan-900">高精度Pose Landmarkerを優先する</span>
+	                        <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
+	                        <span class="text-base font-bold text-cyan-900">高精度Pose Landmarkerを試す</span>
 	                    </label>
-	                    <p class="text-xs text-cyan-700 mt-2 ml-8">最新のMediaPipe Tasks APIを優先し、3D座標とフレーム時刻を使って速度を計算します。失敗時は従来版へ自動で戻ります。</p>
+	                    <p class="text-xs text-cyan-700 mt-2 ml-8">実験用です。通常は安定する従来版で解析します。オンにした場合も失敗時は従来版へ自動で戻ります。</p>
 	                </div>
 
 	                <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
@@ -2252,7 +2252,7 @@
             kiaiThreshold: 0.1,
             signalMode: false,
             tsukiMode: false,
-            usePoseLandmarker: true,
+            usePoseLandmarker: false,
             referenceShoulderMeters: 0.42,
             shinaiLengthMeters: 1.2,
             cameraDistanceMeters: 2.5,
@@ -2481,7 +2481,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v76';
+            const refreshKey = 'kendo-sw-refreshed-v77';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2672,7 +2672,7 @@
             Params.kiaiThreshold = 0.1;
             Params.signalMode = false;
             Params.tsukiMode = false;
-            Params.usePoseLandmarker = true;
+            Params.usePoseLandmarker = false;
             Params.tipTracking = false;
             Params.tapeColor = 'yellow';
             Params.shinaiExtension = 2.4;
@@ -5598,6 +5598,7 @@
         async function initLegacyPose() {
             const ios = isIOSLikeBrowser();
             const lightweightLegacy = ios || !window.crossOriginIsolated;
+            await ensureLegacyPoseLibrary();
             pose = new Pose({locateFile: (file) => `./vendor/mediapipe/pose/${file}`});
             pose.setOptions({ 
                 modelComplexity: lightweightLegacy ? 0 : 1, 
@@ -5615,6 +5616,54 @@
             if (!AppState.landmarkerDiag || AppState.landmarkerDiag === 'Tasks確認中') AppState.landmarkerDiag = 'Legacy Pose使用中';
             AppState.poseReady = true;
             updatePrecisionPanel();
+        }
+
+        function loadScriptAsset(src, isReady, timeoutMs = 12000) {
+            if (isReady()) return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                let script = Array.from(document.scripts).find(node => {
+                    const attr = node.getAttribute('src') || '';
+                    return attr === src || attr.endsWith(src.replace('./', '/')) || attr.endsWith(src.replace('./', ''));
+                });
+                const timer = setTimeout(() => {
+                    cleanup();
+                    reject(new Error(`${src} load timeout`));
+                }, timeoutMs);
+                function cleanup() {
+                    clearTimeout(timer);
+                    script?.removeEventListener('load', onLoad);
+                    script?.removeEventListener('error', onError);
+                }
+                function onLoad() {
+                    cleanup();
+                    isReady() ? resolve() : reject(new Error(`${src} loaded but global is missing`));
+                }
+                function onError() {
+                    cleanup();
+                    reject(new Error(`${src} load failed`));
+                }
+                if (!script) {
+                    script = document.createElement('script');
+                    script.src = src;
+                    script.async = true;
+                    document.head.appendChild(script);
+                }
+                script.addEventListener('load', onLoad, { once: true });
+                script.addEventListener('error', onError, { once: true });
+                setTimeout(() => {
+                    if (isReady()) {
+                        cleanup();
+                        resolve();
+                    }
+                }, 0);
+            });
+        }
+
+        async function ensureLegacyPoseLibrary() {
+            await loadScriptAsset('./vendor/mediapipe/drawing_utils/drawing_utils.js', () => (
+                typeof window.drawConnectors === 'function' && typeof window.drawLandmarks === 'function'
+            ), 10000).catch(() => {});
+            await loadScriptAsset('./vendor/mediapipe/pose/pose.js', () => typeof window.Pose === 'function', 16000);
         }
 
         function hasVisionTasksModule() {
@@ -5714,9 +5763,7 @@
                 try {
                     await withTimeout(ensurePoseLandmarkerAssets(), 12000, 'Pose assets');
                     const vision = await withTimeout(waitForVisionTasks(10000), 13000, 'MediaPipe Tasks');
-                    const delegates = window.crossOriginIsolated && !isSafariLikeBrowser()
-                        ? ['GPU', 'CPU']
-                        : ['CPU'];
+                    const delegates = ['CPU'];
                     for (const delegate of delegates) {
                         try {
                             AppState.landmarkerDiag = `${delegate}初期化中`;

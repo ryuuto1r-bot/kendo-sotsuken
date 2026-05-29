@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v76';
+const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v77';
 const APP_SHELL = [
   './',
   './index.html',
