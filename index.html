@@ -54,6 +54,34 @@
         .practice-simple #upperBodyModeIndicator,
         .practice-simple #zanshinIndicator { display: none !important; }
         .practice-simple #canvasOverlayData { max-width: min(280px, 42vw); }
+        .settings-advanced {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 0.85rem;
+        }
+        .settings-advanced > summary {
+            cursor: pointer;
+            list-style: none;
+            font-weight: 900;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .settings-advanced > summary::-webkit-details-marker { display: none; }
+        .settings-advanced > summary::after {
+            content: "開く";
+            font-size: 0.72rem;
+            color: #64748b;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: 0.18rem 0.55rem;
+        }
+        .settings-advanced[open] > summary::after { content: "閉じる"; }
+        .settings-advanced:not([open]) .advanced-body { display: none !important; }
         .condition-good { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
         .condition-warn { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
         .condition-bad { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
@@ -908,7 +936,7 @@
                     <div id="canvasOverlayData" class="absolute top-4 right-4 bg-black/50 border border-slate-600 p-3 rounded-lg text-white hidden flex-col gap-2 backdrop-blur-md text-sm shadow-lg z-30">
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>右肘角:</span><span id="overlayRightAng" class="font-mono font-bold">---°</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>体幹傾斜:</span><span id="overlayTorsoAng" class="font-mono font-bold">---°</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-cyan-300">手首参考:</span><span id="overlaySpeed3d" class="font-mono font-bold text-cyan-300">---</span></div>
+                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-cyan-300">検出信号:</span><span id="overlaySpeed3d" class="font-mono font-bold text-cyan-300">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-amber-300">推定剣先:</span><span id="overlayTipSpeed" class="font-mono font-bold text-amber-300">---</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-lime-300">テープ剣先:</span><span id="overlayTapeSpeed" class="font-mono font-bold text-lime-300">OFF</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-slate-300">Δt:</span><span id="overlayFrameDt" class="font-mono font-bold text-slate-200">---</span></div>
@@ -1954,52 +1982,58 @@
                     </div>
                 </div>
 
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="paramSignalMode" class="w-5 h-5 text-blue-600 rounded border-gray-300">
-                        <span class="text-base font-bold text-blue-900">シグナル反応モードを有効にする</span>
-                    </label>
-                    <p class="text-xs text-blue-700 mt-2 ml-8">構えて静止すると、1〜3秒後にランダムで「ピーッ」と鳴ります。音が鳴ってから打突が完了するまでの時間を計測します。（※実戦的な反応速度テスト）</p>
-                </div>
+                <details class="settings-advanced">
+                    <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>高度・実験機能</span></summary>
+                    <p class="text-xs text-slate-500 mt-2">通常の素振り測定では使わない項目です。発表・検証で必要な時だけ開いて調整します。</p>
+                    <div class="advanced-body mt-4 space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="paramSignalMode" class="w-5 h-5 text-blue-600 rounded border-gray-300">
+                                <span class="text-base font-bold text-blue-900">シグナル反応モードを有効にする</span>
+                            </label>
+                            <p class="text-xs text-blue-700 mt-2 ml-8">構えて静止すると、1〜3秒後にランダムで「ピーッ」と鳴ります。音が鳴ってから打突が完了するまでの時間を計測します。</p>
+                        </div>
 
-	                <div class="bg-red-50 p-4 rounded-lg border border-red-100 mt-4">
-	                    <label class="flex items-center gap-3 cursor-pointer">
-	                        <input type="checkbox" id="paramTsukiMode" class="w-5 h-5 text-red-600 rounded border-gray-300">
-                        <span class="text-base font-bold text-red-900">突き（ツキ）モードを有効にする</span>
-                    </label>
-	                    <p class="text-xs text-red-700 mt-2 ml-8">振りかぶりではなく、「肘の急激な伸び」と「伸びきった瞬間の停止」を使って突き動作の打突時間と角度を確認します。</p>
-	                </div>
+	                    <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+	                        <label class="flex items-center gap-3 cursor-pointer">
+	                            <input type="checkbox" id="paramTsukiMode" class="w-5 h-5 text-red-600 rounded border-gray-300">
+                                <span class="text-base font-bold text-red-900">突き（ツキ）モードを有効にする</span>
+                            </label>
+	                        <p class="text-xs text-red-700 mt-2 ml-8">振りかぶりではなく、「肘の急激な伸び」と「伸びきった瞬間の停止」を使って突き動作の打突時間と角度を確認します。</p>
+	                    </div>
 
-	                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
-	                    <label class="flex items-center gap-3 cursor-pointer">
-	                        <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
-	                        <span class="text-base font-bold text-cyan-900">高精度Pose Landmarkerを試す</span>
-	                    </label>
-	                    <p class="text-xs text-cyan-700 mt-2 ml-8">実験用です。通常は安定する従来版で解析します。オンにした場合も失敗時は従来版へ自動で戻ります。</p>
-	                </div>
+	                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
+	                        <label class="flex items-center gap-3 cursor-pointer">
+	                            <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
+	                            <span class="text-base font-bold text-cyan-900">高精度Pose Landmarkerを試す</span>
+	                        </label>
+	                        <p class="text-xs text-cyan-700 mt-2 ml-8">実験用です。通常は安定する従来版で解析します。オンにした場合も失敗時は従来版へ自動で戻ります。</p>
+	                    </div>
 
-	                <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
-	                    <label class="flex items-center gap-3 cursor-pointer">
-	                        <input type="checkbox" id="paramTipTracking" class="w-5 h-5 text-amber-600 rounded border-gray-300">
-	                        <span class="text-base font-bold text-amber-900">竹刀先端テープ検出を使う</span>
-	                    </label>
-	                    <p class="text-xs text-amber-700 mt-2 ml-8">両手首から推定した竹刀方向の先をROI探索します。竹刀先端に黄色テープを貼ると、刃筋と剣先速度の補助指標として使えます。</p>
-	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-	                        <div>
-	                            <label class="block text-xs font-bold text-amber-900 mb-1">テープ色</label>
-	                            <select id="paramTapeColor" class="w-full border border-amber-200 rounded px-2 py-2 text-sm bg-white">
-	                                <option value="yellow" selected="">黄色</option>
-	                                <option value="red">赤</option>
-	                                <option value="blue">青</option>
-	                                <option value="green">緑</option>
-	                            </select>
-	                        </div>
-	                        <div>
-	                            <label class="block text-xs font-bold text-amber-900 mb-1">剣先延長係数 <span id="valShinaiExtension" class="font-mono-num">2.40</span></label>
-	                            <input type="range" id="paramShinaiExtension" min="1.6" max="3.4" step="0.05" value="2.4" class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer">
+	                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+	                        <label class="flex items-center gap-3 cursor-pointer">
+	                            <input type="checkbox" id="paramTipTracking" class="w-5 h-5 text-amber-600 rounded border-gray-300">
+	                            <span class="text-base font-bold text-amber-900">竹刀先端テープ検出を使う</span>
+	                        </label>
+	                        <p class="text-xs text-amber-700 mt-2 ml-8">両手首から推定した竹刀方向の先をROI探索します。竹刀先端に黄色テープを貼ると、推定刃筋と剣先ピークの補助指標として使えます。</p>
+	                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+	                            <div>
+	                                <label class="block text-xs font-bold text-amber-900 mb-1">テープ色</label>
+	                                <select id="paramTapeColor" class="w-full border border-amber-200 rounded px-2 py-2 text-sm bg-white">
+	                                    <option value="yellow" selected="">黄色</option>
+	                                    <option value="red">赤</option>
+	                                    <option value="blue">青</option>
+	                                    <option value="green">緑</option>
+	                                </select>
+	                            </div>
+	                            <div>
+	                                <label class="block text-xs font-bold text-amber-900 mb-1">剣先延長係数 <span id="valShinaiExtension" class="font-mono-num">2.40</span></label>
+	                                <input type="range" id="paramShinaiExtension" min="1.6" max="3.4" step="0.05" value="2.4" class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer">
+	                            </div>
 	                        </div>
 	                    </div>
-	                </div>
+                    </div>
+                </details>
 
 	                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
 	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>実測キャリブレーション</h4>
@@ -2481,7 +2515,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v79';
+            const refreshKey = 'kendo-sw-refreshed-v80';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2872,7 +2906,7 @@
                 AppState.startCandidateWristY = wristY;
             }
             AppState.startCandidateFrames += 1;
-            setTimingStatus(`開始候補 ${AppState.startCandidateFrames}/${Params.timingStartConsecutiveFrames}`, speedLabel(AppState.currentDownVelocityMps, AppState.currentSpeedUnit), '---');
+            setTimingStatus(`開始候補 ${AppState.startCandidateFrames}/${Params.timingStartConsecutiveFrames}`, 'ピーク探索中', '---');
             if (AppState.startCandidateFrames >= Params.timingStartConsecutiveFrames) {
                 return {
                     timeMs: AppState.startCandidateTimeMs || frameTimeMs,
@@ -3112,7 +3146,7 @@
         }
 
         function speedLabel(value, unit) {
-            return value ? `${value.toFixed(2)} ${unit === 'm/s' ? 'm/s' : 'm/s*'}` : '---';
+            return value ? `信号 ${value.toFixed(2)}` : '---';
         }
 
         function normalizeMs(value) {
@@ -3740,7 +3774,8 @@
             const safeLength = Math.max(safeDir.length(), 0.01);
             mesh.visible = true;
             mesh.position.copy(safeStart.clone().add(safeEnd).multiplyScalar(0.5));
-            mesh.scale.set(1, safeLength, 1);
+            const radiusScale = mesh.userData?.radiusScale || 1;
+            mesh.scale.set(radiusScale, safeLength, radiusScale);
             mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), safeDir.clone().normalize());
         }
 
@@ -4595,11 +4630,15 @@
             highlightSegments.forEach(mesh => {
                 mesh.material.color.set(color);
                 mesh.material.emissive.set(color);
+                mesh.material.emissiveIntensity = 0.9;
+                mesh.userData.radiusScale = 1.65;
                 mesh.visible = false;
             });
             highlightJoints.forEach(mesh => {
                 mesh.material.color.set(color);
                 mesh.material.emissive.set(color);
+                mesh.material.emissiveIntensity = 0.9;
+                mesh.scale.setScalar(1.22);
                 mesh.visible = false;
             });
             refLine.visible = false;
@@ -4700,7 +4739,7 @@
             resetSwingTracking();
             AppState.swingStartY = wristY;
             AppState.swingStartFrameTimeMs = startTime;
-            setTimingStatus('開始OK', speedLabel(AppState.currentDownVelocityMps, AppState.currentSpeedUnit), '---');
+            setTimingStatus('開始OK', 'ピーク探索中', '---');
             updateStateUI('SWINGING');
         }
 
@@ -4710,7 +4749,7 @@
                 AppState.swingPeakSpeedMps = speed;
                 AppState.swingPeakTimeMs = now;
                 AppState.swingPeakFrameTimeMs = now;
-                setTimingStatus('開始OK', `${speed.toFixed(2)} ${AppState.currentSpeedUnit}`, '探索中');
+                setTimingStatus('開始OK', msLabel(now - AppState.swingStartTime), '探索中');
             }
             const dt = AppState.swingPreviousFrameTimeMs ? Math.max((now - AppState.swingPreviousFrameTimeMs) / 1000, 1 / 240) : 1 / Math.max(Params.targetFps, 30);
             const decel = (AppState.swingPreviousSpeedMps - speed) / dt;
@@ -4730,7 +4769,7 @@
                 const reason = endByDecel ? `急減速 ${decel.toFixed(1)}` : (endByRatio ? '最高速比38%未満' : (timedOut ? '上限到達' : '停止検出'));
                 AppState.swingEndFrameTimeMs = now;
                 AppState.swingEndReason = reason;
-                setTimingStatus('開始OK', `${AppState.swingPeakSpeedMps.toFixed(2)} ${AppState.currentSpeedUnit}`, reason);
+                setTimingStatus('開始OK', msLabel(AppState.swingPeakTimeMs - AppState.swingStartTime), reason);
             }
             return { isImpact, decel, endTimeMs: now, reason: AppState.swingEndReason };
         }
