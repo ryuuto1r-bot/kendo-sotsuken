@@ -414,7 +414,7 @@
         }
         .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: minmax(0, 1.55fr) minmax(280px, 360px) !important;
         }
         .video-analysis-fullscreen:fullscreen .video-correction-preview,
         .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview {
@@ -424,6 +424,10 @@
         }
         .video-analysis-fullscreen:fullscreen .video-result-controls,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
+            position: sticky;
+            top: 12px;
+            max-height: calc(100vh - 24px);
+            overflow: auto;
             background: rgba(15, 23, 42, 0.92) !important;
             border-color: rgba(148, 163, 184, 0.38) !important;
             color: #e2e8f0;
@@ -621,6 +625,17 @@
             background: rgba(255, 251, 235, 0.76);
             padding: 10px;
         }
+        .video-result-edit-panel {
+            border: 1px solid rgba(129, 140, 248, 0.22);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 8px;
+        }
+        .video-analysis-fullscreen:fullscreen .video-result-edit-panel,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-edit-panel {
+            background: rgba(15, 23, 42, 0.72);
+            border-color: rgba(129, 140, 248, 0.36);
+        }
         @media (max-width: 640px) {
             .video-detail-edit-btn,
             .video-strike-action,
@@ -642,6 +657,17 @@
         .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
             background: rgba(15, 23, 42, 0.92);
             border-color: rgba(59, 130, 246, 0.36);
+        }
+        @media (max-width: 900px) {
+            .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
+            .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .video-analysis-fullscreen:fullscreen .video-result-controls,
+            .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
+                position: static;
+                max-height: none;
+            }
         }
         .model-analysis-grid { grid-template-columns: 1fr; }
         @media (min-width: 1280px) {
@@ -1168,8 +1194,21 @@
                                 <button id="videoResultOpen3DBtn" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-person-rays mr-1"></i>3D</button>
                                 <button id="videoResultFullscreenBtn" type="button" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>全画面分析</button>
                             </div>
+                            <div class="video-result-edit-panel">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <span class="font-black text-indigo-700"><i class="fa-solid fa-scissors mr-1"></i>プレビュー編集</span>
+                                    <span class="text-[10px] text-slate-500">全画面中も操作可</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button id="videoResultSplitStrikeBtn" type="button" class="video-detail-edit-btn peak"><i class="fa-solid fa-scissors mr-1"></i>ここで分割</button>
+                                    <button id="videoResultMergePrevStrikeBtn" type="button" class="video-detail-edit-btn">前と統合</button>
+                                    <button id="videoResultMergeNextStrikeBtn" type="button" class="video-detail-edit-btn">次と統合</button>
+                                    <button id="videoResultUndoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
+                                    <button id="videoResultRedoEditBtn" type="button" class="video-detail-edit-btn col-span-2"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
+                                </div>
+                            </div>
                             <div class="text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
-                                ここで再生しながら確認し、必要なら「1コマ補正」で開始/終了を置き直します。
+                                ここで再生しながら確認し、開始/終了・分割・統合をそのまま編集できます。
                             </div>
                             <div id="videoPlaybackCurrentMetrics" class="text-[11px] text-slate-700 bg-slate-900/5 border border-slate-200 rounded p-2 font-mono-num">
                                 現在フレーム: ---
@@ -2293,7 +2332,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v70';
+            const refreshKey = 'kendo-sw-refreshed-v71';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -7143,23 +7182,23 @@
             const selected = currentVideoStrikeRef();
             const pos = selected ? refs.findIndex(item => item.rejected === selected.rejected && item.index === selected.index) : -1;
             const noSelection = !selected;
-            ['videoUndoEditBtn', 'videoDetailUndoEditBtn'].forEach(id => {
+            ['videoUndoEditBtn', 'videoDetailUndoEditBtn', 'videoResultUndoEditBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = undoDisabled;
             });
-            ['videoRedoEditBtn', 'videoDetailRedoEditBtn'].forEach(id => {
+            ['videoRedoEditBtn', 'videoDetailRedoEditBtn', 'videoResultRedoEditBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = redoDisabled;
             });
-            ['videoSplitStrikeBtn', 'videoDetailSplitStrikeBtn'].forEach(id => {
+            ['videoSplitStrikeBtn', 'videoDetailSplitStrikeBtn', 'videoResultSplitStrikeBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = noSelection;
             });
-            ['videoMergePrevStrikeBtn', 'videoDetailMergePrevStrikeBtn'].forEach(id => {
+            ['videoMergePrevStrikeBtn', 'videoDetailMergePrevStrikeBtn', 'videoResultMergePrevStrikeBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = pos <= 0;
             });
-            ['videoMergeNextStrikeBtn', 'videoDetailMergeNextStrikeBtn'].forEach(id => {
+            ['videoMergeNextStrikeBtn', 'videoDetailMergeNextStrikeBtn', 'videoResultMergeNextStrikeBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = pos < 0 || pos >= refs.length - 1;
             });
@@ -10172,6 +10211,16 @@
         if (videoResultMarkStartBtn) videoResultMarkStartBtn.addEventListener('click', () => markVideoCurrentFrame('start'));
         const videoResultMarkEndBtn = document.getElementById('videoResultMarkEndBtn');
         if (videoResultMarkEndBtn) videoResultMarkEndBtn.addEventListener('click', () => markVideoCurrentFrame('end'));
+        const videoResultSplitStrikeBtn = document.getElementById('videoResultSplitStrikeBtn');
+        if (videoResultSplitStrikeBtn) videoResultSplitStrikeBtn.addEventListener('click', splitSelectedVideoStrikeAtCurrent);
+        const videoResultMergePrevStrikeBtn = document.getElementById('videoResultMergePrevStrikeBtn');
+        if (videoResultMergePrevStrikeBtn) videoResultMergePrevStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('prev'));
+        const videoResultMergeNextStrikeBtn = document.getElementById('videoResultMergeNextStrikeBtn');
+        if (videoResultMergeNextStrikeBtn) videoResultMergeNextStrikeBtn.addEventListener('click', () => mergeSelectedVideoStrike('next'));
+        const videoResultUndoEditBtn = document.getElementById('videoResultUndoEditBtn');
+        if (videoResultUndoEditBtn) videoResultUndoEditBtn.addEventListener('click', undoVideoEdit);
+        const videoResultRedoEditBtn = document.getElementById('videoResultRedoEditBtn');
+        if (videoResultRedoEditBtn) videoResultRedoEditBtn.addEventListener('click', redoVideoEdit);
         const videoResultOpen3DBtn = document.getElementById('videoResultOpen3DBtn');
         if (videoResultOpen3DBtn) videoResultOpen3DBtn.addEventListener('click', openCurrentVideoFrameInModel);
         const videoFormalEditBtn = document.getElementById('videoFormalEditBtn');
