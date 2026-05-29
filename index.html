@@ -422,6 +422,14 @@
             height: min(78vh, 880px);
             border-color: rgba(148, 163, 184, 0.42);
         }
+        .video-result-preview-grid {
+            align-items: stretch;
+        }
+        .video-result-preview-grid > .video-correction-preview {
+            aspect-ratio: auto;
+            min-height: clamp(440px, 58vh, 760px);
+            height: clamp(440px, 58vh, 760px);
+        }
         .video-analysis-fullscreen:fullscreen .video-result-controls,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
             position: sticky;
@@ -436,6 +444,16 @@
         .video-analysis-fullscreen:-webkit-full-screen .video-result-frame-controls {
             background: rgba(15, 23, 42, 0.82) !important;
             border-color: rgba(59, 130, 246, 0.36) !important;
+        }
+        .video-result-controls button,
+        .video-result-controls select,
+        .video-result-controls .video-detail-edit-btn {
+            min-height: 36px;
+            padding-top: 7px;
+            padding-bottom: 7px;
+        }
+        .video-result-controls .video-result-frame-controls {
+            padding: 8px;
         }
         .video-result-mini-timeline {
             margin-top: 10px;
@@ -631,6 +649,16 @@
             background: rgba(255, 255, 255, 0.92);
             padding: 8px;
         }
+        .video-result-edit-panel .grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .video-result-edit-panel .col-span-2 {
+            grid-column: auto;
+        }
+        .video-result-help {
+            margin: 0;
+            padding: 8px !important;
+        }
         .video-analysis-fullscreen:fullscreen .video-result-edit-panel,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-edit-panel {
             background: rgba(15, 23, 42, 0.72);
@@ -658,6 +686,11 @@
             background: rgba(15, 23, 42, 0.92);
             border-color: rgba(59, 130, 246, 0.36);
         }
+        .video-analysis-fullscreen:fullscreen .video-result-preview-grid > .video-correction-preview,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid > .video-correction-preview {
+            height: calc(100vh - 170px);
+            min-height: 520px;
+        }
         @media (max-width: 900px) {
             .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
             .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
@@ -667,6 +700,10 @@
             .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
                 position: static;
                 max-height: none;
+            }
+            .video-result-preview-grid > .video-correction-preview {
+                min-height: min(62vh, 620px);
+                height: min(62vh, 620px);
             }
         }
         .model-analysis-grid { grid-template-columns: 1fr; }
@@ -1092,7 +1129,7 @@
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
                     <span class="font-black">単位の整理:</span> 正式結果・保存記録・CSVは <span class="font-mono-num font-black">ms</span> と角度を中心に表示します。ピーク検出信号は内部計算だけで使います。
                 </div>
-                <div id="videoResultSectionNav" class="sticky top-16 z-10 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
+                <div id="videoResultSectionNav" class="sticky top-16 z-10 mb-3 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
                     <button type="button" data-video-section="strikes" class="video-result-section-btn bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-100 px-3 py-2 rounded font-black">打突一覧</button>
                     <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正</button>
@@ -1207,7 +1244,7 @@
                                     <button id="videoResultRedoEditBtn" type="button" class="video-detail-edit-btn col-span-2"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
+                            <div class="video-result-help text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
                                 ここで再生しながら確認し、開始/終了・分割・統合をそのまま編集できます。
                             </div>
                             <div id="videoPlaybackCurrentMetrics" class="text-[11px] text-slate-700 bg-slate-900/5 border border-slate-200 rounded p-2 font-mono-num">
@@ -2332,7 +2369,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v71';
+            const refreshKey = 'kendo-sw-refreshed-v72';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
