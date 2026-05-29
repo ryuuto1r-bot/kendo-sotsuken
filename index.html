@@ -2481,7 +2481,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v78';
+            const refreshKey = 'kendo-sw-refreshed-v79';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3837,14 +3837,19 @@
             floor.receiveShadow = true;
             scene.add(floor);
 
-            const boneMaterial = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.46, metalness: 0.08, transparent: true, opacity: 0.82 });
-            const jointMaterial = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.08, transparent: true, opacity: 0.9 });
+            const boneMaterial = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.46, metalness: 0.08, transparent: true, opacity: 0.38 });
+            const jointMaterial = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.08, transparent: true, opacity: 0.68 });
             const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xa78bfa, roughness: 0.3, metalness: 0.18, emissive: 0x28124d, emissiveIntensity: 0.55 });
             const refMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0, transparent: true, opacity: 0.42 });
-            const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, roughness: 0.74, metalness: 0.0, transparent: true, opacity: 0.72 });
-            const hakamaMaterial = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.0, transparent: true, opacity: 0.68 });
+            const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, roughness: 0.74, metalness: 0.0, transparent: true, opacity: 0.24 });
+            const hakamaMaterial = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.0, transparent: true, opacity: 0.72 });
             const headMaterial = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.52, metalness: 0.0, transparent: true, opacity: 0.88 });
             const shinaiMaterial = new THREE.MeshStandardMaterial({ color: 0xc9a227, roughness: 0.55, metalness: 0.05 });
+            const uniformMaterial = new THREE.MeshStandardMaterial({ color: 0x16324f, roughness: 0.82, metalness: 0.0, transparent: true, opacity: 0.78 });
+            const sleeveMaterial = new THREE.MeshStandardMaterial({ color: 0x244a73, roughness: 0.78, metalness: 0.0, transparent: true, opacity: 0.72 });
+            const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe0c8a8, roughness: 0.58, metalness: 0.0, transparent: true, opacity: 0.88 });
+            const faceGuardMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.46, metalness: 0.0, transparent: true, opacity: 0.34 });
+            const pleatMaterial = new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.86, metalness: 0.0, transparent: true, opacity: 0.58 });
 
             const bones = {};
             MODEL_BONE_PAIRS.forEach(pair => {
@@ -3933,6 +3938,52 @@
             const shinaiTip = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16, 16), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35, metalness: 0.15, transparent: true, opacity: 0.82 }));
             group.add(shinaiTip);
 
+            const modelParts = {};
+            const makeBodySegment = (radiusTop, radiusBottom, material, segments = 22) => {
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, 1, segments), material);
+                mesh.castShadow = true;
+                mesh.visible = false;
+                group.add(mesh);
+                return mesh;
+            };
+            modelParts.torsoShell = makeBodySegment(0.36, 0.47, uniformMaterial, 32);
+            modelParts.chestPanel = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1, 0.12), uniformMaterial.clone());
+            modelParts.chestPanel.material.opacity = 0.62;
+            modelParts.chestPanel.castShadow = true;
+            modelParts.chestPanel.visible = false;
+            group.add(modelParts.chestPanel);
+            modelParts.hakamaShell = makeBodySegment(0.52, 0.38, hakamaMaterial, 32);
+            modelParts.belt = new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.075, 32), new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.7, metalness: 0.08, transparent: true, opacity: 0.86 }));
+            modelParts.belt.visible = false;
+            group.add(modelParts.belt);
+            modelParts.pleats = Array.from({ length: 5 }, (_, index) => {
+                const mesh = makeBodySegment(0.012, 0.012, pleatMaterial, 8);
+                mesh.userData.offsetX = (index - 2) * 0.12;
+                return mesh;
+            });
+            modelParts.leftUpperArm = makeBodySegment(0.105, 0.085, sleeveMaterial, 24);
+            modelParts.leftForeArm = makeBodySegment(0.082, 0.058, sleeveMaterial, 22);
+            modelParts.rightUpperArm = makeBodySegment(0.105, 0.085, sleeveMaterial, 24);
+            modelParts.rightForeArm = makeBodySegment(0.082, 0.058, sleeveMaterial, 22);
+            modelParts.leftThigh = makeBodySegment(0.14, 0.12, hakamaMaterial, 24);
+            modelParts.rightThigh = makeBodySegment(0.14, 0.12, hakamaMaterial, 24);
+            modelParts.leftShin = makeBodySegment(0.09, 0.075, hakamaMaterial, 20);
+            modelParts.rightShin = makeBodySegment(0.09, 0.075, hakamaMaterial, 20);
+            modelParts.leftHand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 18, 18), skinMaterial);
+            modelParts.rightHand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 18, 18), skinMaterial);
+            modelParts.leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.055, 0.34), skinMaterial);
+            modelParts.rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.055, 0.34), skinMaterial);
+            modelParts.faceGuard = new THREE.Mesh(new THREE.SphereGeometry(0.205, 24, 18), faceGuardMaterial);
+            modelParts.faceGuard.scale.set(0.92, 1.16, 0.44);
+            modelParts.leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), new THREE.MeshBasicMaterial({ color: 0x020617 }));
+            modelParts.rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), new THREE.MeshBasicMaterial({ color: 0x020617 }));
+            modelParts.nose = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 12), skinMaterial);
+            [modelParts.leftHand, modelParts.rightHand, modelParts.leftFoot, modelParts.rightFoot, modelParts.faceGuard, modelParts.leftEye, modelParts.rightEye, modelParts.nose].forEach(mesh => {
+                mesh.castShadow = true;
+                mesh.visible = false;
+                group.add(mesh);
+            });
+
             const highlightSegments = [0, 1, 2].map(() => {
                 const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 1, 18), highlightMaterial.clone());
                 group.add(mesh);
@@ -3948,7 +3999,7 @@
             const refLine = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 1, 12), refMaterial);
             group.add(refLine);
 
-            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, container };
+            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, modelParts, container };
             return AppState.angleModel3d;
         }
 
@@ -4390,6 +4441,82 @@
             }
         }
 
+        function updateAngleModelBodyParts(model, pose) {
+            const { THREE, modelParts } = model;
+            if (!modelParts) return;
+            const p = key => getModelLandmarkPoint(pose, key, THREE);
+            const lShoulder = p(11), rShoulder = p(12), lElbow = p(13), rElbow = p(14), lWrist = p(15), rWrist = p(16);
+            const lHip = p(23), rHip = p(24), lKnee = p(25), rKnee = p(26), lAnkle = p(27), rAnkle = p(28), lToe = p(31), rToe = p(32);
+            const shoulderMid = p('shoulderMid');
+            const hipMid = p('hipMid');
+            const kneeMid = lKnee && rKnee ? lKnee.clone().add(rKnee).multiplyScalar(0.5) : null;
+            alignModelSegment(THREE, modelParts.torsoShell, shoulderMid, hipMid, 0.0);
+            alignModelSegment(THREE, modelParts.chestPanel, shoulderMid, hipMid, 0.0);
+            alignModelSegment(THREE, modelParts.hakamaShell, hipMid, kneeMid, 0.0);
+            alignModelSegment(THREE, modelParts.leftUpperArm, lShoulder, lElbow, 0.02);
+            alignModelSegment(THREE, modelParts.leftForeArm, lElbow, lWrist, 0.018);
+            alignModelSegment(THREE, modelParts.rightUpperArm, rShoulder, rElbow, 0.02);
+            alignModelSegment(THREE, modelParts.rightForeArm, rElbow, rWrist, 0.018);
+            alignModelSegment(THREE, modelParts.leftThigh, lHip, lKnee, 0.015);
+            alignModelSegment(THREE, modelParts.rightThigh, rHip, rKnee, 0.015);
+            alignModelSegment(THREE, modelParts.leftShin, lKnee, lAnkle, 0.015);
+            alignModelSegment(THREE, modelParts.rightShin, rKnee, rAnkle, 0.015);
+            modelParts.pleats?.forEach(mesh => {
+                if (!hipMid || !kneeMid) {
+                    mesh.visible = false;
+                    return;
+                }
+                const offset = new THREE.Vector3(mesh.userData.offsetX || 0, 0, 0.012);
+                alignModelSegment(THREE, mesh, hipMid.clone().add(offset), kneeMid.clone().add(offset.clone().multiplyScalar(0.72)), 0.0);
+            });
+            if (hipMid && modelParts.belt) {
+                modelParts.belt.visible = true;
+                modelParts.belt.position.copy(hipMid.clone().add(new THREE.Vector3(0, 0.015, 0)));
+                modelParts.belt.scale.set(1, 1, 1);
+                modelParts.belt.quaternion.identity();
+            } else if (modelParts.belt) {
+                modelParts.belt.visible = false;
+            }
+            const placeSphere = (mesh, point) => {
+                if (!mesh) return;
+                mesh.visible = !!point;
+                if (point) mesh.position.copy(point);
+            };
+            placeSphere(modelParts.leftHand, lWrist);
+            placeSphere(modelParts.rightHand, rWrist);
+            const placeFoot = (mesh, ankle, toe) => {
+                if (!mesh || !ankle) {
+                    if (mesh) mesh.visible = false;
+                    return;
+                }
+                mesh.visible = true;
+                const dir = toe ? toe.clone().sub(ankle) : new THREE.Vector3(0, -0.02, -0.2);
+                const len = Math.max(dir.length(), 0.06);
+                mesh.position.copy(ankle.clone().add(dir.clone().normalize().multiplyScalar(len * 0.35)));
+                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
+            };
+            placeFoot(modelParts.leftFoot, lAnkle, lToe);
+            placeFoot(modelParts.rightFoot, rAnkle, rToe);
+            const nose = p(0);
+            const lEar = p(7);
+            const rEar = p(8);
+            if (nose && modelParts.faceGuard) {
+                const headCenter = nose.clone().add(new THREE.Vector3(0, 0.075, 0.018));
+                modelParts.faceGuard.visible = true;
+                modelParts.faceGuard.position.copy(headCenter);
+                modelParts.leftEye.visible = true;
+                modelParts.rightEye.visible = true;
+                const eyeWidth = lEar && rEar ? Math.max(0.08, lEar.distanceTo(rEar) * 0.18) : 0.055;
+                modelParts.leftEye.position.copy(headCenter.clone().add(new THREE.Vector3(-eyeWidth, 0.028, 0.16)));
+                modelParts.rightEye.position.copy(headCenter.clone().add(new THREE.Vector3(eyeWidth, 0.028, 0.16)));
+                modelParts.nose.visible = true;
+                modelParts.nose.position.copy(headCenter.clone().add(new THREE.Vector3(0, -0.018, 0.19)));
+                modelParts.nose.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
+            } else {
+                ['faceGuard', 'leftEye', 'rightEye', 'nose'].forEach(key => { if (modelParts[key]) modelParts[key].visible = false; });
+            }
+        }
+
         function renderAngleModel() {
             const model = AppState.angleModel3d;
             if (!model?.initialized) return;
@@ -4412,6 +4539,7 @@
                 mesh.visible = !!p;
                 if (p) mesh.position.copy(p);
             });
+            updateAngleModelBodyParts(model, pose);
 
             const shoulderMidForBody = getModelLandmarkPoint(pose, 'shoulderMid', THREE);
             const hipMidForBody = getModelLandmarkPoint(pose, 'hipMid', THREE);
