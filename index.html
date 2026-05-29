@@ -659,6 +659,97 @@
             margin: 0;
             padding: 8px !important;
         }
+        .video-formal-hero {
+            border: 1px solid rgba(16, 185, 129, 0.24);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.16), transparent 34%),
+                linear-gradient(135deg, #f0fdf4 0%, #ffffff 48%, #eff6ff 100%);
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+        }
+        .video-formal-layout {
+            display: grid;
+            grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.45fr);
+            gap: 12px;
+            align-items: stretch;
+        }
+        .video-formal-primary {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-radius: 16px;
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            background: #ffffff;
+            padding: 14px;
+            min-height: 150px;
+        }
+        .video-formal-duration-value {
+            font-size: clamp(34px, 4.4vw, 64px);
+            line-height: 0.95;
+            letter-spacing: 0;
+        }
+        .video-formal-frame-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .video-formal-frame-card {
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid rgba(226, 232, 240, 0.96);
+            padding: 10px;
+            min-height: 74px;
+        }
+        .video-result-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        @media (min-width: 900px) {
+            .video-result-kpi-grid {
+                grid-template-columns: minmax(190px, 1.15fr) repeat(4, minmax(130px, 1fr));
+            }
+            .video-result-kpi-card.primary {
+                grid-row: span 2;
+            }
+        }
+        .video-result-kpi-card {
+            border-radius: 14px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #ffffff;
+            padding: 12px;
+            min-height: 86px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+        }
+        .video-result-kpi-card.primary {
+            background: linear-gradient(135deg, #eff6ff, #ffffff);
+            border-color: rgba(37, 99, 235, 0.18);
+        }
+        .video-result-kpi-label {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .video-result-kpi-value {
+            margin-top: 5px;
+            font-size: 20px;
+            line-height: 1.05;
+            font-weight: 1000;
+        }
+        .video-result-kpi-card.primary .video-result-kpi-value {
+            font-size: clamp(32px, 4vw, 54px);
+        }
+        @media (max-width: 760px) {
+            .video-formal-layout {
+                grid-template-columns: 1fr;
+            }
+            .video-formal-frame-grid {
+                grid-template-columns: 1fr;
+            }
+            .video-result-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
         .video-analysis-fullscreen:fullscreen .video-result-edit-panel,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-edit-panel {
             background: rgba(15, 23, 42, 0.72);
@@ -1146,21 +1237,40 @@
                     </div>
                     <div id="videoSideDrawerBody" class="space-y-3 mt-3"></div>
                 </aside>
-                <div id="videoFormalCandidatePanel" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <h3 class="text-sm font-black text-emerald-900"><i class="fa-solid fa-certificate mr-1"></i>正式測定</h3>
+                <div id="videoFormalCandidatePanel" class="video-formal-hero p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900"><i class="fa-solid fa-certificate text-emerald-600 mr-1"></i>正式結果</h3>
+                            <p id="videoFormalGuide" class="mt-1 text-[11px] font-bold text-slate-600">開始/終了フレームを補正した後、この値を正式記録として保存します。</p>
+                        </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <span id="videoFormalStatus" class="text-xs font-bold text-emerald-800">動画解析後に開始/終了を補正</span>
-                            <button id="videoFormalEditBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-black"><i class="fa-solid fa-pen-to-square mr-1"></i>修正</button>
+                            <span id="videoFormalStatus" class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-black">動画解析後に開始/終了を補正</span>
+                            <button id="videoFormalEditBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-pen-to-square mr-1"></i>補正する</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                        <div class="bg-white/80 border border-emerald-100 rounded p-2"><span class="text-emerald-700">開始</span><div id="videoFormalStart" class="font-black font-mono-num text-emerald-900">---</div></div>
-                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最高速</span><div id="videoFormalPeak" class="font-black font-mono-num text-amber-800">---</div></div>
-                        <div class="bg-white/80 border border-red-100 rounded p-2"><span class="text-red-700">終了</span><div id="videoFormalEnd" class="font-black font-mono-num text-red-800">---</div></div>
-                        <div class="bg-white/80 border border-blue-100 rounded p-2"><span class="text-blue-700">補正後時間</span><div id="videoFormalDuration" class="font-black font-mono-num text-blue-800">---</div></div>
+                    <div class="video-formal-layout">
+                        <div class="video-formal-primary">
+                            <div>
+                                <span class="text-xs font-black text-blue-700">補正後打突時間</span>
+                                <div id="videoFormalDuration" class="video-formal-duration-value font-black font-mono-num text-blue-700 mt-2">---</div>
+                            </div>
+                            <div class="mt-3 text-[11px] font-bold text-slate-500">この値が発表・記録で使う中心値です。</div>
+                        </div>
+                        <div class="video-formal-frame-grid text-xs">
+                            <div class="video-formal-frame-card">
+                                <span class="text-blue-700 font-black"><i class="fa-solid fa-flag mr-1"></i>開始フレーム</span>
+                                <div id="videoFormalStart" class="font-black font-mono-num text-slate-900 mt-2 text-lg">---</div>
+                            </div>
+                            <div class="video-formal-frame-card">
+                                <span class="text-amber-700 font-black"><i class="fa-solid fa-gauge-high mr-1"></i>最高速フレーム</span>
+                                <div id="videoFormalPeak" class="font-black font-mono-num text-slate-900 mt-2 text-lg">---</div>
+                            </div>
+                            <div class="video-formal-frame-card">
+                                <span class="text-red-700 font-black"><i class="fa-solid fa-flag-checkered mr-1"></i>終了フレーム</span>
+                                <div id="videoFormalEnd" class="font-black font-mono-num text-slate-900 mt-2 text-lg">---</div>
+                            </div>
+                        </div>
                     </div>
-                    <p id="videoFormalGuide" class="mt-2 text-[11px] font-bold text-emerald-900">自動分割は候補です。正式な打突時間は開始/終了フレームを確認してから確定します。</p>
                 </div>
                 <div id="videoResultAuxPanel" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div class="rounded-xl border border-indigo-100 bg-white p-3">
@@ -1268,17 +1378,17 @@
                         <p class="mt-2 text-[11px] text-slate-600">ここでも動画位置の移動、開始/終了マーカーの修正、複数打突へのジャンプができます。</p>
                     </div>
                 </div>
-                <div id="videoAnalysisResult" class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="videoResultDuration" class="font-black text-blue-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">正式ピーク時刻</span><div id="videoResultPeak" class="font-black text-cyan-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">手首ピーク時刻</span><div id="videoResultWristPeak" class="font-black text-slate-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">推定剣先ピーク時刻</span><div id="videoResultTipPeak" class="font-black text-amber-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">テープ剣先ピーク時刻</span><div id="videoResultTapePeak" class="font-black text-lime-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">最大減速時刻</span><div id="videoResultDecel" class="font-black text-red-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">右肘角</span><div id="videoResultRightElbow" class="font-black text-purple-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">刃筋</span><div id="videoResultHasuji" class="font-black text-yellow-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">体幹軸</span><div id="videoResultTorso" class="font-black text-emerald-700 font-mono-num">---</div></div>
-                    <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">採用基準</span><div id="videoResultBasis" class="font-bold text-slate-700">右手首ピーク / 体幹基準</div></div>
+                <div id="videoAnalysisResult" class="video-result-kpi-grid text-xs">
+                    <div class="video-result-kpi-card primary"><span class="video-result-kpi-label">打突時間</span><div id="videoResultDuration" class="video-result-kpi-value text-blue-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">正式ピーク時刻</span><div id="videoResultPeak" class="video-result-kpi-value text-cyan-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">最大減速時刻</span><div id="videoResultDecel" class="video-result-kpi-value text-red-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">右肘角</span><div id="videoResultRightElbow" class="video-result-kpi-value text-purple-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">体幹軸</span><div id="videoResultTorso" class="video-result-kpi-value text-emerald-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">刃筋</span><div id="videoResultHasuji" class="video-result-kpi-value text-amber-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">手首ピーク時刻</span><div id="videoResultWristPeak" class="video-result-kpi-value text-slate-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">推定剣先ピーク時刻</span><div id="videoResultTipPeak" class="video-result-kpi-value text-amber-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">テープ剣先ピーク時刻</span><div id="videoResultTapePeak" class="video-result-kpi-value text-lime-700 font-mono-num">---</div></div>
+                    <div class="video-result-kpi-card"><span class="video-result-kpi-label">採用基準</span><div id="videoResultBasis" class="mt-2 font-black text-slate-700 leading-tight">右手首ピーク / 体幹基準</div></div>
                 </div>
                 <div id="videoDetailMetricsPanel" class="rounded-xl border border-slate-200 bg-white p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -2369,7 +2479,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v72';
+            const refreshKey = 'kendo-sw-refreshed-v73';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
