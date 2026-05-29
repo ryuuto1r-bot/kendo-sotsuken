@@ -2479,7 +2479,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v73';
+            const refreshKey = 'kendo-sw-refreshed-v74';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6886,6 +6886,32 @@
             return next;
         }
 
+        function isNativePoseAbortError(err) {
+            const message = String(err?.message || err || '');
+            return /Aborted|native code call|RuntimeError|BindingError|memory access out of bounds/i.test(message);
+        }
+
+        function retireVideoPoseLandmarker(reason = '動画解析中にTasks推論失敗') {
+            if (AppState.poseLandmarker?.close) {
+                try { AppState.poseLandmarker.close(); } catch (err) {}
+            }
+            AppState.poseLandmarker = null;
+            AppState.poseEngine = 'Legacy Pose';
+            AppState.landmarkerDiag = `${reason} / Legacyへ切替`;
+            safeText('precisionEngineStatus', 'Legacy Pose');
+            safeText('videoAnalysisStatus', 'Legacy Poseへ切替中');
+            updatePrecisionPanel();
+        }
+
+        function resetLegacyVideoPose() {
+            if (AppState.videoLegacyPose?.close) {
+                try { AppState.videoLegacyPose.close(); } catch (err) {}
+            }
+            AppState.videoLegacyPose = null;
+            AppState.videoLegacyResolver = null;
+            AppState.videoLegacyReject = null;
+        }
+
         async function ensureLegacyVideoPose() {
             if (AppState.videoLegacyPose) return AppState.videoLegacyPose;
             if (typeof Pose === 'undefined') throw new Error('Legacy Poseが読み込まれていません');
@@ -6912,10 +6938,7 @@
             return videoPose;
         }
 
-        async function detectPoseForAnalysisVideo(video, timeMs) {
-            if (AppState.poseLandmarker) {
-                return AppState.poseLandmarker.detectForVideo(video, nextPoseInferenceTimestamp(timeMs));
-            }
+        async function detectLegacyPoseForAnalysisVideo(video, retry = true) {
             const legacyPose = await ensureLegacyVideoPose();
             return new Promise((resolve, reject) => {
                 const timer = setTimeout(() => {
@@ -6935,9 +6958,29 @@
                     clearTimeout(timer);
                     AppState.videoLegacyResolver = null;
                     AppState.videoLegacyReject = null;
-                    reject(err);
+                    if (retry && isNativePoseAbortError(err)) {
+                        console.warn('Legacy Poseが中断したため再初期化して再試行します', err);
+                        resetLegacyVideoPose();
+                        detectLegacyPoseForAnalysisVideo(video, false).then(resolve).catch(reject);
+                    } else {
+                        reject(err);
+                    }
                 });
             });
+        }
+
+        async function detectPoseForAnalysisVideo(video, timeMs) {
+            if (AppState.poseLandmarker) {
+                try {
+                    return AppState.poseLandmarker.detectForVideo(video, nextPoseInferenceTimestamp(timeMs));
+                } catch (err) {
+                    if (!isNativePoseAbortError(err)) throw err;
+                    console.warn('Pose Landmarker推論が中断したため、動画解析をLegacy Poseへ切り替えます', err);
+                    retireVideoPoseLandmarker('Tasks推論中断');
+                    showToast('Pose Landmarkerの推論が中断したため、互換モードで動画解析を続けます', 'yellow');
+                }
+            }
+            return detectLegacyPoseForAnalysisVideo(video);
         }
 
         function currentVideoStrikeDetailRange(data = AppState.videoAnalysis) {
@@ -9171,8 +9214,11 @@
                 try {
                     result = await detectPoseForAnalysisVideo(video, timeMs);
                 } catch (frameErr) {
-                    if (frame === 0) throw frameErr;
                     console.warn('動画フレーム解析をスキップしました', frame, frameErr);
+                    if (frame === 0) {
+                        safeText('videoAnalysisStatus', 'AI初期フレームをスキップして継続');
+                        showToast('先頭フレームの姿勢推定に失敗したため、次のフレームから解析を続けます', 'yellow');
+                    }
                     result = { landmarks: [], worldLandmarks: [] };
                 }
                 const lm = result.landmarks?.[0];
