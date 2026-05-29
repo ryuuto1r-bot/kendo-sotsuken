@@ -2480,7 +2480,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v75';
+            const refreshKey = 'kendo-sw-refreshed-v76';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2803,9 +2803,9 @@
         }
 
         function shouldUsePoseLandmarkerRealtime() {
-            // iPhone/iPad SafariではTasks版のWASM/GPU初期化で止まることがあるため、
-            // リアルタイム分析は互換性重視でLegacy Poseに倒す。
-            return !!Params.usePoseLandmarker && !isIOSLikeBrowser();
+            // Tasks版はCOOP/COEP付きの安定サーバでのみ本格使用する。
+            // GitHub PagesやSafari/iPhoneでは初期化が詰まる場合があるため、互換性重視でLegacy Poseに倒す。
+            return !!Params.usePoseLandmarker && window.crossOriginIsolated && !isIOSLikeBrowser() && !isSafariLikeBrowser();
         }
 
         function withTimeout(promise, timeoutMs, label = '処理') {
@@ -5698,9 +5698,13 @@
             AppState.poseEngine = '準備中';
             AppState.landmarkerDiag = 'Tasks確認中';
             updatePrecisionPanel();
-            const useTasks = options.forceTasks ? !!Params.usePoseLandmarker : shouldUsePoseLandmarkerRealtime();
+            const canUseTasksSafely = !!Params.usePoseLandmarker && window.crossOriginIsolated && !isIOSLikeBrowser() && !isSafariLikeBrowser();
+            const useTasks = options.forceTasks ? canUseTasksSafely : shouldUsePoseLandmarkerRealtime();
             if (!useTasks && Params.usePoseLandmarker) {
-                AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
+                if (isIOSLikeBrowser()) AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
+                else if (isSafariLikeBrowser()) AppState.landmarkerDiag = 'Safari互換: Legacy Poseへ切替';
+                else if (!window.crossOriginIsolated) AppState.landmarkerDiag = '通常HTTPS: Legacy Poseへ切替';
+                else AppState.landmarkerDiag = '互換モード: Legacy Poseへ切替';
                 updatePrecisionPanel();
             }
             if (useTasks) {
@@ -5737,6 +5741,18 @@
                 }
             }
             await initLegacyPose();
+        }
+
+        function ensurePoseReady(options = {}) {
+            if (AppState.poseLandmarker || pose) return Promise.resolve();
+            if (poseReadyPromise && AppState.poseEngine === '準備中') return poseReadyPromise;
+            poseReadyPromise = initPose(options).catch(err => {
+                AppState.poseEngine = 'AI未起動';
+                AppState.landmarkerDiag = err && err.message ? err.message.slice(0, 60) : '初期化失敗';
+                updatePrecisionPanel();
+                throw err;
+            });
+            return poseReadyPromise;
         }
 
         function stopCameraStream() {
@@ -9159,10 +9175,10 @@
                 return;
             }
             applyCalibrationInputs();
-            if (!AppState.poseLandmarker) {
-                safeText('videoAnalysisStatus', 'Pose Landmarker準備中');
+            if (!AppState.poseLandmarker && !pose) {
+                safeText('videoAnalysisStatus', window.crossOriginIsolated ? 'Pose Landmarker準備中' : '互換AI準備中');
                 AppState.poseLandmarker = null;
-                await initPose({ purpose: 'video', forceTasks: Params.usePoseLandmarker });
+                await ensurePoseReady({ purpose: 'video', forceTasks: Params.usePoseLandmarker });
             }
             if (!AppState.poseLandmarker) {
                 try {
@@ -9980,6 +9996,7 @@
                 document.getElementById('canvasOverlayData').classList.add('flex');
                 document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / AI準備中`;
                 updatePrecisionPanel();
+                poseReadyPromise = ensurePoseReady({ purpose: 'realtime' });
                 Promise.resolve(poseReadyPromise).then(() => {
                     document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-green-500"></span> 計測中 / ${AppState.poseEngine}`;
                     updatePrecisionPanel();
@@ -10939,8 +10956,11 @@
         window.exportCSV = exportCSV;
         window.clearHistory = clearHistory;
         window.resetSettings = resetSettings;
-        // AI初期化が失敗しても、タブ切替や履歴操作だけは使えるように最後ではなく先に公開する。
-        poseReadyPromise = initPose();
+        // AIはカメラ開始・動画解析時に初期化する。ページ表示時のLandmarker初期化停止を避ける。
+        poseReadyPromise = null;
+        AppState.poseEngine = '未起動';
+        AppState.landmarkerDiag = '開始時に初期化';
+        updatePrecisionPanel();
         registerServiceWorker();
         
         window.addEventListener('DOMContentLoaded', initCharts);
