@@ -1204,8 +1204,9 @@
                         </div>
                         <i id="videoDeviceCheckIcon" class="fa-solid fa-circle-question text-2xl"></i>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-xs">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mt-3 text-xs">
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解像度</span><div id="videoDiagResolution" class="font-black font-mono-num">---</div></div>
+                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">動画fps目安</span><div id="videoDiagNativeFps" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析fps</span><div id="videoDiagFps" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析フレーム</span><div id="videoDiagFrames" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">検出信頼度</span><div id="videoDiagConfidence" class="font-black font-mono-num">---</div></div>
@@ -6435,6 +6436,132 @@
             });
         }
 
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function seekVideoTo(video, sec) {
+            return new Promise(resolve => {
+                const target = Number(sec || 0);
+                const cleanup = () => {
+                    clearTimeout(timer);
+                    video.removeEventListener('seeked', onDone);
+                    video.removeEventListener('error', onDone);
+                };
+                const onDone = () => { cleanup(); resolve(); };
+                const timer = setTimeout(onDone, 1200);
+                video.addEventListener('seeked', onDone, { once: true });
+                video.addEventListener('error', onDone, { once: true });
+                try { video.currentTime = target; } catch (err) { cleanup(); resolve(); }
+            });
+        }
+
+        function nearestCommonVideoFps(rawFps) {
+            const value = Number(rawFps);
+            if (!Number.isFinite(value) || value <= 0) return null;
+            const common = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60, 100, 119.88, 120, 240];
+            let best = value;
+            let bestDiff = Infinity;
+            common.forEach(candidate => {
+                const diff = Math.abs(candidate - value);
+                if (diff < bestDiff) {
+                    best = candidate;
+                    bestDiff = diff;
+                }
+            });
+            if (bestDiff <= Math.max(1.8, best * 0.045)) {
+                if (Math.abs(best - 23.976) < 0.05) return 24;
+                if (Math.abs(best - 29.97) < 0.06) return 30;
+                if (Math.abs(best - 59.94) < 0.08) return 60;
+                if (Math.abs(best - 119.88) < 0.12) return 120;
+                return Math.round(best);
+            }
+            return Math.round(value);
+        }
+
+        function videoPlaybackFrames(video) {
+            if (video?.getVideoPlaybackQuality) {
+                const quality = video.getVideoPlaybackQuality();
+                return Number(quality?.totalVideoFrames || 0);
+            }
+            return Number(video?.webkitDecodedFrameCount || video?.mozDecodedFrames || 0);
+        }
+
+        async function estimateVideoNativeFps(src, options = {}) {
+            if (!src) return null;
+            const probe = document.createElement('video');
+            probe.muted = true;
+            probe.playsInline = true;
+            probe.preload = 'auto';
+            probe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+            if (options.crossOrigin) probe.crossOrigin = options.crossOrigin;
+            document.body.appendChild(probe);
+            try {
+                probe.src = src;
+                await waitForVideoEvent(probe, 'loadedmetadata');
+                const duration = Number(probe.duration || 0);
+                if (!Number.isFinite(duration) || duration <= 0.25) return null;
+                const startAt = Math.min(0.35, Math.max(0, duration - 1.2));
+                if (startAt > 0.01) {
+                    await seekVideoTo(probe, startAt);
+                }
+                const framesBefore = videoPlaybackFrames(probe);
+                const mediaBefore = probe.currentTime;
+                let callbacks = 0;
+                let firstMedia = null;
+                let lastMedia = null;
+                let callbackId = null;
+                const supportsRvfc = typeof probe.requestVideoFrameCallback === 'function';
+                const collectFrame = (_now, meta) => {
+                    callbacks += 1;
+                    const media = Number(meta?.mediaTime);
+                    if (Number.isFinite(media)) {
+                        if (firstMedia === null) firstMedia = media;
+                        lastMedia = media;
+                    }
+                    if (supportsRvfc && callbacks < 180 && !probe.paused && !probe.ended) {
+                        callbackId = probe.requestVideoFrameCallback(collectFrame);
+                    }
+                };
+                if (supportsRvfc) callbackId = probe.requestVideoFrameCallback(collectFrame);
+                await probe.play();
+                await sleep(Math.min(1200, Math.max(420, (duration - startAt) * 1000 - 80)));
+                probe.pause();
+                if (supportsRvfc && callbackId && probe.cancelVideoFrameCallback) {
+                    try { probe.cancelVideoFrameCallback(callbackId); } catch (err) {}
+                }
+                const framesAfter = videoPlaybackFrames(probe);
+                const mediaAfter = probe.currentTime;
+                const decodedDelta = framesAfter - framesBefore;
+                const mediaDelta = mediaAfter - mediaBefore;
+                let fps = decodedDelta > 2 && mediaDelta > 0.08 ? decodedDelta / mediaDelta : null;
+                if ((!fps || fps < 1) && callbacks > 2 && lastMedia !== null && firstMedia !== null && lastMedia > firstMedia) {
+                    fps = callbacks / (lastMedia - firstMedia);
+                }
+                return nearestCommonVideoFps(fps);
+            } catch (err) {
+                console.warn('動画fps推定をスキップしました', err);
+                return null;
+            } finally {
+                try { probe.removeAttribute('src'); probe.load(); } catch (err) {}
+                probe.remove();
+            }
+        }
+
+        async function updateVideoNativeFpsEstimate(src, options = {}) {
+            if (!src) return;
+            const token = Date.now();
+            AppState.videoNativeFpsProbeToken = token;
+            updateVideoDiagnostics({ ...(AppState.videoDiagnostics || {}), nativeFpsStatus: 'measuring' });
+            const nativeFps = await estimateVideoNativeFps(src, options);
+            if (AppState.videoNativeFpsProbeToken !== token) return;
+            updateVideoDiagnostics({
+                ...(AppState.videoDiagnostics || {}),
+                nativeFpsEstimate: nativeFps,
+                nativeFpsStatus: nativeFps ? 'estimated' : 'unknown'
+            });
+        }
+
         function videoAnalysisErrorText(error, source = null) {
             const message = String(error?.message || error || '');
             if (location.protocol === 'file:') {
@@ -7196,14 +7323,16 @@
             const width = Number(diag.width || 0);
             const height = Number(diag.height || 0);
             const fps = Number(diag.fps || Params.targetFps || 60);
+            const nativeFps = Number(diag.nativeFpsEstimate || 0);
+            const scoreFps = nativeFps || fps;
             const frames = Number(diag.frames || 0);
             const confidence = Number(diag.confidence || 0);
             const detectionRate = Number(diag.detectionRate || 0);
             let score = 0;
             if (width >= 1280 && height >= 720) score += 25;
             if (width >= 1920 && height >= 1080) score += 10;
-            if (fps >= 120) score += 30;
-            else if (fps >= 60) score += 18;
+            if (scoreFps >= 120) score += 30;
+            else if (scoreFps >= 60) score += 18;
             else score += 8;
             if (frames >= 60) score += 10;
             if (confidence >= 0.70) score += 25;
@@ -7223,6 +7352,7 @@
             safeText('videoDeviceCheckVerdict', diag.empty ? '動画未選択' : verdict);
             safeText('videoDeviceCheckReason', diag.empty ? 'iPhoneの120fps/240fps動画を選ぶと、解像度・解析fps・検出信頼度を確認します。' : reason);
             safeText('videoDiagResolution', width && height ? `${width}x${height}` : '---');
+            safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps` : '---'));
             safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}` : '---');
             safeText('videoDiagFrames', frames ? `${frames}` : '---');
             safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%` : '---');
@@ -9426,6 +9556,7 @@
                 safeText('videoAnalysisStatus', 'URL読込完了');
                 updateVideoManualRangeUi();
                 switchVideoStep('mark');
+                updateVideoNativeFpsEstimate(parsed.href, { crossOrigin: 'anonymous' });
                 return true;
             } catch (err) {
                 AppState.videoUrlSource = null;
@@ -9753,7 +9884,9 @@
                 confidence: avgConfidence,
                 detectionRate,
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
-                actualFpsUnknown: true
+                actualFpsUnknown: true,
+                nativeFpsEstimate: AppState.videoDiagnostics?.nativeFpsEstimate || null,
+                nativeFpsStatus: AppState.videoDiagnostics?.nativeFpsStatus || 'unknown'
             };
             updateVideoDiagnostics(diagnostics);
             AppState.videoAnalysis = {
@@ -9945,6 +10078,7 @@
             const rows = [
                 ['動画ファイル', escapeHtml(diag.fileName || '---')],
                 ['解像度', diag.width && diag.height ? `${diag.width}x${diag.height}` : '---'],
+                ['動画fps目安', diag.nativeFpsEstimate ? `${diag.nativeFpsEstimate} fps` : '---'],
                 ['解析fps', `${data.fps} fps${diag.actualFpsUnknown ? ' *ブラウザ上の解析設定値' : ''}`],
                 ['解析フレーム数', data.frames.length],
                 ['姿勢検出信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---'],
@@ -10448,6 +10582,7 @@
                 });
                 updateVideoManualRangeUi();
                 switchVideoStep('mark');
+                updateVideoNativeFpsEstimate(tempUrl);
             };
             video.onerror = () => {
                 safeText('videoAnalysisStatus', '読込エラー');
