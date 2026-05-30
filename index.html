@@ -687,6 +687,63 @@
             margin: 0;
             padding: 8px !important;
         }
+        .video-file-pick-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 14px;
+            align-items: center;
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.16), transparent 34%),
+                linear-gradient(135deg, #eff6ff 0%, #ffffff 52%, #f8fafc 100%);
+            padding: 16px;
+            cursor: pointer;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .video-file-pick-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.45);
+            box-shadow: 0 18px 42px rgba(37, 99, 235, 0.12);
+        }
+        .video-file-pick-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
+        }
+        .video-file-pick-action {
+            white-space: nowrap;
+            border-radius: 999px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 1000;
+        }
+        .video-file-pick-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            clip-path: inset(50%);
+        }
+        @media (max-width: 640px) {
+            .video-file-pick-card {
+                grid-template-columns: auto 1fr;
+            }
+            .video-file-pick-action {
+                grid-column: 1 / -1;
+                text-align: center;
+            }
+        }
         .video-formal-hero {
             border: 1px solid rgba(16, 185, 129, 0.24);
             border-radius: 18px;
@@ -897,7 +954,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
                 <div class="font-black text-sm"><i class="fa-solid fa-triangle-exclamation mr-2"></i>file:// で開いています</div>
-                <p class="text-xs mt-1 leading-relaxed">カメラ・AIモデル・動画URL解析はローカルサーバーで開く必要があります。下のURLで開くと、起動時エラーとカメラ停止が減ります。</p>
+                <p class="text-xs mt-1 leading-relaxed">カメラ・AIモデル・動画解析はローカルサーバーで開く必要があります。下のボタンで開くと、起動時エラーとカメラ停止が減ります。</p>
             </div>
             <a href="http://127.0.0.1:4175/index.html" class="inline-flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-bold">
                 localhostで開く
@@ -1089,7 +1146,7 @@
         <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画解析 / 正式測定</h2>
-                <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式記録用。ピーク検出信号は内部処理に限定し、開始/終了フレームを1コマ単位で補正して保存します。</p>
+                <p class="text-xs text-slate-500 mt-1">動画ファイルを読み込み、開始/終了フレームを補正して打突時間と角度を保存します。</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><i class="fa-solid fa-certificate mr-1"></i>正式測定モード</span>
@@ -1113,19 +1170,27 @@
                     <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
-                <p class="text-xs text-slate-500 mb-3">動画を入れて、開始/終了を置き、解析して、結果を確認します。</p>
+                <p class="text-xs text-slate-500 mb-3">PCは動画ファイルを選択、iPhoneは写真/ファイルアプリから動画を選択してください。</p>
                 <div id="videoStepHint" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 leading-relaxed">
-                    まず動画を読み込みます。読み込めたら開始/終了マーカーを置く手順へ進みます。
+                    最初に動画ファイルを選びます。読み込めたら開始/終了マーカーを置く手順へ進みます。
                 </div>
                 <div id="videoStep-load" class="video-step-panel active space-y-3">
-                <input type="file" id="videoFileInput" accept="video/*" class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-bold">
-                <div class="mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <label for="videoFileInput" class="video-file-pick-card">
+                    <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
+                    <span class="min-w-0">
+                        <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">PC: mp4/movを選択 / iPhone: 写真アプリ・ファイルアプリから動画を選択</span>
+                    </span>
+                    <span class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
+                </label>
+                <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input">
+                <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">動画ファイルを選択してください。URL入力は通常使用しません。</p>
+                <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
                     <label class="block text-xs font-bold text-slate-700 mb-1">動画URL解析（mp4/mov直接URLのみ）</label>
                     <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                         <input id="videoUrlInput" type="url" inputmode="url" placeholder="https://example.com/suburi.mp4" class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white">
                         <button id="loadVideoUrlBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">URL読込</button>
                     </div>
-                    <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">YouTubeページURLは直接動画ファイルではないため解析できません。自分の動画をファイルとして保存し、上の「動画ファイル」から読み込んでください。</p>
                     <div id="youtubeImportGuide" class="hidden mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 leading-relaxed">
                         <div class="font-black mb-1"><i class="fa-brands fa-youtube mr-1"></i>YouTube URLは直接解析不可</div>
                         <p>ブラウザ単体ではYouTubeの再生ページから映像フレームを取得できません。測定する場合は、権利のある動画をmp4/movファイルとして保存してから「動画ファイル」で読み込んでください。</p>
@@ -1255,7 +1320,7 @@
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">単位の整理:</span> 正式結果・保存記録・CSVは <span class="font-mono-num font-black">ms</span> と角度を中心に表示します。ピーク検出信号は内部計算だけで使います。
+                    <span class="font-black">表示:</span> 打突時間とピーク時刻は <span class="font-mono-num font-black">ms</span>、角度は度数で表示します。
                 </div>
                 <div id="videoResultSectionNav" class="sticky top-16 z-10 mb-3 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認</button>
@@ -1278,7 +1343,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
                         <div>
                             <h3 class="text-base font-black text-slate-900"><i class="fa-solid fa-certificate text-emerald-600 mr-1"></i>正式結果</h3>
-                            <p id="videoFormalGuide" class="mt-1 text-[11px] font-bold text-slate-600">開始/終了フレームを補正した後、この値を正式記録として保存します。</p>
+                            <p id="videoFormalGuide" class="mt-1 text-[11px] font-bold text-slate-600">開始/終了を確認して正式保存します。</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <span id="videoFormalStatus" class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-black">動画解析後に開始/終了を補正</span>
@@ -1291,7 +1356,7 @@
                                 <span class="text-xs font-black text-blue-700">補正後打突時間</span>
                                 <div id="videoFormalDuration" class="video-formal-duration-value font-black font-mono-num text-blue-700 mt-2">---</div>
                             </div>
-                            <div class="mt-3 text-[11px] font-bold text-slate-500">この値が発表・記録で使う中心値です。</div>
+                            <div class="mt-3 text-[11px] font-bold text-slate-500">正式記録の中心値</div>
                         </div>
                         <div class="video-formal-frame-grid text-xs">
                             <div class="video-formal-frame-card">
@@ -1336,13 +1401,13 @@
                 <div id="videoResultPreviewPanel" class="video-analysis-fullscreen rounded-xl border border-slate-200 bg-white p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-circle-play text-indigo-500 mr-1"></i>解析プレビュー</h3>
-                        <span class="text-[11px] text-slate-500">動画・骨格・角度・マーカーを同じ画面で確認</span>
+                        <span class="text-[11px] text-slate-500">骨格・角度・マーカー</span>
                     </div>
                     <div class="video-result-preview-grid grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
                             <video id="videoResultElement" muted="" playsinline=""></video>
                             <canvas id="videoAnalysisCanvas" class="w-full aspect-video object-contain"></canvas>
-                            <div id="videoResultEmpty" class="video-correction-empty">解析後、ここで動画全体を再生しながら骨格・角度・開始/最高速/終了を確認できます。</div>
+                            <div id="videoResultEmpty" class="video-correction-empty">動画解析後に表示</div>
                         </div>
                         <div class="video-result-controls rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
                             <div class="grid grid-cols-2 gap-2">
@@ -1392,7 +1457,7 @@
                                 </div>
                             </div>
                             <div class="video-result-help text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
-                                ここで再生しながら確認し、開始/終了・分割・統合をそのまま編集できます。
+                                再生しながら開始/終了・分割・統合を編集できます。
                             </div>
                             <div id="videoPlaybackCurrentMetrics" class="text-[11px] text-slate-700 bg-slate-900/5 border border-slate-200 rounded p-2 font-mono-num">
                                 現在フレーム: ---
@@ -1412,7 +1477,7 @@
                             <button id="videoResultTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
                             <div id="videoResultTimelinePlayhead" class="video-editor-playhead"></div>
                         </div>
-                        <p class="mt-2 text-[11px] text-slate-600">ここでも動画位置の移動、開始/終了マーカーの修正、複数打突へのジャンプができます。</p>
+                        <p class="mt-2 text-[11px] text-slate-600">ドラッグで位置移動、開始/終了マーカーを微調整できます。</p>
                     </div>
                 </div>
                 <div id="videoAnalysisResult" class="video-result-kpi-grid text-xs">
@@ -9400,7 +9465,7 @@
             const progress = document.getElementById('videoAnalysisProgress');
             const video = document.getElementById('analysisVideoElement');
             const source = getVideoAnalysisSource();
-            if (!source) return showToast('解析する動画ファイル、または直接動画URLを指定してください', 'red');
+            if (!source) return showToast('解析する動画ファイルを選択してください', 'red');
             const progressText = document.getElementById('videoAnalysisProgressText');
             if (progressText) progressText.textContent = '0%';
             if (source.type === 'file' && Number(source.size || 0) < 1024) {
@@ -10359,7 +10424,7 @@
                 showToast('動画ファイルが空、または破損しています', 'red');
                 return;
             }
-            setVideoUrlStatus('動画ファイルを選択しました。解析開始を押してください。', 'green');
+            setVideoUrlStatus('動画を選択しました。開始/終了を置いて解析できます。', 'green');
             const video = document.getElementById('analysisVideoElement');
             if (!video) return;
             if (AppState.videoPreviewUrl) URL.revokeObjectURL(AppState.videoPreviewUrl);
