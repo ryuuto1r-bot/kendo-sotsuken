@@ -1263,6 +1263,7 @@
                             <input id="videoPlaybackFpsInput" type="number" min="1" max="240" step="1" value="30" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
                         </label>
                     </div>
+                    <p id="videoSlowMotionHint" class="mt-2 text-[11px] leading-relaxed text-indigo-800">通常動画なら補正なし。iPhoneスロー動画は、写真アプリで見た時の再生速度に合わせて選びます。</p>
                 </div>
                 <div class="flex justify-end mt-3">
                     <button type="button" onclick="switchVideoStep('mark')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">開始/終了を置くへ</button>
@@ -2708,7 +2709,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v102';
+            const refreshKey = 'kendo-sw-refreshed-v103';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3401,6 +3402,21 @@
                     ? `動画上の時間を ${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)} で割って、実際の打突時間として表示します。例: 動画上960ms → 実時間${Math.round(960 / settings.factor)}ms。`
                     : '通常動画として解析します。スロー動画を入れる場合は撮影fps/再生fpsに合わせて補正を選んでください。';
             }
+            const hint = document.getElementById('videoSlowMotionHint');
+            if (hint) {
+                const diag = AppState.videoDiagnostics || {};
+                const visibleFps = Number(diag.nativeFpsEstimate || diag.fps || 0);
+                const effective = visibleFps ? Math.round(visibleFps * settings.factor) : null;
+                if (settings.factor > 1.001 && effective) {
+                    hint.textContent = `時間分解能の目安: 動画${visibleFps}fps × 補正${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)} = 実時間${effective}fps相当。打突時間はこの実時間で計算します。`;
+                } else if (visibleFps && visibleFps <= 35) {
+                    hint.textContent = '動画fps目安が30fps前後です。iPhoneスロー動画として撮影した場合は、補正なしだと打突時間が長く出ます。通常撮影なら補正なしでOKです。';
+                } else if (visibleFps && visibleFps >= 100) {
+                    hint.textContent = '高fps動画として読み込めています。通常速度の高fps撮影なら補正なし、スロー再生化された動画なら補正を選びます。';
+                } else {
+                    hint.textContent = '通常動画なら補正なし。iPhoneスロー動画は、写真アプリで見た時の再生速度に合わせて選びます。';
+                }
+            }
             return settings;
         }
 
@@ -3427,12 +3443,22 @@
                 if (Number.isFinite(diff) && diff > 0) return diff;
             }
             const factor = videoSlowMotionFactorForData(data);
-            const fps = Math.max(1, Number(fallbackFps || data?.fps || Params.targetFps || 60));
+            const fps = Math.max(1, Number(data?.fps || fallbackFps || Params.targetFps || 60));
             return 1000 / (fps * factor);
         }
 
         function videoEffectiveTimingFps(data = AppState.videoAnalysis, fallbackFps = Params.targetFps || 60) {
             return 1000 / Math.max(1, videoFrameStepMs(data, fallbackFps));
+        }
+
+        function videoEffectiveFpsFromDiagnostics(diag = AppState.videoDiagnostics) {
+            const settings = readVideoSlowMotionSettings();
+            const visibleFps = Number(diag?.nativeFpsEstimate || diag?.fps || Params.targetFps || 60);
+            return {
+                visibleFps,
+                factor: settings.factor,
+                effectiveFps: visibleFps * settings.factor
+            };
         }
 
         function videoSourceSecondForFrame(data, frameOrIndex) {
@@ -7644,7 +7670,8 @@
             const fps = Number(diag.fps || Params.targetFps || 60);
             const slowSettings = updateVideoSlowMotionUi();
             const nativeFps = Number(diag.nativeFpsEstimate || 0);
-            const scoreFps = nativeFps || fps;
+            const effectiveFps = (nativeFps || fps) * slowSettings.factor;
+            const scoreFps = effectiveFps || fps;
             const frames = Number(diag.frames || 0);
             const confidence = Number(diag.confidence || 0);
             const detectionRate = Number(diag.detectionRate || 0);
@@ -7674,7 +7701,7 @@
             safeText('videoDeviceCheckVerdict', diag.empty ? '動画未選択' : verdict);
             safeText('videoDeviceCheckReason', diag.empty ? 'iPhoneの120fps/240fps動画を選ぶと、解像度・解析fps・検出信頼度を確認します。' : reason);
             safeText('videoDiagResolution', width && height ? `${width}x${height}` : '---');
-            safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps` : '---'));
+            safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps${slowSettings.factor > 1.001 ? ` / 実時間${Math.round(effectiveFps)}fps相当` : ''}` : '---'));
             safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}${slowSettings.factor > 1.001 ? ` / 実時間÷${slowSettings.factor.toFixed(slowSettings.factor % 1 ? 2 : 0)}` : ''}` : '---');
             safeText('videoDiagFrames', frames ? `${frames}` : '---');
             safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%` : '---');
