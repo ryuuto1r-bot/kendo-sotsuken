@@ -2623,6 +2623,7 @@
         }
 
         function setVideoAnalysisBusy(isBusy) {
+            AppState.videoAnalysisBusy = !!isBusy;
             const analyzeBtn = document.getElementById('analyzeVideoBtn');
             const progressText = document.getElementById('videoAnalysisProgressText');
             if (analyzeBtn) {
@@ -2678,10 +2679,17 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v83';
+            const refreshKey = 'kendo-sw-refreshed-v94';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
+                const hasVideoFile = !!document.getElementById('videoFileInput')?.files?.length;
+                const hasVideoSource = !!AppState.videoPreviewUrl || !!AppState.videoAnalysisUrl || !!AppState.videoAnalysis?.frames?.length;
+                if (AppState.videoAnalysisBusy || hasVideoFile || hasVideoSource) {
+                    sessionStorage.setItem(refreshKey, '1');
+                    showToast('アプリ更新は準備済みです。動画解析が終わってから手動で再読み込みしてください', 'blue');
+                    return;
+                }
                 refreshedByServiceWorker = true;
                 sessionStorage.setItem(refreshKey, '1');
                 window.location.reload();
@@ -5948,25 +5956,33 @@
             updatePrecisionPanel();
         }
 
-        function loadScriptAsset(src, isReady, timeoutMs = 12000) {
+        function loadScriptAsset(src, isReady, timeoutMs = 30000) {
             if (isReady()) return Promise.resolve();
             return new Promise((resolve, reject) => {
                 let script = Array.from(document.scripts).find(node => {
                     const attr = node.getAttribute('src') || '';
                     return attr === src || attr.endsWith(src.replace('./', '/')) || attr.endsWith(src.replace('./', ''));
                 });
+                let interval = null;
                 const timer = setTimeout(() => {
                     cleanup();
                     reject(new Error(`${src} load timeout`));
                 }, timeoutMs);
                 function cleanup() {
                     clearTimeout(timer);
+                    if (interval) clearInterval(interval);
                     script?.removeEventListener('load', onLoad);
                     script?.removeEventListener('error', onError);
                 }
-                function onLoad() {
+                function resolveIfReady() {
+                    if (!isReady()) return false;
                     cleanup();
-                    isReady() ? resolve() : reject(new Error(`${src} loaded but global is missing`));
+                    resolve();
+                    return true;
+                }
+                function onLoad() {
+                    if (resolveIfReady()) return;
+                    // MediaPipeのグローバル定義はload直後に少し遅れることがあるため、ポーリング継続。
                 }
                 function onError() {
                     cleanup();
@@ -5980,20 +5996,16 @@
                 }
                 script.addEventListener('load', onLoad, { once: true });
                 script.addEventListener('error', onError, { once: true });
-                setTimeout(() => {
-                    if (isReady()) {
-                        cleanup();
-                        resolve();
-                    }
-                }, 0);
+                interval = setInterval(resolveIfReady, 100);
+                setTimeout(resolveIfReady, 0);
             });
         }
 
         async function ensureLegacyPoseLibrary() {
             await loadScriptAsset('./vendor/mediapipe/drawing_utils/drawing_utils.js', () => (
                 typeof window.drawConnectors === 'function' && typeof window.drawLandmarks === 'function'
-            ), 10000).catch(() => {});
-            await loadScriptAsset('./vendor/mediapipe/pose/pose.js', () => typeof window.Pose === 'function', 16000);
+            ), 25000).catch(() => {});
+            await loadScriptAsset('./vendor/mediapipe/pose/pose.js', () => typeof window.Pose === 'function', 45000);
         }
 
         function hasVisionTasksModule() {
@@ -6052,7 +6064,9 @@
                 './vendor/models/pose_landmarker_full.task'
             ];
             for (const path of paths) {
-                const res = await fetch(new URL(path, location.href), { cache: 'reload' });
+                // 大きいwasm/taskを事前GETすると動画解析開始前に二重読み込みになり、実動画でタイムアウトしやすい。
+                // ここでは存在確認だけ行い、本体の読み込みはMediaPipe Tasksに任せる。
+                const res = await fetch(new URL(path, location.href), { method: 'HEAD', cache: 'no-store' });
                 if (!res.ok) throw new Error(`${path} 読み込み失敗: ${res.status}`);
             }
             const isolation = window.crossOriginIsolated ? 'COOP/COEP OK' : '通常HTTP';
@@ -6063,7 +6077,7 @@
         async function createPoseLandmarkerInstance(vision, delegate = 'CPU') {
             const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
             const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-            const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 12000, 'Vision WASM');
+            const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 30000, 'Vision WASM');
             const baseOptions = { modelAssetPath: modelPath };
             if (delegate === 'GPU') baseOptions.delegate = 'GPU';
             return withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
@@ -6073,14 +6087,14 @@
                 minPoseDetectionConfidence: 0.55,
                 minPosePresenceConfidence: 0.55,
                 minTrackingConfidence: 0.55
-            }), 18000, `Pose Landmarker ${delegate}`);
+            }), 45000, `Pose Landmarker ${delegate}`);
         }
 
         async function initPose(options = {}) {
             AppState.poseEngine = '準備中';
             AppState.landmarkerDiag = 'Tasks確認中';
             updatePrecisionPanel();
-            const canUseTasksSafely = !!Params.usePoseLandmarker && window.crossOriginIsolated && !isIOSLikeBrowser() && !isSafariLikeBrowser();
+            const canUseTasksSafely = window.crossOriginIsolated && !isIOSLikeBrowser() && !isSafariLikeBrowser();
             const useTasks = options.forceTasks ? canUseTasksSafely : shouldUsePoseLandmarkerRealtime();
             if (!useTasks && Params.usePoseLandmarker) {
                 if (isIOSLikeBrowser()) AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
@@ -6091,9 +6105,9 @@
             }
             if (useTasks) {
                 try {
-                    await withTimeout(ensurePoseLandmarkerAssets(), 12000, 'Pose assets');
-                    const vision = await withTimeout(waitForVisionTasks(10000), 13000, 'MediaPipe Tasks');
-                    const delegates = ['CPU'];
+                    await withTimeout(ensurePoseLandmarkerAssets(), 45000, 'Pose assets');
+                    const vision = await withTimeout(waitForVisionTasks(30000), 35000, 'MediaPipe Tasks');
+                    const delegates = options.purpose === 'video' ? ['GPU', 'CPU'] : ['CPU'];
                     for (const delegate of delegates) {
                         try {
                             AppState.landmarkerDiag = `${delegate}初期化中`;
@@ -9855,7 +9869,7 @@
             if (!AppState.poseLandmarker && !pose) {
                 safeText('videoAnalysisStatus', window.crossOriginIsolated ? 'Pose Landmarker準備中' : '互換AI準備中');
                 AppState.poseLandmarker = null;
-                await ensurePoseReady({ purpose: 'video', forceTasks: Params.usePoseLandmarker });
+                await ensurePoseReady({ purpose: 'video', forceTasks: true });
             }
             if (!AppState.poseLandmarker) {
                 try {
