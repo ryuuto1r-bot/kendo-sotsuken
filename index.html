@@ -1114,14 +1114,14 @@
 	                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 	                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 	                    <div class="space-y-2 text-xs text-slate-700">
-	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下方向ピーク検出信号が閾値を2フレーム続けて超えた最初のフレーム</p>
-	                        <p><span class="font-bold text-slate-900">終了:</span> 右手首ピーク後、急減速またはピーク値の38%未満になったフレーム</p>
+	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下降が確認でき、ピーク検出信号が立ち上がる最初のフレーム</p>
+	                        <p><span class="font-bold text-slate-900">終了:</span> 最高速後に速度低下または下降停止が続いたフレーム</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">終了</span><div id="timingEndStatus" class="font-bold">---</div></div>
 	                        </div>
-	                        <p class="text-[11px] text-slate-500">ピーク検出の信号は内部処理に限定します。正式記録は補正後の打突時間・ピーク時刻・角度を中心に扱います。</p>
+	                        <p class="text-[11px] text-slate-500">動画解析の正式候補は90〜650msを目安にし、長すぎる合算・短すぎるノイズは補正候補に回します。正式記録は補正後の打突時間・ピーク時刻・角度を中心に扱います。</p>
 	                    </div>
 	                </div>
 
@@ -2435,8 +2435,8 @@
             timingEndSpeedRatio: 0.38,
             timingStartDownVelocityMps: 0.55,
             timingStartConsecutiveFrames: 2,
-            timingMaxDurationMs: 1200,
-            timingMinDurationMs: 30,
+            timingMaxDurationMs: 650,
+            timingMinDurationMs: 90,
             minAngleVisibility: 0.45,
             maxReasonableSpeedMps: 18
         };
@@ -8380,11 +8380,11 @@
         }
 
         function videoFormalMinDurationMs() {
-            return 120;
+            return 90;
         }
 
         function videoFormalMaxDurationMs() {
-            return Math.min(800, Number(Params.timingMaxDurationMs || 1200));
+            return Math.min(650, Number(Params.timingMaxDurationMs || 650));
         }
 
         function videoWristScreenY(frame) {
@@ -8397,14 +8397,62 @@
             return distance2d(frame.landmarks[11], frame.landmarks[12]) || 0;
         }
 
+        function smoothVideoScalarSeries(values, passes = 1) {
+            const source = Array.isArray(values) ? values.map(value => Number(value) || 0) : [];
+            if (source.length < 5) return source;
+            let current = source;
+            for (let pass = 0; pass < passes; pass++) {
+                current = current.map((value, index) => {
+                    if (index < 2 || index >= current.length - 2) return value;
+                    return (-3 * current[index - 2] + 12 * current[index - 1] + 17 * current[index] + 12 * current[index + 1] - 3 * current[index + 2]) / 35;
+                });
+            }
+            return current.map(value => Math.max(0, Number(value) || 0));
+        }
+
+        function videoWristDescentRatio(frames, center, radius = 2) {
+            const start = clamp(center - radius, 0, frames.length - 1);
+            const end = clamp(center + radius, 0, frames.length - 1);
+            const y0 = videoWristScreenY(frames[start]);
+            const y1 = videoWristScreenY(frames[end]);
+            if (!Number.isFinite(y0) || !Number.isFinite(y1)) return 0;
+            return y1 - y0;
+        }
+
+        function videoPeakProminence(speeds, index, window) {
+            const start = Math.max(0, index - window);
+            const end = Math.min(speeds.length - 1, index + window);
+            let valley = Infinity;
+            for (let i = start; i <= end; i++) {
+                if (i === index) continue;
+                valley = Math.min(valley, Number(speeds[i] || 0));
+            }
+            return Math.max(0, Number(speeds[index] || 0) - (Number.isFinite(valley) ? valley : 0));
+        }
+
+        function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, globalPeak) {
+            const frame = frames[index];
+            if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
+            if (Number(frame.poseConfidence || 0) < 0.35) return false;
+            const shoulder = Math.max(0.08, videoShoulderWidthRatio(frame));
+            const descent = videoWristDescentRatio(frames, index, 2);
+            const minDescent = Math.max(0.006, shoulder * 0.035);
+            const downVelocity = Number(frame.downVelocity || 0);
+            const downOk = descent >= minDescent || downVelocity >= Math.max(0.08, Params.timingStartDownVelocityMps * 0.20);
+            if (!downOk) return false;
+            const prominence = videoPeakProminence(speeds, index, 4);
+            const peak = Number(speeds[index] || 0);
+            return prominence >= Math.max(0.12, globalPeak * 0.045) || peak >= globalPeak * Math.max(0.55, sensitivity.peakRatio * 1.25);
+        }
+
         function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
             const frames = data.frames || [];
             const fps = data.fps || Params.targetFps || 60;
             const peakSpeed = Number(speeds[peakFrame] || 0);
-            const maxBack = Math.max(10, Math.round(fps * 0.85));
-            const maxForward = Math.max(10, Math.round(fps * 0.62));
-            const minLeadFrames = Math.max(4, Math.round(fps * 0.08));
-            const minAfterFrames = Math.max(4, Math.round(fps * 0.07));
+            const maxBack = Math.max(8, Math.round(fps * 0.55));
+            const maxForward = Math.max(8, Math.round(fps * 0.42));
+            const minLeadFrames = Math.max(3, Math.round(fps * 0.055));
+            const minAfterFrames = Math.max(3, Math.round(fps * 0.055));
             const downVelocityThreshold = Math.max(0.10, Params.timingStartDownVelocityMps * 0.28);
             let startFrame = Math.max(0, peakFrame - maxBack);
             let quietFrames = 0;
@@ -8413,7 +8461,7 @@
                 const prevY = videoWristScreenY(frames[i - 1]);
                 const screenDown = Number.isFinite(y) && Number.isFinite(prevY) ? y - prevY : 0;
                 const movingDown = screenDown > 0.0015 || Number(frames[i]?.downVelocity || 0) >= downVelocityThreshold;
-                const activeSpeed = Number(speeds[i] || 0) >= peakSpeed * Math.max(0.10, sensitivity.startSpeedRatio * 0.55);
+                const activeSpeed = Number(speeds[i] || 0) >= peakSpeed * Math.max(0.16, sensitivity.startSpeedRatio * 0.70);
                 if (movingDown || activeSpeed) {
                     startFrame = i - 1;
                     quietFrames = 0;
@@ -8455,7 +8503,7 @@
                 const dt = Math.max((frames[i].timeMs - frames[i - 1].timeMs) / 1000, 1 / fps);
                 const decel = (Number(speeds[i - 1] || 0) - Number(speeds[i] || 0)) / dt;
                 const afterMin = i - peakFrame >= minAfterFrames;
-                const slowEnough = Number(speeds[i] || 0) <= peakSpeed * Math.max(0.22, sensitivity.endSpeedRatio * 0.72);
+                const slowEnough = Number(speeds[i] || 0) <= peakSpeed * Math.max(0.24, sensitivity.endSpeedRatio * 0.76);
                 const noLongerDescending = screenDown <= 0.0006 || Number(frames[i]?.downVelocity || 0) <= downVelocityThreshold * 0.65;
                 if (afterMin && (slowEnough || noLongerDescending || decel >= Params.timingEndDecelMps2 * sensitivity.endDecelRatio)) {
                     settleFrames += 1;
@@ -8596,7 +8644,8 @@
             data.strikeSensitivity = Params.videoStrikeSensitivity || AppState.videoStrikeSensitivity || 'normal';
             const frames = data.frames;
             const fps = data.fps || Params.targetFps || 60;
-            const speeds = frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0);
+            const rawSpeeds = frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0);
+            const speeds = smoothVideoScalarSeries(rawSpeeds, 2);
             const globalPeak = Math.max(...speeds);
             if (!Number.isFinite(globalPeak) || globalPeak <= 0) {
                 data.strikes = [];
@@ -8611,15 +8660,20 @@
                 if (speeds[i] < threshold) continue;
                 if (speeds[i] < speeds[i - 1] || speeds[i] < speeds[i + 1]) continue;
                 if (speeds[i] < speeds[i - 2] || speeds[i] < speeds[i + 2]) continue;
+                if (!isVideoDownwardStrikeCandidate(frames, speeds, i, sensitivity, globalPeak)) continue;
                 const tooClose = candidates.some(candidate => Math.abs(candidate.peakFrame - i) < minGap);
                 if (tooClose) {
                     const current = candidates.find(candidate => Math.abs(candidate.peakFrame - i) < minGap);
-                    if (current && speeds[i] > speeds[current.peakFrame]) current.peakFrame = i;
+                    if (current && speeds[i] > speeds[current.peakFrame]) {
+                        current.peakFrame = i;
+                        current.score = speeds[i] + videoWristDescentRatio(frames, i, 2) * 10;
+                    }
                     continue;
                 }
-                candidates.push({ peakFrame: i });
+                candidates.push({ peakFrame: i, score: speeds[i] + videoWristDescentRatio(frames, i, 2) * 10 });
                 if (candidates.length >= 40) break;
             }
+            candidates.sort((a, b) => Number(a.peakFrame || 0) - Number(b.peakFrame || 0));
             const segments = [];
             const rejections = [];
             const pushRejection = (startFrame, peakFrame, endFrame, reason) => {
