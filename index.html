@@ -1195,22 +1195,21 @@
                     <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
-                <p class="text-xs text-slate-500 mb-3">PCは動画ファイルを選択、iPhoneは写真/ファイルアプリから動画を選択してください。</p>
-                <div id="videoNextActionBanner" class="video-next-action mb-3"><i class="fa-solid fa-arrow-right mr-2"></i>動画を選んでください</div>
+                <div id="videoNextActionBanner" class="video-next-action mb-3"><i class="fa-solid fa-arrow-right mr-2"></i>動画選択</div>
                 <div id="videoStepHint" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 leading-relaxed">
-                    最初に動画ファイルを選びます。読み込めたら開始/終了マーカーを置く手順へ進みます。
+                    動画選択
                 </div>
                 <div id="videoStep-load" class="video-step-panel active space-y-3">
                 <label for="videoFileInput" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
-                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">PC: mp4/movを選択 / iPhone: 写真アプリ・ファイルアプリから動画を選択</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
                     </span>
                     <span class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
                 </label>
                 <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input">
-                <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">動画ファイルを選択してください。URL入力は通常使用しません。</p>
+                <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
                 <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
                     <label class="block text-xs font-bold text-slate-700 mb-1">動画URL解析（mp4/mov直接URLのみ）</label>
                     <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
@@ -1219,14 +1218,14 @@
                     </div>
                     <div id="youtubeImportGuide" class="hidden mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 leading-relaxed">
                         <div class="font-black mb-1"><i class="fa-brands fa-youtube mr-1"></i>YouTube URLは直接解析不可</div>
-                        <p>ブラウザ単体ではYouTubeの再生ページから映像フレームを取得できません。測定する場合は、権利のある動画をmp4/movファイルとして保存してから「動画ファイル」で読み込んでください。</p>
+                        <p>mp4 / mov</p>
                     </div>
                 </div>
                 <div id="videoDeviceCheckCard" class="video-quality-card warn mt-3 border rounded-lg p-3">
                     <div class="flex items-center justify-between gap-3">
                         <div>
                             <div id="videoDeviceCheckVerdict" class="text-sm font-black">動画未選択</div>
-                            <div id="videoDeviceCheckReason" class="text-xs mt-1 opacity-80">iPhoneの120fps/240fps動画を選ぶと、解像度・解析fps・検出信頼度を確認します。</div>
+                            <div id="videoDeviceCheckReason" class="text-xs mt-1 opacity-80">解像度 / fps / 信頼度</div>
                         </div>
                         <i id="videoDeviceCheckIcon" class="fa-solid fa-circle-question text-2xl"></i>
                     </div>
@@ -1243,7 +1242,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <div class="font-black text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>スローモーション補正</div>
-                            <p id="videoSlowMotionStatus" class="mt-1 text-[11px] leading-relaxed">通常動画として解析します。</p>
+                            <p id="videoSlowMotionStatus" class="mt-1 text-[11px] leading-relaxed">補正なし</p>
                         </div>
                         <label class="font-bold min-w-[220px]">動画の種類
                             <select id="videoSlowMotionSelect" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
@@ -1263,7 +1262,7 @@
                             <input id="videoPlaybackFpsInput" type="number" min="1" max="240" step="1" value="30" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
                         </label>
                     </div>
-                    <p id="videoSlowMotionHint" class="mt-2 text-[11px] leading-relaxed text-indigo-800">通常動画なら補正なし。iPhoneスロー動画は、写真アプリで見た時の再生速度に合わせて選びます。</p>
+                    <p id="videoSlowMotionHint" class="mt-2 text-[11px] leading-relaxed text-indigo-800">通常 / 120→60 / 240→30</p>
                 </div>
                 <div class="flex justify-end mt-3">
                     <button type="button" onclick="switchVideoStep('mark')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">開始/終了を置くへ</button>
@@ -1271,7 +1270,7 @@
                 </div>
                 <div id="videoStep-mark" class="video-step-panel space-y-3">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    動画を見ながら開始位置と終了位置を置きます。置いた範囲だけ再生して確認し、確定してから解析します。
+                    開始 / 終了を指定
                 </div>
                 <div class="mt-3 border border-slate-200 rounded-xl overflow-hidden bg-slate-950">
                     <video id="analysisVideoElement" class="w-full max-h-[360px] bg-black object-contain" muted="" playsinline="" controls=""></video>
@@ -1298,7 +1297,7 @@
                             <button id="videoTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
                             <div id="videoTimelinePlayhead" class="video-editor-playhead"></div>
                         </div>
-                        <p class="mt-2 text-[11px] text-blue-800">タイムラインをドラッグすると動画を移動できます。開始/終了マーカーもドラッグで微調整できます。</p>
+                        <p class="mt-2 text-[11px] text-blue-800">ドラッグで移動 / 調整</p>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                         <div class="bg-white/80 border border-blue-100 rounded p-2"><span class="text-blue-700">現在位置</span><div id="videoManualCurrentLabel" class="font-black font-mono-num">---</div></div>
@@ -1313,7 +1312,7 @@
                         <button id="confirmManualRangeBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-circle-check mr-1"></i>範囲を確定</button>
                         <button id="clearManualMarkersBtn" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-bold">マーカー解除</button>
                     </div>
-                    <p id="videoManualRangeStatus" class="mt-2 text-[11px] text-blue-800">開始/終了を置くと、その範囲だけを再生・解析できます。</p>
+                    <p id="videoManualRangeStatus" class="mt-2 text-[11px] text-blue-800">範囲未指定</p>
                 </div>
                 <div class="flex flex-wrap justify-between gap-2">
                     <button type="button" onclick="switchVideoStep('load')" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2 rounded text-sm font-bold">動画を入れ直す</button>
@@ -1390,7 +1389,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-2">
                         <div>
                             <h3 class="text-sm font-black text-slate-800"><i class="fa-solid fa-crosshairs text-blue-600 mr-1"></i>打突動作の定義</h3>
-                            <p class="mt-1 text-[11px] text-slate-500">自動候補は目安です。正式記録は、映像を見て開始/終了を補正・確定した範囲を使います。</p>
+                            <p class="mt-1 text-[11px] text-slate-500">映像で確定</p>
                         </div>
                     </div>
                     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -1417,7 +1416,7 @@
                             <p id="videoFormalGuide" class="mt-1 text-[11px] font-bold text-slate-600">開始/終了を確認して正式保存します。</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <span id="videoFormalStatus" class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-black">動画解析後に開始/終了を補正</span>
+                            <span id="videoFormalStatus" class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-black">未解析</span>
                             <button id="videoFormalEditBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-pen-to-square mr-1"></i>補正する</button>
                         </div>
                     </div>
@@ -1465,7 +1464,7 @@
                             <span id="videoVerificationSummary" class="text-xs font-bold text-slate-500">未解析</span>
                         </div>
                         <div id="videoVerificationChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div class="video-check-card wait border rounded p-2">動画を解析すると確認項目を表示します。</div>
+                            <div class="video-check-card wait border rounded p-2">未解析</div>
                         </div>
                     </div>
                 </div>
@@ -1501,7 +1500,7 @@
                                         <span id="videoResultFrameSummary" class="font-black font-mono-num text-slate-700">#---</span>
                                     </div>
                                     <input id="videoResultFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
-                                    <div id="videoResultFrameDetail" class="mt-1 text-[11px] text-slate-500 font-mono-num">1コマずつ確認できます</div>
+                                    <div id="videoResultFrameDetail" class="mt-1 text-[11px] text-slate-500 font-mono-num">1コマ確認</div>
                                     <div class="grid grid-cols-2 gap-2 mt-2">
                                         <button id="videoResultMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag mr-1"></i>現在を開始</button>
                                         <button id="videoResultMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>現在を終了</button>
@@ -1529,7 +1528,7 @@
                                 </div>
                             </div>
                             <div class="video-result-help text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
-                                再生しながら開始/終了・分割・統合を編集できます。
+                                開始 / 終了 / 分割 / 統合
                             </div>
                             <div id="videoPlaybackCurrentMetrics" class="text-[11px] text-slate-700 bg-slate-900/5 border border-slate-200 rounded p-2 font-mono-num">
                                 現在フレーム: ---
@@ -1549,7 +1548,7 @@
                             <button id="videoResultTimelineEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
                             <div id="videoResultTimelinePlayhead" class="video-editor-playhead"></div>
                         </div>
-                        <p class="mt-2 text-[11px] text-slate-600">ドラッグで位置移動、開始/終了マーカーを微調整できます。</p>
+                        <p class="mt-2 text-[11px] text-slate-600">ドラッグで調整</p>
                     </div>
                 </div>
                 <div id="videoAnalysisResult" class="video-result-kpi-grid text-xs" data-video-result-section="result">
@@ -1602,14 +1601,14 @@
                         <span id="videoValiditySummary" class="text-xs font-bold text-slate-500">未解析</span>
                     </div>
                     <div id="videoValidityList" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="rounded border border-slate-100 bg-slate-50 p-2 text-slate-500">動画解析後に、時間・速度・骨格・体幹変化を確認します。</div>
+                        <div class="rounded border border-slate-100 bg-slate-50 p-2 text-slate-500">未解析</div>
                     </div>
                 </div>
                 <div id="videoMultiStrikePanel" class="hidden mt-4 border border-amber-200 bg-amber-50 rounded-xl p-3" data-video-result-section="preview">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <div>
                             <h3 class="text-sm font-black text-amber-900"><i class="fa-solid fa-list-ol mr-1"></i>複数打突 自動分割</h3>
-                            <span class="text-xs text-amber-800">各打突へジャンプし、選択した1本ずつ開始/終了を補正・保存できます。</span>
+                            <span class="text-xs text-amber-800">選択 / 補正 / 保存</span>
                         </div>
                         <button id="saveAllVideoStrikesBtn" type="button" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-xs font-black"><i class="fa-solid fa-floppy-disk mr-1"></i>全打突を保存</button>
                     </div>
@@ -1685,7 +1684,7 @@
                 <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen space-y-3">
                     <div class="official-flow-card rounded-xl border p-3 text-xs leading-relaxed">
                         <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
-                        <p><strong>開始</strong>は振り下ろし開始、<strong>終了</strong>は最高速後の減速/停止点として、下の映像・グラフ・3D角度ビューを見ながら1コマ単位で合わせます。</p>
+                        <p><strong>開始</strong> 振り下ろし / <strong>終了</strong> 減速・停止</p>
                     </div>
                     <div class="rounded-xl border border-blue-100 bg-white p-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
@@ -1698,7 +1697,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                             <div>
                                 <div class="font-black text-indigo-900"><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作だけを詳細コマ解析</div>
-                                <div id="videoStrikeDetailRangeLabel" class="text-indigo-700 font-bold mt-1">開始/終了を置くと、その区間だけを1コマ単位で確認できます。</div>
+                                <div id="videoStrikeDetailRangeLabel" class="text-indigo-700 font-bold mt-1">範囲拡大</div>
                             </div>
                             <div id="videoStrikeDetailCurrentLabel" class="font-black font-mono-num text-indigo-900">#---</div>
                         </div>
@@ -1716,7 +1715,7 @@
                                 <button id="videoStrikeDetailScaleEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
                                 <div id="videoStrikeDetailScalePlayhead" class="video-editor-playhead"></div>
                             </div>
-                            <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">目盛りをクリック/ドラッグすると、そのコマへ移動します。開始/終了マーカーはドラッグで微調整できます。</p>
+                            <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">クリック / ドラッグ</p>
                         </div>
                         <div class="video-detail-edit-toolbar mt-3">
                             <div class="video-detail-edit-group">
@@ -1767,7 +1766,7 @@
                         <div class="video-correction-preview border border-slate-800">
                             <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
                             <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
-                            <div id="videoCorrectionEmpty" class="video-correction-empty">動画を読み込むとここに表示されます。解析後は骨格・角度・マーカーも重なります。</div>
+                            <div id="videoCorrectionEmpty" class="video-correction-empty">動画プレビュー</div>
                         </div>
                         <div class="video-correction-controls bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
                             <div class="flex items-center justify-between gap-2 mb-2">
@@ -1851,7 +1850,7 @@
                 </div>
                 <div id="videoStep-report" class="video-step-panel space-y-3">
                     <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-900">
-                        補正後の値を正式記録として保存できます。CSVやレポートは、先生への確認や後日の比較に使います。
+                        保存 / CSV / レポート
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button id="saveVideoRecordBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-check mr-1"></i> 正式記録に保存</button>
@@ -1868,7 +1867,7 @@
                 <h3 class="text-sm font-bold text-indigo-900 mb-2"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</h3>
                 <div class="space-y-2 text-xs text-indigo-900 leading-relaxed">
                     <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・ピーク時刻・角度だけを見る。</p>
-                    <p><span class="font-bold">動画解析:</span> 正式測定用。開始/終了フレームを補正し、保存・CSV・レポートに反映します。</p>
+                    <p><span class="font-bold">動画解析:</span> 正式測定</p>
                 </div>
             </div>
 
@@ -2618,35 +2617,23 @@
             const hasVideo = Number(video?.duration || 0) > 0;
             const hasManualRange = Number.isFinite(AppState.videoManualStartSec) && Number.isFinite(AppState.videoManualEndSec) && AppState.videoManualEndSec > AppState.videoManualStartSec;
             const messages = {
-                load: hasAnalysis
-                    ? '別の動画を読み込む場合はここから選択します。現在の解析結果は結果確認・補正・保存の各手順で確認できます。'
-                    : 'まず動画ファイルを選択します。読み込み後は開始/終了マーカーの手順へ進みます。',
-                mark: hasVideo
-                    ? (hasManualRange ? '開始/終了マーカーが置かれています。この範囲だけを解析できます。' : '動画をスローで確認し、開始位置と終了位置にマーカーを置いてください。')
-                    : '先に動画を読み込んでください。動画がない場合はマーカーを置けません。',
-                analyze: hasVideo
-                    ? (hasManualRange ? '手動マーカー範囲だけを解析します。解析開始を押してください。' : 'マーカー未設定のため自動検出で解析します。必要なら前の手順で開始/終了を置いてください。')
-                    : '先に動画を読み込んでください。',
-                result: hasAnalysis
-                    ? '解析結果の概要です。正式表示・CSV・記録はmsと角度中心です。ピーク検出信号は内部計算だけで使います。必要ならフレーム補正へ進んでください。'
-                    : 'まだ解析結果がありません。先に読み込み手順で動画を解析してください。',
-                correct: hasAnalysis
-                    ? '開始・終了フレームを1コマ単位で補正します。補正後打突時間が正式記録に反映されます。'
-                    : 'まだ補正できる解析結果がありません。先に動画を解析してください。',
-                report: hasAnalysis
-                    ? '補正後の値を正式記録として保存、またはCSV/レポートとして出力します。'
-                    : '保存する解析結果がありません。先に動画を解析してください。'
+                load: hasAnalysis ? '動画変更' : '動画選択',
+                mark: hasVideo ? (hasManualRange ? '範囲指定済み' : '開始 / 終了') : '動画未選択',
+                analyze: hasVideo ? (hasManualRange ? '範囲解析' : '自動解析') : '動画未選択',
+                result: hasAnalysis ? '結果' : '未解析',
+                correct: hasAnalysis ? '1コマ補正' : '未解析',
+                report: hasAnalysis ? '保存 / 出力' : '未解析'
             };
             hint.textContent = messages[step] || messages.load;
             const next = document.getElementById('videoNextActionBanner');
             if (next) {
                 const nextMessages = {
-                    load: hasVideo ? '開始フレームを置いてください' : '動画を選んでください',
-                    mark: hasManualRange ? '範囲を確定して解析できます' : '開始フレームと終了フレームを置いてください',
-                    analyze: hasManualRange ? 'この範囲を解析できます' : '解析できます',
-                    result: hasAnalysis ? '結果を確認し、必要なら補正してください' : '先に解析してください',
-                    correct: hasAnalysis ? '開始/終了を合わせて確定してください' : '先に解析してください',
-                    report: hasAnalysis ? '正式記録として保存できます' : '先に解析してください'
+                    load: hasVideo ? '開始へ' : '動画選択',
+                    mark: hasManualRange ? '範囲確定' : '開始 / 終了',
+                    analyze: hasManualRange ? '範囲解析' : '解析',
+                    result: hasAnalysis ? '結果確認' : '未解析',
+                    correct: hasAnalysis ? '補正' : '未解析',
+                    report: hasAnalysis ? '保存' : '未解析'
                 };
                 next.innerHTML = `<i class="fa-solid fa-arrow-right mr-2"></i>${nextMessages[step] || nextMessages.load}`;
             }
@@ -2709,7 +2696,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v103';
+            const refreshKey = 'kendo-sw-refreshed-v104';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3399,8 +3386,8 @@
             const status = document.getElementById('videoSlowMotionStatus');
             if (status) {
                 status.textContent = settings.factor > 1.001
-                    ? `動画上の時間を ${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)} で割って、実際の打突時間として表示します。例: 動画上960ms → 実時間${Math.round(960 / settings.factor)}ms。`
-                    : '通常動画として解析します。スロー動画を入れる場合は撮影fps/再生fpsに合わせて補正を選んでください。';
+                    ? `実時間 ÷${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)}`
+                    : '補正なし';
             }
             const hint = document.getElementById('videoSlowMotionHint');
             if (hint) {
@@ -3408,13 +3395,13 @@
                 const visibleFps = Number(diag.nativeFpsEstimate || diag.fps || 0);
                 const effective = visibleFps ? Math.round(visibleFps * settings.factor) : null;
                 if (settings.factor > 1.001 && effective) {
-                    hint.textContent = `時間分解能の目安: 動画${visibleFps}fps × 補正${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)} = 実時間${effective}fps相当。打突時間はこの実時間で計算します。`;
+                    hint.textContent = `実時間${effective}fps相当`;
                 } else if (visibleFps && visibleFps <= 35) {
-                    hint.textContent = '動画fps目安が30fps前後です。iPhoneスロー動画として撮影した場合は、補正なしだと打突時間が長く出ます。通常撮影なら補正なしでOKです。';
+                    hint.textContent = '30fps前後';
                 } else if (visibleFps && visibleFps >= 100) {
-                    hint.textContent = '高fps動画として読み込めています。通常速度の高fps撮影なら補正なし、スロー再生化された動画なら補正を選びます。';
+                    hint.textContent = `${visibleFps}fps`;
                 } else {
-                    hint.textContent = '通常動画なら補正なし。iPhoneスロー動画は、写真アプリで見た時の再生速度に合わせて選びます。';
+                    hint.textContent = '通常 / 120→60 / 240→30';
                 }
             }
             return settings;
@@ -4470,16 +4457,16 @@
         }
 
         function videoFormalTimingLabel(data = AppState.videoAnalysis, durationMs = null, validation = null) {
-            if (!data?.frames?.length) return '動画解析後に開始/終了を補正';
+            if (!data?.frames?.length) return '未解析';
             const duration = Number(durationMs);
             if (!isVideoTimingConfirmed(data)) {
-                if (!Number.isFinite(duration)) return '未確定: 開始・終了を確認してください';
+                if (!Number.isFinite(duration)) return '未確定';
                 return validation && !validation.ok
-                    ? `自動候補: ${Math.round(duration)}ms / 要確認: ${validation.reason || '補正推奨'}`
-                    : `自動候補: ${Math.round(duration)}ms / 開始・終了を確認してください`;
+                    ? `${Math.round(duration)}ms / ${validation.reason || '要補正'}`
+                    : `${Math.round(duration)}ms / 未確定`;
             }
             if (validation && !validation.ok) return `要補正: ${validation.reason}`;
-            return '確定済み: 補正後の値を正式保存・レポートに反映';
+            return '確定済み';
         }
 
         function videoFormalDurationDisplay(data = AppState.videoAnalysis, durationMs = null, validation = null) {
@@ -4522,7 +4509,7 @@
             if (!box) return;
             if (!data?.frames?.length) {
                 safeText('videoVerificationSummary', '未解析');
-                box.innerHTML = '<div class="video-check-card wait border rounded p-2">動画を解析すると確認項目を表示します。</div>';
+                box.innerHTML = '<div class="video-check-card wait border rounded p-2">未解析</div>';
                 return;
             }
             const validRange = data.startFrame !== null && data.endFrame !== null && data.endFrame > data.startFrame;
@@ -4538,7 +4525,7 @@
                 { ok: validRange && timingConfirmed, warn: validRange, label: '開始/終了', value: validRange ? `${timingConfirmed ? '確定 ' : '未確定 '}${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}ms` : '未指定', detail: `${frameLabelForDiff(data, data.startFrame)} -> ${frameLabelForDiff(data, data.endFrame)}` },
                 { ok: hasPreview, label: '映像確認', value: hasPreview ? '表示OK' : '未表示', detail: '骨格・角度・マーカー重ね表示' },
                 { ok: checked3d, warn: !!AppState.videoModelAngleValues, label: '3D確認', value: checked3d ? '確認済み' : '未確認', detail: '3Dボタンまたは3Dタブで角度確認' },
-                { ok: saved, warn: validRange && timingConfirmed, label: '正式保存', value: saved ? `#${data.savedRecordId}` : '未保存', detail: timingConfirmed ? '保存すると記録・比較に反映' : '開始/終了確定後に保存できます' }
+                { ok: saved, warn: validRange && timingConfirmed, label: '正式保存', value: saved ? `#${data.savedRecordId}` : '未保存', detail: timingConfirmed ? '保存可' : '未確定' }
             ];
             const okCount = checks.filter(check => check.ok).length;
             safeText('videoVerificationSummary', `${okCount}/${checks.length} OK`);
@@ -7373,8 +7360,8 @@
             if (status) {
                 status.className = ok ? 'mt-2 text-[11px] text-emerald-800 font-bold' : 'mt-2 text-[11px] text-blue-800';
                 status.textContent = ok
-                    ? `手動範囲 ${formatVideoTimeWithCorrection(end - start)} を確認できます。範囲再生してから確定してください。`
-                    : '開始/終了を置くと、その範囲だけを再生・解析できます。';
+                    ? `範囲 ${formatVideoTimeWithCorrection(end - start)}`
+                    : '範囲未指定';
             }
         }
 
@@ -7692,14 +7679,14 @@
             const quality = videoDiagnosticClass(score);
             card.classList.remove('good', 'warn', 'bad');
             card.classList.add(quality);
-            const verdict = quality === 'good' ? '測定に使いやすい動画' : (quality === 'warn' ? '測定可能・補正推奨' : '測定に使いにくい可能性');
+            const verdict = quality === 'good' ? '良好' : (quality === 'warn' ? '補正推奨' : '条件不足');
             const reason = quality === 'good'
-                ? '解像度・fps・姿勢検出が安定しています。開始/終了フレーム補正後の値を正式値にできます。'
+                ? '条件OK'
                 : (quality === 'warn'
-                    ? '測定はできますが、開始/終了フレーム補正と角度表示で確認してください。'
-                    : '低fps、低解像度、姿勢検出不足の可能性があります。明るい場所で高fps動画を撮り直すと安定します。');
+                    ? '補正確認'
+                    : '撮影条件を確認');
             safeText('videoDeviceCheckVerdict', diag.empty ? '動画未選択' : verdict);
-            safeText('videoDeviceCheckReason', diag.empty ? 'iPhoneの120fps/240fps動画を選ぶと、解像度・解析fps・検出信頼度を確認します。' : reason);
+            safeText('videoDeviceCheckReason', diag.empty ? '解像度 / fps / 信頼度' : reason);
             safeText('videoDiagResolution', width && height ? `${width}x${height}` : '---');
             safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps${slowSettings.factor > 1.001 ? ` / 実時間${Math.round(effectiveFps)}fps相当` : ''}` : '---'));
             safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}${slowSettings.factor > 1.001 ? ` / 実時間÷${slowSettings.factor.toFixed(slowSettings.factor % 1 ? 2 : 0)}` : ''}` : '---');
@@ -9487,7 +9474,7 @@
                 safeText('videoFormalPeak', '---');
                 safeText('videoFormalEnd', '---');
                 safeText('videoFormalDuration', '---');
-                safeText('videoFormalStatus', '動画解析後に開始/終了を補正');
+                safeText('videoFormalStatus', '未解析');
                 updateVideoDetailMetricsPanel(null);
                 updateVideoCorrectionDiffPanel(null);
                 updateVideoVerificationChecklist(null);
@@ -9501,7 +9488,7 @@
             safeText('videoResultFrameSummary', frame ? `#${current} / ${frame.timeMs.toFixed(1)}ms${activeMarker ? ` / ${activeMarker.labelJa}` : ''}` : '#---');
             safeText('videoResultFrameDetail', frame
                 ? `右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
-                : '1コマずつ確認できます'
+                : '1コマ確認'
             );
             safeText('videoStartFrameLabel', data.startFrame !== null ? `${data.startFrame} / ${data.frames[data.startFrame]?.timeMs.toFixed(1)}ms` : '---');
             safeText('videoPeakFrameLabel', Number.isFinite(data.peakFrame) ? `${data.peakFrame} / ${data.frames[data.peakFrame]?.timeMs.toFixed(1)}ms` : '---');
@@ -9517,14 +9504,14 @@
             safeText('videoCorrectionModelStatus', frame ? `3D連動 #${current}` : '3D連動待機');
             safeText('videoCurrentElapsedLabel', Number.isFinite(elapsedMs) ? `${Math.round(elapsedMs)}ms` : '---');
             safeText('videoCorrectedDurationLabel', Number.isFinite(correctedDurationMs) ? `${Math.round(correctedDurationMs)}ms` : '---');
-            safeText('videoOfficialMeasurementBadge', Number.isFinite(correctedDurationMs) ? (confirmed ? `正式確定 ${Math.round(correctedDurationMs)}ms / 保存可能` : `自動候補 ${Math.round(correctedDurationMs)}ms / 開始・終了を確定`) : '開始/終了を補正して正式記録へ');
+            safeText('videoOfficialMeasurementBadge', Number.isFinite(correctedDurationMs) ? (confirmed ? `確定 ${Math.round(correctedDurationMs)}ms` : `候補 ${Math.round(correctedDurationMs)}ms`) : '未確定');
             safeText('videoFormalStart', start ? `#${data.startFrame} / ${start.timeMs.toFixed(1)}ms` : '---');
             safeText('videoFormalPeak', peak ? `#${data.peakFrame} / ${peak.timeMs.toFixed(1)}ms` : '---');
             safeText('videoFormalEnd', end ? `#${data.endFrame} / ${end.timeMs.toFixed(1)}ms` : '---');
             safeText('videoFormalDuration', videoFormalDurationDisplay(data, correctedDurationMs, validation));
             safeText('videoFormalStatus', videoFormalTimingLabel(data, correctedDurationMs, validation));
-            safeText('videoFormalGuide', confirmed ? 'この値を正式な打突時間として保存できます。修正したい場合は開始/終了を動かしてください。' : '自動分割は候補です。開始・終了フレームを映像で確認し、「現在を開始」「現在を終了」またはマーカー移動で確定してください。');
-            safeText('videoAnalysisStatus', Number.isFinite(correctedDurationMs) ? (confirmed ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正可）` : '正式値を確定済み') : '自動候補・未確定') : '開始/終了を補正してください');
+            safeText('videoFormalGuide', confirmed ? '保存可能' : '開始 / 終了を確定');
+            safeText('videoAnalysisStatus', Number.isFinite(correctedDurationMs) ? (confirmed ? (data.exclusionReason ? `要確認: ${data.exclusionReason}` : '確定済み') : '未確定') : '未確定');
             safeText('videoPlaybackCurrentMetrics', frame
                 ? `現在 #${current} / ${frame.timeMs.toFixed(1)}ms / 右肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}°`
                 : '現在フレーム: ---'
