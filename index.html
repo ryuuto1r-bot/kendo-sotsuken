@@ -453,6 +453,60 @@
             font-family: inherit;
             font-size: 10px;
         }
+        .video-editor-tool-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.92);
+            padding: 8px;
+            color: #cbd5e1;
+        }
+        .video-editor-tool-btn {
+            min-height: 34px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 10px;
+            background: rgba(248, 250, 252, 0.07);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 1000;
+            padding: 7px 10px;
+        }
+        .video-editor-tool-btn.active {
+            border-color: rgba(56, 189, 248, 0.84);
+            background: rgba(14, 165, 233, 0.22);
+            color: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 0 0 2px rgba(14,165,233,0.12);
+        }
+        .video-editor-snap-toggle {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.06);
+            padding: 7px 10px;
+            font-size: 11px;
+            font-weight: 1000;
+            white-space: nowrap;
+        }
+        .video-editor-snap-toggle input { accent-color: #38bdf8; }
+        #videoEditorToolStatus {
+            border-radius: 999px;
+            background: rgba(51, 65, 85, 0.86);
+            color: #e2e8f0;
+            padding: 7px 10px;
+            font-size: 11px;
+            font-weight: 1000;
+        }
+        @media (max-width: 760px) {
+            .video-editor-snap-toggle { margin-left: 0; }
+            #videoEditorToolStatus { flex-basis: 100%; }
+        }
         .video-editor-status-strip {
             display: flex;
             flex-wrap: wrap;
@@ -690,6 +744,34 @@
                 repeating-linear-gradient(to right, rgba(226,232,240,0.13) 0, rgba(226,232,240,0.13) 1px, transparent 1px, transparent 14px),
                 repeating-linear-gradient(to right, transparent 0, transparent 69px, rgba(148,163,184,0.22) 70px, transparent 72px),
                 linear-gradient(90deg, #0f172a, #111827 48%, #1f2937);
+        }
+        .video-result-mini-timeline .video-editor-track::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 34%;
+            bottom: 34%;
+            border-top: 1px solid rgba(148, 163, 184, 0.22);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .video-editor-lane-labels {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 1000;
+        }
+        .video-editor-lane-labels span {
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 4px 8px;
+            text-align: center;
         }
         .video-result-mini-timeline .video-editor-range {
             top: 26px;
@@ -1678,12 +1760,22 @@
                     </div>
                     <div class="video-editor-shortcuts mb-3">
                         <span><kbd>Space</kbd>再生</span>
+                        <span><kbd>A</kbd>選択</span>
+                        <span><kbd>B</kbd>カット</span>
                         <span><kbd>I</kbd>開始</span>
                         <span><kbd>O</kbd>終了</span>
                         <span><kbd>S</kbd>分割</span>
                         <span><kbd>←/→</kbd>1コマ</span>
                         <span><kbd>Shift</kbd>10コマ</span>
                         <span><kbd>⌘Z</kbd>戻す</span>
+                    </div>
+                    <div class="video-editor-tool-strip">
+                        <button id="videoEditorToolSelectBtn" type="button" class="video-editor-tool-btn active" data-video-editor-tool="select"><i class="fa-solid fa-arrow-pointer mr-1"></i>選択</button>
+                        <button id="videoEditorToolRazorBtn" type="button" class="video-editor-tool-btn" data-video-editor-tool="razor"><i class="fa-solid fa-scissors mr-1"></i>カット</button>
+                        <button id="videoEditorToolStartBtn" type="button" class="video-editor-tool-btn" data-video-editor-tool="start"><i class="fa-solid fa-flag mr-1"></i>開始置き</button>
+                        <button id="videoEditorToolEndBtn" type="button" class="video-editor-tool-btn" data-video-editor-tool="end"><i class="fa-solid fa-flag-checkered mr-1"></i>終了置き</button>
+                        <label class="video-editor-snap-toggle"><input id="videoEditorSnapToggle" type="checkbox" checked> スナップ</label>
+                        <span id="videoEditorToolStatus">選択ツール: タイムラインをドラッグ</span>
                     </div>
                     <div class="video-result-preview-grid grid grid-cols-1 md:grid-cols-[minmax(0,1.28fr)_300px] gap-3 items-start">
                         <div class="video-correction-preview border border-slate-200 rounded-lg overflow-hidden bg-slate-950">
@@ -1761,6 +1853,12 @@
                             <div id="videoResultTimelinePlayhead" class="video-editor-playhead"></div>
                         </div>
                         <p class="mt-2 text-[11px] text-slate-600">ドラッグで調整</p>
+                        <div class="video-editor-lane-labels">
+                            <span>映像</span>
+                            <span>速度ピーク</span>
+                            <span>角度</span>
+                            <span>打突範囲</span>
+                        </div>
                         <div id="videoEditorStatusStrip" class="video-editor-status-strip">
                             <span id="videoEditorStartChip">開始 ---</span>
                             <span id="videoEditorPeakChip">最高速 ---</span>
@@ -2641,6 +2739,8 @@
             videoEditRedoStack: [],
             videoGraphZoomed: false,
             videoTimelineZoom: 1,
+            videoEditorTool: 'select',
+            videoEditorSnap: true,
             videoSlowPlaying: false,
             videoSlowTimer: null,
             videoDrawToken: 0,
@@ -2928,7 +3028,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v107';
+            const refreshKey = 'kendo-sw-refreshed-v108';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -7463,6 +7563,7 @@
             if (!data?.frames?.length) return;
             const maxFrame = data.frames.length - 1;
             let frame = clamp(Math.round(Number(frameIndex || 0)), 0, maxFrame);
+            frame = clamp(snapVideoFrame(frame), 0, maxFrame);
             if (kind === 'start') {
                 if (Number.isFinite(data.endFrame)) frame = Math.min(frame, Math.max(0, data.endFrame - 1));
                 data.startFrame = frame;
@@ -9763,6 +9864,72 @@
             safeText('videoTimelineZoomValue', `${zoom.toFixed(1)}x`);
         }
 
+        function setVideoEditorTool(tool = 'select') {
+            const next = ['select', 'razor', 'start', 'end'].includes(tool) ? tool : 'select';
+            AppState.videoEditorTool = next;
+            document.querySelectorAll('[data-video-editor-tool]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.videoEditorTool === next);
+            });
+            const labels = {
+                select: '選択ツール: タイムラインをドラッグ',
+                razor: 'カットツール: タイムラインをクリックして分割',
+                start: '開始置き: クリック位置を開始フレームへ',
+                end: '終了置き: クリック位置を終了フレームへ'
+            };
+            safeText('videoEditorToolStatus', labels[next] || labels.select);
+        }
+
+        function candidateVideoSnapFrames(data = AppState.videoAnalysis) {
+            if (!data?.frames?.length) return [];
+            const frames = [data.startFrame, data.peakFrame, data.endFrame]
+                .filter(Number.isFinite)
+                .map(Number);
+            [...(data.strikes || []), ...(data.rejectedStrikes || [])].forEach(strike => {
+                [strike.startFrame, strike.peakFrame, strike.endFrame].forEach(value => {
+                    if (Number.isFinite(value)) frames.push(Number(value));
+                });
+            });
+            return [...new Set(frames)].sort((a, b) => a - b);
+        }
+
+        function snapVideoFrame(frameIndex, tolerance = 4) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length || !AppState.videoEditorSnap) return frameIndex;
+            let best = frameIndex;
+            let bestDiff = Infinity;
+            candidateVideoSnapFrames(data).forEach(candidate => {
+                const diff = Math.abs(candidate - frameIndex);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    best = candidate;
+                }
+            });
+            return bestDiff <= tolerance ? best : frameIndex;
+        }
+
+        function handleVideoEditorTimelineTool(event) {
+            const data = AppState.videoAnalysis;
+            if (!data?.frames?.length) return;
+            const tool = AppState.videoEditorTool || 'select';
+            if (tool === 'select') return false;
+            event.preventDefault();
+            event.stopPropagation();
+            const rawFrame = getVideoResultTimelineFrameFromEvent(event);
+            const frame = clamp(snapVideoFrame(rawFrame), 0, data.frames.length - 1);
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(frame);
+            if (tool === 'razor') {
+                splitSelectedVideoStrikeAtCurrent();
+            } else if (tool === 'start') {
+                pushVideoEditUndo('開始フレーム配置');
+                setVideoResultMarkerFrame('start', frame);
+            } else if (tool === 'end') {
+                pushVideoEditUndo('終了フレーム配置');
+                setVideoResultMarkerFrame('end', frame);
+            }
+            return true;
+        }
+
         function toggleVideoEditorPlayback() {
             if (!AppState.videoAnalysis?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             if (AppState.videoSlowPlaying) stopVideoSlowPlayback();
@@ -11673,6 +11840,18 @@
             videoTimelineZoomSlider.addEventListener('input', e => setVideoTimelineZoom(e.target.value));
             setVideoTimelineZoom(videoTimelineZoomSlider.value);
         }
+        document.querySelectorAll('[data-video-editor-tool]').forEach(btn => {
+            btn.addEventListener('click', () => setVideoEditorTool(btn.dataset.videoEditorTool));
+        });
+        const videoEditorSnapToggle = document.getElementById('videoEditorSnapToggle');
+        if (videoEditorSnapToggle) {
+            AppState.videoEditorSnap = videoEditorSnapToggle.checked;
+            videoEditorSnapToggle.addEventListener('change', e => {
+                AppState.videoEditorSnap = !!e.target.checked;
+                showToast(AppState.videoEditorSnap ? 'スナップON' : 'スナップOFF', 'blue');
+            });
+        }
+        setVideoEditorTool(AppState.videoEditorTool);
         const videoResultPlayRangeBtn = document.getElementById('videoResultPlayRangeBtn');
         if (videoResultPlayRangeBtn) videoResultPlayRangeBtn.addEventListener('click', playCorrectedStrikeRange);
         const videoResultSlowRateSelect = document.getElementById('videoResultSlowRateSelect');
@@ -11739,6 +11918,7 @@
         if (videoResultTimelineTrack) {
             videoResultTimelineTrack.addEventListener('pointerdown', event => {
                 if (event.target?.closest?.('.video-editor-marker, .video-editor-strike')) return;
+                if (handleVideoEditorTimelineTool(event)) return;
                 startVideoResultTimelineDrag(event, 'playhead');
             });
             videoResultTimelineTrack.addEventListener('keydown', handleVideoResultTimelineKey);
@@ -11945,6 +12125,16 @@
             if (event.key === ' ') {
                 event.preventDefault();
                 toggleVideoEditorPlayback();
+                return;
+            }
+            if (key === 'a') {
+                event.preventDefault();
+                setVideoEditorTool('select');
+                return;
+            }
+            if (key === 'b') {
+                event.preventDefault();
+                setVideoEditorTool('razor');
                 return;
             }
             if (key === 'i') {
