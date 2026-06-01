@@ -1141,9 +1141,22 @@
     </div>
 
     <div id="tab-analysis" class="tab-content">
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
-            <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>記録・比較</h2>
-            <div class="flex gap-2">
+        <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+            <div>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>記録・比較</h2>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                    <span id="recordVisibleCount" class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-full font-bold">表示 0本</span>
+                    <span id="recordFormalCount" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 rounded-full font-bold">正式 0本</span>
+                    <span id="recordRealtimeCount" class="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full font-bold">目安 0本</span>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <label class="text-xs font-bold text-slate-500" for="recordFilterSelect">表示</label>
+                <select id="recordFilterSelect" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white font-bold text-slate-700">
+                    <option value="formal" selected>正式記録のみ</option>
+                    <option value="realtime">リアルタイム目安のみ</option>
+                    <option value="all">全記録</option>
+                </select>
                 <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded text-sm shadow flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV</button>
                 <button onclick="clearHistory()" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-4 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i> 履歴クリア</button>
             </div>
@@ -1154,14 +1167,26 @@
             <div class="h-80 w-full flex justify-center"><canvas id="radarChart" height="640" style="display: block; box-sizing: border-box; height: 320px; width: 527px;" width="1054"></canvas></div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間 ＆ ピーク時刻推移</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">角度推移（右肘・体幹軸・刃筋）</h3>
-                <div class="h-64"><canvas id="strideChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">ピーク時刻</h3>
+                <div class="h-64"><canvas id="peakChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border">
+                <h3 class="text-sm font-bold text-slate-700 mb-2">右肘角</h3>
+                <div class="h-64"><canvas id="elbowChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border">
+                <h3 class="text-sm font-bold text-slate-700 mb-2">体幹軸</h3>
+                <div class="h-64"><canvas id="torsoChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
+                <h3 class="text-sm font-bold text-slate-700 mb-2">刃筋</h3>
+                <div class="h-64"><canvas id="hasujiChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
         </div>
 
@@ -1976,6 +2001,8 @@
                     <thead class="bg-white sticky top-0 shadow-sm text-slate-500">
                         <tr>
                             <th class="px-2 py-2">#</th>
+                            <th class="px-2 py-2">種別</th>
+                            <th class="px-2 py-2">記録日時</th>
                             <th class="px-2 py-2">時間</th>
                             <th class="px-2 py-2">ピーク</th>
                             <th class="px-2 py-2">右肘</th>
@@ -1986,7 +2013,7 @@
                             <th class="px-2 py-2 text-left">評価/メモ</th>
                         </tr>
                     </thead>
-	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="9" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
+	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -2295,6 +2322,7 @@
             wristTrace: [],
             swingWristXHistory: [], 
             records: [],
+            recordFilter: 'formal',
             zanshinTimer: null,
             zanshinBroken: false,
             currentHasujiAngle: 0,
@@ -2474,7 +2502,7 @@
         const canvasElement = document.getElementById('outputCanvas');
         const canvasCtx = canvasElement.getContext('2d');
         
-        let timeChart, strideChart, radarChart;
+        let timeChart, peakChart, elbowChart, torsoChart, hasujiChart, radarChart;
         let camera = null;
         let pose = null;
         let poseReadyPromise = null;
@@ -2696,7 +2724,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v104';
+            const refreshKey = 'kendo-sw-refreshed-v105';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -3120,9 +3148,62 @@
             return Math.round(timeScore * 0.35 + axisScore * 0.25 + elbowScore * 0.25 + hasujiScore * 0.15);
         }
 
+        function recordTypeOf(record) {
+            if (!record) return 'realtime';
+            if (record.recordType === 'formal' || record.recordType === 'realtime') return record.recordType;
+            const source = String(record.source || '');
+            if (source.startsWith('video') || record.frameSyncMode === '動画解析') return 'formal';
+            return 'realtime';
+        }
+
+        function recordTypeLabel(record) {
+            return recordTypeOf(record) === 'formal' ? '正式' : '目安';
+        }
+
+        function normalizeRecordMeta(record) {
+            if (!record || typeof record !== 'object') return record;
+            return {
+                ...record,
+                recordType: recordTypeOf(record),
+                source: record.source || (recordTypeOf(record) === 'formal' ? 'video-analysis' : 'realtime'),
+                recordedAt: record.recordedAt || ''
+            };
+        }
+
+        function formatRecordDate(record) {
+            const value = record?.recordedAt;
+            if (!value) return '---';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '---';
+            return date.toLocaleString('ja-JP', {
+                year: '2-digit',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function analysisRecords() {
+            const filter = AppState.recordFilter || 'formal';
+            const records = (AppState.records || []).map(normalizeRecordMeta);
+            if (filter === 'all') return records;
+            return records.filter(record => recordTypeOf(record) === filter);
+        }
+
+        function updateRecordFilterSummary() {
+            const all = AppState.records || [];
+            const formal = all.filter(record => recordTypeOf(record) === 'formal').length;
+            const realtime = all.length - formal;
+            const visible = analysisRecords().length;
+            safeText('recordVisibleCount', `表示 ${visible}本`);
+            safeText('recordFormalCount', `正式 ${formal}本`);
+            safeText('recordRealtimeCount', `目安 ${realtime}本`);
+        }
+
         function persistRecords() {
             const compact = AppState.records.map(record => {
-                const { clipFrames, ...rest } = record;
+                const { clipFrames, ...rest } = normalizeRecordMeta(record);
                 return rest;
             });
             safeStorageSet('kendoRecords', JSON.stringify(compact));
@@ -5338,6 +5419,9 @@
 
             const record = {
                 id: AppState.records.length + 1,
+                recordType: 'realtime',
+                source: 'realtime',
+                recordedAt: new Date().toISOString(),
                 timeMs: timeMs, 
                 hasujiAngle: hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
@@ -5439,12 +5523,13 @@
 	                    <td class="px-1 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
 	                    <td class="px-1 py-2 text-left font-bold text-slate-700">
 	                        <div>${record.shortLabel}</div>
+                        <div class="text-[10px] text-slate-400 font-normal">${recordTypeLabel(record)} / ${formatRecordDate(record)}</div>
                         <div class="text-[10px] text-slate-400 font-normal">${record.memo ? record.memo : ''}</div>
                     </td>
                     <td class="px-1 py-2">
                         <div class="flex justify-center gap-1">
                             <button type="button" data-action="memo" data-id="${record.id}" class="history-action bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-[10px] font-bold">メモ</button>
-                            <button type="button" data-action="clip" data-id="${record.id}" class="history-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">保存</button>
+                            <button type="button" data-action="clip" data-id="${record.id}" class="history-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">動画クリップ</button>
                             <button type="button" data-action="delete" data-id="${record.id}" class="history-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold">削除</button>
                         </div>
                     </td>
@@ -5454,7 +5539,8 @@
         }
 
         function updateSessionSummary() {
-            const records = AppState.records || [];
+            const records = analysisRecords();
+            updateRecordFilterSummary();
             safeText('summaryCount', `${records.length}本`);
             if (!records.length) {
                 ['summaryAvgTime', 'summaryMaxSpeed', 'summaryBest', 'summaryWorst', 'summaryAvgAxis', 'summaryAvgRightElbow'].forEach(id => safeText(id, '---'));
@@ -5479,11 +5565,12 @@
 
         function updateDetailsTab() {
             updateSessionSummary();
-            const latest = AppState.records[AppState.records.length - 1];
+            const records = analysisRecords();
+            const latest = records[records.length - 1];
             if (!latest) {
                 ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestWristSpeed', 'detailLatestTipSpeed', 'detailLatestTapeSpeed', 'detailRightElbow', 'detailLeftElbow', 'detailTorso', 'detailHasuji', 'detailShoulderLine'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
-	                if (body) body.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
+	                if (body) body.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
 	                return;
 	            }
 	            safeText('detailLatestTime', `${latest.timeMs} ms`);
@@ -5500,11 +5587,13 @@
             const tbody = document.getElementById('detailRecordsBody');
             if (!tbody) return;
             tbody.innerHTML = '';
-            [...AppState.records].reverse().forEach(record => {
+            [...records].reverse().forEach(record => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition';
                 tr.innerHTML = `
 	                    <td class="px-2 py-2 text-slate-500">${record.id}</td>
+                        <td class="px-2 py-2"><span class="px-2 py-1 rounded-full text-[11px] font-bold ${recordTypeOf(record) === 'formal' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}">${recordTypeLabel(record)}</span></td>
+                        <td class="px-2 py-2 text-slate-600 whitespace-nowrap">${formatRecordDate(record)}</td>
 	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
 	                    <td class="px-2 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
 	                    <td class="px-2 py-2 text-purple-700 font-bold">${record.rightAng || '---'}°</td>
@@ -6516,33 +6605,31 @@
         }
 
         function initCharts() {
-            const ctxTime = document.getElementById('timeChart').getContext('2d');
-            timeChart = new Chart(ctxTime, {
+            const createRecordLineChart = (id, label, color, unitLabel) => {
+                const canvas = document.getElementById(id);
+                if (!canvas) return null;
+                return new Chart(canvas.getContext('2d'), {
                 type: 'line',
                 data: { labels: [], datasets: [
-                    { label: '打突時間 (ms)', data: [], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.3, yAxisID: 'y' },
-	                    { label: 'ピーク時刻 (ms)', data: [], borderColor: '#0891b2', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' }
+                        { label, data: [], borderColor: color, backgroundColor: `${color}22`, fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 7 }
                 ]},
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'ms' } },
-	                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'ms' } }
+                            y: { beginAtZero: true, title: { display: true, text: unitLabel } },
+                            x: { ticks: { maxRotation: 0 } }
                     }
                 }
             });
+            };
 
-            const ctxStride = document.getElementById('strideChart').getContext('2d');
-            strideChart = new Chart(ctxStride, {
-                type: 'line',
-                data: { labels: [], datasets: [
-                    { label: '右肘角 (deg)', data: [], borderColor: '#7c3aed', tension: 0.3 },
-                    { label: '体幹軸 (deg)', data: [], borderColor: '#059669', tension: 0.3 },
-                    { label: '刃筋 (deg)', data: [], borderColor: '#d97706', tension: 0.3 }
-                ] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            timeChart = createRecordLineChart('timeChart', '打突時間 (ms)', '#2563eb', 'ms');
+            peakChart = createRecordLineChart('peakChart', 'ピーク時刻 (ms)', '#0891b2', 'ms');
+            elbowChart = createRecordLineChart('elbowChart', '右肘角 (deg)', '#7c3aed', 'deg');
+            torsoChart = createRecordLineChart('torsoChart', '体幹軸 (deg)', '#059669', 'deg');
+            hasujiChart = createRecordLineChart('hasujiChart', '刃筋 (deg)', '#d97706', 'deg');
             
             const ctxRadar = document.getElementById('radarChart').getContext('2d');
             radarChart = new Chart(ctxRadar, {
@@ -6597,24 +6684,27 @@
         }
 
         function updateCharts() {
-            if(!timeChart || !strideChart || !radarChart) return;
-            const labels = AppState.records.map(r => `#${r.id}`);
+            if(!timeChart || !radarChart) return;
+            const records = analysisRecords();
+            updateRecordFilterSummary();
+            const labels = records.map(r => `#${r.id}`);
+            const updateLine = (chart, values) => {
+                if (!chart) return;
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.update();
+            };
             
-            timeChart.data.labels = labels;
-            timeChart.data.datasets[0].data = AppState.records.map(r => r.timeMs);
-	            timeChart.data.datasets[1].data = AppState.records.map(r => recordPeakOffsetMs(r, 'official') || 0);
-            timeChart.update();
+            updateLine(timeChart, records.map(r => Number(r.timeMs || 0)));
+            updateLine(peakChart, records.map(r => recordPeakOffsetMs(r, 'official') || 0));
+            updateLine(elbowChart, records.map(r => Number(r.rightAng || 0)));
+            updateLine(torsoChart, records.map(r => Math.abs(Number(r.torsoAng || 0))));
+            updateLine(hasujiChart, records.map(r => Math.abs(Number(r.hasujiAngle || 0))));
 
-            strideChart.data.labels = labels;
-            strideChart.data.datasets[0].data = AppState.records.map(r => Number(r.rightAng || 0));
-            strideChart.data.datasets[1].data = AppState.records.map(r => Math.abs(Number(r.torsoAng || 0)));
-            strideChart.data.datasets[2].data = AppState.records.map(r => Math.abs(Number(r.hasujiAngle || 0)));
-            strideChart.update();
-
-            if (AppState.records.length > 0) {
+            if (records.length > 0) {
 	                let avgTime = 0, avgPeak = 0, avgRightElbow = 0, avgTorso = 0, avgHasuji = 0;
 
-	                AppState.records.forEach(r => {
+	                records.forEach(r => {
 	                    const peakOffset = recordPeakOffsetMs(r, 'official');
 	                    const right = Number(r.rightAng || 0);
 	                    const torso = Math.abs(Number(r.torsoAng || 0));
@@ -6626,7 +6716,7 @@
                     avgHasuji += clamp(100 - hasuji * 3, 0, 100);
                 });
 
-                const len = AppState.records.length;
+                const len = records.length;
                 radarChart.data.datasets[0].data = [
 	                    Math.round(avgTime / len),
 	                    Math.round(avgPeak / len),
@@ -10591,6 +10681,8 @@
             const shortLabel = official.metrics && durationMs <= 350 && rightAng >= 150 && torsoAng <= 15 ? '動画良好' : '動画確認';
             const record = {
 	                id: AppState.records.length + 1,
+                    recordType: 'formal',
+                    recordedAt: new Date().toISOString(),
 	                timeMs: durationMs,
 	                hasujiAngle: hasuji.toFixed(1),
 	                trajectorySway,
@@ -10683,6 +10775,8 @@
             const numberLabel = strike.number ? ` #${strike.number}` : '';
             return {
 	                id: AppState.records.length + 1,
+                    recordType: 'formal',
+                    recordedAt: new Date().toISOString(),
 	                timeMs: durationMs,
 	                hasujiAngle: hasuji.toFixed(1),
 	                trajectorySway,
@@ -10819,15 +10913,16 @@
         }
 
 	        function exportCSV() {
-	            if(AppState.records.length === 0) return showToast('データがありません', 'red');
+                const records = analysisRecords();
+	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
-		            AppState.records.forEach(r => {
-		                csvContent += `${r.id},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
+		            records.forEach(r => {
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `kendo_data_${new Date().getTime()}.csv`);
+            link.setAttribute("download", `kendo_${AppState.recordFilter || 'formal'}_${new Date().getTime()}.csv`);
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             showToast('CSVを出力しました', 'green');
         }
@@ -11606,6 +11701,13 @@
             if (btn.dataset.action === 'clip') exportRecordClip(id);
         });
 
+        const recordFilterSelect = document.getElementById('recordFilterSelect');
+        if (recordFilterSelect) recordFilterSelect.addEventListener('change', e => {
+            AppState.recordFilter = e.target.value || 'formal';
+            updateDetailsTab();
+            updateCharts();
+        });
+
         const cameraDeviceSelect = document.getElementById('cameraDeviceSelect');
         if (cameraDeviceSelect) cameraDeviceSelect.addEventListener('change', async e => {
             AppState.selectedCameraId = e.target.value;
@@ -11804,7 +11906,7 @@
         const saved = safeStorageGet('kendoRecords');
         if (saved) {
             try {
-                AppState.records = JSON.parse(saved);
+                AppState.records = JSON.parse(saved).map(normalizeRecordMeta);
             } catch (err) {
                 console.warn('保存履歴を読み込めませんでした', err);
                 AppState.records = [];
