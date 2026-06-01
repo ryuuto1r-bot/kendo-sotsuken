@@ -1239,6 +1239,31 @@
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">判定</span><div id="videoDiagUsability" class="font-black">---</div></div>
                     </div>
                 </div>
+                <div id="videoSlowMotionCard" class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-950">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <div class="font-black text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>スローモーション補正</div>
+                            <p id="videoSlowMotionStatus" class="mt-1 text-[11px] leading-relaxed">通常動画として解析します。</p>
+                        </div>
+                        <label class="font-bold min-w-[220px]">動画の種類
+                            <select id="videoSlowMotionSelect" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
+                                <option value="1" selected="">通常動画（補正なし）</option>
+                                <option value="2">120fps撮影 → 60fps再生（2倍）</option>
+                                <option value="4">120fps撮影 → 30fps再生 / 240fps → 60fps（4倍）</option>
+                                <option value="8">240fps撮影 → 30fps再生（8倍）</option>
+                                <option value="custom">手動設定</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="videoSlowMotionCustomControls" class="hidden grid grid-cols-2 gap-2 mt-3">
+                        <label class="font-bold">撮影fps
+                            <input id="videoCaptureFpsInput" type="number" min="30" max="960" step="1" value="240" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
+                        </label>
+                        <label class="font-bold">再生fps
+                            <input id="videoPlaybackFpsInput" type="number" min="1" max="240" step="1" value="30" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
+                        </label>
+                    </div>
+                </div>
                 <div class="flex justify-end mt-3">
                     <button type="button" onclick="switchVideoStep('mark')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">開始/終了を置くへ</button>
                 </div>
@@ -2417,6 +2442,10 @@
             shinaiLengthMeters: 1.2,
             cameraDistanceMeters: 2.5,
             targetFps: 60,
+            videoSlowMotionMode: '1',
+            videoSlowMotionFactor: 1,
+            videoCaptureFps: 240,
+            videoPlaybackFps: 30,
             realtimeAnalysisFps: 24,
             cameraStableWidth: 1280,
             cameraStableHeight: 720,
@@ -2679,7 +2708,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v101';
+            const refreshKey = 'kendo-sw-refreshed-v102';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -2878,6 +2907,10 @@
             Params.shinaiLengthMeters = 1.2;
             Params.cameraDistanceMeters = 2.5;
             Params.targetFps = 60;
+            Params.videoSlowMotionMode = '1';
+            Params.videoSlowMotionFactor = 1;
+            Params.videoCaptureFps = 240;
+            Params.videoPlaybackFps = 30;
             AppState.cameraPerformanceMode = 'stable';
             applyCameraPerformanceMode('stable');
             Params.officialSpeedSource = 'wrist';
@@ -2915,6 +2948,9 @@
             const videoStrikeMode = document.getElementById('videoStrikeModeSelect');
             const videoStrikeSensitivity = document.getElementById('videoStrikeSensitivitySelect');
             const videoAnalysisFps = document.getElementById('videoAnalysisFpsSelect');
+            const videoSlowMotion = document.getElementById('videoSlowMotionSelect');
+            const videoCaptureFps = document.getElementById('videoCaptureFpsInput');
+            const videoPlaybackFps = document.getElementById('videoPlaybackFpsInput');
             const videoAngleOverlay = document.getElementById('videoAngleOverlayToggle');
             const videoAngleOverlaySelect = document.getElementById('videoAngleOverlaySelect');
             const videoTapeColor = document.getElementById('videoTapeColorSelect');
@@ -2930,6 +2966,10 @@
             if (tipTracking) tipTracking.checked = false;
             if (tapeColor) tapeColor.value = 'yellow';
             if (shinaiExtension) { shinaiExtension.value = Params.shinaiExtension; document.getElementById('valShinaiExtension').innerText = Params.shinaiExtension.toFixed(2); }
+            if (videoSlowMotion) videoSlowMotion.value = Params.videoSlowMotionMode;
+            if (videoCaptureFps) videoCaptureFps.value = String(Params.videoCaptureFps);
+            if (videoPlaybackFps) videoPlaybackFps.value = String(Params.videoPlaybackFps);
+            updateVideoSlowMotionUi();
             if (angleOverlay) angleOverlay.checked = true;
 	            if (angleTarget) angleTarget.value = 'all';
             if (videoOfficialSpeed) videoOfficialSpeed.value = 'wrist';
@@ -3321,6 +3361,93 @@
         function msLabel(value) {
             const numeric = normalizeMs(value);
             return numeric === null ? '---' : `${numeric} ms`;
+        }
+
+        function readVideoSlowMotionSettings() {
+            const select = document.getElementById('videoSlowMotionSelect');
+            const mode = select?.value || Params.videoSlowMotionMode || '1';
+            let captureFps = Number(document.getElementById('videoCaptureFpsInput')?.value || Params.videoCaptureFps || 240);
+            let playbackFps = Number(document.getElementById('videoPlaybackFpsInput')?.value || Params.videoPlaybackFps || 30);
+            let factor = Number(mode);
+            if (mode === 'custom') {
+                captureFps = clamp(captureFps, 30, 960);
+                playbackFps = clamp(playbackFps, 1, 240);
+                factor = captureFps / playbackFps;
+            } else if (mode === '2') {
+                captureFps = 120;
+                playbackFps = 60;
+            } else if (mode === '4') {
+                captureFps = 120;
+                playbackFps = 30;
+            } else if (mode === '8') {
+                captureFps = 240;
+                playbackFps = 30;
+            }
+            factor = clamp(Number.isFinite(factor) ? factor : 1, 1, 16);
+            return { mode, factor, captureFps, playbackFps };
+        }
+
+        function updateVideoSlowMotionUi() {
+            const settings = readVideoSlowMotionSettings();
+            Params.videoSlowMotionMode = settings.mode;
+            Params.videoSlowMotionFactor = settings.factor;
+            Params.videoCaptureFps = settings.captureFps;
+            Params.videoPlaybackFps = settings.playbackFps;
+            const custom = document.getElementById('videoSlowMotionCustomControls');
+            if (custom) custom.classList.toggle('hidden', settings.mode !== 'custom');
+            const status = document.getElementById('videoSlowMotionStatus');
+            if (status) {
+                status.textContent = settings.factor > 1.001
+                    ? `動画上の時間を ${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)} で割って、実際の打突時間として表示します。例: 動画上960ms → 実時間${Math.round(960 / settings.factor)}ms。`
+                    : '通常動画として解析します。スロー動画を入れる場合は撮影fps/再生fpsに合わせて補正を選んでください。';
+            }
+            return settings;
+        }
+
+        function videoCorrectedMs(rawMs, factor = Params.videoSlowMotionFactor) {
+            const value = Number(rawMs);
+            const safeFactor = clamp(Number(factor || 1), 1, 16);
+            return Number.isFinite(value) ? value / safeFactor : NaN;
+        }
+
+        function videoRawMsFromFrame(frame) {
+            return Number(frame?.rawTimeMs ?? frame?.timeMs ?? 0);
+        }
+
+        function videoSlowMotionFactorForData(data = AppState.videoAnalysis) {
+            return clamp(Number(data?.slowMotionFactor || Params.videoSlowMotionFactor || 1), 1, 16);
+        }
+
+        function videoFrameStepMs(data = AppState.videoAnalysis, fallbackFps = Params.targetFps || 60) {
+            const frames = data?.frames || [];
+            if (frames.length >= 2) {
+                const first = Number(frames[0]?.timeMs || 0);
+                const second = Number(frames[1]?.timeMs || 0);
+                const diff = Math.abs(second - first);
+                if (Number.isFinite(diff) && diff > 0) return diff;
+            }
+            const factor = videoSlowMotionFactorForData(data);
+            const fps = Math.max(1, Number(fallbackFps || data?.fps || Params.targetFps || 60));
+            return 1000 / (fps * factor);
+        }
+
+        function videoEffectiveTimingFps(data = AppState.videoAnalysis, fallbackFps = Params.targetFps || 60) {
+            return 1000 / Math.max(1, videoFrameStepMs(data, fallbackFps));
+        }
+
+        function videoSourceSecondForFrame(data, frameOrIndex) {
+            if (!data?.frames?.length) return null;
+            const frame = typeof frameOrIndex === 'number' ? data.frames[clamp(Math.round(frameOrIndex), 0, data.frames.length - 1)] : frameOrIndex;
+            if (!frame) return null;
+            return Number(data.sourceStartSec || 0) + videoRawMsFromFrame(frame) / 1000;
+        }
+
+        function formatVideoTimeWithCorrection(rawSec) {
+            const rawMs = Number(rawSec) * 1000;
+            if (!Number.isFinite(rawMs)) return '---';
+            const settings = readVideoSlowMotionSettings();
+            if (settings.factor <= 1.001) return `${Math.round(rawMs)} ms`;
+            return `${Math.round(rawMs / settings.factor)} ms 実時間（動画上 ${Math.round(rawMs)} ms）`;
         }
 
         function recordPeakOffsetMs(record, source = 'official') {
@@ -6773,9 +6900,7 @@
         function videoStrikeSourceSecond(data, strike, frameKey = 'peakFrame') {
             if (!data || !strike) return null;
             const frameIndex = clamp(Math.round(Number(strike[frameKey] ?? strike.peakFrame ?? 0)), 0, Math.max(0, (data.frames?.length || 1) - 1));
-            const frame = data.frames?.[frameIndex];
-            if (!frame) return null;
-            return Number(data.sourceStartSec || 0) + Number(frame.timeMs || 0) / 1000;
+            return videoSourceSecondForFrame(data, frameIndex);
         }
 
         function updateVideoTimelineStrikeMarkers(duration) {
@@ -6937,7 +7062,7 @@
             let bestIndex = 0;
             let bestDiff = Infinity;
             data.frames.forEach((frame, index) => {
-                const diff = Math.abs(Number(frame.timeMs || 0) - relativeMs);
+                const diff = Math.abs(videoRawMsFromFrame(frame) - relativeMs);
                 if (diff < bestDiff) {
                     bestDiff = diff;
                     bestIndex = index;
@@ -6964,11 +7089,11 @@
             const fps = Math.max(1, data.fps || Params.targetFps || 60);
             let guess = clamp(Math.round(relativeMs / (1000 / fps)), 0, data.frames.length - 1);
             let bestIndex = guess;
-            let bestDiff = Math.abs(Number(data.frames[guess]?.timeMs || 0) - relativeMs);
+            let bestDiff = Math.abs(videoRawMsFromFrame(data.frames[guess]) - relativeMs);
             const from = Math.max(0, guess - 3);
             const to = Math.min(data.frames.length - 1, guess + 3);
             for (let i = from; i <= to; i++) {
-                const diff = Math.abs(Number(data.frames[i]?.timeMs || 0) - relativeMs);
+                const diff = Math.abs(videoRawMsFromFrame(data.frames[i]) - relativeMs);
                 if (diff < bestDiff) {
                     bestDiff = diff;
                     bestIndex = i;
@@ -7206,7 +7331,7 @@
                     const startPct = clamp((start / duration) * 100, 0, 100);
                     const endPct = clamp((end / duration) * 100, 0, 100);
                     slider.style.background = `linear-gradient(to right, #e2e8f0 0%, #e2e8f0 ${startPct}%, #3b82f6 ${startPct}%, #ef4444 ${endPct}%, #e2e8f0 ${endPct}%, #e2e8f0 100%)`;
-                    slider.title = `手動測定範囲: ${formatVideoTime(end - start)}`;
+                    slider.title = `手動測定範囲: ${formatVideoTimeWithCorrection(end - start)}`;
                 } else {
                     slider.style.background = '';
                     slider.title = '';
@@ -7215,14 +7340,14 @@
             safeText('videoManualCurrentLabel', Number.isFinite(current) ? formatVideoTime(current) : '---');
             safeText('videoManualStartLabel', Number.isFinite(start) ? formatVideoTime(start) : '未設定');
             safeText('videoManualEndLabel', Number.isFinite(end) ? formatVideoTime(end) : '未設定');
-            safeText('videoManualDurationLabel', ok ? formatVideoTime(end - start) : '---');
+            safeText('videoManualDurationLabel', ok ? formatVideoTimeWithCorrection(end - start) : '---');
             updateVideoEditorTimeline(video, current, duration, start, end, ok);
             syncCorrectionVideoSource(current);
             const status = document.getElementById('videoManualRangeStatus');
             if (status) {
                 status.className = ok ? 'mt-2 text-[11px] text-emerald-800 font-bold' : 'mt-2 text-[11px] text-blue-800';
                 status.textContent = ok
-                    ? `手動範囲 ${formatVideoTime(end - start)} を確認できます。範囲再生してから確定してください。`
+                    ? `手動範囲 ${formatVideoTimeWithCorrection(end - start)} を確認できます。範囲再生してから確定してください。`
                     : '開始/終了を置くと、その範囲だけを再生・解析できます。';
             }
         }
@@ -7267,8 +7392,8 @@
             updateVideoManualRangeUi();
             updateVideoStepHint('mark');
             const duration = AppState.videoManualEndSec - AppState.videoManualStartSec;
-            safeText('videoManualRangeStatus', `確定: ${formatVideoTime(duration)} の範囲を解析します。`);
-            showToast(`範囲を確定しました: ${formatVideoTime(duration)}`, 'green');
+            safeText('videoManualRangeStatus', `確定: ${formatVideoTimeWithCorrection(duration)} の範囲を解析します。`);
+            showToast(`範囲を確定しました: ${formatVideoTimeWithCorrection(duration)}`, 'green');
             return true;
         }
 
@@ -7517,6 +7642,7 @@
             const width = Number(diag.width || 0);
             const height = Number(diag.height || 0);
             const fps = Number(diag.fps || Params.targetFps || 60);
+            const slowSettings = updateVideoSlowMotionUi();
             const nativeFps = Number(diag.nativeFpsEstimate || 0);
             const scoreFps = nativeFps || fps;
             const frames = Number(diag.frames || 0);
@@ -7549,13 +7675,13 @@
             safeText('videoDeviceCheckReason', diag.empty ? 'iPhoneの120fps/240fps動画を選ぶと、解像度・解析fps・検出信頼度を確認します。' : reason);
             safeText('videoDiagResolution', width && height ? `${width}x${height}` : '---');
             safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps` : '---'));
-            safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}` : '---');
+            safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}${slowSettings.factor > 1.001 ? ` / 実時間÷${slowSettings.factor.toFixed(slowSettings.factor % 1 ? 2 : 0)}` : ''}` : '---');
             safeText('videoDiagFrames', frames ? `${frames}` : '---');
             safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%` : '---');
             safeText('videoDiagUsability', diag.empty ? '---' : verdict);
             const icon = document.getElementById('videoDeviceCheckIcon');
             if (icon) icon.className = quality === 'good' ? 'fa-solid fa-circle-check text-2xl' : (quality === 'warn' ? 'fa-solid fa-triangle-exclamation text-2xl' : 'fa-solid fa-circle-xmark text-2xl');
-            AppState.videoDiagnostics = { ...diag, score, quality, verdict };
+            AppState.videoDiagnostics = { ...diag, score, quality, verdict, slowMotionFactor: slowSettings.factor, slowMotionMode: slowSettings.mode };
         }
 
         function nextPoseInferenceTimestamp(rawMs = performance.now()) {
@@ -8170,6 +8296,7 @@
             setVideoSlowButtonsPlaying(true);
             const rate = getVideoSlowRate();
             const fps = Math.max(1, data.fps || Params.targetFps || 60);
+            const frameStepMs = videoFrameStepMs(data, fps);
             const frameStep = 1;
             const scope = getVideoPlaybackScope();
             const playStart = scope === 'strike' ? clamp(data.startFrame ?? 0, 0, data.frames.length - 1) : 0;
@@ -8187,8 +8314,8 @@
                 const currentFrame = data.frames[current];
                 const nextFrame = data.frames[next];
                 const frameDeltaMs = currentFrame && nextFrame && next >= current
-                    ? Math.max(1000 / fps, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
-                    : 1000 / fps;
+                    ? Math.max(frameStepMs, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
+                    : frameStepMs;
                 const delayMs = clamp(frameDeltaMs / Math.max(rate, 0.05), 18, 1600);
                 AppState.videoSlowTimer = setTimeout(tick, delayMs);
             };
@@ -8215,6 +8342,7 @@
             if (btn) btn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> 停止';
             const rate = Number(document.getElementById('modelPlayRateSelect')?.value || 0.5);
             const fps = Math.max(1, data.fps || Params.targetFps || 60);
+            const frameStepMs = videoFrameStepMs(data, fps);
             const startIndex = clamp(data.startFrame ?? 0, 0, data.frames.length - 1);
             const endIndex = clamp(data.endFrame ?? data.frames.length - 1, startIndex, data.frames.length - 1);
             let current = clamp(AppState.videoModelAngleValues?.frameIndex ?? startIndex, startIndex, endIndex);
@@ -8225,8 +8353,8 @@
                 const currentFrame = data.frames[current];
                 const nextFrame = data.frames[next];
                 const frameDeltaMs = currentFrame && nextFrame && next > current
-                    ? Math.max(1000 / fps, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
-                    : 1000 / fps;
+                    ? Math.max(frameStepMs, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
+                    : frameStepMs;
                 current = next;
                 AppState.modelPlaybackTimer = setTimeout(tick, clamp(frameDeltaMs / Math.max(rate, 0.05), 22, 1600));
             };
@@ -8373,7 +8501,7 @@
             if (!data?.frames?.[summary.startFrame]?.landmarks || !data?.frames?.[summary.peakFrame]?.landmarks || !data?.frames?.[summary.endFrame]?.landmarks) {
                 return { ok: false, reason: '骨格不足' };
             }
-            if (summary.durationMs < videoFormalMinDurationMs()) return { ok: false, reason: '短すぎる' };
+            if (summary.durationMs < videoFormalMinDurationMs(data)) return { ok: false, reason: '短すぎる' };
             if (summary.durationMs > videoFormalMaxDurationMs()) return { ok: false, reason: '長すぎる' };
 	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: 'ピーク不足' };
 	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
@@ -8386,8 +8514,8 @@
             return { ok: true, reason: 'OK' };
         }
 
-        function videoFormalMinDurationMs() {
-            return 90;
+        function videoFormalMinDurationMs(data = AppState.videoAnalysis) {
+            return videoSlowMotionFactorForData(data) > 1.001 ? 55 : 90;
         }
 
         function videoFormalMaxDurationMs() {
@@ -8455,11 +8583,13 @@
         function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
             const frames = data.frames || [];
             const fps = data.fps || Params.targetFps || 60;
+            const timingFps = videoEffectiveTimingFps(data, fps);
+            const frameStepSec = Math.max(0.001, videoFrameStepMs(data, fps) / 1000);
             const peakSpeed = Number(speeds[peakFrame] || 0);
-            const maxBack = Math.max(8, Math.round(fps * 0.55));
-            const maxForward = Math.max(8, Math.round(fps * 0.42));
-            const minLeadFrames = Math.max(3, Math.round(fps * 0.055));
-            const minAfterFrames = Math.max(3, Math.round(fps * 0.055));
+            const maxBack = Math.max(8, Math.round(timingFps * 0.55));
+            const maxForward = Math.max(8, Math.round(timingFps * 0.42));
+            const minLeadFrames = Math.max(3, Math.round(timingFps * 0.055));
+            const minAfterFrames = Math.max(3, Math.round(timingFps * 0.055));
             const downVelocityThreshold = Math.max(0.10, Params.timingStartDownVelocityMps * 0.28);
             let startFrame = Math.max(0, peakFrame - maxBack);
             let quietFrames = 0;
@@ -8507,7 +8637,7 @@
                 const y = videoWristScreenY(frames[i]);
                 const prevY = videoWristScreenY(frames[i - 1]);
                 const screenDown = Number.isFinite(y) && Number.isFinite(prevY) ? y - prevY : 0;
-                const dt = Math.max((frames[i].timeMs - frames[i - 1].timeMs) / 1000, 1 / fps);
+                const dt = Math.max((frames[i].timeMs - frames[i - 1].timeMs) / 1000, frameStepSec);
                 const decel = (Number(speeds[i - 1] || 0) - Number(speeds[i] || 0)) / dt;
                 const afterMin = i - peakFrame >= minAfterFrames;
                 const slowEnough = Number(speeds[i] || 0) <= peakSpeed * Math.max(0.24, sensitivity.endSpeedRatio * 0.76);
@@ -8546,7 +8676,7 @@
                 }
             }
 
-            const minFrameSpan = Math.max(2, Math.ceil(videoFormalMinDurationMs() / Math.max(1000 / fps, 1)));
+            const minFrameSpan = Math.max(2, Math.ceil(videoFormalMinDurationMs(data) / Math.max(videoFrameStepMs(data, fps), 1)));
             if (endFrame - startFrame < minFrameSpan) {
                 startFrame = Math.max(0, peakFrame - Math.ceil(minFrameSpan * 0.65));
                 endFrame = Math.min(frames.length - 1, startFrame + minFrameSpan);
@@ -8651,6 +8781,7 @@
             data.strikeSensitivity = Params.videoStrikeSensitivity || AppState.videoStrikeSensitivity || 'normal';
             const frames = data.frames;
             const fps = data.fps || Params.targetFps || 60;
+            const timingFps = videoEffectiveTimingFps(data, fps);
             const rawSpeeds = frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0);
             const speeds = smoothVideoScalarSeries(rawSpeeds, 2);
             const globalPeak = Math.max(...speeds);
@@ -8661,7 +8792,7 @@
             }
             const sensitivity = videoStrikeSensitivityProfile();
             const threshold = Math.max(globalPeak * sensitivity.peakRatio, sensitivity.minSpeed);
-            const minGap = Math.max(6, Math.round(fps * sensitivity.minGapSec));
+            const minGap = Math.max(6, Math.round(timingFps * sensitivity.minGapSec));
             const candidates = [];
             for (let i = 2; i < speeds.length - 2; i++) {
                 if (speeds[i] < threshold) continue;
@@ -8697,8 +8828,8 @@
                     pushRejection(startFrame, peakFrame, endFrame, '重複');
                     return;
                 }
-                if (duration < videoFormalMinDurationMs() || duration > videoFormalMaxDurationMs()) {
-                    pushRejection(startFrame, peakFrame, endFrame, duration < videoFormalMinDurationMs() ? '短すぎる' : '長すぎる');
+                if (duration < videoFormalMinDurationMs(data) || duration > videoFormalMaxDurationMs()) {
+                    pushRejection(startFrame, peakFrame, endFrame, duration < videoFormalMinDurationMs(data) ? '短すぎる' : '長すぎる');
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
@@ -9616,7 +9747,7 @@
             }
 	            const sourceStartSec = Number(data.sourceStartSec || 0);
             const sourceEndSec = Number(data.sourceEndSec || sourceStartSec + data.duration || 0);
-            const seekSec = Math.min(sourceStartSec + frame.timeMs / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
+            const seekSec = Math.min(sourceStartSec + videoRawMsFromFrame(frame) / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
             syncCorrectionVideoSource(seekSec);
             await seekVideoTo(video, seekSec).catch(() => {});
             if (drawToken !== AppState.videoDrawToken) return false;
@@ -9670,7 +9801,8 @@
             ctx.fillRect(10, 10, Math.min(560, w - 20), 128);
             ctx.fillStyle = '#ffffff';
             ctx.font = '14px sans-serif';
-            ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms`, 22, 34);
+            const slowFactor = Number(data.slowMotionFactor || 1);
+            ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms${slowFactor > 1.001 ? ` 実時間（動画上${videoRawMsFromFrame(frame).toFixed(1)}ms）` : ''}`, 22, 34);
             ctx.fillText(`ピーク検出基準: ${officialSpeedLabel(Params.officialSpeedSource)}（内部信号）`, 22, 56);
             if (frame.rightAng || frame.hasuji || frame.torsoAng) {
                 ctx.fillStyle = 'rgba(255,255,255,0.92)';
@@ -9859,6 +9991,7 @@
                 return;
             }
             applyCalibrationInputs();
+            const slowSettings = updateVideoSlowMotionUi();
             if (!AppState.poseLandmarker) {
                 safeText('videoAnalysisStatus', window.crossOriginIsolated ? 'Pose Landmarker準備中' : '互換AI準備中');
                 AppState.poseLandmarker = null;
@@ -9910,6 +10043,8 @@
                 frames: totalFrames,
                 confidence: 0,
                 detectionRate: 0,
+                slowMotionFactor: slowSettings.factor,
+                slowMotionMode: slowSettings.mode,
                 actualFpsUnknown: true
             });
             Params.officialSpeedSource = document.getElementById('videoOfficialSpeedSelect')?.value || Params.officialSpeedSource;
@@ -9950,6 +10085,7 @@
             let confidenceSum = 0;
             let tapeHitFrames = 0;
             const useManualTiming = !!manualRange;
+            const correctedFrameStepSec = Math.max(0.001, 1 / Math.max(1, fps * slowSettings.factor));
 
             safeText('videoAnalysisStatus', useManualTiming ? `手動範囲解析中 0/${totalFrames}` : `解析中 0/${totalFrames}`);
             progress.value = 0;
@@ -9957,7 +10093,8 @@
                 const t = frame / fps;
                 const seekSec = Math.min(sourceStartSec + t, Math.max(sourceStartSec, sourceEndSec - 0.001));
                 await seekVideoTo(video, seekSec);
-                const timeMs = t * 1000;
+                const rawTimeMs = t * 1000;
+                const timeMs = videoCorrectedMs(rawTimeMs, slowSettings.factor);
                 let result;
                 try {
                     poseInputCtx.drawImage(video, 0, 0, poseInputCanvas.width, poseInputCanvas.height);
@@ -10073,9 +10210,9 @@
                             peakTimeMs = timeMs;
                             peakFrame = frame;
                         }
-                        const dt = previousTimeMs ? Math.max((timeMs - previousTimeMs) / 1000, 1 / fps) : 1 / fps;
+                        const dt = previousTimeMs ? Math.max((timeMs - previousTimeMs) / 1000, correctedFrameStepSec) : correctedFrameStepSec;
                         const decel = (previousSpeed - speed) / dt;
-                        if (peakTimeMs && timeMs - peakTimeMs >= 1000 / fps && (decel >= Params.timingEndDecelMps2 || speed <= peakSpeed * Params.timingEndSpeedRatio)) {
+                        if (peakTimeMs && timeMs - peakTimeMs >= correctedFrameStepSec * 1000 && (decel >= Params.timingEndDecelMps2 || speed <= peakSpeed * Params.timingEndSpeedRatio)) {
                             endTimeMs = timeMs;
                             endFrame = frame;
                         }
@@ -10085,6 +10222,7 @@
                 }
                 frames.push({
                     index: frame,
+                    rawTimeMs,
                     timeMs,
                     landmarks: lm ? lm.map(point => ({ x: point.x, y: point.y, z: point.z || 0, visibility: point.visibility ?? 1 })) : null,
                     position: framePosition,
@@ -10150,13 +10288,21 @@
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
                 actualFpsUnknown: true,
                 nativeFpsEstimate: AppState.videoDiagnostics?.nativeFpsEstimate || null,
-                nativeFpsStatus: AppState.videoDiagnostics?.nativeFpsStatus || 'unknown'
+                nativeFpsStatus: AppState.videoDiagnostics?.nativeFpsStatus || 'unknown',
+                slowMotionFactor: slowSettings.factor,
+                slowMotionMode: slowSettings.mode,
+                captureFps: slowSettings.captureFps,
+                playbackFps: slowSettings.playbackFps
             };
             updateVideoDiagnostics(diagnostics);
             AppState.videoAnalysis = {
                 url,
                 fps,
                 duration,
+                slowMotionFactor: slowSettings.factor,
+                slowMotionMode: slowSettings.mode,
+                captureFps: slowSettings.captureFps,
+                playbackFps: slowSettings.playbackFps,
                 sourceStartSec,
                 sourceEndSec,
                 manualRange,
@@ -10279,6 +10425,9 @@
             let csv = '\uFEFF';
             csv += '項目,値\n';
             csv += `fps,${data.fps}\n`;
+            csv += `スロー補正倍率,${data.slowMotionFactor || 1}\n`;
+            csv += `撮影fps,${data.captureFps || ''}\n`;
+            csv += `再生fps,${data.playbackFps || ''}\n`;
             csv += `ピーク検出基準,${officialSpeedLabel(data.officialSpeedSource || Params.officialSpeedSource)}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
@@ -10302,10 +10451,10 @@
 	                });
 	                csv += '\n';
 	            }
-	            csv += 'frame,timeMs,rightElbow,hasuji,torso,visibility,mark\n';
+	            csv += 'frame,timeMs,rawVideoTimeMs,rightElbow,hasuji,torso,visibility,mark\n';
 	            data.frames.forEach(frame => {
 	                const mark = frame.index === data.startFrame ? 'START' : (frame.index === data.peakFrame ? 'PEAK' : (frame.index === data.endFrame ? 'END' : ''));
-	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${frame.visibility.toFixed(3)},${mark}\n`;
+	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${videoRawMsFromFrame(frame).toFixed(3)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${frame.visibility.toFixed(3)},${mark}\n`;
 	            });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const link = document.createElement('a');
@@ -11292,6 +11441,22 @@
             applyCalibrationInputs();
             updateVideoDiagnostics(AppState.videoDiagnostics || { empty: true });
             showToast(`動画解析fpsを ${Params.targetFps}fps にしました`, 'blue');
+        });
+        const videoSlowMotionSelect = document.getElementById('videoSlowMotionSelect');
+        const videoCaptureFpsInput = document.getElementById('videoCaptureFpsInput');
+        const videoPlaybackFpsInput = document.getElementById('videoPlaybackFpsInput');
+        [videoSlowMotionSelect, videoCaptureFpsInput, videoPlaybackFpsInput].forEach(input => {
+            if (!input) return;
+            input.addEventListener('change', () => {
+                const settings = updateVideoSlowMotionUi();
+                updateVideoManualRangeUi();
+                updateVideoDiagnostics(AppState.videoDiagnostics || { empty: true });
+                showToast(settings.factor > 1.001 ? `スロー補正 ${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)}倍を適用します` : 'スロー補正をOFFにしました', 'blue');
+            });
+            input.addEventListener('input', () => {
+                updateVideoSlowMotionUi();
+                updateVideoManualRangeUi();
+            });
         });
         const exportVideoReportBtn = document.getElementById('exportVideoReportBtn');
         if (exportVideoReportBtn) exportVideoReportBtn.addEventListener('click', exportVideoAnalysisReport);
