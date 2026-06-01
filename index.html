@@ -2679,20 +2679,13 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v94';
+            const refreshKey = 'kendo-sw-refreshed-v101';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
-                const hasVideoFile = !!document.getElementById('videoFileInput')?.files?.length;
-                const hasVideoSource = !!AppState.videoPreviewUrl || !!AppState.videoAnalysisUrl || !!AppState.videoAnalysis?.frames?.length;
-                if (AppState.videoAnalysisBusy || hasVideoFile || hasVideoSource) {
-                    sessionStorage.setItem(refreshKey, '1');
-                    showToast('アプリ更新は準備済みです。動画解析が終わってから手動で再読み込みしてください', 'blue');
-                    return;
-                }
                 refreshedByServiceWorker = true;
                 sessionStorage.setItem(refreshKey, '1');
-                window.location.reload();
+                showToast('アプリ更新は準備済みです。必要な時だけ手動で再読み込みしてください', 'blue');
             });
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -6042,18 +6035,13 @@
 
         function waitForVisionTasks(timeoutMs = 5000) {
             if (hasVisionTasksModule()) return Promise.resolve(window.MediaPipeTasksVision);
-            return new Promise((resolve, reject) => {
-                const timer = setTimeout(() => {
-                    window.removeEventListener('mediapipeTasksReady', onReady);
-                    loadMediaPipeTasksVisionScript(Math.max(9000, timeoutMs)).then(resolve).catch(reject);
-                }, timeoutMs);
-                function onReady() {
-                    clearTimeout(timer);
-                    if (hasVisionTasksModule()) resolve(window.MediaPipeTasksVision);
-                    else loadMediaPipeTasksVisionScript(Math.max(9000, timeoutMs)).then(resolve).catch(reject);
-                }
-                window.addEventListener('mediapipeTasksReady', onReady, { once: true });
-            });
+            // head内のasync読み込みが遅れているだけのケースが多いため、待機だけでなく即ポーリングする。
+            // ここで30秒待ってから再読込すると、実動画解析前にLandmarkerがタイムアウトしやすい。
+            return loadScriptAsset(
+                './vendor/mediapipe/tasks-vision/vision_bundle_browser.js',
+                hasVisionTasksModule,
+                timeoutMs
+            ).then(() => window.MediaPipeTasksVision);
         }
 
         async function ensurePoseLandmarkerAssets() {
@@ -6074,7 +6062,7 @@
             updatePrecisionPanel();
         }
 
-        async function createPoseLandmarkerInstance(vision, delegate = 'CPU') {
+        async function createPoseLandmarkerInstance(vision, delegate = 'CPU', timeoutMs = 45000) {
             const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
             const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
             const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 30000, 'Vision WASM');
@@ -6087,7 +6075,7 @@
                 minPoseDetectionConfidence: 0.55,
                 minPosePresenceConfidence: 0.55,
                 minTrackingConfidence: 0.55
-            }), 45000, `Pose Landmarker ${delegate}`);
+            }), timeoutMs, `Pose Landmarker ${delegate}`);
         }
 
         async function initPose(options = {}) {
@@ -6112,7 +6100,10 @@
                         try {
                             AppState.landmarkerDiag = `${delegate}初期化中`;
                             updatePrecisionPanel();
-                            AppState.poseLandmarker = await createPoseLandmarkerInstance(vision, delegate);
+                            const delegateTimeout = options.purpose === 'video'
+                                ? (delegate === 'GPU' ? 10000 : 18000)
+                                : 45000;
+                            AppState.poseLandmarker = await createPoseLandmarkerInstance(vision, delegate, delegateTimeout);
                             AppState.poseEngine = delegate === 'GPU' ? 'Pose Landmarker' : 'Pose Landmarker CPU';
                             AppState.landmarkerDiag = `${delegate} / ${window.crossOriginIsolated ? '安定サーバ' : '通常HTTP'} / ${options.purpose === 'video' ? '動画解析' : 'リアルタイム'}`;
                             AppState.poseReady = true;
@@ -6138,7 +6129,7 @@
         }
 
         function ensurePoseReady(options = {}) {
-            if (AppState.poseLandmarker || pose) return Promise.resolve();
+            if (AppState.poseLandmarker || (pose && !options.forceTasks)) return Promise.resolve();
             if (poseReadyPromise && AppState.poseEngine === '準備中') return poseReadyPromise;
             poseReadyPromise = initPose(options).catch(err => {
                 AppState.poseEngine = 'AI未起動';
@@ -7532,8 +7523,10 @@
             const confidence = Number(diag.confidence || 0);
             const detectionRate = Number(diag.detectionRate || 0);
             let score = 0;
-            if (width >= 1280 && height >= 720) score += 25;
-            if (width >= 1920 && height >= 1080) score += 10;
+	            const shortSide = Math.min(width, height);
+	            const longSide = Math.max(width, height);
+	            if (longSide >= 1280 && shortSide >= 720) score += 25;
+	            if (longSide >= 1920 && shortSide >= 1080) score += 10;
             if (scoreFps >= 120) score += 30;
             else if (scoreFps >= 60) score += 18;
             else score += 8;
@@ -7604,7 +7597,7 @@
             if (typeof Pose === 'undefined') throw new Error('Legacy Poseが読み込まれていません');
             const videoPose = new Pose({ locateFile: (file) => `./vendor/mediapipe/pose/${file}` });
             videoPose.setOptions({
-                modelComplexity: 1,
+                modelComplexity: 0,
                 smoothLandmarks: false,
                 minDetectionConfidence: 0.5,
                 minTrackingConfidence: 0.5,
@@ -9866,7 +9859,7 @@
                 return;
             }
             applyCalibrationInputs();
-            if (!AppState.poseLandmarker && !pose) {
+            if (!AppState.poseLandmarker) {
                 safeText('videoAnalysisStatus', window.crossOriginIsolated ? 'Pose Landmarker準備中' : '互換AI準備中');
                 AppState.poseLandmarker = null;
                 await ensurePoseReady({ purpose: 'video', forceTasks: true });
@@ -9902,7 +9895,9 @@
                 showToast(source.type === 'url' ? 'URL動画を読み込めません。CORS対応URLかファイル読込を使ってください' : '動画を読み込めませんでした', 'red');
                 throw err;
             }
-            const fps = clamp(Params.targetFps || 60, 30, 240);
+            const fps = !AppState.poseLandmarker
+                ? Math.min(12, clamp(Params.targetFps || 60, 12, 240))
+                : clamp(Params.targetFps || 60, 30, 240);
             const manualRange = getVideoManualAnalysisRange(video, fps);
             const sourceStartSec = manualRange ? manualRange.startSec : 0;
             const sourceEndSec = manualRange ? manualRange.endSec : Math.min(video.duration || 0, 12);
@@ -9923,10 +9918,20 @@
             const tipFilter = new VisibilityAdaptiveFilter3D();
             const tapeFilter = new VisibilityAdaptiveFilter3D();
             const frames = [];
+            const sourceVideoWidth = video.videoWidth || 640;
+            const sourceVideoHeight = video.videoHeight || 360;
+            const poseInputCanvas = document.createElement('canvas');
+            const poseInputCtx = poseInputCanvas.getContext('2d', { willReadFrequently: false });
+            const poseInputMaxSide = AppState.poseLandmarker ? 960 : 320;
+            const poseInputScale = Math.min(1, poseInputMaxSide / Math.max(sourceVideoWidth, sourceVideoHeight));
+            poseInputCanvas.width = Math.max(1, Math.round(sourceVideoWidth * poseInputScale));
+            poseInputCanvas.height = Math.max(1, Math.round(sourceVideoHeight * poseInputScale));
             const videoScanCanvas = document.createElement('canvas');
             const videoScanCtx = videoScanCanvas.getContext('2d', { willReadFrequently: true });
-            videoScanCanvas.width = video.videoWidth || 640;
-            videoScanCanvas.height = video.videoHeight || 360;
+            const scanMaxSide = AppState.poseLandmarker ? 720 : 480;
+            const scanScale = Math.min(1, scanMaxSide / Math.max(sourceVideoWidth, sourceVideoHeight));
+            videoScanCanvas.width = Math.max(1, Math.round(sourceVideoWidth * scanScale));
+            videoScanCanvas.height = Math.max(1, Math.round(sourceVideoHeight * scanScale));
             let previousY = null;
             let startTimeMs = null;
             let startFrame = null;
@@ -9955,7 +9960,8 @@
                 const timeMs = t * 1000;
                 let result;
                 try {
-                    result = await detectPoseForAnalysisVideo(video, timeMs);
+                    poseInputCtx.drawImage(video, 0, 0, poseInputCanvas.width, poseInputCanvas.height);
+                    result = await detectPoseForAnalysisVideo(poseInputCanvas, timeMs);
                 } catch (frameErr) {
                     console.warn('動画フレーム解析をスキップしました', frame, frameErr);
                     if (frame === 0) {
