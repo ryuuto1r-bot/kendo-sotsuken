@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v132';
+            var version = 'v133';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1974,6 +1974,37 @@
                 <button onclick="clearHistory()" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-4 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i> 履歴クリア</button>
             </div>
         </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">本数</span>
+                <div id="recordSummaryCount" class="mt-1 text-2xl font-black text-slate-900 font-mono-num">0本</div>
+            </div>
+            <div class="bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">平均打突時間</span>
+                <div id="recordSummaryAvgTime" class="mt-1 text-2xl font-black text-blue-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">最良</span>
+                <div id="recordSummaryBest" class="mt-1 text-xl font-black text-emerald-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-rose-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">要改善</span>
+                <div id="recordSummaryWorst" class="mt-1 text-xl font-black text-rose-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-purple-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">右肘平均</span>
+                <div id="recordSummaryAvgElbow" class="mt-1 text-2xl font-black text-purple-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">刃筋平均</span>
+                <div id="recordSummaryAvgHasuji" class="mt-1 text-2xl font-black text-amber-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm col-span-2 xl:col-span-1">
+                <span class="text-[11px] font-bold text-slate-500">最新保存</span>
+                <div id="recordSummaryLastSaved" class="mt-1 text-sm font-black text-slate-800">---</div>
+            </div>
+        </div>
         
         <div class="bg-white p-4 rounded-xl shadow-sm border mb-6">
             <h3 class="text-sm font-bold text-slate-700 mb-2">上半身指標の総合比較</h3>
@@ -2081,6 +2112,7 @@
                             if (window.__kendoEarlyVideoSignature === signature && now - (window.__kendoEarlyVideoLoadedAt || 0) < 500) return;
                             window.__kendoEarlyVideoSignature = signature;
                             window.__kendoEarlyVideoLoadedAt = now;
+                            window.__kendoEarlyVideoFile = file;
                             if (Number(file.size || 0) < 1024) {
                                 text('videoAnalysisStatus', 'ファイル異常');
                                 text('videoUrlStatus', '選択した動画ファイルが空、または破損しています。別のmp4/mov動画を選んでください。');
@@ -2188,7 +2220,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v132-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v133-reset=' + Date.now();
                                 });
                             });
                         }
@@ -2352,7 +2384,7 @@
                 </div>
                 </details>
                 <div class="flex items-center gap-2 mt-3">
-                    <button id="analyzeVideoBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold transition"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> 解析開始</button>
+                    <button id="analyzeVideoBtn" type="button" onclick="window.startVideoAnalysis && window.startVideoAnalysis()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold transition"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> 解析開始</button>
                     <progress id="videoAnalysisProgress" max="100" value="0" class="w-full h-3"></progress>
                     <span id="videoAnalysisProgressText" class="min-w-[4.5rem] text-right text-xs font-bold text-slate-500 font-mono-num">未解析</span>
                 </div>
@@ -2937,10 +2969,26 @@
                     <label class="block font-bold text-slate-700">探索範囲 <span id="videoTapeRoiValue" class="font-mono-num text-lime-700">12%</span>
                         <input id="videoTapeRoiSlider" type="range" min="0.06" max="0.24" step="0.01" value="0.12" class="w-full accent-lime-600 mt-1">
                     </label>
+                    <label class="block font-bold text-slate-700">色の許容幅 <span id="videoTapeToleranceValue" class="font-mono-num text-lime-700">24°</span>
+                        <input id="videoTapeToleranceSlider" type="range" min="10" max="44" step="1" value="24" class="w-full accent-lime-600 mt-1">
+                    </label>
+                    <label class="block font-bold text-slate-700">色の濃さ <span id="videoTapeSaturationValue" class="font-mono-num text-lime-700">32%</span>
+                        <input id="videoTapeSaturationSlider" type="range" min="0.18" max="0.62" step="0.01" value="0.32" class="w-full accent-lime-600 mt-1">
+                    </label>
+                    <label class="block font-bold text-slate-700">最小検出量 <span id="videoTapeMinPixelsValue" class="font-mono-num text-lime-700">8</span>
+                        <input id="videoTapeMinPixelsSlider" type="range" min="4" max="40" step="1" value="8" class="w-full accent-lime-600 mt-1">
+                    </label>
                     <label class="block font-bold text-slate-700">竹刀延長倍率 <span id="videoShinaiExtensionValue" class="font-mono-num text-lime-700">2.40</span>
                         <input id="videoShinaiExtensionSlider" type="range" min="1.6" max="3.2" step="0.05" value="2.4" class="w-full accent-lime-600 mt-1">
                     </label>
-                    <p class="text-slate-500 leading-relaxed">剣先に色テープを貼る場合だけ使います。テープ検出値は照明と背景の影響を受けるため、推定剣先の参考値と並べて確認します。</p>
+                    <label class="flex items-center gap-2 font-bold text-slate-700">
+                        <input id="videoTapeRoiVisibleToggle" type="checkbox" checked class="w-4 h-4 accent-lime-600">
+                        ROIを映像上に表示
+                    </label>
+                    <div id="videoTapeQualityStatus" class="rounded-lg border border-lime-100 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900">
+                        テープ検出: 未解析
+                    </div>
+                    <p class="text-slate-500 leading-relaxed">竹刀先端に明るい色テープを貼り、映像上のROIに入るように調整します。刃筋はテープ検出が取れた時だけ実剣先寄りに切り替わります。</p>
                 </div>
             </div>
 
@@ -3518,6 +3566,8 @@
             cameraSettings: null,
             landmarkerDiag: '未確認',
             roiStatus: 'OFF',
+            lastTapeRoi: null,
+            lastTapeQuality: 0,
             lastRuntimePoseErrorAt: 0,
             videoStream: null,
             scanCanvas: null,
@@ -3550,6 +3600,11 @@
             tapeColor: 'yellow',
             shinaiExtension: 2.4,
             tipRoiRatio: 0.12,
+            tapeHueTolerance: 24,
+            tapeSaturationMin: 0.32,
+            tapeValueMin: 0.25,
+            tapeMinPixels: 8,
+            tapeRoiVisible: true,
             officialSpeedSource: 'wrist',
             videoStrikeSensitivity: 'normal',
             angleReference: 'torso',
@@ -3837,7 +3892,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v132';
+            const refreshKey = 'kendo-sw-refreshed-v133';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -4032,6 +4087,12 @@
             Params.tipTracking = false;
             Params.tapeColor = 'yellow';
             Params.shinaiExtension = 2.4;
+            Params.tipRoiRatio = 0.12;
+            Params.tapeHueTolerance = 24;
+            Params.tapeSaturationMin = 0.32;
+            Params.tapeValueMin = 0.25;
+            Params.tapeMinPixels = 8;
+            Params.tapeRoiVisible = true;
             Params.referenceShoulderMeters = 0.42;
             Params.shinaiLengthMeters = 1.2;
             Params.cameraDistanceMeters = 2.5;
@@ -4084,6 +4145,10 @@
             const videoAngleOverlaySelect = document.getElementById('videoAngleOverlaySelect');
             const videoTapeColor = document.getElementById('videoTapeColorSelect');
             const videoTapeRoi = document.getElementById('videoTapeRoiSlider');
+            const videoTapeTolerance = document.getElementById('videoTapeToleranceSlider');
+            const videoTapeSaturation = document.getElementById('videoTapeSaturationSlider');
+            const videoTapeMinPixels = document.getElementById('videoTapeMinPixelsSlider');
+            const videoTapeRoiVisible = document.getElementById('videoTapeRoiVisibleToggle');
             const videoShinaiExtension = document.getElementById('videoShinaiExtensionSlider');
             if (raised) { raised.value = Params.raisedYOffset; document.getElementById('valRaisedY').innerText = Params.raisedYOffset.toFixed(2); }
             if (swing) { swing.value = Params.swingVelThreshold; document.getElementById('valSwingVel').innerText = Params.swingVelThreshold.toFixed(3); }
@@ -4110,6 +4175,10 @@
             if (videoAngleOverlaySelect) videoAngleOverlaySelect.value = 'rightElbow';
             if (videoTapeColor) videoTapeColor.value = 'yellow';
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
+            if (videoTapeTolerance) { videoTapeTolerance.value = Params.tapeHueTolerance; safeText('videoTapeToleranceValue', `${Params.tapeHueTolerance}°`); }
+            if (videoTapeSaturation) { videoTapeSaturation.value = Params.tapeSaturationMin; safeText('videoTapeSaturationValue', `${Math.round(Params.tapeSaturationMin * 100)}%`); }
+            if (videoTapeMinPixels) { videoTapeMinPixels.value = Params.tapeMinPixels; safeText('videoTapeMinPixelsValue', String(Params.tapeMinPixels)); }
+            if (videoTapeRoiVisible) videoTapeRoiVisible.checked = true;
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
             safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
             setVideoStrikeMode('multi');
@@ -4312,6 +4381,30 @@
             safeText('recordVisibleCount', `表示 ${visible}本`);
             safeText('recordFormalCount', `正式 ${formal}本`);
             safeText('recordRealtimeCount', `目安 ${realtime}本`);
+        }
+
+        function updateRecordComparisonSummary() {
+            const records = analysisRecords();
+            const emptyIds = ['recordSummaryAvgTime', 'recordSummaryBest', 'recordSummaryWorst', 'recordSummaryAvgElbow', 'recordSummaryAvgHasuji', 'recordSummaryLastSaved'];
+            safeText('recordSummaryCount', `${records.length}本`);
+            if (!records.length) {
+                emptyIds.forEach(id => safeText(id, '---'));
+                return;
+            }
+            const avg = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+            const times = records.map(record => Number(record.timeMs || 0)).filter(Number.isFinite);
+            const elbows = records.map(record => Number(record.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
+            const hasuji = records.map(record => Math.abs(Number(record.hasujiAngle || 0))).filter(Number.isFinite);
+            const ranked = [...records].sort((a, b) => scoreRecord(b) - scoreRecord(a));
+            const best = ranked[0];
+            const worst = ranked[ranked.length - 1];
+            const latest = [...records].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0] || records[records.length - 1];
+            safeText('recordSummaryAvgTime', times.length ? `${Math.round(avg(times))} ms` : '---');
+            safeText('recordSummaryBest', best ? `#${best.id} / ${scoreRecord(best)}` : '---');
+            safeText('recordSummaryWorst', worst ? `#${worst.id} / ${scoreRecord(worst)}` : '---');
+            safeText('recordSummaryAvgElbow', elbows.length ? `${avg(elbows).toFixed(1)}°` : '---');
+            safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
+            safeText('recordSummaryLastSaved', latest ? formatRecordDate(latest) : '---');
         }
 
         function persistRecords() {
@@ -4759,21 +4852,28 @@
             if (width < 4 || height < 4) return null;
             const data = scanCtx.getImageData(x0, y0, width, height).data;
             const targetHue = getTapeHue(color);
+            const hueTolerance = clamp(Number(Params.tapeHueTolerance || 24), 8, 60);
+            const minSaturation = clamp(Number(Params.tapeSaturationMin || 0.32), 0.1, 0.8);
+            const minValue = clamp(Number(Params.tapeValueMin || 0.25), 0.1, 0.9);
+            const minPixels = clamp(Math.round(Number(Params.tapeMinPixels || 8)), 3, 80);
             let count = 0, sx = 0, sy = 0;
             for (let y = 0; y < height; y += 2) {
                 for (let x = 0; x < width; x += 2) {
                     const idx = (y * width + x) * 4;
                     const hsv = hsvFromRgb(data[idx], data[idx + 1], data[idx + 2]);
-                    const hueOk = color === 'red' ? (hsv.h <= 18 || hsv.h >= 342) : hueDistance(hsv.h, targetHue) <= 22;
-                    if (hueOk && hsv.s > 0.35 && hsv.v > 0.25) {
+                    const hueOk = color === 'red'
+                        ? (hsv.h <= hueTolerance || hsv.h >= 360 - hueTolerance)
+                        : hueDistance(hsv.h, targetHue) <= hueTolerance;
+                    if (hueOk && hsv.s >= minSaturation && hsv.v >= minValue) {
                         count++;
                         sx += x0 + x;
                         sy += y0 + y;
                     }
                 }
             }
-            if (count < 8) return null;
-            return { x: sx / count, y: sy / count, count };
+            if (count < minPixels) return null;
+            const expected = Math.max(minPixels, Math.min(120, (width * height) / 90));
+            return { x: sx / count, y: sy / count, count, quality: clamp(count / expected, 0, 1) };
         }
 
         function detectTapeInRoi(ctx, centerX, centerY, radius, color) {
@@ -4785,12 +4885,16 @@
             if (!Params.tipTracking || !landmarks[14] || !landmarks[16]) {
                 AppState.roiStatus = Params.tipTracking ? '探索待ち' : 'OFF';
                 AppState.lastTapePoint = null;
+                AppState.lastTapeRoi = null;
+                AppState.lastTapeQuality = 0;
                 return null;
             }
             const roi = shinaiRoiCenter(landmarks, canvasElement.width, canvasElement.height);
             if (!roi) {
                 AppState.roiStatus = '探索待ち';
                 AppState.lastTapePoint = null;
+                AppState.lastTapeRoi = null;
+                AppState.lastTapeQuality = 0;
                 return null;
             }
             const cx = roi.x;
@@ -4798,31 +4902,35 @@
             const shoulderPx = roi.shoulderPx;
             const radius = clamp(shoulderPx * Params.tipRoiRatio, 20, 90);
             const hit = detectTapeInRoi(canvasCtx, cx, cy, radius, Params.tapeColor);
+            AppState.lastTapeRoi = { ...roi, radius };
 
-            canvasCtx.save();
-            canvasCtx.setLineDash([8, 6]);
-            canvasCtx.strokeStyle = hit ? 'rgba(250, 204, 21, 0.95)' : 'rgba(148, 163, 184, 0.65)';
-            canvasCtx.lineWidth = 2;
-            canvasCtx.beginPath();
-            canvasCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-            canvasCtx.stroke();
-            canvasCtx.setLineDash([]);
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(roi.start.x, roi.start.y);
-            canvasCtx.lineTo(cx, cy);
-            canvasCtx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
-            canvasCtx.stroke();
-            if (hit) {
-                canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.9)';
+            if (Params.tapeRoiVisible) {
+                canvasCtx.save();
+                canvasCtx.setLineDash([8, 6]);
+                canvasCtx.strokeStyle = hit ? 'rgba(250, 204, 21, 0.95)' : 'rgba(148, 163, 184, 0.65)';
+                canvasCtx.lineWidth = hit ? 3 : 2;
                 canvasCtx.beginPath();
-                canvasCtx.arc(hit.x, hit.y, 6, 0, Math.PI * 2);
-                canvasCtx.fill();
-                canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.95)';
-                canvasCtx.font = `${Math.max(12, canvasElement.width * 0.012)}px sans-serif`;
-                canvasCtx.fillText('tape tip', hit.x + 10, hit.y - 10);
+                canvasCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+                canvasCtx.stroke();
+                canvasCtx.setLineDash([]);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(roi.start.x, roi.start.y);
+                canvasCtx.lineTo(cx, cy);
+                canvasCtx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
+                canvasCtx.stroke();
+                if (hit) {
+                    canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.9)';
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(hit.x, hit.y, 7, 0, Math.PI * 2);
+                    canvasCtx.fill();
+                    canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.95)';
+                    canvasCtx.font = `${Math.max(12, canvasElement.width * 0.012)}px sans-serif`;
+                    canvasCtx.fillText(`tape ${Math.round((hit.quality || 0) * 100)}%`, hit.x + 10, hit.y - 10);
+                }
+                canvasCtx.restore();
             }
-            canvasCtx.restore();
-            AppState.roiStatus = hit ? `検出 ${hit.count} / ${roi.source}` : `探索中 / ${roi.source}`;
+            AppState.lastTapeQuality = hit ? Number(hit.quality || 0) : 0;
+            AppState.roiStatus = hit ? `検出 ${hit.count} / 品質${Math.round(AppState.lastTapeQuality * 100)}% / ${roi.source}` : `探索中 / ${roi.source}`;
             AppState.lastTapePoint = hit;
             return hit;
         }
@@ -4838,6 +4946,7 @@
             safeText('precisionAngleQuality', AppState.currentAngleQuality ? `${Math.round(AppState.currentAngleQuality * 100)}%` : '---');
             safeText('precisionDownVelocity', speedLabel(AppState.currentDownVelocityMps, AppState.currentSpeedUnit));
             safeText('precisionRoiStatus', AppState.roiStatus);
+            updateVideoTapeQualityStatus();
             safeText('precisionLandmarkerDiag', AppState.landmarkerDiag || '未確認');
             if (AppState.cameraSettings) {
                 const settings = AppState.cameraSettings;
@@ -6886,6 +6995,7 @@
         function updateSessionSummary() {
             const records = analysisRecords();
             updateRecordFilterSummary();
+            updateRecordComparisonSummary();
             safeText('summaryCount', `${records.length}本`);
             if (!records.length) {
                 ['summaryAvgTime', 'summaryMaxSpeed', 'summaryBest', 'summaryWorst', 'summaryAvgAxis', 'summaryAvgRightElbow'].forEach(id => safeText(id, '---'));
@@ -8037,6 +8147,7 @@
             if(!timeChart || !radarChart) return;
             const records = analysisRecords();
             updateRecordFilterSummary();
+            updateRecordComparisonSummary();
             const labels = records.map(r => `#${r.id}`);
             const updateLine = (chart, values) => {
                 if (!chart) return;
@@ -10450,10 +10561,10 @@
                     const strike = ref.strike || {};
                     const active = ref.index === AppState.videoSelectedStrikeIndex && !!ref.rejected === !!AppState.videoSelectedStrikeRejected;
                     const number = strike.number || ref.index + 1;
-                    const label = ref.rejected ? `除外${number}` : `#${number}`;
+                    const label = ref.rejected ? `除外#${number}` : `#${number}`;
                     const start = Number.isFinite(Number(strike.startTimeMs)) ? Math.round(Number(strike.startTimeMs)) : null;
                     const end = Number.isFinite(Number(strike.endTimeMs)) ? Math.round(Number(strike.endTimeMs)) : null;
-                    const time = start !== null && end !== null ? `<span class="block text-[10px] opacity-75">${start}-${end}ms</span>` : '';
+                    const time = start !== null && end !== null ? `<span class="block text-[10px] opacity-75 mt-0.5">${start}-${end}ms</span>` : '';
                     return `
                         <button type="button"
                             data-action="quick-strike"
@@ -11244,6 +11355,7 @@
         }
 
         function updateVideoDetailMetricsPanel(data = AppState.videoAnalysis) {
+            updateVideoTapeQualityStatus(data);
             if (!data?.frames?.length) {
                 safeText('videoDetailExclusion', '未解析');
                 ['videoDetailTiming', 'videoDetailSpeedSet', 'videoDetailRightElbowSet', 'videoDetailTorsoSet', 'videoDetailHasujiSet', 'videoDetailQualitySet'].forEach(id => safeText(id, '---'));
@@ -11265,6 +11377,37 @@
             const detectionRate = Number(data.diagnostics?.detectionRate || 0);
             const peakOffset = data.metrics && Number.isFinite(Number(data.metrics.peakOffsetMs)) ? Math.round(Number(data.metrics.peakOffsetMs)) : null;
             safeText('videoDetailQualitySet', `信頼度 ${confidence ? Math.round(confidence * 100) + '%' : '---'} / 検出率 ${detectionRate ? Math.round(detectionRate * 100) + '%' : '---'} / 最高速時刻 ${peakOffset !== null ? peakOffset + 'ms' : '---'}`);
+        }
+
+        function updateVideoTapeQualityStatus(data = AppState.videoAnalysis) {
+            const box = document.getElementById('videoTapeQualityStatus');
+            if (!box) return;
+            if (!data?.frames?.length) {
+                if (!Params.tipTracking) {
+                    box.textContent = 'テープ検出: 動画解析では自動確認 / リアルタイムは設定でON';
+                    box.className = 'rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-700';
+                    return;
+                }
+                const liveQuality = Math.round(Number(AppState.lastTapeQuality || 0) * 100);
+                box.textContent = AppState.lastTapePoint
+                    ? `テープ検出: リアルタイム品質 ${liveQuality}%`
+                    : `テープ検出: ${AppState.roiStatus || '探索待ち'}`;
+                box.className = AppState.lastTapePoint
+                    ? 'rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900'
+                    : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-900';
+                return;
+            }
+            const hits = data.frames.filter(frame => frame?.tapePoint).length;
+            const avgQuality = hits
+                ? data.frames.reduce((sum, frame) => sum + Number(frame?.tapeConfidence || 0), 0) / hits
+                : 0;
+            const rate = data.frames.length ? hits / data.frames.length : 0;
+            box.textContent = hits
+                ? `テープ検出: ${hits}/${data.frames.length}f (${Math.round(rate * 100)}%) / 平均品質 ${Math.round(avgQuality * 100)}%`
+                : 'テープ検出: 未検出（ROI位置・色許容幅・照明を調整）';
+            box.className = hits
+                ? 'rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900'
+                : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-900';
         }
 
         function updateVideoResultCards(data, metricsBySource, officialSource) {
@@ -11446,21 +11589,40 @@
                 ctx.restore();
             }
             if (document.getElementById('videoAngleOverlayToggle')?.checked) drawVideoAngleOverlay(ctx, frame, w, h);
-            if (frame.landmarks?.[14] && frame.landmarks?.[16]) {
-                const elbow = normalizedToCanvas(frame.landmarks[14], w, h);
-                const wrist = normalizedToCanvas(frame.landmarks[16], w, h);
-                const vx = wrist.x - elbow.x;
-                const vy = wrist.y - elbow.y;
-                const shoulderPx = frame.landmarks?.[11] && frame.landmarks?.[12] ? Math.max(40, distance2d(frame.landmarks[11], frame.landmarks[12]) * w) : 80;
-                const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
-                ctx.save();
-                ctx.strokeStyle = 'rgba(132, 204, 22, 0.62)';
-                ctx.setLineDash([6, 6]);
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(wrist.x + vx * Params.shinaiExtension, wrist.y + vy * Params.shinaiExtension, radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
+            if (Params.tapeRoiVisible && frame.landmarks?.[14] && frame.landmarks?.[16]) {
+                const roi = shinaiRoiCenter(frame.landmarks, w, h);
+                const radius = frame.tapeRoi?.radius
+                    ? clamp(frame.tapeRoi.radius * Math.max(w, h), 18, 110)
+                    : (roi ? clamp(roi.shoulderPx * Params.tipRoiRatio, 18, 90) : 0);
+                if (roi && radius > 0) {
+                    const tapePoint = frame.tapePoint ? normalizedToCanvas(frame.tapePoint, w, h) : null;
+                    const quality = Number(frame.tapeConfidence || 0);
+                    ctx.save();
+                    ctx.strokeStyle = tapePoint ? 'rgba(250, 204, 21, 0.95)' : 'rgba(148, 163, 184, 0.62)';
+                    ctx.fillStyle = tapePoint ? 'rgba(250, 204, 21, 0.12)' : 'rgba(148, 163, 184, 0.08)';
+                    ctx.setLineDash([7, 6]);
+                    ctx.lineWidth = tapePoint ? 3 : 2;
+                    ctx.beginPath();
+                    ctx.arc(roi.x, roi.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.72)';
+                    ctx.beginPath();
+                    ctx.moveTo(roi.start.x, roi.start.y);
+                    ctx.lineTo(roi.x, roi.y);
+                    ctx.stroke();
+                    if (tapePoint) {
+                        ctx.fillStyle = 'rgba(250, 204, 21, 0.95)';
+                        ctx.beginPath();
+                        ctx.arc(tapePoint.x, tapePoint.y, 7, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = tapePoint ? '#fef3c7' : '#e2e8f0';
+                    ctx.font = `${Math.max(12, w * 0.012)}px sans-serif`;
+                    ctx.fillText(tapePoint ? `テープ検出 ${Math.round(quality * 100)}%` : `テープROI / ${roi.source}`, roi.x + radius + 8, Math.max(18, roi.y - 6));
+                    ctx.restore();
+                }
             }
             ctx.fillStyle = 'rgba(2, 6, 23, 0.78)';
             ctx.fillRect(10, 10, Math.min(560, w - 20), 128);
@@ -11617,7 +11779,8 @@
 
         function getVideoAnalysisSource() {
             const input = document.getElementById('videoFileInput');
-            const file = input?.files?.[0];
+            const fallbackInput = document.getElementById('videoFileInputFallback');
+            const file = input?.files?.[0] || fallbackInput?.files?.[0] || window.__kendoEarlyVideoFile;
             if (file) {
                 return {
                     type: 'file',
@@ -11783,6 +11946,8 @@
                 let frameTapeSpeed = 0;
                 let frameTapePosition = null;
                 let frameTapePoint = null;
+                let frameTapeConfidence = 0;
+                let frameTapeRoi = null;
                 let frameRightAng = 0;
                 let frameLeftAng = 0;
                 let frameTorsoAng = 0;
@@ -11815,10 +11980,12 @@
                             const shoulderPx = Math.max(40, distance2d(lm[11], lm[12]) * videoScanCanvas.width);
                             const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
                             const roi = shinaiRoiCenter(lm, videoScanCanvas.width, videoScanCanvas.height);
+                            frameTapeRoi = roi ? { x: roi.x / videoScanCanvas.width, y: roi.y / videoScanCanvas.height, radius: radius / Math.max(videoScanCanvas.width, videoScanCanvas.height), source: roi.source } : null;
                             const tapeHit = roi ? detectTapeInCanvas(videoScanCtx, videoScanCanvas.width, videoScanCanvas.height, roi.x, roi.y, radius, Params.tapeColor) : null;
                             if (tapeHit) {
                                 tapeHitFrames += 1;
                                 frameTapePoint = { x: tapeHit.x / videoScanCanvas.width, y: tapeHit.y / videoScanCanvas.height, visibility: 0.85 };
+                                frameTapeConfidence = Number(tapeHit.quality || 0);
                                 const tapeMetric = metricFromFramePoint(tapeHit, lm, videoScanCanvas.width, videoScanCanvas.height);
                                 const tapeFiltered = tapeFilter.update(tapeMetric, timeMs, 0.85);
                                 frameTapeSpeed = tapeFiltered.speed || 0;
@@ -11896,6 +12063,8 @@
                     tipSpeed: frameTipSpeed,
                     tapePosition: frameTapePosition,
                     tapePoint: frameTapePoint,
+                    tapeConfidence: frameTapeConfidence,
+                    tapeRoi: frameTapeRoi,
                     tapeSpeed: frameTapeSpeed,
                     officialSpeed: chooseOfficialSpeed({ wrist: frameSpeed, tip: frameTipSpeed, tape: frameTapeSpeed, unit: speedUnit }, Params.officialSpeedSource).value,
                     speedUnit,
@@ -12613,9 +12782,9 @@
             switchTab('details');
         });
 
-        const analyzeVideoBtn = document.getElementById('analyzeVideoBtn');
-        if (analyzeVideoBtn) analyzeVideoBtn.addEventListener('click', () => {
-            if (analyzeVideoBtn.disabled) return;
+        function startVideoAnalysisFromButton() {
+            const analyzeVideoBtn = document.getElementById('analyzeVideoBtn');
+            if (!analyzeVideoBtn || analyzeVideoBtn.disabled) return;
             setVideoAnalysisBusy(true);
             analyzeUploadedVideo()
                 .catch(err => {
@@ -12628,7 +12797,10 @@
                     showToast(message, 'red');
                 })
                 .finally(() => setVideoAnalysisBusy(false));
-        });
+        }
+        window.startVideoAnalysis = startVideoAnalysisFromButton;
+        const analyzeVideoBtn = document.getElementById('analyzeVideoBtn');
+        if (analyzeVideoBtn) analyzeVideoBtn.addEventListener('click', startVideoAnalysisFromButton);
 
         function handleVideoFileInputChange(inputEl = document.getElementById('videoFileInput')) {
             const file = inputEl?.files?.[0];
@@ -13203,12 +13375,39 @@
             Params.tapeColor = e.target.value;
             const globalTape = document.getElementById('paramTapeColor');
             if (globalTape) globalTape.value = e.target.value;
+            updateVideoTapeQualityStatus();
             drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
         });
         const videoTapeRoiSlider = document.getElementById('videoTapeRoiSlider');
         if (videoTapeRoiSlider) videoTapeRoiSlider.addEventListener('input', e => {
             Params.tipRoiRatio = parseFloat(e.target.value);
             safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`);
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
+        const videoTapeToleranceSlider = document.getElementById('videoTapeToleranceSlider');
+        if (videoTapeToleranceSlider) videoTapeToleranceSlider.addEventListener('input', e => {
+            Params.tapeHueTolerance = parseFloat(e.target.value);
+            safeText('videoTapeToleranceValue', `${Math.round(Params.tapeHueTolerance)}°`);
+            updateVideoTapeQualityStatus();
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
+        const videoTapeSaturationSlider = document.getElementById('videoTapeSaturationSlider');
+        if (videoTapeSaturationSlider) videoTapeSaturationSlider.addEventListener('input', e => {
+            Params.tapeSaturationMin = parseFloat(e.target.value);
+            safeText('videoTapeSaturationValue', `${Math.round(Params.tapeSaturationMin * 100)}%`);
+            updateVideoTapeQualityStatus();
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
+        const videoTapeMinPixelsSlider = document.getElementById('videoTapeMinPixelsSlider');
+        if (videoTapeMinPixelsSlider) videoTapeMinPixelsSlider.addEventListener('input', e => {
+            Params.tapeMinPixels = Math.round(parseFloat(e.target.value));
+            safeText('videoTapeMinPixelsValue', String(Params.tapeMinPixels));
+            updateVideoTapeQualityStatus();
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
+        const videoTapeRoiVisibleToggle = document.getElementById('videoTapeRoiVisibleToggle');
+        if (videoTapeRoiVisibleToggle) videoTapeRoiVisibleToggle.addEventListener('change', e => {
+            Params.tapeRoiVisible = !!e.target.checked;
             drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
         });
         const videoShinaiExtensionSlider = document.getElementById('videoShinaiExtensionSlider');
@@ -13511,6 +13710,7 @@
             Params.tipTracking = e.target.checked;
             AppState.roiStatus = Params.tipTracking ? '探索待ち' : 'OFF';
             updatePrecisionPanel();
+            updateVideoTapeQualityStatus();
         });
 
         const elTapeColor = document.getElementById('paramTapeColor');
