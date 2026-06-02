@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v131';
+            var version = 'v132';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2188,7 +2188,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v131-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v132-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3792,6 +3792,17 @@
             setTimeout(refreshVideoGraphResolution, 120);
         }
 
+        function isVideoFullscreenActive() {
+            const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            const fullscreenPanel = fullscreenElement?.closest?.('.video-analysis-fullscreen') || fullscreenElement;
+            return Boolean(
+                document.body.classList.contains('video-fallback-fullscreen-active')
+                || fullscreenPanel?.classList?.contains('video-analysis-fullscreen')
+                || fullscreenPanel?.id === 'videoResultPreviewPanel'
+                || fullscreenPanel?.id === 'videoStep-correct'
+            );
+        }
+
         function closeVideoFullscreenFallback() {
             document.querySelectorAll('.video-analysis-fullscreen.fullscreen-fallback').forEach(el => {
                 el.classList.remove('fullscreen-fallback');
@@ -3826,7 +3837,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v131';
+            const refreshKey = 'kendo-sw-refreshed-v132';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -10482,6 +10493,10 @@
             syncVideoAnalysisSliders(targetFrame);
             updateVideoMultiStrikePanel(data);
             drawVideoAnalysisFrame(targetFrame);
+            if (isVideoFullscreenActive()) {
+                refreshVideoFullscreenLayout();
+                return;
+            }
             if (options.correct) switchVideoStep('correct');
             else if (options.result) switchVideoStep('result');
         }
