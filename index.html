@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v130';
+            var version = 'v131';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1278,6 +1278,154 @@
             margin: 0;
             padding: 8px !important;
         }
+        .video-quick-strike-nav {
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 9px;
+        }
+        .video-quick-strike-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 1000;
+            margin-bottom: 8px;
+        }
+        .video-quick-strike-list {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .video-quick-strike-btn {
+            min-height: 34px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 1000;
+            line-height: 1.15;
+            padding: 6px 7px;
+            transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease, color 0.14s ease;
+        }
+        .video-quick-strike-btn:hover {
+            transform: translateY(-1px);
+            border-color: #64748b;
+            background: #f1f5f9;
+        }
+        .video-quick-strike-btn.active {
+            background: #111827;
+            border-color: #111827;
+            color: #ffffff;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+        }
+        .video-quick-strike-btn.rejected {
+            border-color: #fecaca;
+            color: #991b1b;
+            background: #fff7f7;
+        }
+        .video-quick-strike-btn.rejected.active {
+            background: #7f1d1d;
+            border-color: #7f1d1d;
+            color: #ffffff;
+        }
+        .control-color-soft {
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a;
+        }
+        .control-color-soft button:not(.video-quick-strike-btn):not(.video-detail-edit-btn) {
+            border: 1px solid #cbd5e1 !important;
+            color: #1f2937 !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+        }
+        .control-color-soft button:not(.video-quick-strike-btn):not(.video-detail-edit-btn):hover {
+            background: #eef2ff !important;
+            border-color: #a5b4fc !important;
+        }
+        .control-color-soft #videoResultPlayRangeBtn,
+        .control-color-soft #videoPlayCorrectedRangeBtn,
+        .control-color-soft #confirmVideoTimingBtn {
+            border-color: #86efac !important;
+            background: #ecfdf5 !important;
+            color: #166534 !important;
+        }
+        .control-color-soft #videoResultMarkStartBtn,
+        .control-color-soft #markStartFrameBtn,
+        .control-color-soft #videoJumpStartBtn,
+        .control-color-soft #videoResultJumpStartBtn {
+            border-color: #93c5fd !important;
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+        .control-color-soft #videoResultMarkEndBtn,
+        .control-color-soft #markEndFrameBtn,
+        .control-color-soft #videoJumpEndBtn,
+        .control-color-soft #videoResultJumpEndBtn {
+            border-color: #fca5a5 !important;
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+        .control-color-soft #videoJumpPeakBtn,
+        .control-color-soft #videoResultJumpPeakBtn {
+            border-color: #fcd34d !important;
+            background: #fffbeb !important;
+            color: #92400e !important;
+        }
+        .control-color-soft #videoCorrectionFullscreenBtn,
+        .control-color-soft #videoResultFullscreenBtn {
+            border-color: #334155 !important;
+            background: #111827 !important;
+            color: #ffffff !important;
+        }
+        .control-color-soft .control-primary,
+        .control-color-soft .control-confirm,
+        .control-color-soft .control-neutral,
+        .control-color-soft .control-start,
+        .control-color-soft .control-end,
+        .control-color-soft .control-peak,
+        .control-color-soft .control-view,
+        .control-color-soft .control-fullscreen {
+            border: 1px solid #cbd5e1 !important;
+            color: #1f2937 !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+        }
+        .control-color-soft .control-primary:hover,
+        .control-color-soft .control-neutral:hover,
+        .control-color-soft .control-view:hover {
+            background: #eef2ff !important;
+            border-color: #a5b4fc !important;
+        }
+        .control-color-soft .control-confirm {
+            border-color: #86efac !important;
+            background: #ecfdf5 !important;
+            color: #166534 !important;
+        }
+        .control-color-soft .control-start {
+            border-color: #93c5fd !important;
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+        .control-color-soft .control-end {
+            border-color: #fca5a5 !important;
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+        .control-color-soft .control-peak {
+            border-color: #fcd34d !important;
+            background: #fffbeb !important;
+            color: #92400e !important;
+        }
+        .control-color-soft .control-fullscreen {
+            border-color: #334155 !important;
+            background: #111827 !important;
+            color: #ffffff !important;
+        }
         .video-file-pick-card {
             position: relative;
             display: grid;
@@ -2040,7 +2188,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v130-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v131-reset=' + Date.now();
                                 });
                             });
                         }
@@ -2349,7 +2497,7 @@
                             <canvas id="videoAnalysisCanvas" class="w-full aspect-video object-contain"></canvas>
                             <div id="videoResultEmpty" class="video-correction-empty">動画解析後に表示</div>
                         </div>
-                        <div class="video-result-controls rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
+                        <div class="video-result-controls control-color-soft rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
                             <div class="grid grid-cols-2 gap-2">
                                 <button id="videoResultSlowPlayBtn" type="button" class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i> 解析再生</button>
                                 <button id="videoResultPlayRangeBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i>開始〜終了だけ再生</button>
@@ -2364,6 +2512,13 @@
                                     <option value="full" selected="">動画全体を再生</option>
                                     <option value="strike">開始〜終了だけ再生</option>
                                 </select>
+                                <div id="videoResultStrikeNav" class="video-quick-strike-nav col-span-2" data-strike-nav-mode="result">
+                                    <div class="video-quick-strike-head">
+                                        <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
+                                        <span>未解析</span>
+                                    </div>
+                                    <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
+                                </div>
                                 <div class="video-result-frame-controls col-span-2 rounded-lg border border-blue-100 bg-white p-2">
                                     <div class="flex items-center justify-between gap-2 mb-1">
                                         <span class="font-black text-blue-700"><i class="fa-solid fa-clapperboard mr-1"></i>全フレーム確認</span>
@@ -2655,7 +2810,7 @@
                             <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
                             <div id="videoCorrectionEmpty" class="video-correction-empty">動画プレビュー</div>
                         </div>
-                        <div class="video-correction-controls bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
+                        <div class="video-correction-controls control-color-soft bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-sliders text-indigo-500 mr-1"></i>補正操作</h3>
                                 <span id="videoCorrectionModelStatus" class="text-[11px] font-bold text-indigo-700">3D連動待機</span>
@@ -2674,6 +2829,13 @@
                                     <option value="full">動画全体を再生</option>
                                     <option value="strike" selected="">開始〜終了だけ再生</option>
                                 </select>
+                                <div id="videoCorrectionStrikeNav" class="video-quick-strike-nav col-span-2" data-strike-nav-mode="correct">
+                                    <div class="video-quick-strike-head">
+                                        <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
+                                        <span>未解析</span>
+                                    </div>
+                                    <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
+                                </div>
                                 <button id="videoPrevFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 戻る</button>
                                 <button id="videoNextFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold">進む <i class="fa-solid fa-forward-step"></i></button>
                                 <button id="videoJumpStartBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded font-bold">開始へ</button>
@@ -3664,7 +3826,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v130';
+            const refreshKey = 'kendo-sw-refreshed-v131';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -10142,6 +10304,7 @@
             if (data?.frames?.length) normalizeVideoStrikeBuckets(data);
             const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1 || (data?.rejectedStrikes?.length || 0) > 0;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
+            renderVideoQuickStrikeNav(data);
             if (!data || !shouldShow) {
                 updateVideoEditUndoRedoButtons();
                 updateVideoManualRangeUi();
@@ -10250,6 +10413,55 @@
             }
             updateVideoEditUndoRedoButtons();
             updateVideoManualRangeUi();
+        }
+
+        function renderVideoQuickStrikeNav(data = AppState.videoAnalysis) {
+            const targets = [
+                document.getElementById('videoCorrectionStrikeNav'),
+                document.getElementById('videoResultStrikeNav')
+            ].filter(Boolean);
+            if (!targets.length) return;
+            const refs = data?.frames?.length ? videoStrikeRefList(data) : [];
+            const validCount = data?.strikes?.length || 0;
+            const rejectedCount = data?.rejectedStrikes?.length || 0;
+            targets.forEach(box => {
+                if (!refs.length) {
+                    box.innerHTML = `
+                        <div class="video-quick-strike-head">
+                            <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
+                            <span>未解析</span>
+                        </div>
+                        <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
+                    `;
+                    return;
+                }
+                const buttons = refs.map(ref => {
+                    const strike = ref.strike || {};
+                    const active = ref.index === AppState.videoSelectedStrikeIndex && !!ref.rejected === !!AppState.videoSelectedStrikeRejected;
+                    const number = strike.number || ref.index + 1;
+                    const label = ref.rejected ? `除外${number}` : `#${number}`;
+                    const start = Number.isFinite(Number(strike.startTimeMs)) ? Math.round(Number(strike.startTimeMs)) : null;
+                    const end = Number.isFinite(Number(strike.endTimeMs)) ? Math.round(Number(strike.endTimeMs)) : null;
+                    const time = start !== null && end !== null ? `<span class="block text-[10px] opacity-75">${start}-${end}ms</span>` : '';
+                    return `
+                        <button type="button"
+                            data-action="quick-strike"
+                            data-kind="${ref.rejected ? 'rejected' : 'valid'}"
+                            data-index="${ref.index}"
+                            class="video-quick-strike-btn ${active ? 'active' : ''} ${ref.rejected ? 'rejected' : ''}"
+                            title="${escapeHtml(label)}へ移動">
+                            ${escapeHtml(label)}${time}
+                        </button>
+                    `;
+                }).join('');
+                box.innerHTML = `
+                    <div class="video-quick-strike-head">
+                        <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
+                        <span>${validCount}本${rejectedCount ? ` / 除外${rejectedCount}` : ''}</span>
+                    </div>
+                    <div class="video-quick-strike-list">${buttons}</div>
+                `;
+            });
         }
 
         function applyVideoStrikeSelection(index, target = 'peak', options = {}) {
@@ -13021,6 +13233,20 @@
             const btn = e.target.closest('.video-strike-action');
             if (!btn) return;
             applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true, rejected: btn.dataset.kind === 'rejected' });
+        });
+        document.querySelectorAll('[data-strike-nav-mode]').forEach(nav => {
+            nav.addEventListener('click', e => {
+                const btn = e.target.closest('[data-action="quick-strike"]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const mode = nav.dataset.strikeNavMode || 'correct';
+                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', {
+                    rejected: btn.dataset.kind === 'rejected',
+                    correct: mode === 'correct',
+                    result: mode === 'result'
+                });
+            });
         });
         const saveAllVideoStrikesBtn = document.getElementById('saveAllVideoStrikesBtn');
         if (saveAllVideoStrikesBtn) saveAllVideoStrikesBtn.addEventListener('click', saveAllVideoStrikesAsRecords);
