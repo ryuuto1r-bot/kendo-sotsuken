@@ -3087,7 +3087,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v118';
+            const refreshKey = 'kendo-sw-refreshed-v119';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12557,6 +12557,7 @@
         window.switchTab = switchTab;
         window.switchVideoStep = switchVideoStep;
         window.confirmVideoManualRange = confirmVideoManualRange;
+        window.confirmVideoTimingCorrection = confirmVideoTimingCorrection;
         window.exportCSV = exportCSV;
         window.clearHistory = clearHistory;
         window.resetSettings = resetSettings;
