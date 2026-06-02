@@ -1012,19 +1012,27 @@
             border-radius: 999px;
             background: #0f172a;
             color: #ffffff;
+            border: 0;
             padding: 10px 14px;
             font-size: 12px;
             font-weight: 1000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
         .video-file-pick-input {
             position: absolute;
-            inset: 0;
-            z-index: 5;
-            width: 100%;
-            height: 100%;
+            width: 1px;
+            height: 1px;
             opacity: 0;
             overflow: hidden;
-            cursor: pointer;
+            pointer-events: none;
+            clip-path: inset(50%);
+        }
+        .video-file-pick-card:focus-visible {
+            outline: 3px solid rgba(37, 99, 235, 0.45);
+            outline-offset: 3px;
         }
         @media (max-width: 640px) {
             .video-file-pick-card {
@@ -1499,13 +1507,13 @@
                     動画選択
                 </div>
                 <div id="videoStep-load" class="video-step-panel active space-y-3">
-                <label for="videoFileInput" class="video-file-pick-card">
+                <label id="videoFilePickCard" for="videoFileInput" class="video-file-pick-card" role="button" tabindex="0" aria-controls="videoFileInput" aria-label="動画ファイルを選ぶ">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
                     </span>
-                    <span class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
+                    <span id="videoFilePickBtn" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ">
                 </label>
                 <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
@@ -3121,7 +3129,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v120';
+            const refreshKey = 'kendo-sw-refreshed-v121';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -11860,6 +11868,28 @@
                 .finally(() => setVideoAnalysisBusy(false));
         });
 
+        const prepareVideoFilePicker = () => {
+            const input = document.getElementById('videoFileInput');
+            if (!input) {
+                showToast('動画選択欄を初期化できませんでした', 'red');
+                return null;
+            }
+            try { input.value = ''; } catch (_) {}
+            return input;
+        };
+        const openVideoFilePickerFromKeyboard = event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            const input = prepareVideoFilePicker();
+            if (input) input.click();
+        };
+        const videoFilePickCard = document.getElementById('videoFilePickCard');
+        if (videoFilePickCard) {
+            videoFilePickCard.addEventListener('pointerdown', prepareVideoFilePicker);
+            videoFilePickCard.addEventListener('keydown', openVideoFilePickerFromKeyboard);
+        }
+        const videoFilePickBtn = document.getElementById('videoFilePickBtn');
+        if (videoFilePickBtn) videoFilePickBtn.addEventListener('pointerdown', prepareVideoFilePicker);
         const videoFileInput = document.getElementById('videoFileInput');
         if (videoFileInput) videoFileInput.addEventListener('change', () => {
             const file = videoFileInput.files?.[0];
