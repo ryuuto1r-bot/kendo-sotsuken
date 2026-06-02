@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v124';
+const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v125';
 const APP_SHELL = [
   './',
   './index.html',
@@ -36,6 +36,25 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (request.headers.has('range') || request.destination === 'video' || request.destination === 'audio') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  if (request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname === '/' || url.pathname.endsWith('/research/') || url.pathname.endsWith('/research/index.html')) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).then(response => {
+        const copy = response.clone();
+        if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
+      }).catch(() => {
+        if (url.pathname.endsWith('/research/') || url.pathname.endsWith('/research/index.html')) return caches.match('./research/index.html');
+        return caches.match('./index.html');
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then(cached => {
