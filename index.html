@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v128';
+            var version = 'v129';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1106,15 +1106,25 @@
         #videoStep-correct .video-correction-workspace {
             min-height: 0;
             align-items: stretch;
+            overflow: hidden;
         }
         #videoStep-correct .video-correction-preview {
+            aspect-ratio: auto;
             height: var(--video-editor-max);
             max-height: var(--video-editor-max);
             min-height: 240px;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
             border-radius: 14px;
             overflow: hidden;
+            justify-self: stretch;
         }
         #videoStep-correct .video-correction-controls {
+            min-width: 0;
+            position: relative;
+            top: auto !important;
+            z-index: 3;
             max-height: var(--video-editor-panel-max);
             overflow: auto;
             overscroll-behavior: contain;
@@ -1134,6 +1144,62 @@
             max-height: 190px;
             overflow: auto;
         }
+        body[data-active-tab="video"][data-video-step="mark"] .video-page-header,
+        body[data-active-tab="video"][data-video-step="correct"] .video-page-header,
+        body[data-active-tab="video"][data-video-step="result"] .video-page-header,
+        body[data-active-tab="video"][data-video-step="mark"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex,
+        body[data-active-tab="video"][data-video-step="correct"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex,
+        body[data-active-tab="video"][data-video-step="result"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex {
+            padding: 10px 14px !important;
+            margin-bottom: 10px !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-page-header p,
+        body[data-active-tab="video"][data-video-step="correct"] .video-page-header p,
+        body[data-active-tab="video"][data-video-step="result"] .video-page-header p,
+        body[data-active-tab="video"][data-video-step="mark"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex p,
+        body[data-active-tab="video"][data-video-step="correct"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex p,
+        body[data-active-tab="video"][data-video-step="result"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex p {
+            display: none;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-tabs,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-tabs,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-tabs {
+            padding: 8px !important;
+            margin-bottom: 10px !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-step-btn,
+        body[data-active-tab="video"][data-video-step="correct"] .video-step-btn,
+        body[data-active-tab="video"][data-video-step="result"] .video-step-btn {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            min-height: 38px;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-layout {
+            gap: 14px !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-main,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-main,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-main {
+            padding: 12px !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-main-head,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-main-head,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-main-head,
+        body[data-active-tab="video"][data-video-step="mark"] #videoNextActionBanner,
+        body[data-active-tab="video"][data-video-step="correct"] #videoNextActionBanner,
+        body[data-active-tab="video"][data-video-step="result"] #videoNextActionBanner,
+        body[data-active-tab="video"][data-video-step="mark"] #videoStepHint,
+        body[data-active-tab="video"][data-video-step="correct"] #videoStepHint,
+        body[data-active-tab="video"][data-video-step="result"] #videoStepHint {
+            display: none !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-side .official-flow-card,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-side .official-flow-card,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-side .official-flow-card {
+            display: none;
+        }
         #videoStep-correct > .grid.grid-cols-1.md\:grid-cols-2,
         #videoStep-correct > .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-7 {
             display: none;
@@ -1141,12 +1207,12 @@
         @media (min-width: 1280px) {
             #videoStep-mark,
             #videoStep-result {
-                --video-editor-max: min(calc(100vh - 520px), 380px);
-                --video-editor-panel-max: min(calc(100vh - 520px), 380px);
+                --video-editor-max: min(calc(100vh - 430px), 440px);
+                --video-editor-panel-max: min(calc(100vh - 430px), 440px);
             }
             #videoStep-correct {
-                --video-editor-max: min(calc(100vh - 620px), 280px);
-                --video-editor-panel-max: min(calc(100vh - 620px), 280px);
+                --video-editor-max: min(calc(100vh - 460px), 420px);
+                --video-editor-panel-max: min(calc(100vh - 460px), 420px);
             }
             #videoStep-result .video-result-preview-grid {
                 grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
@@ -1713,7 +1779,7 @@
     </div>
 
     <div id="tab-analysis" class="tab-content">
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="video-page-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>記録・比較</h2>
                 <div class="mt-2 flex flex-wrap gap-2 text-xs">
@@ -1777,7 +1843,7 @@
             </div>
         </div>
 
-        <div class="bg-white p-3 rounded-xl shadow-sm border mb-4">
+        <div class="video-workflow-tabs bg-white p-3 rounded-xl shadow-sm border mb-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-bold">
                 <button type="button" id="videoStepBtn-load" onclick="switchVideoStep('load')" class="video-step-btn active border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-upload mr-1"></i>1. 動画を選ぶ</button>
                 <button type="button" id="videoStepBtn-mark" onclick="switchVideoStep('mark')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-sliders mr-1"></i>2. 補正</button>
@@ -1786,9 +1852,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <div class="flex items-center justify-between gap-3 mb-3">
+        <div class="video-workflow-layout grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+            <div class="video-workflow-main bg-white p-4 rounded-xl shadow-sm border">
+                <div class="video-workflow-main-head flex items-center justify-between gap-3 mb-3">
                     <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
@@ -1819,8 +1885,10 @@
                             var el = document.getElementById(id);
                             if (el) el.textContent = value;
                         }
-                        function openStep(step) {
-                            document.querySelectorAll('.video-step-panel').forEach(function(panel){ panel.classList.remove('active'); });
+                            function openStep(step) {
+                                document.body.dataset.activeTab = 'video';
+                                document.body.dataset.videoStep = step;
+                                document.querySelectorAll('.video-step-panel').forEach(function(panel){ panel.classList.remove('active'); });
                             document.querySelectorAll('.video-step-btn').forEach(function(btn){ btn.classList.remove('active'); });
                             var panel = document.getElementById('videoStep-' + step);
                             var btn = document.getElementById('videoStepBtn-' + (step === 'analyze' || step === 'correct' ? 'mark' : step));
@@ -1945,7 +2013,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v127-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v129-reset=' + Date.now();
                                 });
                             });
                         }
@@ -2657,7 +2725,7 @@
                 </div>
             </div>
 
-            <div class="space-y-4">
+            <div class="video-workflow-side space-y-4">
             <div class="official-flow-card p-4 rounded-xl border">
                 <h3 class="text-sm font-bold text-indigo-900 mb-2"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</h3>
                 <div class="space-y-2 text-xs text-indigo-900 leading-relaxed">
@@ -3331,6 +3399,8 @@
         }
 
         function switchTab(tab) {
+            document.body.dataset.activeTab = tab;
+            if (tab !== 'video') delete document.body.dataset.videoStep;
             if (tab !== 'measure') setPracticeFocus(false);
             if (tab !== 'video') {
                 stopVideoSlowPlayback();
@@ -3350,6 +3420,8 @@
 
         function switchVideoStep(step) {
             const activeStep = ['load', 'mark', 'analyze', 'result', 'correct', 'report'].includes(step) ? step : 'load';
+            document.body.dataset.activeTab = 'video';
+            document.body.dataset.videoStep = activeStep;
             document.querySelectorAll('.video-step-panel').forEach(panel => panel.classList.remove('active'));
             document.querySelectorAll('.video-step-btn').forEach(btn => btn.classList.remove('active'));
             const panel = document.getElementById(`videoStep-${activeStep}`);
@@ -3565,7 +3637,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v128';
+            const refreshKey = 'kendo-sw-refreshed-v129';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
