@@ -2598,11 +2598,12 @@
                         <label class="block text-sm font-bold text-slate-700">補助音量閾値</label>
                         <button type="button" id="calibrateKiaiBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-bold transition">自動設定</button>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <input type="range" id="paramKiaiThreshold" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-                        <span id="valKiaiThreshold" class="font-mono-num font-bold text-slate-700 w-12 text-right">0.10</span>
-                    </div>
-                </div>
+	                    <div class="flex items-center gap-4">
+	                        <input type="range" id="paramKiaiThreshold" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+	                        <span id="valKiaiThreshold" class="font-mono-num font-bold text-slate-700 w-12 text-right">0.10</span>
+	                    </div>
+	                    <div id="calibrateMsg" class="hidden mt-2 text-xs text-slate-500">音量を測定しています。</div>
+	                </div>
 
                 <div class="border-t border-slate-100 pt-4">
                     <label class="flex items-center gap-3 cursor-pointer">
@@ -2882,7 +2883,7 @@
             reorderVideoResultPanels();
             updateVideoStepHint(activeStep);
             if (activeStep === 'result') {
-                setVideoResultView('result');
+                setVideoResultView(AppState.videoAnalysis?.frames?.length ? 'preview' : 'result');
                 drawVideoResultGraphs(Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis?.startFrame || 0));
             }
             if (activeStep === 'correct') {
@@ -3085,7 +3086,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v111';
+            const refreshKey = 'kendo-sw-refreshed-v112';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
