@@ -2907,7 +2907,7 @@
         function navigateVideoResultSection(section) {
             const key = section || 'preview';
             if (key === 'correct') {
-                switchVideoStep('correct');
+                openVideoEditorWorkspace({ zoom: 1.75, tool: 'select' });
                 return;
             }
             if (key === 'report') {
@@ -3028,7 +3028,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v108';
+            const refreshKey = 'kendo-sw-refreshed-v109';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -7563,7 +7563,7 @@
             if (!data?.frames?.length) return;
             const maxFrame = data.frames.length - 1;
             let frame = clamp(Math.round(Number(frameIndex || 0)), 0, maxFrame);
-            frame = clamp(snapVideoFrame(frame), 0, maxFrame);
+            frame = clamp(snapVideoFrame(frame, 2, kind), 0, maxFrame);
             if (kind === 'start') {
                 if (Number.isFinite(data.endFrame)) frame = Math.min(frame, Math.max(0, data.endFrame - 1));
                 data.startFrame = frame;
@@ -9879,25 +9879,34 @@
             safeText('videoEditorToolStatus', labels[next] || labels.select);
         }
 
-        function candidateVideoSnapFrames(data = AppState.videoAnalysis) {
+        function candidateVideoSnapFrames(data = AppState.videoAnalysis, excludeKind = null) {
             if (!data?.frames?.length) return [];
-            const frames = [data.startFrame, data.peakFrame, data.endFrame]
+            const frames = [
+                excludeKind === 'start' ? null : data.startFrame,
+                data.peakFrame,
+                excludeKind === 'end' ? null : data.endFrame
+            ]
                 .filter(Number.isFinite)
                 .map(Number);
+            const pushCandidate = (value, role = null) => {
+                if (!Number.isFinite(value)) return;
+                if (excludeKind === role && Number(value) === Number(data[`${role}Frame`])) return;
+                frames.push(Number(value));
+            };
             [...(data.strikes || []), ...(data.rejectedStrikes || [])].forEach(strike => {
-                [strike.startFrame, strike.peakFrame, strike.endFrame].forEach(value => {
-                    if (Number.isFinite(value)) frames.push(Number(value));
-                });
+                pushCandidate(strike.startFrame, 'start');
+                pushCandidate(strike.peakFrame, 'peak');
+                pushCandidate(strike.endFrame, 'end');
             });
             return [...new Set(frames)].sort((a, b) => a - b);
         }
 
-        function snapVideoFrame(frameIndex, tolerance = 4) {
+        function snapVideoFrame(frameIndex, tolerance = 2, excludeKind = null) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length || !AppState.videoEditorSnap) return frameIndex;
             let best = frameIndex;
             let bestDiff = Infinity;
-            candidateVideoSnapFrames(data).forEach(candidate => {
+            candidateVideoSnapFrames(data, excludeKind).forEach(candidate => {
                 const diff = Math.abs(candidate - frameIndex);
                 if (diff < bestDiff) {
                     bestDiff = diff;
@@ -9915,7 +9924,8 @@
             event.preventDefault();
             event.stopPropagation();
             const rawFrame = getVideoResultTimelineFrameFromEvent(event);
-            const frame = clamp(snapVideoFrame(rawFrame), 0, data.frames.length - 1);
+            const snapKind = tool === 'start' || tool === 'end' ? tool : null;
+            const frame = clamp(snapVideoFrame(rawFrame, 2, snapKind), 0, data.frames.length - 1);
             stopVideoSlowPlayback();
             setVideoAnalysisFrame(frame);
             if (tool === 'razor') {
@@ -9928,6 +9938,32 @@
                 setVideoResultMarkerFrame('end', frame);
             }
             return true;
+        }
+
+        function openVideoEditorWorkspace(options = {}) {
+            if (!AppState.videoAnalysis?.frames?.length) {
+                switchVideoStep('result');
+                setVideoResultView('result');
+                return;
+            }
+            const frameIndex = clamp(
+                Number(options.frameIndex ?? AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0),
+                0,
+                AppState.videoAnalysis.frames.length - 1
+            );
+            switchVideoStep('result');
+            setVideoResultView('preview');
+            const details = document.getElementById('videoResultSupportDetails');
+            if (details) details.open = true;
+            setVideoEditorTool(options.tool || 'select');
+            if (Number.isFinite(Number(options.zoom))) setVideoTimelineZoom(options.zoom);
+            else setVideoTimelineZoom(Math.max(1.5, AppState.videoTimelineZoom || 1));
+            syncVideoAnalysisSliders(frameIndex);
+            setVideoAnalysisFrame(frameIndex);
+            requestAnimationFrame(() => {
+                const target = document.getElementById('videoResultPreviewPanel') || document.getElementById('videoResultSupportDetails');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         }
 
         function toggleVideoEditorPlayback() {
@@ -10941,7 +10977,8 @@
             drawVideoResultGraphs(startFrame ?? peakFrame ?? 0);
             drawVideoCorrectionGraphs(startFrame ?? peakFrame ?? 0);
             await drawVideoAnalysisFrame(startFrame ?? peakFrame ?? 0);
-            switchVideoStep('result');
+            openVideoEditorWorkspace({ frameIndex: startFrame ?? peakFrame ?? 0, zoom: 1.75, tool: 'select' });
+            showToast('編集ワークスペースを開きました', 'blue');
         }
 
         function exportVideoAnalysisReport() {
@@ -11893,9 +11930,11 @@
         const videoFormalEditBtn = document.getElementById('videoFormalEditBtn');
         if (videoFormalEditBtn) videoFormalEditBtn.addEventListener('click', () => {
             if (!AppState.videoAnalysis?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
-            switchVideoStep('correct');
-            syncVideoAnalysisSliders(Number(AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0));
-            setVideoAnalysisFrame(Number(AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0));
+            openVideoEditorWorkspace({
+                frameIndex: Number(AppState.videoAnalysis.startFrame ?? AppState.videoAnalysis.peakFrame ?? 0),
+                zoom: 1.75,
+                tool: 'select'
+            });
         });
         const videoResultFullscreenBtn = document.getElementById('videoResultFullscreenBtn');
         if (videoResultFullscreenBtn) videoResultFullscreenBtn.addEventListener('click', () => {
