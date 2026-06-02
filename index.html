@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v125';
+            var version = 'v126';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1001,7 +1001,7 @@
         .video-file-pick-card {
             position: relative;
             display: grid;
-            grid-template-columns: auto 1fr auto;
+            grid-template-columns: auto 1fr;
             gap: 14px;
             align-items: center;
             border: 1px solid rgba(37, 99, 235, 0.22);
@@ -1010,7 +1010,7 @@
                 radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.16), transparent 34%),
                 linear-gradient(135deg, #eff6ff 0%, #ffffff 52%, #f8fafc 100%);
             padding: 16px;
-            cursor: pointer;
+            cursor: default;
             overflow: hidden;
             box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
             transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1045,6 +1045,9 @@
             cursor: pointer;
             text-decoration: none;
             min-height: 38px;
+        }
+        .video-file-pick-action.hidden-native-helper {
+            display: none;
         }
         .video-file-pick-input {
             grid-column: 1 / -1;
@@ -1561,14 +1564,14 @@
                     動画選択
                 </div>
                 <div id="videoStep-load" class="video-step-panel active space-y-3">
-                <div id="videoFilePickCard" class="video-file-pick-card" role="button" tabindex="0" aria-controls="videoFileInput" aria-label="動画ファイルを選ぶ">
+                <div id="videoFilePickCard" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
-                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">下の「ファイルを選択」を押してください。mp4 / mov に対応。</span>
                     </span>
-                    <label id="videoFilePickBtn" for="videoFileInput" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</label>
-                    <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
+                    <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
+                    <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
                 </div>
                 <script>
                     // 動画選択だけはメイン初期化に依存させない。大きなAI/描画スクリプトの読み込みが遅くても、先に動画を投入できるようにする。
@@ -1631,37 +1634,9 @@
                             video.src = url;
                         }
                         window.handleVideoFileInputChange = window.handleVideoFileInputChange || earlyVideoFileInputChange;
-                        function openPicker(event) {
-                            if (event && event.target && event.target.id === 'videoFileInput') return;
-                            if (event) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                            }
-                            var input = document.getElementById('videoFileInput');
-                            if (!input) return;
-                            try { input.value = ''; } catch (_) {}
-                            input.click();
-                        }
-                        var card = document.getElementById('videoFilePickCard');
-                        var btn = document.getElementById('videoFilePickBtn');
                         var input = document.getElementById('videoFileInput');
-                        if (card && !card.dataset.earlyPickerBound) {
-                            card.dataset.earlyPickerBound = '1';
-                            card.addEventListener('click', openPicker);
-                            card.addEventListener('keydown', function(event){
-                                if (event.key === 'Enter' || event.key === ' ') openPicker(event);
-                            });
-                        }
-                        if (btn && !btn.dataset.earlyPickerBound) {
-                            btn.dataset.earlyPickerBound = '1';
-                            btn.addEventListener('click', openPicker);
-                        }
                         if (input && !input.dataset.earlyPickerBound) {
                             input.dataset.earlyPickerBound = '1';
-                            input.addEventListener('click', function(event){
-                                event.stopPropagation();
-                                try { input.value = ''; } catch (_) {}
-                            });
                             input.addEventListener('change', function(){ earlyVideoFileInputChange(input); });
                         }
                     })();
@@ -3280,7 +3255,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v125';
+            const refreshKey = 'kendo-sw-refreshed-v126';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12019,33 +11994,6 @@
                 .finally(() => setVideoAnalysisBusy(false));
         });
 
-        const prepareVideoFilePicker = () => {
-            const input = document.getElementById('videoFileInput');
-            if (!input) {
-                showToast('動画選択欄を初期化できませんでした', 'red');
-                return null;
-            }
-            try { input.value = ''; } catch (_) {}
-            return input;
-        };
-        const openVideoFilePicker = event => {
-            if (event?.target?.id === 'videoFileInput') return;
-            event?.preventDefault?.();
-            event?.stopPropagation?.();
-            const input = prepareVideoFilePicker();
-            if (input) input.click();
-        };
-        const openVideoFilePickerFromKeyboard = event => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            openVideoFilePicker(event);
-        };
-        const videoFilePickCard = document.getElementById('videoFilePickCard');
-        if (videoFilePickCard && !videoFilePickCard.dataset.earlyPickerBound) {
-            videoFilePickCard.addEventListener('click', openVideoFilePicker);
-            videoFilePickCard.addEventListener('keydown', openVideoFilePickerFromKeyboard);
-        }
-        const videoFilePickBtn = document.getElementById('videoFilePickBtn');
-        if (videoFilePickBtn && !videoFilePickBtn.dataset.earlyPickerBound) videoFilePickBtn.addEventListener('click', openVideoFilePicker);
         function handleVideoFileInputChange(inputEl = document.getElementById('videoFileInput')) {
             const file = inputEl?.files?.[0];
             if (!file) return updateVideoDiagnostics({ empty: true });
@@ -12099,12 +12047,6 @@
         window.handleVideoFileInputChange = handleVideoFileInputChange;
         const videoFileInput = document.getElementById('videoFileInput');
         if (videoFileInput) {
-            if (!videoFileInput.dataset.earlyPickerBound) {
-                videoFileInput.addEventListener('click', event => {
-                    event.stopPropagation();
-                    try { videoFileInput.value = ''; } catch (_) {}
-                });
-            }
             videoFileInput.addEventListener('change', event => handleVideoFileInputChange(event.currentTarget));
         }
         const loadVideoUrlBtn = document.getElementById('loadVideoUrlBtn');
