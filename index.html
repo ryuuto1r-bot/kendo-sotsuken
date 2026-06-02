@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v126';
+            var version = 'v127';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1087,6 +1087,52 @@
             font-weight: 1000;
             cursor: pointer;
         }
+        .video-file-pick-card.dragover {
+            border-color: #2563eb;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.24), transparent 40%),
+                linear-gradient(135deg, #dbeafe 0%, #ffffff 52%, #eff6ff 100%);
+            box-shadow: 0 18px 46px rgba(37, 99, 235, 0.18);
+        }
+        .video-file-drop-note {
+            grid-column: 1 / -1;
+            border: 1px dashed rgba(37, 99, 235, 0.35);
+            border-radius: 12px;
+            background: rgba(239, 246, 255, 0.74);
+            color: #1e3a8a;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        .video-file-fallback {
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #ffffff;
+            padding: 12px;
+        }
+        .video-file-fallback input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            min-height: 52px;
+            border: 2px solid #0f172a;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .video-cache-reset-btn {
+            border: 1px solid #fbbf24;
+            border-radius: 12px;
+            background: #fffbeb;
+            color: #92400e;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 1000;
+            cursor: pointer;
+        }
         .video-file-pick-card:focus-visible {
             outline: 3px solid rgba(37, 99, 235, 0.45);
             outline-offset: 3px;
@@ -1568,10 +1614,16 @@
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
-                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">下の「ファイルを選択」を押してください。mp4 / mov に対応。</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">下の「ファイルを選択」を押すか、動画をここへドラッグしてください。</span>
                     </span>
                     <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
+                    <div class="video-file-drop-note"><i class="fa-solid fa-hand mr-1"></i>反応しない場合は、Finderから動画をこの枠へドラッグ＆ドロップしてください。</div>
+                </div>
+                <div class="video-file-fallback">
+                    <div class="text-xs font-black text-slate-700 mb-2"><i class="fa-solid fa-life-ring text-amber-600 mr-1"></i>予備の動画選択</div>
+                    <input type="file" id="videoFileInputFallback" accept="video/*,video/quicktime,.mp4,.mov,.m4v" aria-label="予備の動画ファイル選択" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
+                    <button type="button" id="videoCacheResetBtn" class="video-cache-reset-btn mt-3"><i class="fa-solid fa-rotate mr-1"></i>開けない時はアプリを完全更新</button>
                 </div>
                 <script>
                     // 動画選択だけはメイン初期化に依存させない。大きなAI/描画スクリプトの読み込みが遅くても、先に動画を投入できるようにする。
@@ -1634,10 +1686,81 @@
                             video.src = url;
                         }
                         window.handleVideoFileInputChange = window.handleVideoFileInputChange || earlyVideoFileInputChange;
+                        function getVideoFileFromDrop(event) {
+                            var files = event && event.dataTransfer && event.dataTransfer.files;
+                            if (!files || !files.length) return null;
+                            for (var i = 0; i < files.length; i++) {
+                                var file = files[i];
+                                if (/video\//.test(file.type || '') || /\.(mp4|mov|m4v)$/i.test(file.name || '')) return file;
+                            }
+                            return files[0];
+                        }
+                        function setInputFiles(inputEl, file) {
+                            if (!inputEl || !file || typeof DataTransfer === 'undefined') return false;
+                            try {
+                                var dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(file);
+                                inputEl.files = dataTransfer.files;
+                                return true;
+                            } catch (_) {
+                                return false;
+                            }
+                        }
+                        function handleDroppedVideoFile(file) {
+                            if (!file) return;
+                            var inputEl = document.getElementById('videoFileInput') || document.getElementById('videoFileInputFallback');
+                            setInputFiles(inputEl, file);
+                            earlyVideoFileInputChange(inputEl || { files: [file] });
+                            if (window.handleVideoFileInputChange && window.handleVideoFileInputChange !== earlyVideoFileInputChange) {
+                                window.handleVideoFileInputChange(inputEl || { files: [file] });
+                            }
+                        }
+                        window.handleDroppedVideoFile = window.handleDroppedVideoFile || handleDroppedVideoFile;
+                        function installDropZone(zone) {
+                            if (!zone || zone.dataset.dropBound) return;
+                            zone.dataset.dropBound = '1';
+                            ['dragenter', 'dragover'].forEach(function(type){
+                                zone.addEventListener(type, function(event){
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    zone.classList.add('dragover');
+                                });
+                            });
+                            ['dragleave', 'drop'].forEach(function(type){
+                                zone.addEventListener(type, function(event){
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    zone.classList.remove('dragover');
+                                });
+                            });
+                            zone.addEventListener('drop', function(event){
+                                handleDroppedVideoFile(getVideoFileFromDrop(event));
+                            });
+                        }
                         var input = document.getElementById('videoFileInput');
+                        var fallbackInput = document.getElementById('videoFileInputFallback');
                         if (input && !input.dataset.earlyPickerBound) {
                             input.dataset.earlyPickerBound = '1';
                             input.addEventListener('change', function(){ earlyVideoFileInputChange(input); });
+                        }
+                        if (fallbackInput && !fallbackInput.dataset.earlyPickerBound) {
+                            fallbackInput.dataset.earlyPickerBound = '1';
+                            fallbackInput.addEventListener('change', function(){ earlyVideoFileInputChange(fallbackInput); });
+                        }
+                        installDropZone(document.getElementById('videoFilePickCard'));
+                        installDropZone(document.body);
+                        var resetBtn = document.getElementById('videoCacheResetBtn');
+                        if (resetBtn && !resetBtn.dataset.resetBound) {
+                            resetBtn.dataset.resetBound = '1';
+                            resetBtn.addEventListener('click', function(){
+                                resetBtn.textContent = '更新中...';
+                                Promise.all([
+                                    ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
+                                    ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
+                                ]).finally(function(){
+                                    location.href = location.pathname + '?ui-v127-reset=' + Date.now();
+                                });
+                            });
                         }
                     })();
                 </script>
@@ -3255,7 +3378,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v126';
+            const refreshKey = 'kendo-sw-refreshed-v127';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12049,6 +12172,24 @@
         if (videoFileInput) {
             videoFileInput.addEventListener('change', event => handleVideoFileInputChange(event.currentTarget));
         }
+        const videoFileInputFallback = document.getElementById('videoFileInputFallback');
+        if (videoFileInputFallback) {
+            videoFileInputFallback.addEventListener('change', event => handleVideoFileInputChange(event.currentTarget));
+        }
+        window.handleDroppedVideoFile = file => {
+            if (!file) return;
+            const targetInput = document.getElementById('videoFileInput') || document.getElementById('videoFileInputFallback');
+            if (targetInput && typeof DataTransfer !== 'undefined') {
+                try {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    targetInput.files = dataTransfer.files;
+                    handleVideoFileInputChange(targetInput);
+                    return;
+                } catch (_) {}
+            }
+            handleVideoFileInputChange({ files: [file] });
+        };
         const loadVideoUrlBtn = document.getElementById('loadVideoUrlBtn');
         if (loadVideoUrlBtn) loadVideoUrlBtn.addEventListener('click', () => {
             loadVideoUrlSource().catch(err => {
