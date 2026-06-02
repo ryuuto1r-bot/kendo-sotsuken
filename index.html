@@ -957,6 +957,7 @@
             padding: 8px !important;
         }
         .video-file-pick-card {
+            position: relative;
             display: grid;
             grid-template-columns: auto 1fr auto;
             gap: 14px;
@@ -968,6 +969,7 @@
                 linear-gradient(135deg, #eff6ff 0%, #ffffff 52%, #f8fafc 100%);
             padding: 16px;
             cursor: pointer;
+            overflow: hidden;
             box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
             transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
         }
@@ -997,12 +999,13 @@
         }
         .video-file-pick-input {
             position: absolute;
-            width: 1px;
-            height: 1px;
+            inset: 0;
+            z-index: 5;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
             overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            clip-path: inset(50%);
+            cursor: pointer;
         }
         @media (max-width: 640px) {
             .video-file-pick-card {
@@ -1479,8 +1482,8 @@
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
                     </span>
                     <span class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
+                    <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ">
                 </label>
-                <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input">
                 <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
                 <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
                     <label class="block text-xs font-bold text-slate-700 mb-1">動画URL解析（mp4/mov直接URLのみ）</label>
@@ -3028,7 +3031,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v109';
+            const refreshKey = 'kendo-sw-refreshed-v110';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
