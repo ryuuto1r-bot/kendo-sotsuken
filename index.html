@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v129';
+            var version = 'v130';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -330,44 +330,71 @@
             height: 22px;
         }
         #videoStep-correct:fullscreen,
-        #videoStep-correct:-webkit-full-screen {
-            display: block;
+        #videoStep-correct:-webkit-full-screen,
+        #videoStep-correct.fullscreen-fallback {
+            display: grid;
+            grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+            gap: 10px;
             width: 100vw;
             height: 100vh;
-            overflow: auto;
+            overflow: hidden;
             background: #f8fafc;
-            padding: 14px;
+            padding: 10px;
         }
         #videoStep-correct:fullscreen .video-correction-preview,
-        #videoStep-correct:-webkit-full-screen .video-correction-preview {
-            min-height: min(78vh, 820px);
-            height: min(78vh, 820px);
+        #videoStep-correct:-webkit-full-screen .video-correction-preview,
+        #videoStep-correct.fullscreen-fallback .video-correction-preview {
+            height: 100%;
+            min-height: 0;
+            max-height: none;
         }
         #videoStep-correct:fullscreen .official-flow-card,
-        #videoStep-correct:-webkit-full-screen .official-flow-card {
+        #videoStep-correct:-webkit-full-screen .official-flow-card,
+        #videoStep-correct.fullscreen-fallback .official-flow-card {
             display: none;
         }
         #videoStep-correct:fullscreen .video-strike-detail-panel,
-        #videoStep-correct:-webkit-full-screen .video-strike-detail-panel {
+        #videoStep-correct:-webkit-full-screen .video-strike-detail-panel,
+        #videoStep-correct.fullscreen-fallback .video-strike-detail-panel {
             position: static;
             z-index: 25;
             border-color: rgba(129, 140, 248, 0.42);
             box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
         }
         #videoStep-correct:fullscreen .video-correction-controls,
-        #videoStep-correct:-webkit-full-screen .video-correction-controls {
-            max-height: min(78vh, 820px);
+        #videoStep-correct:-webkit-full-screen .video-correction-controls,
+        #videoStep-correct.fullscreen-fallback .video-correction-controls {
+            height: 100%;
+            max-height: none;
             overflow: auto;
         }
         #videoStep-correct:fullscreen .video-correction-workspace,
-        #videoStep-correct:-webkit-full-screen .video-correction-workspace {
-            grid-template-columns: minmax(0, 1fr) minmax(320px, 390px) !important;
+        #videoStep-correct:-webkit-full-screen .video-correction-workspace,
+        #videoStep-correct.fullscreen-fallback .video-correction-workspace {
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 400px) !important;
             align-items: stretch;
+            min-height: 0;
+            height: 100%;
+            overflow: hidden;
         }
         #videoStep-correct:fullscreen .video-correction-controls,
-        #videoStep-correct:-webkit-full-screen .video-correction-controls {
-            position: sticky;
-            top: 10px;
+        #videoStep-correct:-webkit-full-screen .video-correction-controls,
+        #videoStep-correct.fullscreen-fallback .video-correction-controls {
+            position: relative;
+            top: auto !important;
+        }
+        #videoStep-correct:fullscreen .video-correction-framebar,
+        #videoStep-correct:-webkit-full-screen .video-correction-framebar,
+        #videoStep-correct.fullscreen-fallback .video-correction-framebar,
+        #videoStep-correct:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct.fullscreen-fallback #videoStrikeDetailPanel {
+            background: rgba(255, 255, 255, 0.96);
+        }
+        #videoStep-correct:fullscreen > .flex.flex-wrap.justify-between.gap-2,
+        #videoStep-correct:-webkit-full-screen > .flex.flex-wrap.justify-between.gap-2,
+        #videoStep-correct.fullscreen-fallback > .flex.flex-wrap.justify-between.gap-2 {
+            margin-top: 0;
         }
         .video-editor-timeline {
             position: relative;
@@ -2013,7 +2040,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v129-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v130-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3637,7 +3664,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v129';
+            const refreshKey = 'kendo-sw-refreshed-v130';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
