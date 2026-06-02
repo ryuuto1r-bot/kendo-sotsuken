@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v127';
+            var version = 'v128';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -713,6 +713,90 @@
         .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid {
             grid-template-columns: minmax(0, 1.55fr) minmax(280px, 360px) !important;
         }
+        #videoStep-mark,
+        #videoStep-result,
+        #videoStep-correct {
+            --video-editor-max: min(42vh, 420px);
+            --video-editor-panel-max: min(42vh, 420px);
+        }
+        #videoStep-mark.active,
+        #videoStep-result.active,
+        #videoStep-correct.active {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+        }
+        #videoStep-mark .video-editor-timeline,
+        #videoStep-result .video-editor-timeline,
+        #videoStep-correct .video-editor-timeline {
+            padding: 8px 9px 10px;
+        }
+        #videoStep-mark .video-editor-track,
+        #videoStep-result .video-editor-track,
+        #videoStep-correct .video-editor-track {
+            height: 58px;
+        }
+        #videoStep-mark .video-editor-marker,
+        #videoStep-result .video-editor-marker,
+        #videoStep-correct .video-editor-marker {
+            top: 8px;
+            height: 42px;
+        }
+        #videoStep-mark #analysisVideoElement {
+            max-height: var(--video-editor-max);
+            min-height: 260px;
+            height: var(--video-editor-max);
+            object-fit: contain;
+        }
+        #videoStep-mark .video-editor-timeline {
+            margin-top: 8px;
+        }
+        #videoStep-mark .grid.grid-cols-2.md\:grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        #videoStep-mark .flex.flex-wrap.gap-2.mt-3 {
+            gap: 6px;
+        }
+        #videoStep-mark .flex.flex-wrap.gap-2.mt-3 button,
+        #videoStep-mark .flex.flex-wrap.justify-between.gap-2 button {
+            min-height: 38px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        @media (min-width: 1024px) {
+            #videoStep-mark.active {
+                grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+                align-items: start;
+            }
+            #videoStep-mark .mark-video-hint {
+                display: none;
+            }
+            #videoStep-mark .mark-video-shell {
+                grid-column: 1;
+                margin-top: 0;
+            }
+            #videoStep-mark .mark-manual-card {
+                grid-column: 2;
+                margin-top: 0;
+                max-height: var(--video-editor-max);
+                overflow: auto;
+                overscroll-behavior: contain;
+            }
+            #videoStep-mark .mark-footer {
+                grid-column: 1 / -1;
+                margin-top: 0;
+            }
+        }
+        .video-analysis-compact-shell {
+            display: grid;
+            gap: 10px;
+        }
+        #videoResultPreviewPanel {
+            padding: 10px;
+        }
+        #videoResultPreviewPanel > .flex:first-child {
+            margin-bottom: 8px !important;
+        }
         .video-analysis-fullscreen:fullscreen .video-correction-preview,
         .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview,
         .video-analysis-fullscreen.fullscreen-fallback .video-correction-preview {
@@ -730,14 +814,27 @@
         }
         .video-result-preview-grid > .video-correction-preview {
             aspect-ratio: auto;
-            min-height: clamp(440px, 58vh, 760px);
-            height: clamp(440px, 58vh, 760px);
+            min-height: 360px;
+            height: var(--video-editor-max);
+            max-height: var(--video-editor-max);
             border-radius: 14px;
             box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
             border-color: rgba(15, 23, 42, 0.7) !important;
         }
+        .video-correction-preview video,
+        .video-correction-preview canvas,
+        .video-correction-preview > video,
+        .video-correction-preview > canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
         .video-result-controls {
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 14px 40px rgba(15, 23, 42, 0.08);
+            max-height: var(--video-editor-panel-max);
+            overflow: auto;
+            overscroll-behavior: contain;
         }
         .video-analysis-fullscreen:fullscreen .video-result-controls,
         .video-analysis-fullscreen:-webkit-full-screen .video-result-controls,
@@ -759,15 +856,15 @@
         .video-result-controls button,
         .video-result-controls select,
         .video-result-controls .video-detail-edit-btn {
-            min-height: 36px;
-            padding-top: 7px;
-            padding-bottom: 7px;
+            min-height: 34px;
+            padding-top: 6px;
+            padding-bottom: 6px;
         }
         .video-result-controls .video-result-frame-controls {
             padding: 8px;
         }
         .video-result-mini-timeline {
-            margin-top: 10px;
+            margin-top: 8px;
             border: 1px solid rgba(15, 23, 42, 0.22);
             background:
                 linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96));
@@ -778,7 +875,7 @@
             font-size: 12px;
         }
         .video-result-mini-timeline .video-editor-track {
-            height: 108px;
+            height: 74px;
             border: 1px solid rgba(148, 163, 184, 0.28);
             border-radius: 18px;
             background:
@@ -836,21 +933,21 @@
             border-radius: 6px;
         }
         .video-result-mini-timeline .video-editor-marker {
-            top: 16px;
-            height: 76px;
-            width: 22px;
+            top: 12px;
+            height: 50px;
+            width: 18px;
             box-shadow: 0 14px 30px rgba(2, 6, 23, 0.4);
         }
         .video-result-mini-timeline .video-editor-strike-range {
-            top: 33px;
-            height: 30px;
+            top: 24px;
+            height: 22px;
             background: rgba(245, 158, 11, 0.22);
             border-color: rgba(245, 158, 11, 0.38);
         }
         .video-result-mini-timeline .video-editor-strike {
-            top: 28px;
-            width: 42px;
-            height: 42px;
+            top: 19px;
+            width: 34px;
+            height: 34px;
         }
         .video-editor-marker.peak { background: #f59e0b; }
         .video-strike-detail-panel {
@@ -867,7 +964,7 @@
         }
         .video-strike-detail-scale .video-editor-timebar { color: #312e81; }
         .video-strike-detail-scale .video-editor-track {
-            height: 92px;
+            height: 68px;
             border-color: rgba(99, 102, 241, 0.26);
             background:
                 linear-gradient(180deg, rgba(15, 23, 42, 0.04), rgba(255,255,255,0.08)),
@@ -881,9 +978,9 @@
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.62);
         }
         .video-strike-detail-scale .video-editor-marker {
-            top: 15px;
-            height: 62px;
-            width: 20px;
+            top: 10px;
+            height: 48px;
+            width: 18px;
         }
         .video-strike-detail-scale .video-editor-marker.peak {
             height: 50px;
@@ -905,7 +1002,7 @@
             border: 1px solid rgba(99, 102, 241, 0.16);
             border-radius: 14px;
             background: rgba(255, 255, 255, 0.72);
-            padding: 10px;
+            padding: 8px;
         }
         @media (min-width: 900px) {
             .video-detail-edit-toolbar {
@@ -917,7 +1014,7 @@
             border: 1px solid rgba(226, 232, 240, 0.9);
             border-radius: 12px;
             background: rgba(248, 250, 252, 0.85);
-            padding: 9px;
+            padding: 7px;
         }
         .video-detail-edit-title {
             margin-bottom: 6px;
@@ -943,7 +1040,7 @@
             }
         }
         .video-detail-edit-btn {
-            min-height: 38px;
+            min-height: 34px;
             border: 1px solid #c7d2fe;
             border-radius: 10px;
             background: #ffffff;
@@ -987,6 +1084,96 @@
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.92);
             padding: 8px;
+        }
+        #videoStep-correct .official-flow-card {
+            display: none;
+        }
+        #videoStep-correct .video-correction-framebar {
+            padding: 10px;
+        }
+        #videoStep-correct {
+            --video-editor-max: min(36vh, 340px);
+            --video-editor-panel-max: min(36vh, 340px);
+        }
+        #videoStep-correct #videoStrikeDetailPanel {
+            padding: 8px;
+            max-height: 150px;
+            overflow: auto;
+        }
+        #videoStep-correct #videoStrikeDetailPanel:not([open]) {
+            max-height: 38px;
+        }
+        #videoStep-correct .video-correction-workspace {
+            min-height: 0;
+            align-items: stretch;
+        }
+        #videoStep-correct .video-correction-preview {
+            height: var(--video-editor-max);
+            max-height: var(--video-editor-max);
+            min-height: 240px;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        #videoStep-correct .video-correction-controls {
+            max-height: var(--video-editor-panel-max);
+            overflow: auto;
+            overscroll-behavior: contain;
+            padding: 10px;
+            gap: 8px;
+        }
+        #videoStep-correct .video-correction-controls .grid.grid-cols-2 {
+            gap: 6px;
+        }
+        #videoStep-correct .video-correction-controls button,
+        #videoStep-correct .video-correction-controls select {
+            min-height: 34px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+        #videoStep-correct .video-correction-support-details {
+            max-height: 190px;
+            overflow: auto;
+        }
+        #videoStep-correct > .grid.grid-cols-1.md\:grid-cols-2,
+        #videoStep-correct > .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-7 {
+            display: none;
+        }
+        @media (min-width: 1280px) {
+            #videoStep-mark,
+            #videoStep-result {
+                --video-editor-max: min(calc(100vh - 520px), 380px);
+                --video-editor-panel-max: min(calc(100vh - 520px), 380px);
+            }
+            #videoStep-correct {
+                --video-editor-max: min(calc(100vh - 620px), 280px);
+                --video-editor-panel-max: min(calc(100vh - 620px), 280px);
+            }
+            #videoStep-result .video-result-preview-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+            }
+            #videoStep-correct .video-correction-workspace {
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+            }
+        }
+        @media (max-width: 900px) {
+            #videoStep-mark,
+            #videoStep-result,
+            #videoStep-correct {
+                --video-editor-max: min(52vh, 430px);
+                --video-editor-panel-max: none;
+            }
+            #videoStep-mark #analysisVideoElement,
+            #videoStep-result .video-result-preview-grid > .video-correction-preview,
+            #videoStep-correct .video-correction-preview {
+                min-height: 260px;
+            }
+            .video-result-controls,
+            #videoStep-correct .video-correction-controls {
+                max-height: none;
+            }
+            #videoStep-mark .grid.grid-cols-2.md\:grid-cols-4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
         .video-result-edit-panel .grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1824,13 +2011,13 @@
                 </div>
                 </div>
                 <div id="videoStep-mark" class="video-step-panel space-y-3">
-                <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+                <div class="mark-video-hint rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
                     開始 / 終了を指定
                 </div>
-                <div class="mt-3 border border-slate-200 rounded-xl overflow-hidden bg-slate-950">
+                <div class="mark-video-shell mt-3 border border-slate-200 rounded-xl overflow-hidden bg-slate-950">
                     <video id="analysisVideoElement" class="w-full max-h-[360px] bg-black object-contain" muted="" playsinline="" controls=""></video>
                 </div>
-                <div class="mt-3 border border-blue-100 bg-blue-50 rounded-xl p-3 text-xs text-blue-900">
+                <div class="mark-manual-card mt-3 border border-blue-100 bg-blue-50 rounded-xl p-3 text-xs text-blue-900">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <div class="font-black"><i class="fa-solid fa-location-dot mr-1"></i>手動マーカーで範囲指定</div>
                         <label class="flex items-center gap-2 font-bold text-blue-800">
@@ -1869,7 +2056,7 @@
                     </div>
                     <p id="videoManualRangeStatus" class="mt-2 text-[11px] text-blue-800">範囲未指定</p>
                 </div>
-                <div class="flex flex-wrap justify-between gap-2">
+                <div class="mark-footer flex flex-wrap justify-between gap-2">
                     <button type="button" onclick="switchVideoStep('load')" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2 rounded text-sm font-bold">動画を入れ直す</button>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="confirmVideoManualRange(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold">補正を確定</button>
@@ -2290,7 +2477,7 @@
                         <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
                         <p><strong>開始</strong> 振り下ろし / <strong>終了</strong> 減速・停止</p>
                     </div>
-                    <div class="rounded-xl border border-blue-100 bg-white p-3">
+                    <div class="video-correction-framebar rounded-xl border border-blue-100 bg-white p-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
                             <span class="font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>全フレーム移動</span>
                             <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
@@ -3378,7 +3565,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v127';
+            const refreshKey = 'kendo-sw-refreshed-v128';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
