@@ -1022,13 +1022,22 @@
             cursor: pointer;
         }
         .video-file-pick-input {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            overflow: hidden;
-            pointer-events: none;
-            clip-path: inset(50%);
+            grid-column: 1 / -1;
+            display: block;
+            width: 100%;
+            min-height: 44px;
+            opacity: 1;
+            overflow: visible;
+            pointer-events: auto;
+            clip-path: none;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.88);
+            color: #0f172a;
+            padding: 9px 10px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
         }
         .video-file-pick-card:focus-visible {
             outline: 3px solid rgba(37, 99, 235, 0.45);
@@ -1507,15 +1516,111 @@
                     動画選択
                 </div>
                 <div id="videoStep-load" class="video-step-panel active space-y-3">
-                <label id="videoFilePickCard" for="videoFileInput" class="video-file-pick-card" role="button" tabindex="0" aria-controls="videoFileInput" aria-label="動画ファイルを選ぶ">
+                <div id="videoFilePickCard" class="video-file-pick-card" role="button" tabindex="0" aria-controls="videoFileInput" aria-label="動画ファイルを選ぶ">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
                     </span>
-                    <span id="videoFilePickBtn" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</span>
-                    <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ">
-                </label>
+                    <button id="videoFilePickBtn" type="button" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</button>
+                    <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
+                </div>
+                <script>
+                    // 動画選択だけはメイン初期化に依存させない。大きなAI/描画スクリプトの読み込みが遅くても、先に動画を投入できるようにする。
+                    (function(){
+                        function text(id, value) {
+                            var el = document.getElementById(id);
+                            if (el) el.textContent = value;
+                        }
+                        function openStep(step) {
+                            document.querySelectorAll('.video-step-panel').forEach(function(panel){ panel.classList.remove('active'); });
+                            document.querySelectorAll('.video-step-btn').forEach(function(btn){ btn.classList.remove('active'); });
+                            var panel = document.getElementById('videoStep-' + step);
+                            var btn = document.getElementById('videoStepBtn-' + (step === 'analyze' || step === 'correct' ? 'mark' : step));
+                            if (panel) panel.classList.add('active');
+                            if (btn) btn.classList.add('active');
+                        }
+                        function earlyVideoFileInputChange(inputEl) {
+                            var file = inputEl && inputEl.files && inputEl.files[0];
+                            if (!file) {
+                                text('videoUrlStatus', '未選択');
+                                return;
+                            }
+                            var signature = file.name + ':' + file.size + ':' + (file.lastModified || 0);
+                            var now = Date.now();
+                            if (window.__kendoEarlyVideoSignature === signature && now - (window.__kendoEarlyVideoLoadedAt || 0) < 500) return;
+                            window.__kendoEarlyVideoSignature = signature;
+                            window.__kendoEarlyVideoLoadedAt = now;
+                            if (Number(file.size || 0) < 1024) {
+                                text('videoAnalysisStatus', 'ファイル異常');
+                                text('videoUrlStatus', '選択した動画ファイルが空、または破損しています。別のmp4/mov動画を選んでください。');
+                                return;
+                            }
+                            var video = document.getElementById('analysisVideoElement');
+                            if (!video) {
+                                setTimeout(function(){ earlyVideoFileInputChange(inputEl); }, 120);
+                                return;
+                            }
+                            if (window.__kendoEarlyVideoUrl) URL.revokeObjectURL(window.__kendoEarlyVideoUrl);
+                            var url = URL.createObjectURL(file);
+                            window.__kendoEarlyVideoUrl = url;
+                            text('videoAnalysisStatus', '動画選択済み');
+                            text('videoUrlStatus', '動画を選択しました。開始/終了を置いて解析できます。');
+                            video.removeAttribute('crossorigin');
+                            video.muted = true;
+                            video.playsInline = true;
+                            video.onloadedmetadata = function(){
+                                var fps = 60;
+                                var duration = Math.min(Number(video.duration || 0), 12);
+                                text('videoDiagResolution', (video.videoWidth || 0) + 'x' + (video.videoHeight || 0));
+                                text('videoDiagFps', fps + 'fps');
+                                text('videoDiagFrames', String(Math.max(1, Math.min(Math.floor(duration * fps), 1800))));
+                                text('videoDeviceCheckVerdict', '動画選択済み');
+                                text('videoDeviceCheckReason', file.name);
+                                openStep('mark');
+                            };
+                            video.onerror = function(){
+                                text('videoAnalysisStatus', '読込エラー');
+                                text('videoUrlStatus', '動画を読み込めませんでした。別のmp4/movを選んでください。');
+                            };
+                            video.src = url;
+                        }
+                        window.handleVideoFileInputChange = window.handleVideoFileInputChange || earlyVideoFileInputChange;
+                        function openPicker(event) {
+                            if (event && event.target && event.target.id === 'videoFileInput') return;
+                            if (event) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            var input = document.getElementById('videoFileInput');
+                            if (!input) return;
+                            try { input.value = ''; } catch (_) {}
+                            input.click();
+                        }
+                        var card = document.getElementById('videoFilePickCard');
+                        var btn = document.getElementById('videoFilePickBtn');
+                        var input = document.getElementById('videoFileInput');
+                        if (card && !card.dataset.earlyPickerBound) {
+                            card.dataset.earlyPickerBound = '1';
+                            card.addEventListener('click', openPicker);
+                            card.addEventListener('keydown', function(event){
+                                if (event.key === 'Enter' || event.key === ' ') openPicker(event);
+                            });
+                        }
+                        if (btn && !btn.dataset.earlyPickerBound) {
+                            btn.dataset.earlyPickerBound = '1';
+                            btn.addEventListener('click', openPicker);
+                        }
+                        if (input && !input.dataset.earlyPickerBound) {
+                            input.dataset.earlyPickerBound = '1';
+                            input.addEventListener('click', function(event){
+                                event.stopPropagation();
+                                try { input.value = ''; } catch (_) {}
+                            });
+                            input.addEventListener('change', function(){ earlyVideoFileInputChange(input); });
+                        }
+                    })();
+                </script>
                 <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
                 <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
                     <label class="block text-xs font-bold text-slate-700 mb-1">動画URL解析（mp4/mov直接URLのみ）</label>
@@ -3129,7 +3234,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v121';
+            const refreshKey = 'kendo-sw-refreshed-v124';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -11877,23 +11982,32 @@
             try { input.value = ''; } catch (_) {}
             return input;
         };
-        const openVideoFilePickerFromKeyboard = event => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
+        const openVideoFilePicker = event => {
+            if (event?.target?.id === 'videoFileInput') return;
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
             const input = prepareVideoFilePicker();
             if (input) input.click();
         };
+        const openVideoFilePickerFromKeyboard = event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            openVideoFilePicker(event);
+        };
         const videoFilePickCard = document.getElementById('videoFilePickCard');
-        if (videoFilePickCard) {
-            videoFilePickCard.addEventListener('pointerdown', prepareVideoFilePicker);
+        if (videoFilePickCard && !videoFilePickCard.dataset.earlyPickerBound) {
+            videoFilePickCard.addEventListener('click', openVideoFilePicker);
             videoFilePickCard.addEventListener('keydown', openVideoFilePickerFromKeyboard);
         }
         const videoFilePickBtn = document.getElementById('videoFilePickBtn');
-        if (videoFilePickBtn) videoFilePickBtn.addEventListener('pointerdown', prepareVideoFilePicker);
-        const videoFileInput = document.getElementById('videoFileInput');
-        if (videoFileInput) videoFileInput.addEventListener('change', () => {
-            const file = videoFileInput.files?.[0];
+        if (videoFilePickBtn && !videoFilePickBtn.dataset.earlyPickerBound) videoFilePickBtn.addEventListener('click', openVideoFilePicker);
+        function handleVideoFileInputChange(inputEl = document.getElementById('videoFileInput')) {
+            const file = inputEl?.files?.[0];
             if (!file) return updateVideoDiagnostics({ empty: true });
+            const signature = `${file.name}:${file.size}:${file.lastModified || 0}`;
+            const now = performance.now();
+            if (AppState.lastVideoFileLoadSignature === signature && now - (AppState.lastVideoFileLoadAt || 0) < 500) return;
+            AppState.lastVideoFileLoadSignature = signature;
+            AppState.lastVideoFileLoadAt = now;
             AppState.videoUrlSource = null;
             if (Number(file.size || 0) < 1024) {
                 updateVideoDiagnostics({ empty: true });
@@ -11935,7 +12049,18 @@
             video.src = tempUrl;
             video.muted = true;
             video.playsInline = true;
-        });
+        }
+        window.handleVideoFileInputChange = handleVideoFileInputChange;
+        const videoFileInput = document.getElementById('videoFileInput');
+        if (videoFileInput) {
+            if (!videoFileInput.dataset.earlyPickerBound) {
+                videoFileInput.addEventListener('click', event => {
+                    event.stopPropagation();
+                    try { videoFileInput.value = ''; } catch (_) {}
+                });
+            }
+            videoFileInput.addEventListener('change', event => handleVideoFileInputChange(event.currentTarget));
+        }
         const loadVideoUrlBtn = document.getElementById('loadVideoUrlBtn');
         if (loadVideoUrlBtn) loadVideoUrlBtn.addEventListener('click', () => {
             loadVideoUrlSource().catch(err => {
