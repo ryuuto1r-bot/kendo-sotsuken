@@ -5,6 +5,29 @@
     <title>剣道 非接触打突分析 ver.9</title>
     <meta name="description" content="MediaPipe Poseを使った剣道の非接触打突分析ツール">
     <meta name="theme-color" content="#0f172a">
+    <script>
+        // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
+        (function(){
+            var version = 'v125';
+            var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
+            if (!isGithubPages) return;
+            var key = 'kendo-github-cache-clean-' + version;
+            if (sessionStorage.getItem(key) === '1') return;
+            sessionStorage.setItem(key, '1');
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations()
+                        .then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); })
+                        .catch(function(){});
+                }
+                if ('caches' in window) {
+                    caches.keys()
+                        .then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); })
+                        .catch(function(){});
+                }
+            } catch (_) {}
+        })();
+    </script>
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     
@@ -1020,6 +1043,8 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            text-decoration: none;
+            min-height: 38px;
         }
         .video-file-pick-input {
             grid-column: 1 / -1;
@@ -1037,6 +1062,26 @@
             padding: 9px 10px;
             font-size: 13px;
             font-weight: 800;
+            cursor: pointer;
+        }
+        .video-file-pick-input::file-selector-button {
+            border: 0;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            padding: 8px 12px;
+            margin-right: 10px;
+            font-weight: 1000;
+            cursor: pointer;
+        }
+        .video-file-pick-input::-webkit-file-upload-button {
+            border: 0;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            padding: 8px 12px;
+            margin-right: 10px;
+            font-weight: 1000;
             cursor: pointer;
         }
         .video-file-pick-card:focus-visible {
@@ -1522,7 +1567,7 @@
                         <span class="block text-base font-black text-slate-900">動画ファイルを選ぶ</span>
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov</span>
                     </span>
-                    <button id="videoFilePickBtn" type="button" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</button>
+                    <label id="videoFilePickBtn" for="videoFileInput" class="video-file-pick-action"><i class="fa-solid fa-folder-open mr-1"></i>選択</label>
                     <input type="file" id="videoFileInput" accept="video/*,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
                 </div>
                 <script>
@@ -3234,7 +3279,8 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v124';
+            if (location.hostname.endsWith('github.io')) return;
+            const refreshKey = 'kendo-sw-refreshed-v125';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
