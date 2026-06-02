@@ -2359,16 +2359,38 @@
 	                    <option value="live">現在姿勢のみ</option>
 	                    <option value="latest">最新記録のみ</option>
 	                </select>
-	                <select id="modelAngleSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white">
-	                    <option value="rightElbow" selected="">右肘角</option>
-	                    <option value="leftElbow">左肘角</option>
-	                    <option value="torso">体幹軸</option>
-	                    <option value="hasuji">刃筋</option>
-	                    <option value="shoulders">肩ライン</option>
-	                </select>
-	                <select id="modelPlayRateSelect" class="border border-slate-200 rounded px-2 py-2 text-sm bg-white">
-	                    <option value="0.1">0.1x</option>
-	                    <option value="0.25">0.25x</option>
+		                <select id="modelAngleSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white">
+		                    <option value="rightElbow" selected="">右肘角</option>
+		                    <option value="leftElbow">左肘角</option>
+		                    <option value="torso">体幹軸</option>
+		                    <option value="hasuji">刃筋</option>
+		                    <option value="shoulders">肩ライン</option>
+		                </select>
+		                <select id="modelCameraDirectionSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="撮影方向を補正">
+		                    <option value="auto" selected="">撮影: 自動補正</option>
+		                    <option value="front">撮影: 正面</option>
+		                    <option value="left45">撮影: 左斜め45°</option>
+		                    <option value="right45">撮影: 右斜め45°</option>
+		                    <option value="leftSide">撮影: 左側面</option>
+		                    <option value="rightSide">撮影: 右側面</option>
+		                    <option value="back">撮影: 背面</option>
+		                </select>
+		                <select id="modelPivotSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="3D回転の中心">
+		                    <option value="auto" selected="">ピボット: 角度中心</option>
+		                    <option value="shoulder">ピボット: 肩</option>
+		                    <option value="hip">ピボット: 腰</option>
+		                    <option value="rightWrist">ピボット: 右手首</option>
+		                    <option value="center">ピボット: 体中心</option>
+		                </select>
+		                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded px-3 py-2">
+		                    拡大
+		                    <input id="modelViewZoomSlider" type="range" min="0.65" max="2.4" step="0.05" value="1" class="w-24 accent-violet-600">
+		                    <span id="modelViewZoomValue" class="font-mono-num text-slate-800">1.00x</span>
+		                </label>
+		                <button id="modelResetViewBtn" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded text-sm font-bold">視点リセット</button>
+		                <select id="modelPlayRateSelect" class="border border-slate-200 rounded px-2 py-2 text-sm bg-white">
+		                    <option value="0.1">0.1x</option>
+		                    <option value="0.25">0.25x</option>
 	                    <option value="0.5" selected="">0.5x</option>
 	                    <option value="1">1x</option>
 	                </select>
@@ -2383,8 +2405,12 @@
 	                    <h3 class="font-bold text-sm text-slate-100">3D人体モデル</h3>
 	                    <span id="modelSourceLabel" class="text-xs text-slate-400">待機姿勢</span>
 	                </div>
-	                <div id="angleModelViewport" class="relative min-h-[440px] md:min-h-[560px]">
-	                    <div class="absolute left-3 bottom-3 z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pointer-events-none">
+		                <div id="angleModelViewport" class="relative min-h-[440px] md:min-h-[560px]">
+		                    <div class="absolute right-3 top-3 z-10 max-w-[240px] rounded bg-slate-950/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 backdrop-blur pointer-events-none">
+		                        <div id="modelOrientationStatus" class="font-bold text-violet-200">撮影補正: 自動</div>
+		                        <div class="text-slate-400 mt-1">ドラッグ回転 / Shift移動 / ホイール拡大</div>
+		                    </div>
+		                    <div class="absolute left-3 bottom-3 z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pointer-events-none">
 	                        <div class="bg-slate-950/80 border border-violet-400/40 text-violet-100 rounded px-3 py-2 backdrop-blur"><span class="block text-violet-300">右肘</span><b id="modelBadgeRightElbow" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
 	                        <div class="bg-slate-950/80 border border-emerald-400/40 text-emerald-100 rounded px-3 py-2 backdrop-blur"><span class="block text-emerald-300">体幹軸</span><b id="modelBadgeTorso" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
 	                        <div class="bg-slate-950/80 border border-amber-400/40 text-amber-100 rounded px-3 py-2 backdrop-blur"><span class="block text-amber-300">刃筋</span><b id="modelBadgeHasuji" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
@@ -2740,6 +2766,14 @@
             modelAngleValues: null,
             angleModelTarget: 'rightElbow',
             modelSourceMode: 'auto',
+            modelCameraDirection: 'auto',
+            modelPivotMode: 'auto',
+            modelViewYaw: 0,
+            modelViewPitch: 0,
+            modelViewZoom: 1,
+            modelViewPanX: 0,
+            modelViewPanY: 0,
+            modelViewDrag: null,
             modelPlaybackPlaying: false,
             modelPlaybackTimer: null,
             angleModel3d: null,
@@ -3087,7 +3121,7 @@
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v119';
+            const refreshKey = 'kendo-sw-refreshed-v120';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -4488,20 +4522,209 @@
             return { pose: neutralPoseSnapshot(), label: '待機姿勢' };
         }
 
-        function getModelLandmarkPoint(pose, key, THREE) {
+        const MODEL_CAMERA_DIRECTION_LABELS = {
+            auto: '自動補正',
+            front: '正面',
+            left45: '左斜め45°',
+            right45: '右斜め45°',
+            leftSide: '左側面',
+            rightSide: '右側面',
+            back: '背面'
+        };
+
+        const MODEL_CAMERA_DIRECTION_YAW = {
+            front: 0,
+            left45: Math.PI / 4,
+            right45: -Math.PI / 4,
+            leftSide: Math.PI / 2,
+            rightSide: -Math.PI / 2,
+            back: Math.PI
+        };
+
+        const MODEL_PIVOT_LABELS = {
+            auto: '角度中心',
+            shoulder: '肩',
+            hip: '腰',
+            rightWrist: '右手首',
+            center: '体中心'
+        };
+
+        function getRawModelLandmarkPoint(pose, key, THREE) {
             if (key === 'shoulderMid') {
-                const l = getModelLandmarkPoint(pose, 11, THREE);
-                const r = getModelLandmarkPoint(pose, 12, THREE);
+                const l = getRawModelLandmarkPoint(pose, 11, THREE);
+                const r = getRawModelLandmarkPoint(pose, 12, THREE);
                 return l && r ? l.clone().add(r).multiplyScalar(0.5) : null;
             }
             if (key === 'hipMid') {
-                const l = getModelLandmarkPoint(pose, 23, THREE);
-                const r = getModelLandmarkPoint(pose, 24, THREE);
+                const l = getRawModelLandmarkPoint(pose, 23, THREE);
+                const r = getRawModelLandmarkPoint(pose, 24, THREE);
                 return l && r ? l.clone().add(r).multiplyScalar(0.5) : null;
             }
-            const lm = pose[key];
+            if (key === 'center') {
+                const shoulderMid = getRawModelLandmarkPoint(pose, 'shoulderMid', THREE);
+                const hipMid = getRawModelLandmarkPoint(pose, 'hipMid', THREE);
+                if (shoulderMid && hipMid) return shoulderMid.clone().add(hipMid).multiplyScalar(0.5);
+                return shoulderMid || hipMid || null;
+            }
+            const lm = pose?.[key];
             if (!lm || visibilityOf(lm) < 0.2) return null;
             return new THREE.Vector3((lm.x - 0.5) * 3.2, (0.82 - lm.y) * 3.2, -(lm.z || 0) * 2.0);
+        }
+
+        function getModelPoseTransform(pose, THREE) {
+            const mode = AppState.modelCameraDirection || document.getElementById('modelCameraDirectionSelect')?.value || 'auto';
+            let yaw = MODEL_CAMERA_DIRECTION_YAW[mode] ?? 0;
+            let label = MODEL_CAMERA_DIRECTION_LABELS[mode] || MODEL_CAMERA_DIRECTION_LABELS.auto;
+            if (mode === 'auto') {
+                const lShoulder = getRawModelLandmarkPoint(pose, 11, THREE);
+                const rShoulder = getRawModelLandmarkPoint(pose, 12, THREE);
+                if (lShoulder && rShoulder) {
+                    const shoulderVector = rShoulder.clone().sub(lShoulder);
+                    if (shoulderVector.length() > 0.03) yaw = -Math.atan2(shoulderVector.z, shoulderVector.x);
+                }
+            }
+            if (!Number.isFinite(yaw)) yaw = 0;
+            const pivot = getRawModelLandmarkPoint(pose, 'center', THREE) || getRawModelLandmarkPoint(pose, 'shoulderMid', THREE) || new THREE.Vector3(0, 0, 0);
+            return { yaw, pivot, label, mode };
+        }
+
+        function rotateModelPointAroundY(THREE, point, pivot, yaw) {
+            if (!point || !pivot || !Number.isFinite(yaw) || Math.abs(yaw) < 0.0001) return point;
+            const relative = point.clone().sub(pivot);
+            const cos = Math.cos(yaw);
+            const sin = Math.sin(yaw);
+            return new THREE.Vector3(
+                relative.x * cos - relative.z * sin,
+                relative.y,
+                relative.x * sin + relative.z * cos
+            ).add(pivot);
+        }
+
+        function getModelLandmarkPoint(pose, key, THREE) {
+            const raw = getRawModelLandmarkPoint(pose, key, THREE);
+            if (!raw) return null;
+            const transform = getModelPoseTransform(pose, THREE);
+            return rotateModelPointAroundY(THREE, raw, transform.pivot, transform.yaw);
+        }
+
+        function getModelViewState() {
+            AppState.modelViewZoom = clamp(Number(AppState.modelViewZoom) || 1, 0.65, 2.4);
+            AppState.modelViewPitch = clamp(Number(AppState.modelViewPitch) || 0, -0.9, 0.9);
+            AppState.modelViewYaw = Number.isFinite(Number(AppState.modelViewYaw)) ? Number(AppState.modelViewYaw) : 0;
+            AppState.modelViewPanX = clamp(Number(AppState.modelViewPanX) || 0, -1.8, 1.8);
+            AppState.modelViewPanY = clamp(Number(AppState.modelViewPanY) || 0, -1.5, 1.5);
+            return {
+                zoom: AppState.modelViewZoom,
+                pitch: AppState.modelViewPitch,
+                yaw: AppState.modelViewYaw,
+                panX: AppState.modelViewPanX,
+                panY: AppState.modelViewPanY
+            };
+        }
+
+        function syncModelViewControls() {
+            const view = getModelViewState();
+            const cameraSelect = document.getElementById('modelCameraDirectionSelect');
+            if (cameraSelect && cameraSelect.value !== AppState.modelCameraDirection) cameraSelect.value = AppState.modelCameraDirection || 'auto';
+            const pivotSelect = document.getElementById('modelPivotSelect');
+            if (pivotSelect && pivotSelect.value !== AppState.modelPivotMode) pivotSelect.value = AppState.modelPivotMode || 'auto';
+            const slider = document.getElementById('modelViewZoomSlider');
+            if (slider && Number(slider.value) !== view.zoom) slider.value = view.zoom;
+            safeText('modelViewZoomValue', `${view.zoom.toFixed(2)}x`);
+        }
+
+        function getModelViewPivotPoint(pose, THREE) {
+            const mode = AppState.modelPivotMode || 'auto';
+            if (mode === 'shoulder') return getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            if (mode === 'hip') return getModelLandmarkPoint(pose, 'hipMid', THREE);
+            if (mode === 'rightWrist') return getModelLandmarkPoint(pose, 16, THREE);
+            if (mode === 'center') return getModelLandmarkPoint(pose, 'center', THREE);
+            const target = AppState.angleModelTarget || 'rightElbow';
+            if (target === 'rightElbow') return getModelLandmarkPoint(pose, 14, THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            if (target === 'leftElbow') return getModelLandmarkPoint(pose, 13, THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            if (target === 'hasuji') return getModelLandmarkPoint(pose, 16, THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            if (target === 'torso') return getModelLandmarkPoint(pose, 'center', THREE);
+            if (target === 'shoulders') return getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            return getModelLandmarkPoint(pose, 'center', THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+        }
+
+        function setModelCameraDirection(mode) {
+            AppState.modelCameraDirection = Object.prototype.hasOwnProperty.call(MODEL_CAMERA_DIRECTION_LABELS, mode) ? mode : 'auto';
+            syncModelViewControls();
+            renderAngleModel();
+        }
+
+        function setModelPivotMode(mode) {
+            AppState.modelPivotMode = Object.prototype.hasOwnProperty.call(MODEL_PIVOT_LABELS, mode) ? mode : 'auto';
+            syncModelViewControls();
+            renderAngleModel();
+        }
+
+        function setModelViewZoom(value) {
+            AppState.modelViewZoom = clamp(Number(value) || 1, 0.65, 2.4);
+            syncModelViewControls();
+            renderAngleModel();
+        }
+
+        function resetAngleModelView() {
+            AppState.modelViewYaw = 0;
+            AppState.modelViewPitch = 0;
+            AppState.modelViewZoom = 1;
+            AppState.modelViewPanX = 0;
+            AppState.modelViewPanY = 0;
+            syncModelViewControls();
+            renderAngleModel();
+        }
+
+        function beginAngleModelViewDrag(event) {
+            if (event.button !== undefined && event.button !== 0) return;
+            event.preventDefault();
+            const view = getModelViewState();
+            AppState.modelViewDrag = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                yaw: view.yaw,
+                pitch: view.pitch,
+                panX: view.panX,
+                panY: view.panY,
+                pan: !!(event.shiftKey || event.altKey || event.metaKey)
+            };
+            event.currentTarget?.setPointerCapture?.(event.pointerId);
+            if (event.currentTarget) event.currentTarget.style.cursor = 'grabbing';
+        }
+
+        function handleAngleModelViewPointerMove(event) {
+            const drag = AppState.modelViewDrag;
+            if (!drag) return;
+            event.preventDefault?.();
+            const dx = event.clientX - drag.startX;
+            const dy = event.clientY - drag.startY;
+            const usePan = drag.pan || event.shiftKey || event.altKey || event.metaKey;
+            if (usePan) {
+                const zoom = Math.max(0.65, Number(AppState.modelViewZoom) || 1);
+                AppState.modelViewPanX = clamp(drag.panX + dx / (300 * zoom), -1.8, 1.8);
+                AppState.modelViewPanY = clamp(drag.panY - dy / (300 * zoom), -1.5, 1.5);
+            } else {
+                AppState.modelViewYaw = drag.yaw + dx * 0.008;
+                AppState.modelViewPitch = clamp(drag.pitch + dy * 0.006, -0.9, 0.9);
+            }
+            syncModelViewControls();
+            renderAngleModel();
+        }
+
+        function stopAngleModelViewDrag() {
+            if (!AppState.modelViewDrag) return;
+            AppState.modelViewDrag = null;
+            const canvas = AppState.angleModel3d?.renderer?.domElement;
+            if (canvas) canvas.style.cursor = 'grab';
+        }
+
+        function handleAngleModelWheel(event) {
+            event.preventDefault();
+            const current = Number(AppState.modelViewZoom) || 1;
+            const next = current * Math.exp(-Number(event.deltaY || 0) * 0.001);
+            setModelViewZoom(next);
         }
 
         function alignModelSegment(THREE, mesh, start, end, inset = 0.015) {
@@ -4584,6 +4807,8 @@
             renderer.domElement.style.width = '100%';
             renderer.domElement.style.height = '100%';
             renderer.domElement.style.display = 'block';
+            renderer.domElement.style.cursor = 'grab';
+            renderer.domElement.style.touchAction = 'none';
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.querySelectorAll('canvas').forEach(canvas => canvas.remove());
@@ -4594,9 +4819,11 @@
             const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
             camera.position.set(0, 0.25, 5.8);
             camera.lookAt(0, 0.12, 0);
+            const viewGroup = new THREE.Group();
+            scene.add(viewGroup);
             const group = new THREE.Group();
             group.scale.setScalar(0.86);
-            scene.add(group);
+            viewGroup.add(group);
 
             scene.add(new THREE.AmbientLight(0x7dd3fc, 0.35));
             const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
@@ -4781,8 +5008,27 @@
             group.add(arcLine);
             const refLine = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 1, 12), refMaterial);
             group.add(refLine);
+            const pivotMarker = new THREE.Mesh(
+                new THREE.SphereGeometry(0.075, 18, 18),
+                new THREE.MeshStandardMaterial({
+                    color: 0x22d3ee,
+                    emissive: 0x164e63,
+                    emissiveIntensity: 0.85,
+                    roughness: 0.28,
+                    metalness: 0.08,
+                    transparent: true,
+                    opacity: 0.9
+                })
+            );
+            pivotMarker.visible = false;
+            pivotMarker.castShadow = true;
+            group.add(pivotMarker);
 
-            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, modelParts, container };
+            renderer.domElement.addEventListener('pointerdown', beginAngleModelViewDrag, { passive: false });
+            renderer.domElement.addEventListener('wheel', handleAngleModelWheel, { passive: false });
+
+            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, viewGroup, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, pivotMarker, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, modelParts, container };
+            syncModelViewControls();
             return AppState.angleModel3d;
         }
 
@@ -5302,7 +5548,7 @@
         function renderAngleModel() {
             const model = AppState.angleModel3d;
             if (!model?.initialized) return;
-            const { THREE, renderer, scene, camera, group, bones, joints, highlightSegments, highlightJoints, refLine, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, container } = model;
+            const { THREE, renderer, scene, camera, viewGroup, group, bones, joints, highlightSegments, highlightJoints, refLine, pivotMarker, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, container } = model;
             const width = Math.max(container.clientWidth || 640, 320);
             const height = Math.max(container.clientHeight || 440, 360);
             if (renderer.domElement.width !== Math.round(width * renderer.getPixelRatio()) || renderer.domElement.height !== Math.round(height * renderer.getPixelRatio())) {
@@ -5313,6 +5559,7 @@
 
             const { pose, label } = modelPoseSource();
             safeText('modelSourceLabel', label);
+            const poseTransform = getModelPoseTransform(pose, THREE);
             MODEL_BONE_PAIRS.forEach(pair => {
                 alignModelSegment(THREE, bones[pair.join('_')], getModelLandmarkPoint(pose, pair[0], THREE), getModelLandmarkPoint(pose, pair[1], THREE), 0.025);
             });
@@ -5418,11 +5665,27 @@
                 }
             }
 
-            const shoulderMid = getModelLandmarkPoint(pose, 'shoulderMid', THREE);
-            if (shoulderMid) {
-                group.position.x = -shoulderMid.x;
-                group.position.y = -shoulderMid.y * 0.25;
+            const pivot = getModelViewPivotPoint(pose, THREE) || getModelLandmarkPoint(pose, 'center', THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
+            if (pivot) {
+                const bodyScale = Number(group.scale?.x) || 1;
+                group.position.copy(pivot).multiplyScalar(-bodyScale);
+                if (pivotMarker) {
+                    pivotMarker.visible = true;
+                    pivotMarker.position.copy(pivot);
+                }
+            } else {
+                group.position.set(0, 0, 0);
+                if (pivotMarker) pivotMarker.visible = false;
             }
+            const view = getModelViewState();
+            if (viewGroup) {
+                viewGroup.rotation.set(view.pitch, view.yaw, 0);
+                viewGroup.scale.setScalar(view.zoom);
+                viewGroup.position.set(view.panX, view.panY, 0);
+            }
+            const yawDeg = Math.round((poseTransform.yaw * 180 / Math.PI) * 10) / 10;
+            const pivotLabel = MODEL_PIVOT_LABELS[AppState.modelPivotMode || 'auto'] || MODEL_PIVOT_LABELS.auto;
+            safeText('modelOrientationStatus', `撮影補正: ${poseTransform.label} / ${yawDeg}° / ${pivotLabel}`);
             renderer.render(scene, camera);
         }
 
@@ -5473,6 +5736,9 @@
         async function updateModelAnalysisTab() {
             AppState.angleModelTarget = document.getElementById('modelAngleSelect')?.value || AppState.angleModelTarget || 'rightElbow';
             setModelSourceMode(document.getElementById('modelSourceSelect')?.value || AppState.modelSourceMode || 'auto');
+            AppState.modelCameraDirection = document.getElementById('modelCameraDirectionSelect')?.value || AppState.modelCameraDirection || 'auto';
+            AppState.modelPivotMode = document.getElementById('modelPivotSelect')?.value || AppState.modelPivotMode || 'auto';
+            syncModelViewControls();
             syncModelFrameControls(AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0);
             updateModelAnalysisLabels();
             drawModelVideoFramePreview(AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0);
@@ -12459,9 +12725,24 @@
         if (modelAngleSelect) modelAngleSelect.addEventListener('change', e => {
             AppState.angleModelTarget = e.target.value;
             syncModelFrameControls(AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0);
+            syncModelViewControls();
             updateModelAnalysisLabels();
             renderAngleModel();
         });
+        const modelCameraDirectionSelect = document.getElementById('modelCameraDirectionSelect');
+        if (modelCameraDirectionSelect) modelCameraDirectionSelect.addEventListener('change', e => {
+            setModelCameraDirection(e.target.value);
+        });
+        const modelPivotSelect = document.getElementById('modelPivotSelect');
+        if (modelPivotSelect) modelPivotSelect.addEventListener('change', e => {
+            setModelPivotMode(e.target.value);
+        });
+        const modelViewZoomSlider = document.getElementById('modelViewZoomSlider');
+        if (modelViewZoomSlider) modelViewZoomSlider.addEventListener('input', e => {
+            setModelViewZoom(e.target.value);
+        });
+        const modelResetViewBtn = document.getElementById('modelResetViewBtn');
+        if (modelResetViewBtn) modelResetViewBtn.addEventListener('click', resetAngleModelView);
         const modelSourceSelect = document.getElementById('modelSourceSelect');
         if (modelSourceSelect) modelSourceSelect.addEventListener('change', async e => {
             stopModelPlayback();
@@ -12502,6 +12783,9 @@
             stopModelPlayback();
             if (AppState.videoAnalysis) setModelVideoFrame(AppState.videoAnalysis.endFrame ?? AppState.videoAnalysis.peakFrame ?? 0);
         });
+        window.addEventListener('pointermove', handleAngleModelViewPointerMove, { passive: false });
+        window.addEventListener('pointerup', stopAngleModelViewDrag);
+        window.addEventListener('pointercancel', stopAngleModelViewDrag);
 
         ['measure', 'video', 'analysis', 'details', 'model', 'settings'].forEach(tabName => {
             const btn = document.getElementById(`tabBtn-${tabName}`);
