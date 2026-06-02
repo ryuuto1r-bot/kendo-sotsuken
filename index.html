@@ -670,12 +670,29 @@
             padding: 12px;
             color: #e2e8f0;
         }
+        .video-analysis-fullscreen.fullscreen-fallback {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 120 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: auto !important;
+            background: #020617 !important;
+            padding: 12px !important;
+            color: #e2e8f0 !important;
+            border-radius: 0 !important;
+        }
+        body.video-fallback-fullscreen-active {
+            overflow: hidden;
+        }
         .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid {
             grid-template-columns: minmax(0, 1.55fr) minmax(280px, 360px) !important;
         }
         .video-analysis-fullscreen:fullscreen .video-correction-preview,
-        .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview {
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview,
+        .video-analysis-fullscreen.fullscreen-fallback .video-correction-preview {
             min-height: min(78vh, 880px);
             height: min(78vh, 880px);
             border-color: rgba(148, 163, 184, 0.42);
@@ -700,7 +717,8 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 14px 40px rgba(15, 23, 42, 0.08);
         }
         .video-analysis-fullscreen:fullscreen .video-result-controls,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-controls,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-controls {
             position: sticky;
             top: 12px;
             max-height: calc(100vh - 24px);
@@ -710,7 +728,8 @@
             color: #e2e8f0;
         }
         .video-analysis-fullscreen:fullscreen .video-result-frame-controls,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-frame-controls {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-frame-controls,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-frame-controls {
             background: rgba(15, 23, 42, 0.82) !important;
             border-color: rgba(59, 130, 246, 0.36) !important;
         }
@@ -1120,7 +1139,8 @@
             }
         }
         .video-analysis-fullscreen:fullscreen .video-result-edit-panel,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-edit-panel {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-edit-panel,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-edit-panel {
             background: rgba(15, 23, 42, 0.72);
             border-color: rgba(129, 140, 248, 0.36);
         }
@@ -1142,22 +1162,26 @@
             }
         }
         .video-analysis-fullscreen:fullscreen .video-result-mini-timeline,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-mini-timeline,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-mini-timeline {
             background: rgba(15, 23, 42, 0.92);
             border-color: rgba(59, 130, 246, 0.36);
         }
         .video-analysis-fullscreen:fullscreen .video-result-preview-grid > .video-correction-preview,
-        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid > .video-correction-preview {
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid > .video-correction-preview,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid > .video-correction-preview {
             height: calc(100vh - 170px);
             min-height: 520px;
         }
         @media (max-width: 900px) {
             .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
-            .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid {
+            .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid,
+            .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid {
                 grid-template-columns: 1fr !important;
             }
             .video-analysis-fullscreen:fullscreen .video-result-controls,
-            .video-analysis-fullscreen:-webkit-full-screen .video-result-controls {
+            .video-analysis-fullscreen:-webkit-full-screen .video-result-controls,
+            .video-analysis-fullscreen.fullscreen-fallback .video-result-controls {
                 position: static;
                 max-height: none;
             }
@@ -3021,17 +3045,47 @@
             }
         }
 
+        function refreshVideoFullscreenLayout() {
+            if (!AppState.videoAnalysis?.frames?.length) return;
+            const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
+            setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
+            setTimeout(refreshVideoGraphResolution, 120);
+        }
+
+        function closeVideoFullscreenFallback() {
+            document.querySelectorAll('.video-analysis-fullscreen.fullscreen-fallback').forEach(el => {
+                el.classList.remove('fullscreen-fallback');
+            });
+            document.body.classList.remove('video-fallback-fullscreen-active');
+            refreshVideoFullscreenLayout();
+        }
+
+        function openVideoFullscreenFallback(element) {
+            closeVideoFullscreenFallback();
+            element.classList.add('fullscreen-fallback');
+            document.body.classList.add('video-fallback-fullscreen-active');
+            showToast('全画面編集モードにしました。Escで戻れます', 'blue');
+            refreshVideoFullscreenLayout();
+        }
+
         function requestElementFullscreen(element) {
             if (!element) return;
+            if (element.classList.contains('fullscreen-fallback')) {
+                closeVideoFullscreenFallback();
+                return;
+            }
             const request = element.requestFullscreen || element.webkitRequestFullscreen || element.msRequestFullscreen;
-            if (!request) return;
+            if (!request) {
+                openVideoFullscreenFallback(element);
+                return;
+            }
             const result = request.call(element);
-            if (result?.catch) result.catch(() => {});
+            if (result?.catch) result.catch(() => openVideoFullscreenFallback(element));
         }
 
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-            const refreshKey = 'kendo-sw-refreshed-v110';
+            const refreshKey = 'kendo-sw-refreshed-v111';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12143,7 +12197,10 @@
         const videoGraphFullscreenBtn = document.getElementById('videoGraphFullscreenBtn');
         if (videoGraphFullscreenBtn) videoGraphFullscreenBtn.addEventListener('click', openVideoGraphFullscreen);
         document.addEventListener('keydown', event => {
-            if (event.key === 'Escape') setVideoSideDrawer(false);
+            if (event.key === 'Escape') {
+                setVideoSideDrawer(false);
+                closeVideoFullscreenFallback();
+            }
             const active = document.activeElement;
             if (active && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
             const videoTab = document.getElementById('tab-video');
