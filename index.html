@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v133';
+            var version = 'v134';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2050,18 +2050,19 @@
         </div>
 
         <div class="video-workflow-tabs bg-white p-3 rounded-xl shadow-sm border mb-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-bold">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs font-bold">
                 <button type="button" id="videoStepBtn-load" onclick="switchVideoStep('load')" class="video-step-btn active border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-upload mr-1"></i>1. 動画を選ぶ</button>
                 <button type="button" id="videoStepBtn-mark" onclick="switchVideoStep('mark')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-sliders mr-1"></i>2. 補正</button>
-                <button type="button" id="videoStepBtn-result" onclick="switchVideoStep('result')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>3. 解析結果</button>
-                <button type="button" id="videoStepBtn-report" onclick="switchVideoStep('report')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-file-export mr-1"></i>4. 保存/レポート</button>
+                <button type="button" id="videoStepBtn-analyze" onclick="switchVideoStep('analyze')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i>3. 解析する</button>
+                <button type="button" id="videoStepBtn-result" onclick="switchVideoStep('result')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>4. 解析結果</button>
+                <button type="button" id="videoStepBtn-report" onclick="switchVideoStep('report')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-file-export mr-1"></i>5. 保存/レポート</button>
             </div>
         </div>
 
         <div class="video-workflow-layout grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
             <div class="video-workflow-main bg-white p-4 rounded-xl shadow-sm border">
                 <div class="video-workflow-main-head flex items-center justify-between gap-3 mb-3">
-                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
+                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>5ステップ測定</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
                 <div id="videoNextActionBanner" class="video-next-action mb-3"><i class="fa-solid fa-arrow-right mr-2"></i>動画選択</div>
@@ -2097,7 +2098,7 @@
                                 document.querySelectorAll('.video-step-panel').forEach(function(panel){ panel.classList.remove('active'); });
                             document.querySelectorAll('.video-step-btn').forEach(function(btn){ btn.classList.remove('active'); });
                             var panel = document.getElementById('videoStep-' + step);
-                            var btn = document.getElementById('videoStepBtn-' + (step === 'analyze' || step === 'correct' ? 'mark' : step));
+                            var btn = document.getElementById('videoStepBtn-' + (step === 'correct' ? 'mark' : step));
                             if (panel) panel.classList.add('active');
                             if (btn) btn.classList.add('active');
                         }
@@ -2220,7 +2221,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v133-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v134-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3669,7 +3670,7 @@
             document.querySelectorAll('.video-step-panel').forEach(panel => panel.classList.remove('active'));
             document.querySelectorAll('.video-step-btn').forEach(btn => btn.classList.remove('active'));
             const panel = document.getElementById(`videoStep-${activeStep}`);
-            const stepButtonMap = { correct: 'mark', analyze: 'mark' };
+            const stepButtonMap = { correct: 'mark' };
             const btn = document.getElementById(`videoStepBtn-${stepButtonMap[activeStep] || activeStep}`);
             if (panel) panel.classList.add('active');
             if (btn) btn.classList.add('active');
@@ -3892,7 +3893,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v133';
+            const refreshKey = 'kendo-sw-refreshed-v134';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
