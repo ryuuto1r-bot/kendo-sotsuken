@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v137';
+            var version = 'v138';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2198,9 +2198,20 @@
         .video-correction-dock-card.peak { border-color: #fcd34d; background: #fffbeb; }
         .video-correction-dock-card.end { border-color: #fecaca; background: #fef2f2; }
         .video-correction-dock-card.duration { border-color: #86efac; background: #ecfdf5; }
+        .video-correction-dock-card.duration.pending {
+            border-color: #fcd34d;
+            background: #fffbeb;
+        }
+        .video-correction-dock-card.duration.confirmed {
+            border-color: #22c55e;
+            background: linear-gradient(135deg, #ecfdf5, #dcfce7);
+            box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.18);
+        }
+        .video-correction-dock-card.duration.confirmed small { color: #15803d; }
+        .video-correction-dock-card.duration.pending small { color: #b45309; }
         .video-correction-dock-actions {
             display: grid;
-            grid-template-columns: repeat(8, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
             gap: 8px;
         }
         .video-correction-dock-actions .dock-btn {
@@ -2242,6 +2253,35 @@
             background: #16a34a;
             color: #ffffff;
             box-shadow: 0 12px 28px rgba(22, 163, 74, 0.18);
+        }
+        .video-correction-dock-actions .dock-btn.save {
+            border-color: #818cf8;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+        .video-correction-key-hints {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .video-correction-key-hints kbd {
+            min-width: 24px;
+            padding: 3px 7px;
+            border: 1px solid #cbd5e1;
+            border-bottom-width: 2px;
+            border-radius: 7px;
+            background: #f8fafc;
+            color: #334155;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 1000;
+            line-height: 1;
+            text-align: center;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
         }
         .video-correction-hud {
             position: absolute;
@@ -2849,7 +2889,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v137-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v138-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3412,6 +3452,14 @@
 	                            <button type="button" class="dock-btn end" onclick="markVideoCurrentFrame('end')"><i class="fa-solid fa-flag-checkered"></i><span>終了にする</span></button>
 	                            <button type="button" class="dock-btn range" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play"></i><span>範囲再生</span></button>
 	                            <button type="button" class="dock-btn confirm" onclick="confirmVideoTimingCorrection()"><i class="fa-solid fa-circle-check"></i><span>確定</span></button>
+	                            <button type="button" class="dock-btn save" onclick="switchVideoStep('report')"><i class="fa-solid fa-floppy-disk"></i><span>保存へ</span></button>
+	                        </div>
+	                        <div class="video-correction-key-hints">
+	                            <span><kbd>←</kbd><kbd>→</kbd>1コマ</span>
+	                            <span><kbd>Shift</kbd>10コマ</span>
+	                            <span><kbd>I</kbd>開始</span>
+	                            <span><kbd>O</kbd>終了</span>
+	                            <span><kbd>Space</kbd>範囲再生</span>
 	                        </div>
 	                    </div>
 	                    <details id="videoStrikeDetailPanel" class="video-strike-detail-panel text-xs" open>
@@ -4548,7 +4596,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v137';
+            const refreshKey = 'kendo-sw-refreshed-v138';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6671,6 +6719,11 @@
                 });
                 safeText('videoCorrectionDockCurrentFrame', '#---');
                 safeText('videoCorrectionHudFrame', '#---');
+                const durationCard = document.querySelector('.video-correction-dock-card.duration');
+                if (durationCard) {
+                    durationCard.classList.remove('confirmed');
+                    durationCard.classList.add('pending');
+                }
                 return;
             }
             const frameMax = data.frames.length - 1;
@@ -6697,6 +6750,11 @@
             safeText('videoCorrectionDockEnd', endFrame !== null ? `#${endFrame}` : '#---');
             safeText('videoCorrectionDockDuration', Number.isFinite(duration) ? `${Math.round(duration)} ms` : '---');
             safeText('videoCorrectionDockStatus', confirmed ? '確定済み' : '未確定');
+            const durationCard = document.querySelector('.video-correction-dock-card.duration');
+            if (durationCard) {
+                durationCard.classList.toggle('confirmed', confirmed);
+                durationCard.classList.toggle('pending', !confirmed);
+            }
             safeText('videoCorrectionHudFrame', `#${current}`);
             safeText('videoCorrectionHudTime', currentTime);
             safeText('videoCorrectionHudRange', rangeText);
