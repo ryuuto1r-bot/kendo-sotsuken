@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v138';
+            var version = 'v139';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -433,8 +433,8 @@
             user-select: none;
         }
         .video-editor-command-bar {
-            display: grid;
-            grid-template-columns: auto auto repeat(5, minmax(88px, auto)) minmax(170px, 1fr);
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             align-items: center;
             border: 1px solid rgba(30, 41, 59, 0.22);
@@ -475,6 +475,7 @@
             align-items: center;
             justify-content: flex-end;
             gap: 8px;
+            flex: 1 1 190px;
             min-width: 0;
             color: #cbd5e1;
             font-size: 11px;
@@ -484,6 +485,64 @@
         .video-timeline-zoom-control input {
             width: min(180px, 100%);
             accent-color: #38bdf8;
+        }
+        .video-speed-chip-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 36px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.82);
+            padding: 4px 6px;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 1000;
+            white-space: nowrap;
+        }
+        .video-speed-chip-group > span {
+            padding: 0 4px;
+            color: #94a3b8;
+        }
+        .video-speed-chip-group button {
+            min-height: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.08);
+            color: #e2e8f0;
+            padding: 4px 9px;
+            font-size: 11px;
+            font-weight: 1000;
+            transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+        }
+        .video-speed-chip-group button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(125, 211, 252, 0.7);
+            background: rgba(14, 165, 233, 0.18);
+        }
+        .video-speed-chip-group button.active {
+            border-color: #38bdf8;
+            background: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16);
+        }
+        .video-speed-chip-group.light {
+            width: 100%;
+            justify-content: center;
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .video-speed-chip-group.light > span { color: #64748b; }
+        .video-speed-chip-group.light button {
+            border-color: #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+        }
+        .video-speed-chip-group.light button.active {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #ffffff;
         }
         .video-editor-shortcuts {
             display: flex;
@@ -2889,7 +2948,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v138-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v139-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3168,6 +3227,13 @@
                         <button id="videoEditorUndoBtn" type="button"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
                         <button id="videoEditorRedoBtn" type="button"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
                         <button id="videoEditorSaveStepBtn" type="button" class="confirm"><i class="fa-solid fa-floppy-disk mr-1"></i>保存へ</button>
+                        <div class="video-speed-chip-group" aria-label="全画面分析の再生速度">
+                            <span>速度</span>
+                            <button type="button" data-video-speed-rate="0.1" onclick="window.setVideoSlowRateValue?.(0.1)">0.1x</button>
+                            <button type="button" data-video-speed-rate="0.25" onclick="window.setVideoSlowRateValue?.(0.25)">0.25x</button>
+                            <button type="button" data-video-speed-rate="0.5" onclick="window.setVideoSlowRateValue?.(0.5)">0.5x</button>
+                            <button type="button" data-video-speed-rate="1" onclick="window.setVideoSlowRateValue?.(1)">1.0x</button>
+                        </div>
                         <label class="video-timeline-zoom-control">拡大
                             <input id="videoTimelineZoomSlider" type="range" min="1" max="4" step="0.25" value="1">
                             <span id="videoTimelineZoomValue" class="font-mono-num">1.0x</span>
@@ -3453,6 +3519,13 @@
 	                            <button type="button" class="dock-btn range" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play"></i><span>範囲再生</span></button>
 	                            <button type="button" class="dock-btn confirm" onclick="confirmVideoTimingCorrection()"><i class="fa-solid fa-circle-check"></i><span>確定</span></button>
 	                            <button type="button" class="dock-btn save" onclick="switchVideoStep('report')"><i class="fa-solid fa-floppy-disk"></i><span>保存へ</span></button>
+	                        </div>
+	                        <div class="video-speed-chip-group light video-correction-speed-strip" aria-label="全画面補正の再生速度">
+	                            <span>再生速度</span>
+	                            <button type="button" data-video-speed-rate="0.1" onclick="window.setVideoSlowRateValue?.(0.1)">0.1x</button>
+	                            <button type="button" data-video-speed-rate="0.25" onclick="window.setVideoSlowRateValue?.(0.25)">0.25x</button>
+	                            <button type="button" data-video-speed-rate="0.5" onclick="window.setVideoSlowRateValue?.(0.5)">0.5x</button>
+	                            <button type="button" data-video-speed-rate="1" onclick="window.setVideoSlowRateValue?.(1)">1.0x</button>
 	                        </div>
 	                        <div class="video-correction-key-hints">
 	                            <span><kbd>←</kbd><kbd>→</kbd>1コマ</span>
@@ -4596,7 +4669,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v138';
+            const refreshKey = 'kendo-sw-refreshed-v139';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -10436,6 +10509,24 @@
             );
         }
 
+        function updateVideoSpeedChips(rate = getVideoSlowRate()) {
+            const current = Number(rate);
+            document.querySelectorAll('[data-video-speed-rate]').forEach(btn => {
+                const value = Number(btn.dataset.videoSpeedRate);
+                btn.classList.toggle('active', Number.isFinite(current) && Math.abs(value - current) < 0.001);
+            });
+        }
+
+        function setVideoSlowRateValue(rate, restart = true) {
+            const value = String(clamp(Number(rate) || 0.5, 0.1, 1));
+            ['videoSlowRateSelect', 'videoResultSlowRateSelect'].forEach(id => {
+                const select = document.getElementById(id);
+                if (select) select.value = value;
+            });
+            updateVideoSpeedChips(Number(value));
+            if (restart && AppState.videoSlowPlaying) startVideoSlowPlayback();
+        }
+
         function syncVideoSlowRate(sourceId) {
             const source = document.getElementById(sourceId);
             if (!source) return;
@@ -10443,7 +10534,9 @@
                 const target = document.getElementById(id);
                 if (target && target !== source) target.value = source.value;
             });
+            updateVideoSpeedChips(Number(source.value));
         }
+        window.setVideoSlowRateValue = setVideoSlowRateValue;
 
         function getVideoPlaybackScope() {
             const resultActive = document.getElementById('videoStep-result')?.classList.contains('active');
@@ -13954,6 +14047,12 @@
             videoTimelineZoomSlider.addEventListener('input', e => setVideoTimelineZoom(e.target.value));
             setVideoTimelineZoom(videoTimelineZoomSlider.value);
         }
+        document.querySelectorAll('[data-video-speed-rate]').forEach(btn => {
+            if (!btn.hasAttribute('onclick')) {
+                btn.addEventListener('click', () => setVideoSlowRateValue(btn.dataset.videoSpeedRate));
+            }
+        });
+        updateVideoSpeedChips(getVideoSlowRate());
         document.querySelectorAll('[data-video-editor-tool]').forEach(btn => {
             btn.addEventListener('click', () => setVideoEditorTool(btn.dataset.videoEditorTool));
         });
