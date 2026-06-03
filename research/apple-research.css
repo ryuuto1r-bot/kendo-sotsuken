@@ -728,6 +728,128 @@ section a {
     }
 }
 
+/* Product Design polish: 卒研情報センターをApple風の情報ハブとして読みやすくする */
+.search-box,
+.search-card {
+    border-radius: 28px !important;
+    background: rgba(255, 255, 255, 0.86) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.08) !important;
+    backdrop-filter: saturate(180%) blur(22px);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+}
+
+.search-label {
+    color: #6e6e73 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+}
+
+.search-row,
+.search-input-wrap {
+    border-radius: 18px !important;
+    background: #f5f5f7 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.search-row input,
+.search-input-wrap input {
+    font-size: 17px !important;
+    font-weight: 650 !important;
+}
+
+.search-results.active {
+    border-radius: 22px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+}
+
+.search-result {
+    border-radius: 16px !important;
+    transition: transform 160ms ease, background 160ms ease;
+}
+
+.search-result:hover {
+    transform: translateY(-1px);
+    background: #f5f5f7 !important;
+}
+
+.side {
+    border-radius: 28px !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.07) !important;
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+
+.menu-group {
+    border-radius: 18px !important;
+    background: rgba(245, 245, 247, 0.64) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    padding: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+.menu-group summary {
+    color: #1d1d1f !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+}
+
+.menu-group a {
+    border-radius: 999px !important;
+    min-height: 34px;
+    padding: 7px 10px !important;
+}
+
+.menu-group a:hover {
+    background: #0071e3 !important;
+    color: #ffffff !important;
+}
+
+section {
+    border-radius: 34px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.065) !important;
+}
+
+section:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.085) !important;
+}
+
+.section-kicker {
+    color: #86868b !important;
+    font-size: 12px !important;
+    letter-spacing: 0.08em !important;
+}
+
+.apple-process {
+    border-radius: 32px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.12), transparent 28rem),
+        #ffffff !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.07);
+}
+
+.apple-process-step {
+    border-radius: 26px !important;
+    background: #f5f5f7 !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.apple-process-step strong {
+    color: #1d1d1f !important;
+}
+
+.apple-process-step p,
+.apple-process-step small {
+    color: #6e6e73 !important;
+}
+
 @media print {
     .topbar,
     .side {
@@ -743,4 +865,22 @@ section a {
         box-shadow: none !important;
         break-inside: avoid;
     }
+}
+
+.side .search-box {
+    border-radius: 28px !important;
+    padding: 16px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.side .search-row {
+    border-radius: 18px !important;
+    background: #f5f5f7 !important;
+    padding: 4px !important;
+}
+
+.side .search-input {
+    border-radius: 14px !important;
+    border-color: transparent !important;
+    background: transparent !important;
 }
