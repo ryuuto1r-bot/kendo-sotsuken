@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v134';
+            var version = 'v135';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1171,8 +1171,11 @@
             max-height: 190px;
             overflow: auto;
         }
+        body[data-active-tab="video"][data-video-step="mark"] .app-section-header,
         body[data-active-tab="video"][data-video-step="mark"] .video-page-header,
+        body[data-active-tab="video"][data-video-step="correct"] .app-section-header,
         body[data-active-tab="video"][data-video-step="correct"] .video-page-header,
+        body[data-active-tab="video"][data-video-step="result"] .app-section-header,
         body[data-active-tab="video"][data-video-step="result"] .video-page-header,
         body[data-active-tab="video"][data-video-step="mark"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex,
         body[data-active-tab="video"][data-video-step="correct"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex,
@@ -1180,8 +1183,11 @@
             padding: 10px 14px !important;
             margin-bottom: 10px !important;
         }
+        body[data-active-tab="video"][data-video-step="mark"] .app-section-header p,
         body[data-active-tab="video"][data-video-step="mark"] .video-page-header p,
+        body[data-active-tab="video"][data-video-step="correct"] .app-section-header p,
         body[data-active-tab="video"][data-video-step="correct"] .video-page-header p,
+        body[data-active-tab="video"][data-video-step="result"] .app-section-header p,
         body[data-active-tab="video"][data-video-step="result"] .video-page-header p,
         body[data-active-tab="video"][data-video-step="mark"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex p,
         body[data-active-tab="video"][data-video-step="correct"] #tab-video > .bg-white.p-4.rounded-xl.shadow-sm.border.mb-4.flex p,
@@ -1746,6 +1752,193 @@
         .report-sheet { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
         .report-sheet table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .report-sheet th, .report-sheet td { border-bottom: 1px solid #e2e8f0; padding: 7px 6px; text-align: left; }
+        .kvc-nav-inner {
+            min-height: 4rem;
+            gap: 0.75rem;
+        }
+        .kvc-tab-strip {
+            min-width: 0;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scrollbar-width: none;
+        }
+        .kvc-tab-strip::-webkit-scrollbar { display: none; }
+        .kvc-tab-strip .tab-btn,
+        .kvc-tab-strip .research-nav-link {
+            min-height: 38px;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .kvc-tab-strip .tab-btn.bg-slate-800 {
+            border-color: rgba(148, 163, 184, 0.22);
+            background: rgba(30, 41, 59, 0.9) !important;
+        }
+        .kvc-route-cards {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .kvc-route-card {
+            min-height: 92px;
+            border: 1px solid rgba(226, 232, 240, 0.92);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 16px 44px rgba(15, 23, 42, 0.06);
+            padding: 14px;
+            color: #0f172a;
+            text-align: left;
+            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+        .kvc-route-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(37, 99, 235, 0.28);
+            box-shadow: 0 20px 54px rgba(37, 99, 235, 0.1);
+        }
+        .kvc-route-card .kvc-route-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-grid;
+            place-items: center;
+            margin-bottom: 10px;
+            color: #fff;
+            background: #0f172a;
+        }
+        .kvc-route-card strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 1000;
+        }
+        .kvc-route-card span {
+            display: block;
+            margin-top: 4px;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.45;
+            font-weight: 700;
+        }
+        .kvc-route-card.video .kvc-route-icon { background: #2563eb; }
+        .kvc-route-card.result .kvc-route-icon { background: #059669; }
+        .kvc-route-card.research .kvc-route-icon { background: #111827; }
+        .app-section-header,
+        .video-page-header {
+            border: 1px solid rgba(226, 232, 240, 0.92);
+            background:
+                radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.09), transparent 28%),
+                rgba(255, 255, 255, 0.94) !important;
+        }
+        .video-workflow-tabs {
+            position: sticky;
+            top: 72px;
+            z-index: 24;
+            background: rgba(255, 255, 255, 0.88) !important;
+            backdrop-filter: saturate(170%) blur(18px);
+            -webkit-backdrop-filter: saturate(170%) blur(18px);
+        }
+        .video-step-btn {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+        }
+        .video-step-btn::after {
+            content: "";
+            position: absolute;
+            inset: auto 12px 7px;
+            height: 3px;
+            border-radius: 999px;
+            background: transparent;
+            transition: background 0.16s ease;
+        }
+        .video-step-btn.active::after {
+            background: #60a5fa;
+        }
+        .video-workflow-main {
+            min-width: 0;
+        }
+        .video-workflow-side {
+            min-width: 0;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-side,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-side,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-side {
+            display: none;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-layout {
+            grid-template-columns: minmax(0, 1fr) !important;
+        }
+        #videoFormalDuration,
+        .video-formal-duration-value,
+        .video-result-kpi-card.primary .video-result-kpi-value {
+            font-size: clamp(28px, 3.8vw, 44px) !important;
+            line-height: 1.04 !important;
+            letter-spacing: 0 !important;
+            overflow-wrap: anywhere;
+        }
+        .video-formal-primary,
+        .video-result-kpi-card {
+            overflow: hidden;
+        }
+        #videoStep-result .video-result-preview-grid,
+        #videoStep-correct .video-correction-workspace {
+            grid-template-columns: minmax(0, 1.5fr) minmax(300px, 360px) !important;
+        }
+        #videoStep-result .video-result-preview-grid > .video-correction-preview {
+            --video-editor-max: min(66vh, 720px);
+            height: var(--video-editor-max);
+            max-height: var(--video-editor-max);
+        }
+        #videoStep-correct {
+            --video-editor-max: min(60vh, 680px);
+            --video-editor-panel-max: min(60vh, 680px);
+        }
+        .video-result-controls,
+        #videoStep-correct .video-correction-controls {
+            border-radius: 18px !important;
+        }
+        .video-editor-command-bar,
+        .video-editor-tool-strip {
+            border-radius: 18px;
+        }
+        .video-editor-command-bar {
+            grid-template-columns: repeat(auto-fit, minmax(92px, auto));
+        }
+        .video-timeline-zoom-control {
+            justify-content: flex-start;
+            grid-column: span 2;
+        }
+        .video-editor-shortcuts {
+            color: #64748b;
+        }
+        @media (max-width: 920px) {
+            .kvc-nav-inner {
+                height: auto !important;
+                padding-top: 0.7rem;
+                padding-bottom: 0.7rem;
+                align-items: flex-start !important;
+                flex-direction: column;
+            }
+            .kvc-tab-strip {
+                width: 100%;
+            }
+            .kvc-route-cards {
+                grid-template-columns: 1fr;
+            }
+            .video-workflow-tabs {
+                top: 0;
+            }
+            #videoStep-result .video-result-preview-grid,
+            #videoStep-correct .video-correction-workspace {
+                grid-template-columns: 1fr !important;
+            }
+            #videoStep-result .video-result-preview-grid > .video-correction-preview,
+            #videoStep-correct .video-correction-preview {
+                height: min(58vh, 560px);
+                min-height: 320px;
+            }
+        }
         @media print {
             body * { visibility: hidden; }
             #videoReportPanel, #videoReportPanel * { visibility: visible; }
@@ -1757,7 +1950,7 @@
 
 <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="kvc-nav-inner flex items-center justify-between h-16">
             <div class="flex items-center gap-4">
                 <i class="fa-solid fa-helmet-battle text-blue-400 text-2xl"></i>
                 <span class="font-bold text-xl tracking-tight hidden sm:block">Kendo Virtual Coach</span>
@@ -1774,14 +1967,14 @@
                     <i class="fa-solid fa-microphone-slash"></i> マイクOFF
                 </button>
             </div>
-            <div class="flex space-x-1">
+            <div class="kvc-tab-strip flex space-x-1">
                 <button onclick="switchTab('measure')" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 計測</button>
                 <button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画解析</button>
                 <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 分析</button>
                 <button onclick="switchTab('details')" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 打突詳細</button>
                 <button onclick="switchTab('model')" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 詳細分析</button>
                 <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-gear"></i> 設定</button>
-                <a href="./research/" class="text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-graduation-cap"></i> 卒研情報</a>
+                <a href="./research/" class="research-nav-link text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-graduation-cap"></i> 卒研情報</a>
             </div>
         </div>
     </div>
@@ -1815,6 +2008,23 @@
                     <span class="h-3 w-3 rounded-full bg-slate-400"></span> 待機中
                 </div>
             </div>
+        </div>
+        <div class="kvc-route-cards practice-secondary">
+            <button type="button" class="kvc-route-card video" onclick="switchTab('video')">
+                <span class="kvc-route-icon"><i class="fa-solid fa-film"></i></span>
+                <strong>動画解析で正式測定</strong>
+                <span>高fps動画を読み込み、開始/終了を補正して記録します。</span>
+            </button>
+            <button type="button" class="kvc-route-card result" onclick="switchTab('details')">
+                <span class="kvc-route-icon"><i class="fa-solid fa-chart-simple"></i></span>
+                <strong>記録・比較を見る</strong>
+                <span>本数、平均時間、右肘角、刃筋の推移を確認します。</span>
+            </button>
+            <a class="kvc-route-card research" href="./research/">
+                <span class="kvc-route-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                <strong>卒研情報センター</strong>
+                <span>測定方法、評価指標、発表用説明をまとめています。</span>
+            </a>
         </div>
 
         <div id="measureLayout" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -1954,7 +2164,7 @@
     </div>
 
     <div id="tab-analysis" class="tab-content">
-        <div class="video-page-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>記録・比較</h2>
                 <div class="mt-2 flex flex-wrap gap-2 text-xs">
@@ -2037,7 +2247,7 @@
     </div>
 
     <div id="tab-video" class="tab-content">
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="app-section-header video-page-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画解析 / 正式測定</h2>
                 <p class="text-xs text-slate-500 mt-1">動画ファイルを読み込み、開始/終了フレームを補正して打突時間と角度を保存します。</p>
@@ -2221,7 +2431,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v134-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v135-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3893,7 +4103,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v134';
+            const refreshKey = 'kendo-sw-refreshed-v135';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
