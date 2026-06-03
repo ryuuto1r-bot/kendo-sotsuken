@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v136';
+            var version = 'v137';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2148,6 +2148,215 @@
             }
         }
 
+        /* v137: 1コマ補正エディタの操作性改善 */
+        .video-correction-edit-dock {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            border: 1px solid rgba(79, 70, 229, 0.22);
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.14), transparent 34%),
+                linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 10px;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        }
+        .video-correction-dock-metrics {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .video-correction-dock-card {
+            min-width: 0;
+            min-height: 68px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+        }
+        .video-correction-dock-card span {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 1000;
+        }
+        .video-correction-dock-card strong {
+            color: #0f172a;
+            font-size: clamp(16px, 1.6vw, 22px);
+            line-height: 1.05;
+            overflow-wrap: anywhere;
+        }
+        .video-correction-dock-card small {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .video-correction-dock-card.current { border-color: #bfdbfe; background: #eff6ff; }
+        .video-correction-dock-card.peak { border-color: #fcd34d; background: #fffbeb; }
+        .video-correction-dock-card.end { border-color: #fecaca; background: #fef2f2; }
+        .video-correction-dock-card.duration { border-color: #86efac; background: #ecfdf5; }
+        .video-correction-dock-actions {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .video-correction-dock-actions .dock-btn {
+            min-height: 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #ffffff;
+            color: #1f2937;
+            font-size: 12px;
+            font-weight: 1000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+        }
+        .video-correction-dock-actions .dock-btn:hover {
+            transform: translateY(-1px);
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+        .video-correction-dock-actions .dock-btn.start {
+            border-color: #93c5fd;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .video-correction-dock-actions .dock-btn.end {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+        .video-correction-dock-actions .dock-btn.range {
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+            color: #047857;
+        }
+        .video-correction-dock-actions .dock-btn.confirm {
+            border-color: #22c55e;
+            background: #16a34a;
+            color: #ffffff;
+            box-shadow: 0 12px 28px rgba(22, 163, 74, 0.18);
+        }
+        .video-correction-hud {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            z-index: 4;
+            display: grid;
+            gap: 6px;
+            max-width: min(360px, calc(100% - 24px));
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            border-radius: 16px;
+            background: rgba(2, 6, 23, 0.72);
+            color: #e2e8f0;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 900;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+        .video-correction-hud span:first-child {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .video-correction-hud b {
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .video-correction-hud small {
+            color: #93c5fd;
+            font-size: 11px;
+            font-weight: 1000;
+        }
+        .video-correction-hud #videoCorrectionHudRange {
+            color: #bbf7d0;
+        }
+        .video-correction-hud #videoCorrectionHudAngle {
+            color: #fde68a;
+        }
+        #videoStep-correct #videoStrikeDetailPanel[open] {
+            max-height: 280px;
+        }
+        #videoStep-correct .video-correction-framebar { order: 1; }
+        #videoStep-correct #videoCorrectionEditDock { order: 2; }
+        #videoStep-correct .video-correction-workspace { order: 3; }
+        #videoStep-correct #videoStrikeDetailPanel { order: 4; }
+        #videoStep-correct > .grid.grid-cols-1.md\:grid-cols-2 { order: 5; }
+        #videoStep-correct > .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-7 { order: 6; }
+        #videoStep-correct > .flex.flex-wrap.justify-between.gap-2 { order: 7; }
+        #videoStep-correct #videoStrikeDetailPanel[open] .video-detail-edit-toolbar {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #videoStep-correct #videoStrikeDetailPanel[open] .video-detail-edit-title {
+            font-size: 9px;
+        }
+        #videoStep-correct #videoStrikeDetailPanel[open] .video-detail-edit-btn {
+            min-height: 31px;
+            font-size: 11px;
+        }
+        #videoStep-correct:fullscreen,
+        #videoStep-correct:-webkit-full-screen,
+        #videoStep-correct.fullscreen-fallback {
+            grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+        }
+        #videoStep-correct:fullscreen .video-correction-edit-dock,
+        #videoStep-correct:-webkit-full-screen .video-correction-edit-dock,
+        #videoStep-correct.fullscreen-fallback .video-correction-edit-dock {
+            background: rgba(15, 23, 42, 0.92);
+            border-color: rgba(129, 140, 248, 0.42);
+            color: #e2e8f0;
+            box-shadow: 0 24px 70px rgba(2, 6, 23, 0.36);
+        }
+        #videoStep-correct:fullscreen .video-correction-dock-card,
+        #videoStep-correct:-webkit-full-screen .video-correction-dock-card,
+        #videoStep-correct.fullscreen-fallback .video-correction-dock-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(148, 163, 184, 0.26);
+        }
+        #videoStep-correct:fullscreen .video-correction-dock-card span,
+        #videoStep-correct:-webkit-full-screen .video-correction-dock-card span,
+        #videoStep-correct.fullscreen-fallback .video-correction-dock-card span,
+        #videoStep-correct:fullscreen .video-correction-dock-card small,
+        #videoStep-correct:-webkit-full-screen .video-correction-dock-card small,
+        #videoStep-correct.fullscreen-fallback .video-correction-dock-card small {
+            color: #cbd5e1;
+        }
+        #videoStep-correct:fullscreen .video-correction-dock-card strong,
+        #videoStep-correct:-webkit-full-screen .video-correction-dock-card strong,
+        #videoStep-correct.fullscreen-fallback .video-correction-dock-card strong {
+            color: #ffffff;
+        }
+        @media (min-width: 1280px) {
+            body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-workspace {
+                grid-template-columns: minmax(0, 1.82fr) minmax(276px, 326px) !important;
+            }
+        }
+        @media (max-width: 980px) {
+            .video-correction-dock-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .video-correction-dock-card.duration {
+                grid-column: span 2;
+            }
+            .video-correction-dock-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .video-correction-hud {
+                left: 8px;
+                top: 8px;
+                padding: 8px 10px;
+            }
+        }
+
         @media print {
             body * { visibility: hidden; }
             #videoReportPanel, #videoReportPanel * { visibility: visible; }
@@ -2640,7 +2849,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v136-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v137-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3179,14 +3388,33 @@
                         <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
                         <p><strong>開始</strong> 振り下ろし / <strong>終了</strong> 減速・停止</p>
                     </div>
-                    <div class="video-correction-framebar rounded-xl border border-blue-100 bg-white p-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
-                            <span class="font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>全フレーム移動</span>
-                            <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
-                        </div>
-                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
-                    </div>
-                    <details id="videoStrikeDetailPanel" class="video-strike-detail-panel text-xs">
+	                    <div class="video-correction-framebar rounded-xl border border-blue-100 bg-white p-3">
+	                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
+	                            <span class="font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>全フレーム移動</span>
+	                            <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
+	                        </div>
+	                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
+	                    </div>
+	                    <div id="videoCorrectionEditDock" class="video-correction-edit-dock">
+	                        <div class="video-correction-dock-metrics">
+	                            <div class="video-correction-dock-card current"><span>現在コマ</span><strong id="videoCorrectionDockCurrentFrame" class="font-mono-num">#---</strong><small id="videoCorrectionDockCurrentTime">--- ms</small></div>
+	                            <div class="video-correction-dock-card"><span>開始</span><strong id="videoCorrectionDockStart" class="font-mono-num">#---</strong></div>
+	                            <div class="video-correction-dock-card peak"><span>最高速</span><strong id="videoCorrectionDockPeak" class="font-mono-num">#---</strong></div>
+	                            <div class="video-correction-dock-card end"><span>終了</span><strong id="videoCorrectionDockEnd" class="font-mono-num">#---</strong></div>
+	                            <div class="video-correction-dock-card duration"><span>補正後</span><strong id="videoCorrectionDockDuration" class="font-mono-num">---</strong><small id="videoCorrectionDockStatus">未確定</small></div>
+	                        </div>
+	                        <div class="video-correction-dock-actions">
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(-10)"><i class="fa-solid fa-backward-fast"></i><span>-10F</span></button>
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(-1)"><i class="fa-solid fa-backward-step"></i><span>-1F</span></button>
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(1)"><span>+1F</span><i class="fa-solid fa-forward-step"></i></button>
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(10)"><span>+10F</span><i class="fa-solid fa-forward-fast"></i></button>
+	                            <button type="button" class="dock-btn start" onclick="markVideoCurrentFrame('start')"><i class="fa-solid fa-flag"></i><span>開始にする</span></button>
+	                            <button type="button" class="dock-btn end" onclick="markVideoCurrentFrame('end')"><i class="fa-solid fa-flag-checkered"></i><span>終了にする</span></button>
+	                            <button type="button" class="dock-btn range" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play"></i><span>範囲再生</span></button>
+	                            <button type="button" class="dock-btn confirm" onclick="confirmVideoTimingCorrection()"><i class="fa-solid fa-circle-check"></i><span>確定</span></button>
+	                        </div>
+	                    </div>
+	                    <details id="videoStrikeDetailPanel" class="video-strike-detail-panel text-xs" open>
                         <summary><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作の詳細スケール</summary>
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                             <div>
@@ -3256,12 +3484,17 @@
                         </div>
                         <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">選択した打突範囲だけを拡大して確認します。</p>
                     </details>
-                    <div class="video-correction-workspace grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
-                        <div class="video-correction-preview border border-slate-800">
-                            <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
-                            <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
-                            <div id="videoCorrectionEmpty" class="video-correction-empty">動画プレビュー</div>
-                        </div>
+	                    <div class="video-correction-workspace grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
+	                        <div class="video-correction-preview border border-slate-800">
+	                            <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
+	                            <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
+	                            <div id="videoCorrectionEmpty" class="video-correction-empty">動画プレビュー</div>
+	                            <div class="video-correction-hud">
+	                                <span><b id="videoCorrectionHudFrame">#---</b><small id="videoCorrectionHudTime">--- ms</small></span>
+	                                <span id="videoCorrectionHudRange">開始/終了未設定</span>
+	                                <span id="videoCorrectionHudAngle">右肘 --- / 体幹 --- / 刃筋 ---</span>
+	                            </div>
+	                        </div>
                         <div class="video-correction-controls control-color-soft bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-sliders text-indigo-500 mr-1"></i>補正操作</h3>
@@ -4315,7 +4548,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v136';
+            const refreshKey = 'kendo-sw-refreshed-v137';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6411,6 +6644,63 @@
             const duration = Number(durationMs);
             if (!Number.isFinite(duration)) return validation?.reason ? '未検出' : '---';
             return `${Math.round(duration)} ms`;
+        }
+
+        function updateVideoCorrectionEditDock(data = AppState.videoAnalysis, currentIndex = null) {
+            const ids = [
+                'videoCorrectionDockCurrentFrame',
+                'videoCorrectionDockCurrentTime',
+                'videoCorrectionDockStart',
+                'videoCorrectionDockPeak',
+                'videoCorrectionDockEnd',
+                'videoCorrectionDockDuration',
+                'videoCorrectionDockStatus',
+                'videoCorrectionHudFrame',
+                'videoCorrectionHudTime',
+                'videoCorrectionHudRange',
+                'videoCorrectionHudAngle'
+            ];
+            if (!data?.frames?.length) {
+                ids.forEach(id => {
+                    const fallback = id.includes('Status') ? '未確定'
+                        : id.includes('Range') ? '開始/終了未設定'
+                        : id.includes('Angle') ? '右肘 --- / 体幹 --- / 刃筋 ---'
+                        : id.includes('Time') ? '--- ms'
+                        : '---';
+                    safeText(id, fallback);
+                });
+                safeText('videoCorrectionDockCurrentFrame', '#---');
+                safeText('videoCorrectionHudFrame', '#---');
+                return;
+            }
+            const frameMax = data.frames.length - 1;
+            const current = clamp(Math.round(Number(currentIndex ?? document.getElementById('videoFrameSlider')?.value ?? data.startFrame ?? 0)), 0, frameMax);
+            const frame = data.frames[current] || null;
+            const startFrame = Number.isFinite(Number(data.startFrame)) ? clamp(Number(data.startFrame), 0, frameMax) : null;
+            const peakFrame = Number.isFinite(Number(data.peakFrame)) ? clamp(Number(data.peakFrame), 0, frameMax) : null;
+            const endFrame = Number.isFinite(Number(data.endFrame)) ? clamp(Number(data.endFrame), 0, frameMax) : null;
+            const start = startFrame !== null ? data.frames[startFrame] : null;
+            const end = endFrame !== null ? data.frames[endFrame] : null;
+            const duration = start && end && endFrame > startFrame ? Number(end.timeMs || 0) - Number(start.timeMs || 0) : NaN;
+            const confirmed = isVideoTimingConfirmed(data);
+            const currentTime = frame ? `${Math.round(Number(frame.timeMs || 0))} ms` : '--- ms';
+            const rangeText = startFrame !== null && endFrame !== null
+                ? `開始 #${startFrame} → 終了 #${endFrame}`
+                : '開始/終了未設定';
+            const angleText = frame
+                ? `右肘 ${videoDegreeText(frame.rightAng)} / 体幹 ${videoDegreeText(frame.torsoAng)} / 刃筋 ${videoDegreeText(frame.hasuji)}`
+                : '右肘 --- / 体幹 --- / 刃筋 ---';
+            safeText('videoCorrectionDockCurrentFrame', `#${current}`);
+            safeText('videoCorrectionDockCurrentTime', currentTime);
+            safeText('videoCorrectionDockStart', startFrame !== null ? `#${startFrame}` : '#---');
+            safeText('videoCorrectionDockPeak', peakFrame !== null ? `#${peakFrame}` : '#---');
+            safeText('videoCorrectionDockEnd', endFrame !== null ? `#${endFrame}` : '#---');
+            safeText('videoCorrectionDockDuration', Number.isFinite(duration) ? `${Math.round(duration)} ms` : '---');
+            safeText('videoCorrectionDockStatus', confirmed ? '確定済み' : '未確定');
+            safeText('videoCorrectionHudFrame', `#${current}`);
+            safeText('videoCorrectionHudTime', currentTime);
+            safeText('videoCorrectionHudRange', rangeText);
+            safeText('videoCorrectionHudAngle', angleText);
         }
 
         function updateVideoCorrectionDiffPanel(data = AppState.videoAnalysis) {
@@ -9928,6 +10218,7 @@
                 safeText('videoStrikeDetailHasuji', '---');
                 safeText('videoStrikeDetailScaleTimeLabel', '---');
                 safeText('videoCorrectionFrameHint', '左右キーでも1コマ移動できます');
+                updateVideoCorrectionEditDock(data, currentIndex);
                 updateVideoStrikeDetailScale(null, null);
                 return;
             }
@@ -9951,6 +10242,7 @@
             safeText('videoStrikeDetailTorso', frame?.torsoAng ? `${frame.torsoAng.toFixed(1)}°` : '---');
             const hasujiSourceLabel = frame?.hasujiSource === 'tape' ? 'テープ' : (frame?.hasujiSource === 'grip' ? '握り' : (frame?.hasujiSource === 'forearm' ? '前腕' : ''));
             safeText('videoStrikeDetailHasuji', frame?.hasuji ? `${frame.hasuji.toFixed(1)}°${hasujiSourceLabel ? ` / ${hasujiSourceLabel}` : ''}` : '---');
+            updateVideoCorrectionEditDock(data, current);
             updateVideoStrikeDetailScale(current, range);
         }
 
