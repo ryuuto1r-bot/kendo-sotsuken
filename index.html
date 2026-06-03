@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v135';
+            var version = 'v136';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1939,6 +1939,215 @@
                 min-height: 320px;
             }
         }
+        /* v136 UI polish: 動画解析は映像を主役にし、結果と記録は読み取り優先に整える */
+        .video-workflow-tabs {
+            border-radius: 18px !important;
+            box-shadow: 0 18px 52px rgba(15, 23, 42, 0.08);
+        }
+        .video-workflow-tabs .video-step-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border-radius: 14px;
+            min-height: 44px;
+            line-height: 1.15;
+        }
+        .video-workflow-tabs .video-step-btn.active {
+            background: #111827 !important;
+            color: #ffffff !important;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+        }
+        .video-workflow-main,
+        #tab-analysis > .bg-white,
+        #tab-details > .bg-white {
+            border-radius: 20px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-workflow-main,
+        body[data-active-tab="video"][data-video-step="correct"] .video-workflow-main {
+            padding: 14px !important;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid,
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-workspace {
+            grid-template-columns: minmax(0, 1.72fr) minmax(280px, 336px) !important;
+            gap: 14px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel {
+            border-radius: 22px;
+            padding: 14px;
+            background:
+                radial-gradient(circle at 14% 0%, rgba(37, 99, 235, 0.12), transparent 32%),
+                linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid > .video-correction-preview {
+            height: clamp(430px, 64vh, 780px);
+            max-height: clamp(430px, 64vh, 780px);
+            min-height: 380px;
+            border-radius: 18px;
+            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.2);
+        }
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-preview {
+            height: clamp(430px, 62vh, 760px);
+            max-height: clamp(430px, 62vh, 760px);
+            min-height: 380px;
+        }
+        .video-result-controls,
+        #videoStep-correct .video-correction-controls {
+            border-radius: 20px !important;
+            background: #f8fafc !important;
+        }
+        .video-result-controls .grid.grid-cols-2,
+        #videoStep-correct .video-correction-controls .grid.grid-cols-2 {
+            gap: 8px !important;
+        }
+        .video-result-controls button,
+        .video-result-controls select,
+        #videoStep-correct .video-correction-controls button,
+        #videoStep-correct .video-correction-controls select {
+            border-radius: 12px !important;
+            min-height: 38px;
+        }
+        .video-result-edit-panel {
+            background: #ffffff !important;
+            border-color: #dbeafe !important;
+        }
+        .video-result-help {
+            display: none;
+        }
+        #videoPlaybackCurrentMetrics {
+            border-radius: 14px !important;
+            background: #ffffff !important;
+        }
+        .video-result-kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+            gap: 12px;
+        }
+        .video-result-kpi-card {
+            min-width: 0;
+            min-height: 78px;
+            padding: 12px 14px;
+            border-radius: 18px;
+        }
+        .video-result-kpi-card.primary {
+            grid-column: span 2;
+        }
+        .video-result-kpi-value,
+        #videoResultBasis {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            word-break: keep-all;
+        }
+        .video-result-kpi-value {
+            font-size: clamp(18px, 2vw, 25px) !important;
+        }
+        #videoResultDuration {
+            font-size: clamp(24px, 3vw, 36px) !important;
+            line-height: 1.08 !important;
+        }
+        .video-result-kpi-label {
+            display: block;
+            margin-bottom: 6px;
+        }
+        #videoDetailMetricsPanel {
+            border-radius: 18px;
+            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+        }
+        #videoDetailMetricsPanel .grid > div {
+            border-radius: 14px;
+            min-height: 72px;
+        }
+        #videoMultiStrikePanel {
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(245, 158, 11, 0.16), transparent 28%),
+                linear-gradient(180deg, #fffbeb, #ffffff 68%);
+        }
+        #videoMultiStrikePanel .overflow-x-auto {
+            border-radius: 16px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        #videoMultiStrikePanel table {
+            min-width: 940px;
+        }
+        #videoMultiStrikePanel th,
+        #videoMultiStrikePanel td {
+            white-space: nowrap;
+        }
+        .video-sync-graph-panel {
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+        }
+        .video-analysis-graph {
+            border-radius: 16px;
+            padding: 14px;
+        }
+        .video-analysis-graph canvas {
+            height: 250px !important;
+            min-height: 250px;
+        }
+        .video-sync-graph-panel.graph-zoomed .video-analysis-graph canvas {
+            height: min(52vh, 520px) !important;
+            min-height: 360px;
+        }
+        .record-summary-grid > div,
+        .detail-kpi-grid > div,
+        .detail-angle-grid > div {
+            border-radius: 18px !important;
+            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.05);
+            min-width: 0;
+        }
+        .record-summary-grid [id^="recordSummary"],
+        .detail-kpi-grid [id^="detailLatest"],
+        .detail-angle-grid [id^="detail"] {
+            overflow-wrap: anywhere;
+            word-break: keep-all;
+        }
+        .record-table-shell,
+        .detail-record-table-shell {
+            border-radius: 20px !important;
+            box-shadow: 0 16px 46px rgba(15, 23, 42, 0.06);
+        }
+        .record-table-shell table,
+        .detail-record-table-shell table {
+            min-width: 920px;
+        }
+        .record-table-shell th,
+        .record-table-shell td,
+        .detail-record-table-shell th,
+        .detail-record-table-shell td {
+            white-space: nowrap;
+        }
+        .analysis-chart-card {
+            border-radius: 20px !important;
+            box-shadow: 0 16px 46px rgba(15, 23, 42, 0.05);
+        }
+        .analysis-chart-card canvas {
+            image-rendering: auto;
+        }
+        @media (max-width: 920px) {
+            body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid,
+            body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-workspace {
+                grid-template-columns: 1fr !important;
+            }
+            body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid > .video-correction-preview,
+            body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-preview {
+                height: min(58vh, 560px);
+                min-height: 300px;
+            }
+            .video-result-kpi-card.primary {
+                grid-column: auto;
+            }
+            #videoResultDuration {
+                font-size: clamp(22px, 8vw, 32px) !important;
+            }
+            .video-analysis-graph canvas {
+                height: 220px !important;
+                min-height: 220px;
+            }
+        }
+
         @media print {
             body * { visibility: hidden; }
             #videoReportPanel, #videoReportPanel * { visibility: visible; }
@@ -2185,7 +2394,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
+        <div class="record-summary-grid grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
             <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                 <span class="text-[11px] font-bold text-slate-500">本数</span>
                 <div id="recordSummaryCount" class="mt-1 text-2xl font-black text-slate-900 font-mono-num">0本</div>
@@ -2216,29 +2425,29 @@
             </div>
         </div>
         
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-6">
+        <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border mb-6">
             <h3 class="text-sm font-bold text-slate-700 mb-2">上半身指標の総合比較</h3>
             <div class="h-80 w-full flex justify-center"><canvas id="radarChart" height="640" style="display: block; box-sizing: border-box; height: 320px; width: 527px;" width="1054"></canvas></div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">ピーク時刻</h3>
                 <div class="h-64"><canvas id="peakChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">右肘角</h3>
                 <div class="h-64"><canvas id="elbowChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">体幹軸</h3>
                 <div class="h-64"><canvas id="torsoChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">刃筋</h3>
                 <div class="h-64"><canvas id="hasujiChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
@@ -2431,7 +2640,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v135-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v136-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3240,12 +3449,15 @@
     </div>
 
     <div id="tab-details" class="tab-content">
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
-            <h2 class="font-bold text-lg"><i class="fa-solid fa-list-check text-blue-500 mr-2"></i>打突詳細</h2>
+        <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+            <div>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-list-check text-blue-500 mr-2"></i>打突詳細</h2>
+                <p class="text-xs text-slate-500 mt-1">保存した打突を、時間・ピーク時刻・角度ごとに練習後に確認します。</p>
+            </div>
             <button onclick="switchTab('measure')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">練習に戻る</button>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="detail-kpi-grid grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式ピーク時刻</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首ピーク時刻</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
@@ -3253,7 +3465,7 @@
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープピーク</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="detail-angle-grid grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">右肘角</span><div id="detailRightElbow" class="text-xl font-black text-purple-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">左肘角</span><div id="detailLeftElbow" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">体幹軸</span><div id="detailTorso" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
@@ -3261,7 +3473,7 @@
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">肩ライン</span><div id="detailShoulderLine" class="text-xl font-black text-rose-700 font-mono-num">---</div></div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
+        <div class="detail-record-table-shell bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
             <div class="bg-slate-50 px-4 py-3 border-b flex items-center justify-between">
                 <h3 class="font-bold text-sm text-slate-700">練習サマリー</h3>
                 <span class="text-xs text-slate-500">本日の履歴から自動集計</span>
@@ -3277,7 +3489,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="detail-record-table-shell bg-white rounded-xl shadow-sm border overflow-hidden">
             <div class="bg-slate-50 px-4 py-3 border-b flex items-center justify-between">
                 <h3 class="font-bold text-sm text-slate-700">打突ごとのピーク時刻・角度</h3>
                 <span class="text-xs text-slate-500">練習中は非表示、練習後に確認</span>
@@ -4103,7 +4315,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v135';
+            const refreshKey = 'kendo-sw-refreshed-v136';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
