@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v139';
+            var version = 'v145';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2461,6 +2461,789 @@
             #videoReportPanel, #videoReportPanel * { visibility: visible; }
             #videoReportPanel { position: absolute; left: 0; top: 0; width: 100%; }
         }
+        /* Product Design polish v142: 動画解析を「編集ツール」として見やすくする仕上げ */
+        body[data-active-tab="video"] .video-page-header {
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)),
+                radial-gradient(circle at 0 0, rgba(59,130,246,0.12), transparent 32%);
+            box-shadow: 0 14px 42px rgba(15, 23, 42, 0.07);
+        }
+        body[data-active-tab="video"] .video-workflow-tabs {
+            position: sticky;
+            top: 68px;
+            z-index: 35;
+            border-color: rgba(203, 213, 225, 0.9);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+        body[data-active-tab="video"] .video-workflow-tabs > div {
+            display: flex !important;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scroll-snap-type: x proximity;
+        }
+        body[data-active-tab="video"] .video-step-btn {
+            flex: 1 0 172px;
+            scroll-snap-align: start;
+            min-height: 46px;
+            border-radius: 14px !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
+            transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+            white-space: nowrap;
+        }
+        body[data-active-tab="video"] .video-step-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+        body[data-active-tab="video"] .video-step-btn.active {
+            background: linear-gradient(135deg, #111827, #1e3a8a);
+            border-color: rgba(30, 58, 138, 0.85);
+            box-shadow: 0 12px 30px rgba(30, 58, 138, 0.24);
+        }
+        body[data-active-tab="video"] .video-workflow-layout {
+            align-items: start;
+        }
+        body[data-active-tab="video"][data-video-step="load"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="analyze"] .video-workflow-layout,
+        body[data-active-tab="video"][data-video-step="report"] .video-workflow-layout {
+            grid-template-columns: minmax(0, 1.46fr) minmax(280px, 0.54fr) !important;
+        }
+        body[data-active-tab="video"] .video-workflow-main {
+            border-color: rgba(203, 213, 225, 0.92);
+            box-shadow: 0 18px 55px rgba(15, 23, 42, 0.07);
+        }
+        body[data-active-tab="video"] .video-workflow-side {
+            position: sticky;
+            top: 148px;
+            max-height: calc(100vh - 170px);
+            overflow: auto;
+            overscroll-behavior: contain;
+        }
+        body[data-active-tab="video"] .video-workflow-side > * {
+            border-radius: 16px !important;
+            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+        }
+        body[data-active-tab="video"] #videoFilePickCard {
+            min-height: 150px;
+            border-width: 1px;
+            background:
+                radial-gradient(circle at 8% 0%, rgba(37,99,235,0.18), transparent 32%),
+                linear-gradient(135deg, #eff6ff 0%, #ffffff 48%, #f8fafc 100%);
+        }
+        body[data-active-tab="video"] #videoFilePickCard .video-file-pick-action,
+        body[data-active-tab="video"] #videoFilePickCard::after {
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+        }
+        body[data-active-tab="video"] .video-next-action {
+            border-radius: 16px;
+            background: linear-gradient(135deg, #eef2ff, #ffffff);
+        }
+        #videoFormalCandidatePanel {
+            border-color: rgba(16, 185, 129, 0.22) !important;
+            background:
+                linear-gradient(135deg, rgba(240,253,244,0.9), rgba(255,255,255,0.96)),
+                radial-gradient(circle at 100% 0%, rgba(16,185,129,0.14), transparent 30%);
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        }
+        #videoFormalDuration,
+        .video-formal-duration-value {
+            font-size: clamp(26px, 3vw, 40px) !important;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+        .video-formal-frame-card,
+        .video-result-kpi-card {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.74);
+        }
+        #videoStep-result .video-result-preview-grid,
+        #videoStep-correct .video-correction-workspace {
+            gap: 14px !important;
+        }
+        #videoStep-result .video-result-preview-grid > .video-correction-preview,
+        #videoStep-correct .video-correction-preview {
+            background:
+                linear-gradient(135deg, rgba(15,23,42,0.92), rgba(2,6,23,1));
+            box-shadow: 0 24px 65px rgba(2, 6, 23, 0.22);
+        }
+        .video-editor-command-bar,
+        .video-editor-tool-strip {
+            border: 1px solid rgba(203, 213, 225, 0.82);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 8px;
+        }
+        .video-analysis-fullscreen:fullscreen .video-editor-command-bar,
+        .video-analysis-fullscreen:-webkit-full-screen .video-editor-command-bar,
+        .video-analysis-fullscreen.fullscreen-fallback .video-editor-command-bar {
+            position: sticky;
+            top: 0;
+            z-index: 8;
+            background: rgba(15, 23, 42, 0.92);
+            border-color: rgba(148, 163, 184, 0.36);
+        }
+        .video-editor-command-bar button,
+        .video-editor-tool-strip button,
+        .video-result-controls button,
+        .video-correction-controls button {
+            border-radius: 12px !important;
+        }
+        .video-speed-chip-group {
+            border-radius: 999px;
+            background: rgba(241, 245, 249, 0.9);
+            padding: 4px;
+        }
+        .video-speed-chip-group button.active,
+        [data-video-speed-rate].active {
+            background: #111827 !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+        }
+        .video-editor-timeline {
+            border-radius: 16px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 12px 34px rgba(15,23,42,0.06);
+        }
+        .video-editor-track {
+            background: linear-gradient(180deg, #e2e8f0, #f8fafc);
+            border: 1px solid rgba(148, 163, 184, 0.55);
+        }
+        .video-editor-playhead {
+            width: 3px;
+            box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.12);
+        }
+        @media (max-width: 900px) {
+            body[data-active-tab="video"] .video-workflow-tabs {
+                top: 58px;
+                margin-left: -4px;
+                margin-right: -4px;
+            }
+            body[data-active-tab="video"] .video-step-btn {
+                flex-basis: 150px;
+                min-height: 42px;
+                padding: 8px 10px !important;
+            }
+            body[data-active-tab="video"][data-video-step="load"] .video-workflow-layout,
+            body[data-active-tab="video"][data-video-step="analyze"] .video-workflow-layout,
+            body[data-active-tab="video"][data-video-step="report"] .video-workflow-layout {
+                grid-template-columns: 1fr !important;
+            }
+            body[data-active-tab="video"] .video-workflow-side {
+                position: static;
+                max-height: none;
+            }
+            .video-formal-layout,
+            .video-formal-frame-grid,
+            #videoStep-result .video-result-preview-grid,
+            #videoStep-correct .video-correction-workspace {
+                grid-template-columns: 1fr !important;
+            }
+            #videoFormalDuration,
+            .video-formal-duration-value {
+                font-size: clamp(24px, 9vw, 36px) !important;
+            }
+        }
+        /* Product Design polish v143: 編集ソフト感を上げる最終UI調整 */
+        body[data-active-tab="video"] #tab-video {
+            --kvc-panel-border: rgba(203, 213, 225, 0.88);
+            --kvc-panel-shadow: 0 18px 52px rgba(15, 23, 42, 0.07);
+            --kvc-blue: #2563eb;
+            --kvc-ink: #0f172a;
+        }
+        body[data-active-tab="video"] .video-workflow-main,
+        body[data-active-tab="video"] .video-workflow-side > *,
+        body[data-active-tab="video"] .video-sync-graph-panel,
+        body[data-active-tab="video"] #videoMultiStrikePanel,
+        body[data-active-tab="video"] #videoDetailMetricsPanel {
+            border-color: var(--kvc-panel-border) !important;
+            box-shadow: var(--kvc-panel-shadow);
+        }
+        body[data-active-tab="video"] .video-workflow-tabs {
+            border-radius: 18px !important;
+        }
+        body[data-active-tab="video"] .video-step-btn {
+            position: relative;
+            isolation: isolate;
+            letter-spacing: 0;
+        }
+        body[data-active-tab="video"] .video-step-btn i {
+            opacity: 0.82;
+        }
+        body[data-active-tab="video"] .video-step-btn.active i {
+            opacity: 1;
+        }
+        body[data-active-tab="video"] .video-step-btn.active::before {
+            content: "";
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            bottom: 5px;
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+        }
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct {
+            --video-editor-max: min(calc(100vh - 330px), 680px);
+            --video-editor-panel-max: min(calc(100vh - 330px), 680px);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid > .video-correction-preview,
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-preview {
+            min-height: 390px;
+            height: min(62vh, 680px);
+            border-radius: 18px;
+        }
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-controls {
+            max-height: min(62vh, 680px);
+            border-radius: 18px !important;
+        }
+        body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-workspace,
+        body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid {
+            align-items: stretch;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+        }
+        body[data-active-tab="video"] .video-correction-preview canvas,
+        body[data-active-tab="video"] .video-correction-preview video {
+            image-rendering: auto;
+        }
+        body[data-active-tab="video"] .video-correction-hud {
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(10px);
+        }
+        .video-fullscreen-entry-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.16), transparent 34%),
+                linear-gradient(135deg, #eff6ff, #ffffff);
+            padding: 12px;
+            box-shadow: 0 16px 42px rgba(37, 99, 235, 0.08);
+        }
+        .video-fullscreen-entry-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .video-fullscreen-primary-btn,
+        .video-fullscreen-exit-btn {
+            min-height: 44px;
+            border-radius: 14px;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 1000;
+            transition: transform 0.14s ease, box-shadow 0.14s ease;
+        }
+        .video-fullscreen-primary-btn {
+            color: #fff;
+            background: linear-gradient(135deg, #1d4ed8, #0f172a);
+            box-shadow: 0 14px 32px rgba(30, 64, 175, 0.26);
+        }
+        .video-fullscreen-primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 42px rgba(30, 64, 175, 0.32);
+        }
+        .video-fullscreen-exit-btn {
+            display: none;
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.86);
+        }
+        body[data-active-tab="video"] #videoCorrectionEditDock,
+        body[data-active-tab="video"] #videoStrikeDetailPanel,
+        body[data-active-tab="video"] .video-correction-framebar,
+        body[data-active-tab="video"] .video-result-edit-panel,
+        body[data-active-tab="video"] .video-result-controls {
+            border-radius: 18px !important;
+            box-shadow: 0 14px 38px rgba(15, 23, 42, 0.06);
+        }
+        body[data-active-tab="video"] .dock-btn,
+        body[data-active-tab="video"] .video-detail-edit-btn,
+        body[data-active-tab="video"] .video-strike-action,
+        body[data-active-tab="video"] .video-graph-action {
+            min-height: 42px;
+            border-radius: 13px !important;
+            font-weight: 900;
+        }
+        body[data-active-tab="video"] .video-correction-dock-card,
+        body[data-active-tab="video"] .video-formal-frame-card,
+        body[data-active-tab="video"] .video-result-kpi-card {
+            min-width: 0;
+            overflow: hidden;
+        }
+        body[data-active-tab="video"] .video-correction-dock-card strong,
+        body[data-active-tab="video"] .video-formal-frame-card strong,
+        body[data-active-tab="video"] .video-result-kpi-card .video-result-kpi-value {
+            overflow-wrap: anywhere;
+            word-break: keep-all;
+        }
+        #videoFormalDuration,
+        #videoResultDuration,
+        .video-formal-duration-value {
+            font-size: clamp(24px, 2.15vw, 34px) !important;
+            line-height: 1.1 !important;
+            letter-spacing: 0 !important;
+            white-space: normal !important;
+        }
+        body[data-active-tab="video"] .video-formal-layout {
+            align-items: stretch;
+        }
+        body[data-active-tab="video"] .video-result-kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)) !important;
+        }
+        body[data-active-tab="video"] .video-result-kpi-card {
+            min-height: 78px;
+            padding: 12px 14px;
+        }
+        body[data-active-tab="video"] .video-result-kpi-card.primary {
+            grid-column: span 2;
+        }
+        body[data-active-tab="video"] #videoFormalCandidatePanel {
+            border-radius: 22px !important;
+        }
+        body[data-active-tab="video"] #videoMultiStrikePanel {
+            background:
+                linear-gradient(180deg, rgba(255,251,235,0.86), rgba(255,255,255,0.96));
+            border-color: rgba(245, 158, 11, 0.22) !important;
+        }
+        body[data-active-tab="video"] #videoMultiStrikePanel .overflow-x-auto {
+            max-height: 340px;
+        }
+        body[data-active-tab="video"] #videoMultiStrikePanel tbody tr:hover {
+            background: rgba(255, 247, 237, 0.88);
+        }
+        body[data-active-tab="video"] .video-sync-graph-panel {
+            background:
+                radial-gradient(circle at 0 0, rgba(14, 165, 233, 0.08), transparent 30%),
+                #ffffff;
+        }
+        body[data-active-tab="video"] .video-graph-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        body[data-active-tab="video"] .video-analysis-graph canvas {
+            height: 210px !important;
+            min-height: 210px;
+        }
+        body[data-active-tab="video"] .video-sync-graph-panel.graph-zoomed .video-analysis-graph canvas {
+            height: min(58vh, 560px) !important;
+            min-height: 380px;
+        }
+        body[data-active-tab="video"] .video-editor-timebar,
+        body[data-active-tab="video"] .video-timeline-zoom-control,
+        body[data-active-tab="video"] .video-correction-key-hints {
+            color: #334155;
+        }
+        body[data-active-tab="video"] .video-editor-track {
+            min-height: 54px;
+        }
+        body[data-active-tab="video"] .video-editor-marker {
+            transform: translateX(-50%) scale(1.08);
+        }
+        body[data-active-tab="video"] .video-editor-marker:hover,
+        body[data-active-tab="video"] .video-editor-marker:focus-visible {
+            transform: translateX(-50%) scale(1.22);
+            outline: 3px solid rgba(37, 99, 235, 0.18);
+        }
+        #toastContainer {
+            pointer-events: none;
+            max-width: min(420px, calc(100vw - 24px));
+        }
+        #toastContainer > div {
+            pointer-events: auto;
+            border-radius: 14px !important;
+            padding: 10px 12px !important;
+            box-shadow: 0 16px 42px rgba(15, 23, 42, 0.18) !important;
+        }
+        #toastContainer > div span {
+            font-size: 12px !important;
+            line-height: 1.35;
+        }
+        .video-analysis-fullscreen:fullscreen,
+        .video-analysis-fullscreen:-webkit-full-screen,
+        .video-analysis-fullscreen.fullscreen-fallback {
+            background: #020617 !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-fullscreen-entry-card,
+        .video-analysis-fullscreen:-webkit-full-screen .video-fullscreen-entry-card,
+        .video-analysis-fullscreen.fullscreen-fallback .video-fullscreen-entry-card {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            color: #e2e8f0;
+            border-color: rgba(59, 130, 246, 0.34);
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9));
+            box-shadow: 0 22px 58px rgba(0, 0, 0, 0.28);
+        }
+        .video-analysis-fullscreen:fullscreen .video-fullscreen-entry-card .text-slate-900,
+        .video-analysis-fullscreen:-webkit-full-screen .video-fullscreen-entry-card .text-slate-900,
+        .video-analysis-fullscreen.fullscreen-fallback .video-fullscreen-entry-card .text-slate-900 {
+            color: #f8fafc !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-fullscreen-entry-card .text-slate-500,
+        .video-analysis-fullscreen:-webkit-full-screen .video-fullscreen-entry-card .text-slate-500,
+        .video-analysis-fullscreen.fullscreen-fallback .video-fullscreen-entry-card .text-slate-500 {
+            color: #cbd5e1 !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-fullscreen-primary-btn,
+        .video-analysis-fullscreen:-webkit-full-screen .video-fullscreen-primary-btn,
+        .video-analysis-fullscreen.fullscreen-fallback .video-fullscreen-primary-btn {
+            display: none;
+        }
+        .video-analysis-fullscreen:fullscreen .video-fullscreen-exit-btn,
+        .video-analysis-fullscreen:-webkit-full-screen .video-fullscreen-exit-btn,
+        .video-analysis-fullscreen.fullscreen-fallback .video-fullscreen-exit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #videoStep-correct:fullscreen,
+        #videoStep-correct:-webkit-full-screen,
+        #videoStep-correct.fullscreen-fallback {
+            grid-template-rows: auto auto minmax(0, 1fr) auto auto !important;
+        }
+        #videoStep-correct:fullscreen #videoCorrectionEditDock,
+        #videoStep-correct:-webkit-full-screen #videoCorrectionEditDock,
+        #videoStep-correct.fullscreen-fallback #videoCorrectionEditDock {
+            display: none !important;
+        }
+        #videoStep-correct:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct.fullscreen-fallback #videoStrikeDetailPanel {
+            max-height: 220px;
+            overflow: auto;
+        }
+        .video-analysis-fullscreen:fullscreen .video-correction-workspace,
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-workspace,
+        .video-analysis-fullscreen.fullscreen-fallback .video-correction-workspace,
+        .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+            gap: 14px !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-correction-preview,
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-preview,
+        .video-analysis-fullscreen.fullscreen-fallback .video-correction-preview {
+            height: calc(100vh - 170px) !important;
+            min-height: 520px !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-correction-controls,
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-controls,
+        .video-analysis-fullscreen.fullscreen-fallback .video-correction-controls,
+        .video-analysis-fullscreen:fullscreen .video-result-controls,
+        .video-analysis-fullscreen:-webkit-full-screen .video-result-controls,
+        .video-analysis-fullscreen.fullscreen-fallback .video-result-controls {
+            background: rgba(15, 23, 42, 0.86) !important;
+            border-color: rgba(148, 163, 184, 0.32) !important;
+            color: #e2e8f0;
+            max-height: calc(100vh - 170px) !important;
+        }
+        .video-analysis-fullscreen:fullscreen .video-correction-controls select,
+        .video-analysis-fullscreen:-webkit-full-screen .video-correction-controls select,
+        .video-analysis-fullscreen.fullscreen-fallback .video-correction-controls select {
+            background: rgba(15, 23, 42, 0.92);
+            color: #e2e8f0;
+            border-color: rgba(148, 163, 184, 0.32);
+        }
+        #videoStep-correct:fullscreen,
+        #videoStep-correct:-webkit-full-screen,
+        #videoStep-correct.fullscreen-fallback {
+            grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 190px) auto !important;
+        }
+        #videoStep-correct:fullscreen .video-correction-workspace,
+        #videoStep-correct:-webkit-full-screen .video-correction-workspace,
+        #videoStep-correct.fullscreen-fallback .video-correction-workspace {
+            min-height: 0 !important;
+            height: 100% !important;
+        }
+        #videoStep-correct:fullscreen .video-correction-preview,
+        #videoStep-correct:-webkit-full-screen .video-correction-preview,
+        #videoStep-correct.fullscreen-fallback .video-correction-preview {
+            height: 100% !important;
+            min-height: 0 !important;
+            max-height: none !important;
+        }
+        #videoStep-correct:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct.fullscreen-fallback #videoStrikeDetailPanel {
+            max-height: 190px !important;
+            min-height: 0;
+            overflow: auto;
+        }
+        @media (max-width: 1100px) {
+            body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-workspace,
+            body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid,
+            .video-analysis-fullscreen:fullscreen .video-correction-workspace,
+            .video-analysis-fullscreen:-webkit-full-screen .video-correction-workspace,
+            .video-analysis-fullscreen.fullscreen-fallback .video-correction-workspace,
+            .video-analysis-fullscreen:fullscreen .video-result-preview-grid,
+            .video-analysis-fullscreen:-webkit-full-screen .video-result-preview-grid,
+            .video-analysis-fullscreen.fullscreen-fallback .video-result-preview-grid {
+                grid-template-columns: 1fr !important;
+            }
+            body[data-active-tab="video"] .video-graph-grid {
+                grid-template-columns: 1fr;
+            }
+            body[data-active-tab="video"] .video-result-kpi-card.primary {
+                grid-column: auto;
+            }
+        }
+        @media (max-width: 760px) {
+            .video-fullscreen-entry-card {
+                align-items: stretch;
+                flex-direction: column;
+            }
+            .video-fullscreen-entry-actions {
+                width: 100%;
+            }
+            .video-fullscreen-primary-btn,
+            .video-fullscreen-exit-btn {
+                width: 100%;
+            }
+            #toastContainer {
+                left: 12px !important;
+                right: 12px !important;
+                bottom: 12px !important;
+                max-width: none;
+            }
+            #toastContainer > div {
+                width: auto;
+                padding: 9px 11px !important;
+            }
+            body[data-active-tab="video"] .video-workflow-main {
+                padding: 10px !important;
+            }
+            body[data-active-tab="video"] .video-step-btn {
+                flex-basis: 132px;
+                font-size: 11px;
+            }
+            body[data-active-tab="video"][data-video-step="result"] #videoStep-result .video-result-preview-grid > .video-correction-preview,
+            body[data-active-tab="video"][data-video-step="correct"] #videoStep-correct .video-correction-preview {
+                min-height: 280px;
+                height: min(56vh, 520px);
+            }
+            #videoFormalDuration,
+            #videoResultDuration,
+            .video-formal-duration-value {
+                font-size: clamp(22px, 7vw, 30px) !important;
+            }
+        }
+        /* v145: 全画面編集の入口固定化と全画面内タブ整理 */
+        body[data-active-tab="video"][data-video-step="correct"] #videoCorrectionFullscreenTopBtn {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 82;
+            min-width: 188px;
+            min-height: 52px;
+            border-radius: 999px;
+        }
+        body[data-active-tab="video"][data-video-step="correct"] #videoCorrectionFullscreenTopBtn::after {
+            content: "常にここから入れます";
+            position: absolute;
+            right: 10px;
+            bottom: calc(100% + 6px);
+            color: #1e3a8a;
+            background: rgba(239, 246, 255, 0.96);
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        }
+        .video-fullscreen-mode-tabs {
+            display: none;
+        }
+        .video-fullscreen-mode-tabs button {
+            min-height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 1000;
+        }
+        .video-fullscreen-mode-tabs button.active {
+            color: #ffffff;
+            border-color: rgba(96, 165, 250, 0.62);
+            background: rgba(37, 99, 235, 0.9);
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.28);
+        }
+        .video-fullscreen-strike-panel {
+            display: none;
+            order: 3;
+            min-height: 0;
+            height: 100%;
+            overflow: auto;
+            border: 1px solid rgba(96, 165, 250, 0.34);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.18), transparent 34%),
+                rgba(15, 23, 42, 0.94);
+            color: #e2e8f0;
+            padding: 14px;
+        }
+        .video-fullscreen-strike-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .video-fullscreen-strike-head h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 1000;
+            color: #ffffff;
+        }
+        .video-fullscreen-strike-head p {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #cbd5e1;
+        }
+        .video-fullscreen-small-btn {
+            min-height: 38px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 1000;
+        }
+        .video-fullscreen-strike-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .video-fullscreen-strike-panel .video-quick-strike-nav {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(148, 163, 184, 0.24);
+        }
+        .video-fullscreen-strike-panel .video-quick-strike-head,
+        .video-fullscreen-strike-panel .video-quick-strike-btn {
+            color: #e2e8f0;
+        }
+        .video-fullscreen-strike-panel .video-quick-strike-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(148, 163, 184, 0.28);
+        }
+        .video-fullscreen-strike-panel .video-quick-strike-btn.active {
+            background: #2563eb;
+            border-color: #60a5fa;
+            color: #ffffff;
+        }
+        .video-fullscreen-strike-tip {
+            margin-top: 12px;
+            border: 1px solid rgba(125, 211, 252, 0.24);
+            border-radius: 14px;
+            background: rgba(14, 165, 233, 0.08);
+            color: #dbeafe;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.6;
+        }
+        #videoStep-correct:fullscreen .video-fullscreen-mode-tabs,
+        #videoStep-correct:-webkit-full-screen .video-fullscreen-mode-tabs,
+        #videoStep-correct.fullscreen-fallback .video-fullscreen-mode-tabs {
+            display: flex;
+            gap: 8px;
+            flex: 1 1 360px;
+            justify-content: center;
+        }
+        #videoStep-correct:fullscreen #videoCorrectionFullscreenTopBtn,
+        #videoStep-correct:-webkit-full-screen #videoCorrectionFullscreenTopBtn,
+        #videoStep-correct.fullscreen-fallback #videoCorrectionFullscreenTopBtn {
+            position: static;
+            min-width: auto;
+            min-height: 44px;
+        }
+        #videoStep-correct:fullscreen #videoCorrectionFullscreenTopBtn::after,
+        #videoStep-correct:-webkit-full-screen #videoCorrectionFullscreenTopBtn::after,
+        #videoStep-correct.fullscreen-fallback #videoCorrectionFullscreenTopBtn::after {
+            display: none;
+        }
+        #videoStep-correct[data-fullscreen-mode="edit"]:fullscreen,
+        #videoStep-correct[data-fullscreen-mode="edit"]:-webkit-full-screen,
+        #videoStep-correct[data-fullscreen-mode="edit"].fullscreen-fallback,
+        #videoStep-correct[data-fullscreen-mode="detail"]:fullscreen,
+        #videoStep-correct[data-fullscreen-mode="detail"]:-webkit-full-screen,
+        #videoStep-correct[data-fullscreen-mode="detail"].fullscreen-fallback,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:fullscreen,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:-webkit-full-screen,
+        #videoStep-correct[data-fullscreen-mode="strikes"].fullscreen-fallback {
+            grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+        }
+        #videoStep-correct[data-fullscreen-mode="edit"]:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="edit"]:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="edit"].fullscreen-fallback #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="edit"]:fullscreen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="edit"]:-webkit-full-screen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="edit"].fullscreen-fallback #videoFullscreenStrikePanel {
+            display: none !important;
+        }
+        #videoStep-correct[data-fullscreen-mode="detail"]:fullscreen .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="detail"]:-webkit-full-screen .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="detail"].fullscreen-fallback .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="detail"]:fullscreen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="detail"]:-webkit-full-screen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="detail"].fullscreen-fallback #videoFullscreenStrikePanel {
+            display: none !important;
+        }
+        #videoStep-correct[data-fullscreen-mode="detail"]:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="detail"]:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="detail"].fullscreen-fallback #videoStrikeDetailPanel {
+            display: block !important;
+            order: 3;
+            height: 100%;
+            max-height: none !important;
+        }
+        #videoStep-correct[data-fullscreen-mode="strikes"]:fullscreen .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:-webkit-full-screen .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="strikes"].fullscreen-fallback .video-correction-workspace,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:fullscreen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:-webkit-full-screen #videoStrikeDetailPanel,
+        #videoStep-correct[data-fullscreen-mode="strikes"].fullscreen-fallback #videoStrikeDetailPanel {
+            display: none !important;
+        }
+        #videoStep-correct[data-fullscreen-mode="strikes"]:fullscreen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="strikes"]:-webkit-full-screen #videoFullscreenStrikePanel,
+        #videoStep-correct[data-fullscreen-mode="strikes"].fullscreen-fallback #videoFullscreenStrikePanel {
+            display: block !important;
+        }
+        @media (max-width: 760px) {
+            body[data-active-tab="video"][data-video-step="correct"] #videoCorrectionFullscreenTopBtn {
+                left: 18px;
+                right: 18px;
+                bottom: 18px;
+                width: auto;
+            }
+            .video-fullscreen-strike-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            #videoStep-correct:fullscreen .video-fullscreen-mode-tabs,
+            #videoStep-correct:-webkit-full-screen .video-fullscreen-mode-tabs,
+            #videoStep-correct.fullscreen-fallback .video-fullscreen-mode-tabs {
+                width: 100%;
+                overflow-x: auto;
+                justify-content: flex-start;
+            }
+            .video-fullscreen-mode-tabs button {
+                flex: 0 0 auto;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple">
@@ -2948,7 +3731,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v139-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v145-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3489,7 +4272,7 @@
                     <button type="button" onclick="switchVideoStep('report')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded text-sm font-bold">保存/レポート（任意）</button>
                 </div>
                 </div>
-                <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen space-y-3">
+                <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen space-y-3" data-fullscreen-mode="edit">
                     <div class="official-flow-card rounded-xl border p-3 text-xs leading-relaxed">
                         <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
                         <p><strong>開始</strong> 振り下ろし / <strong>終了</strong> 減速・停止</p>
@@ -3500,6 +4283,21 @@
 	                            <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
 	                        </div>
 	                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
+	                    </div>
+	                    <div class="video-fullscreen-entry-card">
+	                        <div>
+	                            <div class="text-sm font-black text-slate-900"><i class="fa-solid fa-up-right-and-down-left-from-center text-blue-600 mr-1"></i>大画面で補正編集</div>
+	                            <div class="text-[11px] text-slate-500 mt-1">動画を大きく表示し、開始・終了・分割・統合を同じ画面で操作します。</div>
+	                        </div>
+	                        <div class="video-fullscreen-mode-tabs" aria-label="全画面編集モード">
+	                            <button type="button" data-video-fullscreen-mode="edit" class="active" onclick="setVideoFullscreenMode('edit')"><i class="fa-solid fa-clapperboard mr-1"></i>映像編集</button>
+	                            <button type="button" data-video-fullscreen-mode="detail" onclick="setVideoFullscreenMode('detail')"><i class="fa-solid fa-ruler-horizontal mr-1"></i>詳細スケール</button>
+	                            <button type="button" data-video-fullscreen-mode="strikes" onclick="setVideoFullscreenMode('strikes')"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</button>
+	                        </div>
+	                        <div class="video-fullscreen-entry-actions">
+	                            <button id="videoCorrectionFullscreenTopBtn" type="button" class="video-fullscreen-primary-btn"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
+	                            <button id="videoExitFullscreenBtn" type="button" class="video-fullscreen-exit-btn"><i class="fa-solid fa-compress mr-1"></i>全画面を閉じる</button>
+	                        </div>
 	                    </div>
 	                    <div id="videoCorrectionEditDock" class="video-correction-edit-dock">
 	                        <div class="video-correction-dock-metrics">
@@ -3605,6 +4403,36 @@
                         </div>
                         <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">選択した打突範囲だけを拡大して確認します。</p>
                     </details>
+                    <div id="videoFullscreenStrikePanel" class="video-fullscreen-strike-panel">
+                        <div class="video-fullscreen-strike-head">
+                            <div>
+                                <h3><i class="fa-solid fa-list-ol mr-1"></i>打突ごとの編集</h3>
+                                <p>選択した1本へ移動し、その場で分割・統合・補正できます。</p>
+                            </div>
+                            <button type="button" class="video-fullscreen-small-btn" onclick="setVideoFullscreenMode('edit')"><i class="fa-solid fa-clapperboard mr-1"></i>映像へ戻る</button>
+                        </div>
+                        <div id="videoFullscreenStrikeNav" class="video-quick-strike-nav" data-strike-nav-mode="fullscreen">
+                            <div class="video-quick-strike-head">
+                                <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
+                                <span>未解析</span>
+                            </div>
+                            <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
+                        </div>
+                        <div class="video-fullscreen-strike-actions">
+                            <button type="button" class="video-detail-edit-btn start" onclick="markVideoCurrentFrame('start')"><i class="fa-solid fa-flag mr-1"></i>現在を開始</button>
+                            <button type="button" class="video-detail-edit-btn end" onclick="markVideoCurrentFrame('end')"><i class="fa-solid fa-flag-checkered mr-1"></i>現在を終了</button>
+                            <button type="button" class="video-detail-edit-btn peak" onclick="splitSelectedVideoStrikeAtCurrent()"><i class="fa-solid fa-scissors mr-1"></i>ここで分割</button>
+                            <button type="button" class="video-detail-edit-btn" onclick="mergeSelectedVideoStrike('prev')"><i class="fa-solid fa-object-group mr-1"></i>前と統合</button>
+                            <button type="button" class="video-detail-edit-btn" onclick="mergeSelectedVideoStrike('next')"><i class="fa-solid fa-object-group mr-1"></i>次と統合</button>
+                            <button type="button" class="video-detail-edit-btn" onclick="undoVideoEdit()"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
+                            <button type="button" class="video-detail-edit-btn" onclick="redoVideoEdit()"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
+                            <button type="button" class="video-detail-edit-btn start" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play mr-1"></i>範囲再生</button>
+                            <button type="button" class="video-detail-edit-btn end" onclick="confirmVideoTimingCorrection()"><i class="fa-solid fa-circle-check mr-1"></i>確定</button>
+                        </div>
+                        <div class="video-fullscreen-strike-tip">
+                            <i class="fa-solid fa-circle-info mr-1"></i>打突が分かれすぎる場合は「前/次と統合」、1本が長すぎる場合は打突中のコマで「ここで分割」を使います。
+                        </div>
+                    </div>
 	                    <div class="video-correction-workspace grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
 	                        <div class="video-correction-preview border border-slate-800">
 	                            <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
@@ -3651,7 +4479,7 @@
                                 <button id="markStartFrameBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold">現在を開始</button>
                                 <button id="markEndFrameBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-bold">現在を終了</button>
                                 <button id="confirmVideoTimingBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-circle-check mr-1"></i>この開始/終了で確定</button>
-                                <button id="videoCorrectionFullscreenBtn" type="button" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>全画面補正</button>
+                                <button id="videoCorrectionFullscreenBtn" type="button" class="control-fullscreen col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
                             </div>
                             <div class="grid grid-cols-1 gap-2 text-xs">
                                 <label class="flex items-center gap-2"><input id="videoSkeletonToggle" type="checkbox" checked=""> 骨格表示</label>
@@ -4653,6 +5481,7 @@
 
         function requestElementFullscreen(element) {
             if (!element) return;
+            if (element.id === 'videoStep-correct') setVideoFullscreenMode('edit');
             if (element.classList.contains('fullscreen-fallback')) {
                 closeVideoFullscreenFallback();
                 return;
@@ -4666,10 +5495,35 @@
             if (result?.catch) result.catch(() => openVideoFullscreenFallback(element));
         }
 
+        function exitVideoFullscreen() {
+            if (document.body.classList.contains('video-fallback-fullscreen-active')) {
+                closeVideoFullscreenFallback();
+                return;
+            }
+            const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            if (!fullscreenElement) return;
+            const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+            if (exit) {
+                const result = exit.call(document);
+                if (result?.catch) result.catch(() => {});
+            }
+        }
+
+        function setVideoFullscreenMode(mode = 'edit') {
+            const panel = document.getElementById('videoStep-correct');
+            const nextMode = ['edit', 'detail', 'strikes'].includes(mode) ? mode : 'edit';
+            if (panel) panel.dataset.fullscreenMode = nextMode;
+            document.querySelectorAll('[data-video-fullscreen-mode]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.videoFullscreenMode === nextMode);
+            });
+            refreshVideoFullscreenLayout();
+        }
+        window.setVideoFullscreenMode = setVideoFullscreenMode;
+
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v139';
+            const refreshKey = 'kendo-sw-refreshed-v145';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -8484,6 +9338,7 @@
                     const attr = node.getAttribute('src') || '';
                     return attr === src || attr.endsWith(src.replace('./', '/')) || attr.endsWith(src.replace('./', ''));
                 });
+                let reloaded = false;
                 let interval = null;
                 const timer = setTimeout(() => {
                     cleanup();
@@ -8506,15 +9361,38 @@
                     // MediaPipeのグローバル定義はload直後に少し遅れることがあるため、ポーリング継続。
                 }
                 function onError() {
+                    if (!reloaded) {
+                        reloaded = true;
+                        if (script && !script.dataset.kendoStaticScript) script.remove();
+                        script = createScript(true);
+                        script.addEventListener('load', onLoad, { once: true });
+                        script.addEventListener('error', onError, { once: true });
+                        return;
+                    }
                     cleanup();
                     reject(new Error(`${src} load failed`));
                 }
-                if (!script) {
+                function createScript(cacheBust = false) {
                     script = document.createElement('script');
-                    script.src = src;
+                    script.src = cacheBust ? `${src}${src.includes('?') ? '&' : '?'}v=${Date.now()}` : src;
                     script.async = true;
                     document.head.appendChild(script);
+                    return script;
                 }
+                if (script && !isReady()) {
+                    const attr = script.getAttribute('src') || '';
+                    const loadedLongAgo = script.dataset.kendoLoadPending === '1' && Date.now() - Number(script.dataset.kendoLoadStartedAt || 0) > Math.min(timeoutMs, 8000);
+                    const initialStaticScript = !script.dataset.kendoLoadStartedAt && attr === src;
+                    if (loadedLongAgo || initialStaticScript) {
+                        reloaded = true;
+                        script = createScript(true);
+                    }
+                }
+                if (!script) {
+                    script = createScript(false);
+                }
+                script.dataset.kendoLoadPending = '1';
+                script.dataset.kendoLoadStartedAt = script.dataset.kendoLoadStartedAt || String(Date.now());
                 script.addEventListener('load', onLoad, { once: true });
                 script.addEventListener('error', onError, { once: true });
                 interval = setInterval(resolveIfReady, 100);
@@ -8563,13 +9441,15 @@
 
         function waitForVisionTasks(timeoutMs = 5000) {
             if (hasVisionTasksModule()) return Promise.resolve(window.MediaPipeTasksVision);
-            // head内のasync読み込みが遅れているだけのケースが多いため、待機だけでなく即ポーリングする。
-            // ここで30秒待ってから再読込すると、実動画解析前にLandmarkerがタイムアウトしやすい。
-            return loadScriptAsset(
-                './vendor/mediapipe/tasks-vision/vision_bundle_browser.js',
-                hasVisionTasksModule,
-                timeoutMs
-            ).then(() => window.MediaPipeTasksVision);
+            // head内のasync読み込みだけに依存すると、実動画解析時に読み込み済み判定が間に合わず
+            // Legacy Poseへ落ちることがある。Tasks本体は明示ロードを優先し、失敗時だけ既存script待機へ戻す。
+            return loadMediaPipeTasksVisionScript(timeoutMs)
+                .catch(() => loadScriptAsset(
+                    './vendor/mediapipe/tasks-vision/vision_bundle_browser.js',
+                    hasVisionTasksModule,
+                    timeoutMs
+                ))
+                .then(() => window.MediaPipeTasksVision);
         }
 
         async function ensurePoseLandmarkerAssets() {
@@ -8610,7 +9490,8 @@
             AppState.poseEngine = '準備中';
             AppState.landmarkerDiag = 'Tasks確認中';
             updatePrecisionPanel();
-            const canUseTasksSafely = window.crossOriginIsolated && !isIOSLikeBrowser() && !isSafariLikeBrowser();
+            const isVideoPurpose = options.purpose === 'video';
+            const canUseTasksSafely = (isVideoPurpose || window.crossOriginIsolated) && !isIOSLikeBrowser() && !isSafariLikeBrowser();
             const useTasks = options.forceTasks ? canUseTasksSafely : shouldUsePoseLandmarkerRealtime();
             if (!useTasks && Params.usePoseLandmarker) {
                 if (isIOSLikeBrowser()) AppState.landmarkerDiag = 'iPhone互換: Legacy Poseへ切替';
@@ -8621,20 +9502,21 @@
             }
             if (useTasks) {
                 try {
-                    const isVideoPurpose = options.purpose === 'video';
-                    await withTimeout(ensurePoseLandmarkerAssets(), isVideoPurpose ? 15000 : 45000, 'Pose assets');
+                    await withTimeout(ensurePoseLandmarkerAssets(), isVideoPurpose ? 25000 : 45000, 'Pose assets');
                     const vision = await withTimeout(
-                        waitForVisionTasks(isVideoPurpose ? 7000 : 30000),
-                        isVideoPurpose ? 10000 : 35000,
+                        waitForVisionTasks(isVideoPurpose ? 45000 : 30000),
+                        isVideoPurpose ? 50000 : 35000,
                         'MediaPipe Tasks'
                     );
-                    const delegates = options.purpose === 'video' ? ['GPU', 'CPU'] : ['CPU'];
+                    const delegates = options.purpose === 'video'
+                        ? (window.crossOriginIsolated ? ['GPU', 'CPU'] : ['CPU'])
+                        : ['CPU'];
                     for (const delegate of delegates) {
                         try {
                             AppState.landmarkerDiag = `${delegate}初期化中`;
                             updatePrecisionPanel();
                             const delegateTimeout = isVideoPurpose
-                                ? (delegate === 'GPU' ? 4500 : 6500)
+                                ? (delegate === 'GPU' ? 10000 : 45000)
                                 : 45000;
                             AppState.poseLandmarker = await createPoseLandmarkerInstance(vision, delegate, delegateTimeout);
                             AppState.poseEngine = delegate === 'GPU' ? 'Pose Landmarker' : 'Pose Landmarker CPU';
@@ -10517,6 +11399,14 @@
             });
         }
 
+        function applyVideoPreviewPlaybackRate(rate) {
+            const current = clamp(Number(rate) || 0.5, 0.1, 1);
+            ['videoResultElement', 'videoCorrectionElement', 'analysisVideoElement'].forEach(id => {
+                const video = document.getElementById(id);
+                if (video) video.playbackRate = current;
+            });
+        }
+
         function setVideoSlowRateValue(rate, restart = true) {
             const value = String(clamp(Number(rate) || 0.5, 0.1, 1));
             ['videoSlowRateSelect', 'videoResultSlowRateSelect'].forEach(id => {
@@ -10524,6 +11414,7 @@
                 if (select) select.value = value;
             });
             updateVideoSpeedChips(Number(value));
+            applyVideoPreviewPlaybackRate(Number(value));
             if (restart && AppState.videoSlowPlaying) startVideoSlowPlayback();
         }
 
@@ -10535,6 +11426,7 @@
                 if (target && target !== source) target.value = source.value;
             });
             updateVideoSpeedChips(Number(source.value));
+            applyVideoPreviewPlaybackRate(Number(source.value));
         }
         window.setVideoSlowRateValue = setVideoSlowRateValue;
 
@@ -11406,7 +12298,8 @@
         function renderVideoQuickStrikeNav(data = AppState.videoAnalysis) {
             const targets = [
                 document.getElementById('videoCorrectionStrikeNav'),
-                document.getElementById('videoResultStrikeNav')
+                document.getElementById('videoResultStrikeNav'),
+                document.getElementById('videoFullscreenStrikeNav')
             ].filter(Boolean);
             if (!targets.length) return;
             const refs = data?.frames?.length ? videoStrikeRefList(data) : [];
@@ -14120,6 +15013,12 @@
         if (videoCorrectionFullscreenBtn) videoCorrectionFullscreenBtn.addEventListener('click', () => {
             requestElementFullscreen(document.getElementById('videoStep-correct'));
         });
+        const videoCorrectionFullscreenTopBtn = document.getElementById('videoCorrectionFullscreenTopBtn');
+        if (videoCorrectionFullscreenTopBtn) videoCorrectionFullscreenTopBtn.addEventListener('click', () => {
+            requestElementFullscreen(document.getElementById('videoStep-correct'));
+        });
+        const videoExitFullscreenBtn = document.getElementById('videoExitFullscreenBtn');
+        if (videoExitFullscreenBtn) videoExitFullscreenBtn.addEventListener('click', exitVideoFullscreen);
         const confirmVideoTimingBtn = document.getElementById('confirmVideoTimingBtn');
         if (confirmVideoTimingBtn) confirmVideoTimingBtn.addEventListener('click', confirmVideoTimingCorrection);
         const videoSideDrawerToggle = document.getElementById('videoSideDrawerToggle');
@@ -14728,6 +15627,85 @@
         window.exportCSV = exportCSV;
         window.clearHistory = clearHistory;
         window.resetSettings = resetSettings;
+        if (['127.0.0.1', 'localhost'].includes(location.hostname) || new URLSearchParams(location.search).has('debug')) {
+            window.__KendoDebug = {
+                state: AppState,
+                clearRecords() {
+                    AppState.records = [];
+                    persistRecords();
+                    updateHistoryTable();
+                    updateDetailsTab();
+                    return true;
+                },
+                snapshot() {
+                    const data = AppState.videoAnalysis;
+                    return {
+                        poseEngine: AppState.poseEngine,
+                        landmarkerDiag: AppState.landmarkerDiag,
+                        videoSource: AppState.videoSource ? {
+                            type: AppState.videoSource.type,
+                            name: AppState.videoSource.name || AppState.videoSource.file?.name || null,
+                            size: AppState.videoSource.size || AppState.videoSource.file?.size || null
+                        } : null,
+                        analysis: data ? {
+                            frames: data.frames?.length || 0,
+                            fps: data.fps,
+                            strikes: data.strikes?.length || 0,
+                            rejected: data.rejectedStrikes?.length || 0,
+                            startFrame: data.startFrame,
+                            peakFrame: data.peakFrame,
+                            endFrame: data.endFrame,
+                            timingConfirmed: data.timingConfirmed,
+                            durationMs: data.frames?.[data.endFrame] && data.frames?.[data.startFrame]
+                                ? Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)
+                                : null,
+                            selectedStrikeIndex: AppState.videoSelectedStrikeIndex,
+                            selectedStrikeRejected: AppState.videoSelectedStrikeRejected
+                        } : null,
+                        records: AppState.records.length,
+                        statusText: document.getElementById('videoAnalysisStatus')?.textContent || ''
+                    };
+                },
+                selectStrike(index = 0, rejected = false) {
+                    const data = AppState.videoAnalysis;
+                    if (!data?.frames?.length) return null;
+                    const list = rejected ? data.rejectedStrikes : data.strikes;
+                    const strike = list?.[index];
+                    if (!strike) return null;
+                    applyVideoStrikeSelection(index, 'peak', { rejected });
+                    openVideoEditorWorkspace({ frameIndex: strike.peakFrame });
+                    return { index, rejected, number: strike.number, startFrame: strike.startFrame, peakFrame: strike.peakFrame, endFrame: strike.endFrame, durationMs: strike.durationMs };
+                },
+                adjustSelected(startDelta = 1, endDelta = 1) {
+                    const data = AppState.videoAnalysis;
+                    if (!data?.frames?.length) return null;
+                    const idx = AppState.videoSelectedStrikeIndex ?? 0;
+                    const list = AppState.videoSelectedStrikeRejected ? data.rejectedStrikes : data.strikes;
+                    const strike = list?.[idx];
+                    const startBase = strike?.startFrame ?? data.startFrame ?? 0;
+                    const endBase = strike?.endFrame ?? data.endFrame ?? startBase + 1;
+                    pushVideoEditUndo('検証補正');
+                    data.startFrame = clamp(startBase + Number(startDelta || 0), 0, data.frames.length - 2);
+                    data.endFrame = clamp(Math.max(data.startFrame + 1, endBase + Number(endDelta || 0)), data.startFrame + 1, data.frames.length - 1);
+                    markVideoTimingManual(data, 'debug-flow');
+                    updateSelectedVideoStrikeFromCurrent();
+                    recomputeVideoAnalysisResult();
+                    setVideoAnalysisFrame(data.startFrame);
+                    return this.snapshot();
+                },
+                confirmTiming() {
+                    confirmVideoTimingCorrection();
+                    return this.snapshot();
+                },
+                saveSelectedStrike() {
+                    const data = AppState.videoAnalysis;
+                    if (!data?.frames?.length) return null;
+                    const index = AppState.videoSelectedStrikeIndex ?? 0;
+                    const record = saveVideoStrikeAsRecord(index, { silent: true });
+                    return { saved: !!record, record, snapshot: this.snapshot() };
+                }
+            };
+        }
         // AIはカメラ開始・動画解析時に初期化する。ページ表示時のLandmarker初期化停止を避ける。
         poseReadyPromise = null;
         AppState.poseEngine = '未起動';
