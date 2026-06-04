@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v145';
+            var version = 'v146';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -3155,6 +3155,83 @@
             font-weight: 800;
             line-height: 1.6;
         }
+        /* v146: 全画面編集の打突移動を上部に常駐させ、編集を一画面で完結しやすくする */
+        .video-fullscreen-active-strip {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.62);
+            padding: 8px;
+            color: #e2e8f0;
+        }
+        .video-fullscreen-active-info {
+            min-width: 150px;
+            max-width: 260px;
+            overflow: hidden;
+        }
+        .video-fullscreen-active-info span {
+            display: block;
+            color: #93c5fd;
+            font-size: 10px;
+            font-weight: 1000;
+            letter-spacing: 0;
+        }
+        .video-fullscreen-active-info strong {
+            display: block;
+            overflow: hidden;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 1000;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .video-fullscreen-active-info small {
+            display: block;
+            overflow: hidden;
+            color: #cbd5e1;
+            font-size: 10px;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .video-fullscreen-chip-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            min-width: 38px;
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            padding: 0 10px;
+            font-size: 11px;
+            font-weight: 1000;
+            transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+        }
+        .video-fullscreen-chip-btn:hover {
+            border-color: rgba(147, 197, 253, 0.72);
+            background: rgba(37, 99, 235, 0.42);
+            transform: translateY(-1px);
+        }
+        .video-fullscreen-chip-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.38;
+            transform: none;
+        }
+        .video-fullscreen-chip-btn.start {
+            color: #bfdbfe;
+        }
+        .video-fullscreen-chip-btn.peak {
+            color: #fde68a;
+        }
+        .video-fullscreen-chip-btn.end {
+            color: #fecaca;
+        }
         #videoStep-correct:fullscreen .video-fullscreen-mode-tabs,
         #videoStep-correct:-webkit-full-screen .video-fullscreen-mode-tabs,
         #videoStep-correct.fullscreen-fallback .video-fullscreen-mode-tabs {
@@ -3162,6 +3239,18 @@
             gap: 8px;
             flex: 1 1 360px;
             justify-content: center;
+        }
+        #videoStep-correct:fullscreen .video-fullscreen-entry-card,
+        #videoStep-correct:-webkit-full-screen .video-fullscreen-entry-card,
+        #videoStep-correct.fullscreen-fallback .video-fullscreen-entry-card {
+            display: grid;
+            grid-template-columns: minmax(170px, 0.62fr) minmax(250px, 0.92fr) minmax(360px, 1.3fr) auto;
+            gap: 10px;
+        }
+        #videoStep-correct:fullscreen .video-fullscreen-active-strip,
+        #videoStep-correct:-webkit-full-screen .video-fullscreen-active-strip,
+        #videoStep-correct.fullscreen-fallback .video-fullscreen-active-strip {
+            display: flex;
         }
         #videoStep-correct:fullscreen #videoCorrectionFullscreenTopBtn,
         #videoStep-correct:-webkit-full-screen #videoCorrectionFullscreenTopBtn,
@@ -3242,6 +3331,21 @@
             }
             .video-fullscreen-mode-tabs button {
                 flex: 0 0 auto;
+            }
+        }
+        @media (max-width: 1120px) {
+            #videoStep-correct:fullscreen .video-fullscreen-entry-card,
+            #videoStep-correct:-webkit-full-screen .video-fullscreen-entry-card,
+            #videoStep-correct.fullscreen-fallback .video-fullscreen-entry-card {
+                grid-template-columns: 1fr auto;
+            }
+            #videoStep-correct:fullscreen .video-fullscreen-mode-tabs,
+            #videoStep-correct:-webkit-full-screen .video-fullscreen-mode-tabs,
+            #videoStep-correct.fullscreen-fallback .video-fullscreen-mode-tabs,
+            #videoStep-correct:fullscreen .video-fullscreen-active-strip,
+            #videoStep-correct:-webkit-full-screen .video-fullscreen-active-strip,
+            #videoStep-correct.fullscreen-fallback .video-fullscreen-active-strip {
+                grid-column: 1 / -1;
             }
         }
     </style>
@@ -3731,7 +3835,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v145-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v146-reset=' + Date.now();
                                 });
                             });
                         }
@@ -4289,15 +4393,27 @@
 	                            <div class="text-sm font-black text-slate-900"><i class="fa-solid fa-up-right-and-down-left-from-center text-blue-600 mr-1"></i>大画面で補正編集</div>
 	                            <div class="text-[11px] text-slate-500 mt-1">動画を大きく表示し、開始・終了・分割・統合を同じ画面で操作します。</div>
 	                        </div>
-	                        <div class="video-fullscreen-mode-tabs" aria-label="全画面編集モード">
-	                            <button type="button" data-video-fullscreen-mode="edit" class="active" onclick="setVideoFullscreenMode('edit')"><i class="fa-solid fa-clapperboard mr-1"></i>映像編集</button>
-	                            <button type="button" data-video-fullscreen-mode="detail" onclick="setVideoFullscreenMode('detail')"><i class="fa-solid fa-ruler-horizontal mr-1"></i>詳細スケール</button>
-	                            <button type="button" data-video-fullscreen-mode="strikes" onclick="setVideoFullscreenMode('strikes')"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</button>
-	                        </div>
-	                        <div class="video-fullscreen-entry-actions">
-	                            <button id="videoCorrectionFullscreenTopBtn" type="button" class="video-fullscreen-primary-btn"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
-	                            <button id="videoExitFullscreenBtn" type="button" class="video-fullscreen-exit-btn"><i class="fa-solid fa-compress mr-1"></i>全画面を閉じる</button>
-	                        </div>
+                        <div class="video-fullscreen-mode-tabs" aria-label="全画面編集モード">
+                            <button type="button" data-video-fullscreen-mode="edit" class="active" onclick="setVideoFullscreenMode('edit')"><i class="fa-solid fa-clapperboard mr-1"></i>映像編集</button>
+                            <button type="button" data-video-fullscreen-mode="detail" onclick="setVideoFullscreenMode('detail')"><i class="fa-solid fa-ruler-horizontal mr-1"></i>詳細スケール</button>
+                            <button type="button" data-video-fullscreen-mode="strikes" onclick="setVideoFullscreenMode('strikes')"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</button>
+                        </div>
+                        <div id="videoFullscreenActiveStrip" class="video-fullscreen-active-strip" aria-live="polite">
+                            <button type="button" class="video-fullscreen-chip-btn" onclick="selectAdjacentVideoStrike(-1)" title="前の打突へ"><i class="fa-solid fa-chevron-left"></i></button>
+                            <div class="video-fullscreen-active-info">
+                                <span>選択中</span>
+                                <strong id="videoFullscreenActiveStrikeTitle">打突未選択</strong>
+                                <small id="videoFullscreenActiveStrikeMeta">解析後に #1 / #2 へ移動できます</small>
+                            </div>
+                            <button type="button" class="video-fullscreen-chip-btn" onclick="selectAdjacentVideoStrike(1)" title="次の打突へ"><i class="fa-solid fa-chevron-right"></i></button>
+                            <button type="button" class="video-fullscreen-chip-btn start" onclick="jumpFullscreenSelectedMarker('start')">開始</button>
+                            <button type="button" class="video-fullscreen-chip-btn peak" onclick="jumpFullscreenSelectedMarker('peak')">最高速</button>
+                            <button type="button" class="video-fullscreen-chip-btn end" onclick="jumpFullscreenSelectedMarker('end')">終了</button>
+                        </div>
+                        <div class="video-fullscreen-entry-actions">
+                            <button id="videoCorrectionFullscreenTopBtn" type="button" class="video-fullscreen-primary-btn"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
+                            <button id="videoExitFullscreenBtn" type="button" class="video-fullscreen-exit-btn"><i class="fa-solid fa-compress mr-1"></i>全画面を閉じる</button>
+                        </div>
 	                    </div>
 	                    <div id="videoCorrectionEditDock" class="video-correction-edit-dock">
 	                        <div class="video-correction-dock-metrics">
@@ -5448,6 +5564,7 @@
         function refreshVideoFullscreenLayout() {
             if (!AppState.videoAnalysis?.frames?.length) return;
             const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
+            updateVideoFullscreenActiveStrip();
             setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
             setTimeout(refreshVideoGraphResolution, 120);
         }
@@ -5523,7 +5640,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v145';
+            const refreshKey = 'kendo-sw-refreshed-v146';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12343,7 +12460,69 @@
                     <div class="video-quick-strike-list">${buttons}</div>
                 `;
             });
+            updateVideoFullscreenActiveStrip(data);
         }
+
+        function selectedVideoStrikeRef(data = AppState.videoAnalysis) {
+            if (!data) return null;
+            const refs = videoStrikeRefList(data);
+            if (!refs.length) return null;
+            const selected = refs.find(ref => ref.index === AppState.videoSelectedStrikeIndex && !!ref.rejected === !!AppState.videoSelectedStrikeRejected);
+            return selected || refs[0];
+        }
+
+        function formatVideoStrikeRangeText(strike) {
+            if (!strike) return '---';
+            const start = Number.isFinite(Number(strike.startTimeMs)) ? Math.round(Number(strike.startTimeMs)) : null;
+            const end = Number.isFinite(Number(strike.endTimeMs)) ? Math.round(Number(strike.endTimeMs)) : null;
+            const duration = Number.isFinite(Number(strike.durationMs)) ? `${Math.round(Number(strike.durationMs))}ms` : '補正待ち';
+            return start !== null && end !== null ? `${start}-${end}ms / ${duration}` : duration;
+        }
+
+        function updateVideoFullscreenActiveStrip(data = AppState.videoAnalysis) {
+            const title = document.getElementById('videoFullscreenActiveStrikeTitle');
+            const meta = document.getElementById('videoFullscreenActiveStrikeMeta');
+            const strip = document.getElementById('videoFullscreenActiveStrip');
+            if (!title || !meta || !strip) return;
+            const refs = data?.frames?.length ? videoStrikeRefList(data) : [];
+            if (!refs.length) {
+                title.textContent = '打突未選択';
+                meta.textContent = '解析後に #1 / #2 へ移動できます';
+                strip.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                return;
+            }
+            const selected = selectedVideoStrikeRef(data);
+            const pos = Math.max(0, refs.findIndex(ref => ref.index === selected.index && !!ref.rejected === !!selected.rejected));
+            const strike = selected.strike || {};
+            title.textContent = `${selected.rejected ? '除外候補' : '打突'} #${strike.number || selected.index + 1}`;
+            meta.textContent = `${pos + 1}/${refs.length} ・ ${formatVideoStrikeRangeText(strike)}`;
+            strip.querySelectorAll('button').forEach(btn => btn.disabled = false);
+        }
+
+        function selectAdjacentVideoStrike(delta = 1) {
+            const data = AppState.videoAnalysis;
+            const refs = videoStrikeRefList(data);
+            if (!refs.length) return showToast('移動できる打突がありません', 'yellow');
+            const selected = selectedVideoStrikeRef(data);
+            const current = Math.max(0, refs.findIndex(ref => ref.index === selected.index && !!ref.rejected === !!selected.rejected));
+            const next = clamp(current + delta, 0, refs.length - 1);
+            const ref = refs[next];
+            applyVideoStrikeSelection(ref.index, 'peak', { rejected: ref.rejected });
+            setVideoFullscreenMode('edit');
+            showToast(`${ref.rejected ? '除外候補' : '打突'}#${ref.strike?.number || ref.index + 1}へ移動しました`, 'blue');
+        }
+
+        function jumpFullscreenSelectedMarker(kind = 'peak') {
+            const ref = selectedVideoStrikeRef(AppState.videoAnalysis);
+            if (ref) {
+                applyVideoStrikeSelection(ref.index, kind, { rejected: ref.rejected });
+            } else {
+                jumpVideoAnalysisFrame(kind);
+            }
+            setVideoFullscreenMode('edit');
+        }
+        window.selectAdjacentVideoStrike = selectAdjacentVideoStrike;
+        window.jumpFullscreenSelectedMarker = jumpFullscreenSelectedMarker;
 
         function applyVideoStrikeSelection(index, target = 'peak', options = {}) {
             const data = AppState.videoAnalysis;
