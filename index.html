@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v146';
+            var version = 'v147';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -3198,6 +3198,32 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .video-fullscreen-mini-timeline {
+            position: relative;
+            height: 5px;
+            margin-top: 7px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.24);
+        }
+        .video-fullscreen-mini-timeline span,
+        .video-fullscreen-mini-timeline i {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: block;
+        }
+        .video-fullscreen-mini-timeline span {
+            left: 0;
+            width: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6, #f59e0b, #ef4444);
+        }
+        .video-fullscreen-mini-timeline i {
+            width: 3px;
+            background: #ffffff;
+            box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.5);
+        }
         .video-fullscreen-chip-btn {
             display: inline-flex;
             align-items: center;
@@ -3589,7 +3615,7 @@
             </div>
         </div>
 
-        <div class="record-summary-grid grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
+        <div class="record-summary-grid grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3 mb-4">
             <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                 <span class="text-[11px] font-bold text-slate-500">本数</span>
                 <div id="recordSummaryCount" class="mt-1 text-2xl font-black text-slate-900 font-mono-num">0本</div>
@@ -3609,6 +3635,10 @@
             <div class="bg-white rounded-xl border border-purple-100 p-4 shadow-sm">
                 <span class="text-[11px] font-bold text-slate-500">右肘平均</span>
                 <div id="recordSummaryAvgElbow" class="mt-1 text-2xl font-black text-purple-700 font-mono-num">---</div>
+            </div>
+            <div class="bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
+                <span class="text-[11px] font-bold text-slate-500">体幹軸平均</span>
+                <div id="recordSummaryAvgTorso" class="mt-1 text-2xl font-black text-emerald-700 font-mono-num">---</div>
             </div>
             <div class="bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
                 <span class="text-[11px] font-bold text-slate-500">刃筋平均</span>
@@ -3664,19 +3694,18 @@
         </div>
 
         <div class="video-workflow-tabs bg-white p-3 rounded-xl shadow-sm border mb-4">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs font-bold">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-bold">
                 <button type="button" id="videoStepBtn-load" onclick="switchVideoStep('load')" class="video-step-btn active border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-upload mr-1"></i>1. 動画を選ぶ</button>
-                <button type="button" id="videoStepBtn-mark" onclick="switchVideoStep('mark')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-sliders mr-1"></i>2. 補正</button>
-                <button type="button" id="videoStepBtn-analyze" onclick="switchVideoStep('analyze')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i>3. 解析する</button>
-                <button type="button" id="videoStepBtn-result" onclick="switchVideoStep('result')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>4. 解析結果</button>
-                <button type="button" id="videoStepBtn-report" onclick="switchVideoStep('report')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-file-export mr-1"></i>5. 保存/レポート</button>
+                <button type="button" id="videoStepBtn-mark" onclick="switchVideoStep('mark')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-scissors mr-1"></i>2. 打突を選ぶ</button>
+                <button type="button" id="videoStepBtn-correct" onclick="switchVideoStep('correct')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-sliders mr-1"></i>3. 補正する</button>
+                <button type="button" id="videoStepBtn-result" onclick="switchVideoStep('result')" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>4. 結果を見る</button>
             </div>
         </div>
 
         <div class="video-workflow-layout grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
             <div class="video-workflow-main bg-white p-4 rounded-xl shadow-sm border">
                 <div class="video-workflow-main-head flex items-center justify-between gap-3 mb-3">
-                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>5ステップ測定</h3>
+                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
                 <div id="videoNextActionBanner" class="video-next-action mb-3"><i class="fa-solid fa-arrow-right mr-2"></i>動画選択</div>
@@ -3835,7 +3864,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v146-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v147-reset=' + Date.now();
                                 });
                             });
                         }
@@ -3863,7 +3892,7 @@
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mt-3 text-xs">
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解像度</span><div id="videoDiagResolution" class="font-black font-mono-num">---</div></div>
-                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">動画fps目安</span><div id="videoDiagNativeFps" class="font-black font-mono-num">---</div></div>
+                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">動画fps実測/推定</span><div id="videoDiagNativeFps" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析fps</span><div id="videoDiagFps" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析フレーム</span><div id="videoDiagFrames" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">検出信頼度</span><div id="videoDiagConfidence" class="font-black font-mono-num">---</div></div>
@@ -3950,7 +3979,7 @@
                     <button type="button" onclick="switchVideoStep('load')" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2 rounded text-sm font-bold">動画を入れ直す</button>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="confirmVideoManualRange(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold">補正を確定</button>
-                        <button type="button" onclick="switchVideoStep('analyze')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">解析へ</button>
+                        <button type="button" onclick="window.startVideoAnalysis && window.startVideoAnalysis()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i>解析して結果を見る</button>
                     </div>
                 </div>
                 </div>
@@ -4015,6 +4044,7 @@
                     <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画・打突一覧</button>
                     <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正画面へ</button>
                     <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">結果</button>
+                    <button type="button" data-video-section="report" class="video-result-section-btn bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black">保存/CSV</button>
                     <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
                 <div id="videoStrikeDefinitionCard" class="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700" data-video-result-section="preview">
@@ -4404,6 +4434,10 @@
                                 <span>選択中</span>
                                 <strong id="videoFullscreenActiveStrikeTitle">打突未選択</strong>
                                 <small id="videoFullscreenActiveStrikeMeta">解析後に #1 / #2 へ移動できます</small>
+                                <div class="video-fullscreen-mini-timeline" aria-hidden="true">
+                                    <span id="videoFullscreenMiniRange"></span>
+                                    <i id="videoFullscreenMiniPeak"></i>
+                                </div>
                             </div>
                             <button type="button" class="video-fullscreen-chip-btn" onclick="selectAdjacentVideoStrike(1)" title="次の打突へ"><i class="fa-solid fa-chevron-right"></i></button>
                             <button type="button" class="video-fullscreen-chip-btn start" onclick="jumpFullscreenSelectedMarker('start')">開始</button>
@@ -5390,7 +5424,7 @@
             document.querySelectorAll('.video-step-panel').forEach(panel => panel.classList.remove('active'));
             document.querySelectorAll('.video-step-btn').forEach(btn => btn.classList.remove('active'));
             const panel = document.getElementById(`videoStep-${activeStep}`);
-            const stepButtonMap = { correct: 'mark' };
+            const stepButtonMap = {};
             const btn = document.getElementById(`videoStepBtn-${stepButtonMap[activeStep] || activeStep}`);
             if (panel) panel.classList.add('active');
             if (btn) btn.classList.add('active');
@@ -5492,22 +5526,22 @@
             const hasVideo = Number(video?.duration || 0) > 0;
             const hasManualRange = Number.isFinite(AppState.videoManualStartSec) && Number.isFinite(AppState.videoManualEndSec) && AppState.videoManualEndSec > AppState.videoManualStartSec;
             const messages = {
-                load: hasAnalysis ? '動画変更' : '動画選択',
-                mark: hasVideo ? (hasManualRange ? '範囲指定済み' : '開始 / 終了') : '動画未選択',
-                analyze: hasVideo ? (hasManualRange ? '範囲解析' : '自動解析') : '動画未選択',
-                result: hasAnalysis ? '結果' : '未解析',
-                correct: hasAnalysis ? '1コマ補正' : '未解析',
+                load: hasAnalysis ? '別の動画を選ぶ' : 'PCは動画ファイルを選択、iPhoneは写真アプリから動画を共有して読み込みます。',
+                mark: hasVideo ? (hasManualRange ? '指定した範囲だけを解析できます。' : '動画を動かして、打突が入っている範囲を開始/終了で囲みます。') : '先に動画を選んでください。',
+                analyze: hasVideo ? (hasManualRange ? '指定範囲を解析します。' : '動画から打突候補を自動分割します。') : '動画未選択',
+                result: hasAnalysis ? '最初に見る数字は、打突時間・ピーク時刻・右肘・体幹・刃筋だけです。補助情報は必要な時だけ開きます。' : 'まだ解析されていません。',
+                correct: hasAnalysis ? '大きい映像を見ながら、開始/終了を1コマ単位で補正します。' : '解析後に補正できます。',
                 report: hasAnalysis ? '保存 / 出力' : '未解析'
             };
             hint.textContent = messages[step] || messages.load;
             const next = document.getElementById('videoNextActionBanner');
             if (next) {
                 const nextMessages = {
-                    load: hasVideo ? '開始へ' : '動画選択',
-                    mark: hasManualRange ? '範囲確定' : '開始 / 終了',
+                    load: hasVideo ? '次: 打突範囲を選ぶ' : '動画を選ぶ',
+                    mark: hasManualRange ? '次: 解析する' : '開始/終了を置く',
                     analyze: hasManualRange ? '範囲解析' : '解析',
-                    result: hasAnalysis ? '結果確認' : '未解析',
-                    correct: hasAnalysis ? '補正' : '未解析',
+                    result: hasAnalysis ? '結果を見る' : '未解析',
+                    correct: hasAnalysis ? '補正する' : '未解析',
                     report: hasAnalysis ? '保存' : '未解析'
                 };
                 next.innerHTML = `<i class="fa-solid fa-arrow-right mr-2"></i>${nextMessages[step] || nextMessages.load}`;
@@ -5640,7 +5674,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v146';
+            const refreshKey = 'kendo-sw-refreshed-v147';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6133,7 +6167,7 @@
 
         function updateRecordComparisonSummary() {
             const records = analysisRecords();
-            const emptyIds = ['recordSummaryAvgTime', 'recordSummaryBest', 'recordSummaryWorst', 'recordSummaryAvgElbow', 'recordSummaryAvgHasuji', 'recordSummaryLastSaved'];
+            const emptyIds = ['recordSummaryAvgTime', 'recordSummaryBest', 'recordSummaryWorst', 'recordSummaryAvgElbow', 'recordSummaryAvgTorso', 'recordSummaryAvgHasuji', 'recordSummaryLastSaved'];
             safeText('recordSummaryCount', `${records.length}本`);
             if (!records.length) {
                 emptyIds.forEach(id => safeText(id, '---'));
@@ -6142,6 +6176,7 @@
             const avg = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
             const times = records.map(record => Number(record.timeMs || 0)).filter(Number.isFinite);
             const elbows = records.map(record => Number(record.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
+            const torso = records.map(record => Math.abs(Number(record.torsoAng || 0))).filter(Number.isFinite);
             const hasuji = records.map(record => Math.abs(Number(record.hasujiAngle || 0))).filter(Number.isFinite);
             const ranked = [...records].sort((a, b) => scoreRecord(b) - scoreRecord(a));
             const best = ranked[0];
@@ -6151,8 +6186,9 @@
             safeText('recordSummaryBest', best ? `#${best.id} / ${scoreRecord(best)}` : '---');
             safeText('recordSummaryWorst', worst ? `#${worst.id} / ${scoreRecord(worst)}` : '---');
             safeText('recordSummaryAvgElbow', elbows.length ? `${avg(elbows).toFixed(1)}°` : '---');
+            safeText('recordSummaryAvgTorso', torso.length ? `${avg(torso).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
-            safeText('recordSummaryLastSaved', latest ? formatRecordDate(latest) : '---');
+            safeText('recordSummaryLastSaved', latest ? `${formatRecordDate(latest)} / ${recordTypeLabel(latest)}` : '---');
         }
 
         function persistRecords() {
@@ -12476,18 +12512,23 @@
             const start = Number.isFinite(Number(strike.startTimeMs)) ? Math.round(Number(strike.startTimeMs)) : null;
             const end = Number.isFinite(Number(strike.endTimeMs)) ? Math.round(Number(strike.endTimeMs)) : null;
             const duration = Number.isFinite(Number(strike.durationMs)) ? `${Math.round(Number(strike.durationMs))}ms` : '補正待ち';
-            return start !== null && end !== null ? `${start}-${end}ms / ${duration}` : duration;
+            const status = strike.savedRecordId ? ` / 保存#${strike.savedRecordId}` : (strike.manualAdjusted ? ' / 補正済み' : ' / 自動候補');
+            return (start !== null && end !== null ? `${start}-${end}ms / ${duration}` : duration) + status;
         }
 
         function updateVideoFullscreenActiveStrip(data = AppState.videoAnalysis) {
             const title = document.getElementById('videoFullscreenActiveStrikeTitle');
             const meta = document.getElementById('videoFullscreenActiveStrikeMeta');
             const strip = document.getElementById('videoFullscreenActiveStrip');
+            const miniRange = document.getElementById('videoFullscreenMiniRange');
+            const miniPeak = document.getElementById('videoFullscreenMiniPeak');
             if (!title || !meta || !strip) return;
             const refs = data?.frames?.length ? videoStrikeRefList(data) : [];
             if (!refs.length) {
                 title.textContent = '打突未選択';
                 meta.textContent = '解析後に #1 / #2 へ移動できます';
+                if (miniRange) miniRange.style.width = '0%';
+                if (miniPeak) miniPeak.style.left = '0%';
                 strip.querySelectorAll('button').forEach(btn => btn.disabled = true);
                 return;
             }
@@ -12496,6 +12537,15 @@
             const strike = selected.strike || {};
             title.textContent = `${selected.rejected ? '除外候補' : '打突'} #${strike.number || selected.index + 1}`;
             meta.textContent = `${pos + 1}/${refs.length} ・ ${formatVideoStrikeRangeText(strike)}`;
+            const total = Math.max(1, (data.frames?.length || 1) - 1);
+            const startPct = clamp(Number(strike.startFrame || 0) / total * 100, 0, 100);
+            const endPct = clamp(Number(strike.endFrame || strike.startFrame || 0) / total * 100, startPct, 100);
+            const peakPct = clamp(Number(strike.peakFrame || strike.startFrame || 0) / total * 100, 0, 100);
+            if (miniRange) {
+                miniRange.style.left = `${startPct}%`;
+                miniRange.style.width = `${Math.max(1.5, endPct - startPct)}%`;
+            }
+            if (miniPeak) miniPeak.style.left = `${peakPct}%`;
             strip.querySelectorAll('button').forEach(btn => btn.disabled = false);
         }
 
@@ -14058,7 +14108,7 @@
                 confidence: avgConfidence,
                 detectionRate,
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
-                actualFpsUnknown: true,
+                actualFpsUnknown: !(AppState.videoDiagnostics?.nativeFpsEstimate),
                 nativeFpsEstimate: AppState.videoDiagnostics?.nativeFpsEstimate || null,
                 nativeFpsStatus: AppState.videoDiagnostics?.nativeFpsStatus || 'unknown',
                 slowMotionFactor: slowSettings.factor,
@@ -14352,6 +14402,9 @@
 	                id: AppState.records.length + 1,
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
+                    analysisFps: data.fps || data.diagnostics?.fps || '',
+                    videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
+                    slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
 	                hasujiAngle: hasuji.toFixed(1),
 	                trajectorySway,
@@ -14446,6 +14499,9 @@
 	                id: AppState.records.length + 1,
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
+                    analysisFps: data.fps || data.diagnostics?.fps || '',
+                    videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
+                    slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
 	                hasujiAngle: hasuji.toFixed(1),
 	                trajectorySway,
@@ -14585,9 +14641,9 @@
                 const records = analysisRecords();
 	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
+		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),動画fps実測/推定,解析fps,スロー補正倍率,軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
 		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.videoFpsEstimate||''},${r.analysisFps||''},${r.slowMotionFactor||''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
