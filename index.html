@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v147';
+            var version = 'v148';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -3374,6 +3374,249 @@
                 grid-column: 1 / -1;
             }
         }
+
+        /* v148: 動画解析を「動画中心 + 編集ソフト型」に整理 */
+        body[data-active-tab="video"] {
+            --kvc-action: #2563eb;
+            --kvc-saved: #059669;
+            --kvc-end: #dc2626;
+            --kvc-peak: #d97706;
+            --kvc-muted: #64748b;
+        }
+        body[data-active-tab="video"] .control-color-soft,
+        body[data-active-tab="video"] .official-flow-card,
+        body[data-active-tab="video"] .video-formal-hero {
+            border-color: #dbe5f0 !important;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        body[data-active-tab="video"] .video-result-preview-grid,
+        body[data-active-tab="video"] #videoStep-correct .video-correction-workspace {
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 300px) !important;
+            align-items: stretch;
+        }
+        body[data-active-tab="video"] .video-result-preview-grid > .video-correction-preview,
+        body[data-active-tab="video"] #videoStep-correct .video-correction-preview {
+            min-height: clamp(430px, 62vh, 760px);
+            border-radius: 14px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 18px 46px rgba(15, 23, 42, 0.16);
+        }
+        body[data-active-tab="video"] .video-result-controls,
+        body[data-active-tab="video"] .video-correction-controls {
+            max-height: clamp(430px, 62vh, 760px);
+            overflow: auto;
+            scrollbar-width: thin;
+        }
+        body[data-active-tab="video"] .video-editor-command-bar {
+            position: sticky;
+            top: 70px;
+            z-index: 8;
+            border: 1px solid #dbeafe;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        }
+        body[data-active-tab="video"] .video-result-section-btn {
+            min-height: 40px;
+            border-radius: 12px;
+        }
+        body[data-active-tab="video"] .video-formal-layout {
+            grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+        }
+        body[data-active-tab="video"] .video-formal-frame-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        body[data-active-tab="video"] .video-formal-key-card {
+            min-height: 112px;
+        }
+        body[data-active-tab="video"] #videoAnalysisResult {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+        body[data-active-tab="video"] #videoAnalysisResult .secondary {
+            display: none;
+        }
+        .video-strike-card-table {
+            display: block;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+        .video-strike-card-table thead {
+            display: none;
+        }
+        .video-strike-card-table tbody,
+        .video-strike-card-table tr,
+        .video-strike-card-table td {
+            display: block;
+            width: 100%;
+        }
+        .video-strike-card-table tr {
+            margin-bottom: 10px;
+        }
+        .video-strike-card {
+            display: grid;
+            grid-template-columns: minmax(72px, 0.32fr) minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid #dbe5f0;
+            border-left: 6px solid var(--kvc-action);
+            border-radius: 16px;
+            background: #ffffff;
+            padding: 12px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+        .video-strike-card.active {
+            border-color: #93c5fd;
+            background: linear-gradient(180deg, #eff6ff, #ffffff);
+        }
+        .video-strike-card.rejected {
+            border-left-color: var(--kvc-end);
+            background: #fff7f7;
+        }
+        .video-strike-card.saved {
+            border-left-color: var(--kvc-saved);
+        }
+        .video-strike-card .strike-number {
+            font-size: 22px;
+            font-weight: 1000;
+            color: #0f172a;
+            line-height: 1;
+        }
+        .video-strike-card .strike-status {
+            margin-top: 6px;
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 1000;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .video-strike-card.saved .strike-status {
+            background: #ecfdf5;
+            color: #047857;
+        }
+        .video-strike-card.rejected .strike-status {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .video-strike-card .strike-metrics {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(78px, 1fr));
+            gap: 8px;
+        }
+        .video-strike-card .strike-metric {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 8px;
+        }
+        .video-strike-card .strike-metric span {
+            display: block;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+        }
+        .video-strike-card .strike-metric strong {
+            display: block;
+            margin-top: 2px;
+            color: #0f172a;
+            font-size: 13px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+        .video-strike-card .strike-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(64px, 1fr));
+            gap: 6px;
+            min-width: 176px;
+        }
+        .video-strike-card .video-strike-action {
+            min-height: 34px;
+            border-radius: 10px;
+        }
+        #videoStep-correct:fullscreen,
+        #videoStep-correct:-webkit-full-screen,
+        #videoStep-correct.fullscreen-fallback {
+            padding-bottom: 132px !important;
+        }
+        #videoStep-correct:fullscreen #videoCorrectionEditDock,
+        #videoStep-correct:-webkit-full-screen #videoCorrectionEditDock,
+        #videoStep-correct.fullscreen-fallback #videoCorrectionEditDock {
+            position: fixed !important;
+            left: 16px;
+            right: 16px;
+            bottom: 14px;
+            z-index: 80;
+            display: grid !important;
+            grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.4fr) minmax(260px, 0.72fr);
+            gap: 10px;
+            align-items: center;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.94);
+            color: #e2e8f0;
+            padding: 10px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.38);
+            backdrop-filter: blur(18px);
+        }
+        #videoStep-correct:fullscreen .video-correction-dock-actions,
+        #videoStep-correct:-webkit-full-screen .video-correction-dock-actions,
+        #videoStep-correct.fullscreen-fallback .video-correction-dock-actions {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            gap: 6px;
+        }
+        #videoStep-correct:fullscreen .dock-btn,
+        #videoStep-correct:-webkit-full-screen .dock-btn,
+        #videoStep-correct.fullscreen-fallback .dock-btn {
+            min-height: 42px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        #videoStep-correct:fullscreen .video-correction-speed-strip,
+        #videoStep-correct:-webkit-full-screen .video-correction-speed-strip,
+        #videoStep-correct.fullscreen-fallback .video-correction-speed-strip {
+            justify-content: flex-end;
+            margin: 0;
+        }
+        #videoStep-correct:fullscreen .video-correction-key-hints,
+        #videoStep-correct:-webkit-full-screen .video-correction-key-hints,
+        #videoStep-correct.fullscreen-fallback .video-correction-key-hints {
+            display: none;
+        }
+        @media (max-width: 1100px) {
+            body[data-active-tab="video"] .video-result-preview-grid,
+            body[data-active-tab="video"] #videoStep-correct .video-correction-workspace {
+                grid-template-columns: 1fr !important;
+            }
+            body[data-active-tab="video"] .video-result-controls,
+            body[data-active-tab="video"] .video-correction-controls {
+                max-height: none;
+            }
+            body[data-active-tab="video"] #videoAnalysisResult {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .video-strike-card {
+                grid-template-columns: 1fr;
+            }
+            .video-strike-card .strike-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .video-strike-card .strike-actions {
+                min-width: 0;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            #videoStep-correct:fullscreen #videoCorrectionEditDock,
+            #videoStep-correct:-webkit-full-screen #videoCorrectionEditDock,
+            #videoStep-correct.fullscreen-fallback #videoCorrectionEditDock {
+                grid-template-columns: 1fr;
+                max-height: 34vh;
+                overflow: auto;
+            }
+            #videoStep-correct:fullscreen .video-correction-dock-actions,
+            #videoStep-correct:-webkit-full-screen .video-correction-dock-actions,
+            #videoStep-correct.fullscreen-fallback .video-correction-dock-actions {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple">
@@ -3864,7 +4107,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v147-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v148-reset=' + Date.now();
                                 });
                             });
                         }
@@ -4038,13 +4281,13 @@
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">表示:</span> 打突時間とピーク時刻は <span class="font-mono-num font-black">ms</span>、角度は度数で表示します。
+                    <span class="font-black">次にやること:</span> 動画で選んだ打突を確認し、必要なら補正してから結果を保存します。
                 </div>
                 <div id="videoResultSectionNav" class="mb-3 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
-                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画・打突一覧</button>
-                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正画面へ</button>
+                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認・打突選択</button>
+                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正</button>
                     <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">結果</button>
-                    <button type="button" data-video-section="report" class="video-result-section-btn bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black">保存/CSV</button>
+                    <button type="button" data-video-section="report" class="video-result-section-btn bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black">保存</button>
                     <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
                 <div id="videoStrikeDefinitionCard" class="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700" data-video-result-section="preview">
@@ -4106,7 +4349,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="videoResultAuxPanel" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div id="videoResultAuxPanel" class="grid grid-cols-1 lg:grid-cols-2 gap-3" data-video-result-section="preview">
                     <div class="rounded-xl border border-indigo-100 bg-white p-3">
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-code-compare text-indigo-500 mr-1"></i>自動判定との差分</h3>
@@ -4360,8 +4603,8 @@
                             <button id="videoRedoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto bg-white rounded border border-amber-100 max-h-64">
-                        <table class="w-full text-xs text-center">
+                    <div class="bg-white rounded border border-amber-100 max-h-[420px] overflow-y-auto p-2">
+                        <table class="video-strike-card-table w-full text-xs text-left">
                             <thead class="bg-amber-100 text-amber-900 sticky top-0">
                                 <tr><th class="p-2">#</th><th class="p-2">開始</th><th class="p-2">最高速</th><th class="p-2">終了</th><th class="p-2">時間</th><th class="p-2">最高速時刻</th><th class="p-2">右肘</th><th class="p-2">体幹</th><th class="p-2">刃筋</th><th class="p-2">評価</th><th class="p-2">移動/補正</th></tr>
                             </thead>
@@ -5504,7 +5747,7 @@
                 panel.classList.toggle('video-result-section-hidden', !values.includes(key));
             });
             const supportDetails = document.getElementById('videoResultSupportDetails');
-            if (supportDetails) supportDetails.open = key === 'preview';
+            if (supportDetails) supportDetails.open = false;
             document.querySelectorAll('.video-result-section-btn').forEach(btn => {
                 const target = btn.dataset.videoSection === 'strikes' ? 'preview' : btn.dataset.videoSection;
                 const active = target === key;
@@ -5537,12 +5780,12 @@
             const next = document.getElementById('videoNextActionBanner');
             if (next) {
                 const nextMessages = {
-                    load: hasVideo ? '次: 打突範囲を選ぶ' : '動画を選ぶ',
-                    mark: hasManualRange ? '次: 解析する' : '開始/終了を置く',
-                    analyze: hasManualRange ? '範囲解析' : '解析',
+                    load: hasVideo ? '次: 打突を選ぶ' : '動画を選んでください',
+                    mark: hasManualRange ? '解析できます' : '開始/終了を置いてください',
+                    analyze: hasManualRange ? '範囲を解析' : '打突を自動分割',
                     result: hasAnalysis ? '結果を見る' : '未解析',
-                    correct: hasAnalysis ? '補正する' : '未解析',
-                    report: hasAnalysis ? '保存' : '未解析'
+                    correct: hasAnalysis ? '確定できます' : '未解析',
+                    report: hasAnalysis ? '保存できます' : '未解析'
                 };
                 next.innerHTML = `<i class="fa-solid fa-arrow-right mr-2"></i>${nextMessages[step] || nextMessages.load}`;
             }
@@ -5674,7 +5917,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v147';
+            const refreshKey = 'kendo-sw-refreshed-v148';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12394,54 +12637,67 @@
             }
             const body = document.getElementById('videoStrikeListBody');
             if (body) {
-                const validRows = strikes.map((s, index) => `
-                    <tr class="video-strike-row cursor-pointer hover:bg-amber-50 ${!AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-amber-100' : ''}" data-kind="valid" data-index="${index}">
-                        <td class="p-2 font-black">#${s.number}</td>
-                        <td class="p-2 font-mono-num">${s.startFrame}</td>
-                        <td class="p-2 font-mono-num text-amber-700">${s.peakFrame}</td>
-                        <td class="p-2 font-mono-num">${s.endFrame}</td>
-                        <td class="p-2 font-mono-num">${s.durationMs}ms</td>
-                        <td class="p-2 font-mono-num">${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))}ms</td>
-                        <td class="p-2 font-mono-num">${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-mono-num">${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-mono-num">${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-black ${s.score >= 75 ? 'text-emerald-700' : (s.score >= 55 ? 'text-amber-700' : 'text-red-700')}">${s.score}</td>
-                        <td class="p-2">
-                            <div class="flex flex-wrap justify-center gap-1">
-                                <button type="button" data-action="jump-start" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
-                                <button type="button" data-action="jump-peak" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
-                                <button type="button" data-action="jump-end" data-index="${index}" class="video-strike-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded font-bold">終了</button>
-                                <button type="button" data-action="model" data-kind="valid" data-index="${index}" class="video-strike-action bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold">3D再生</button>
-                                <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
-                                <button type="button" data-action="save" data-kind="valid" data-index="${index}" class="video-strike-action ${s.savedRecordId ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${s.savedRecordId ? `記録#${s.savedRecordId}` : '保存'}</button>
+                const validRows = strikes.map((s, index) => {
+                    const active = !AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex;
+                    const saved = !!s.savedRecordId;
+                    const peakOffset = Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0));
+                    const status = saved ? `保存済み #${s.savedRecordId}` : (s.manualAdjusted ? '補正済み' : '自動候補');
+                    return `
+                    <tr class="video-strike-row cursor-pointer" data-kind="valid" data-index="${index}">
+                        <td colspan="11">
+                            <div class="video-strike-card ${active ? 'active' : ''} ${saved ? 'saved' : ''}">
+                                <div>
+                                    <div class="strike-number">#${s.number}</div>
+                                    <span class="strike-status">${status}</span>
+                                </div>
+                                <div class="strike-metrics">
+                                    <div class="strike-metric"><span>打突時間</span><strong>${s.durationMs}ms</strong></div>
+                                    <div class="strike-metric"><span>ピーク時刻</span><strong>${peakOffset}ms</strong></div>
+                                    <div class="strike-metric"><span>右肘</span><strong>${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>体幹</span><strong>${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
+                                </div>
+                                <div class="strike-actions">
+                                    <button type="button" data-action="jump-start" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
+                                    <button type="button" data-action="jump-peak" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
+                                    <button type="button" data-action="jump-end" data-index="${index}" class="video-strike-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded font-bold">終了</button>
+                                    <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                                    <button type="button" data-action="model" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded font-bold">3D</button>
+                                    <button type="button" data-action="save" data-kind="valid" data-index="${index}" class="video-strike-action ${saved ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${saved ? '保存済' : '保存'}</button>
+                                </div>
                             </div>
-                            ${s.manualAdjusted ? '<div class="mt-1 text-[10px] font-bold text-indigo-700">補正済み</div>' : ''}
                         </td>
-                    </tr>
-                `);
-                const rejectedRows = rejected.map((s, index) => `
-                    <tr class="video-strike-row cursor-pointer hover:bg-red-50 ${AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex ? 'bg-red-100' : 'bg-red-50/60'}" data-kind="rejected" data-index="${index}">
-                        <td class="p-2 font-black text-red-700">除外#${s.number}</td>
-                        <td class="p-2 font-mono-num">${s.startFrame ?? '---'}</td>
-                        <td class="p-2 font-mono-num text-amber-700">${s.peakFrame ?? '---'}</td>
-                        <td class="p-2 font-mono-num">${s.endFrame ?? '---'}</td>
-                        <td class="p-2 font-mono-num">${Number.isFinite(Number(s.durationMs)) ? s.durationMs + 'ms' : '---'}</td>
-                        <td class="p-2 font-mono-num">${Number.isFinite(Number(s.peakTimeMs)) && Number.isFinite(Number(s.startTimeMs)) ? Math.round(Number(s.peakTimeMs) - Number(s.startTimeMs)) + 'ms' : '---'}</td>
-                        <td class="p-2 font-mono-num">${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-mono-num">${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-mono-num">${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</td>
-                        <td class="p-2 font-black text-red-700">要補正<br><span class="text-[10px]">${s.validationReason || s.reason || '要確認'}</span></td>
-                        <td class="p-2">
-                            <div class="flex flex-wrap justify-center gap-1">
-                                <button type="button" data-action="jump-start" data-kind="rejected" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
-                                <button type="button" data-action="jump-peak" data-kind="rejected" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
-                                <button type="button" data-action="jump-end" data-kind="rejected" data-index="${index}" class="video-strike-action bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-bold">終了</button>
-                                <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                    </tr>`;
+                });
+                const rejectedRows = rejected.map((s, index) => {
+                    const active = AppState.videoSelectedStrikeRejected && index === AppState.videoSelectedStrikeIndex;
+                    const duration = Number.isFinite(Number(s.durationMs)) ? `${s.durationMs}ms` : '---';
+                    const peakOffset = Number.isFinite(Number(s.peakTimeMs)) && Number.isFinite(Number(s.startTimeMs)) ? `${Math.round(Number(s.peakTimeMs) - Number(s.startTimeMs))}ms` : '---';
+                    return `
+                    <tr class="video-strike-row cursor-pointer" data-kind="rejected" data-index="${index}">
+                        <td colspan="11">
+                            <div class="video-strike-card rejected ${active ? 'active' : ''}">
+                                <div>
+                                    <div class="strike-number">除外#${s.number}</div>
+                                    <span class="strike-status">${s.validationReason || s.reason || '要補正'}</span>
+                                </div>
+                                <div class="strike-metrics">
+                                    <div class="strike-metric"><span>時間</span><strong>${duration}</strong></div>
+                                    <div class="strike-metric"><span>ピーク時刻</span><strong>${peakOffset}</strong></div>
+                                    <div class="strike-metric"><span>右肘</span><strong>${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>体幹</span><strong>${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
+                                </div>
+                                <div class="strike-actions">
+                                    <button type="button" data-action="jump-start" data-kind="rejected" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
+                                    <button type="button" data-action="jump-peak" data-kind="rejected" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
+                                    <button type="button" data-action="jump-end" data-kind="rejected" data-index="${index}" class="video-strike-action bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-bold">終了</button>
+                                    <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                                </div>
                             </div>
-                            <div class="mt-1 text-[10px] font-bold text-red-700">開始/終了を直すと正式候補になります</div>
                         </td>
-                    </tr>
-                `);
+                    </tr>`;
+                });
                 body.innerHTML = [...validRows, ...rejectedRows].join('');
             }
             updateVideoEditUndoRedoButtons();
