@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v149';
+            var version = 'v150';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -1286,6 +1286,12 @@
         body[data-active-tab="video"][data-video-step="correct"] #videoStepHint,
         body[data-active-tab="video"][data-video-step="result"] #videoStepHint {
             display: none !important;
+        }
+        body[data-active-tab="video"][data-video-step="mark"] #videoNextActionBanner,
+        body[data-active-tab="video"][data-video-step="correct"] #videoNextActionBanner {
+            display: flex !important;
+            align-items: center;
+            font-weight: 900;
         }
         body[data-active-tab="video"][data-video-step="mark"] .video-workflow-side .official-flow-card,
         body[data-active-tab="video"][data-video-step="correct"] .video-workflow-side .official-flow-card,
@@ -3564,7 +3570,7 @@
             bottom: 14px;
             z-index: 80;
             display: grid !important;
-            grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.4fr) minmax(260px, 0.72fr);
+            grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.65fr);
             gap: 10px;
             align-items: center;
             border: 1px solid rgba(148, 163, 184, 0.26);
@@ -3579,7 +3585,7 @@
         #videoStep-correct:-webkit-full-screen .video-correction-dock-actions,
         #videoStep-correct.fullscreen-fallback .video-correction-dock-actions {
             display: grid;
-            grid-template-columns: repeat(9, minmax(0, 1fr));
+            grid-template-columns: repeat(8, minmax(0, 1fr));
             gap: 6px;
         }
         #videoStep-correct:fullscreen .dock-btn,
@@ -3592,8 +3598,7 @@
         #videoStep-correct:fullscreen .video-correction-speed-strip,
         #videoStep-correct:-webkit-full-screen .video-correction-speed-strip,
         #videoStep-correct.fullscreen-fallback .video-correction-speed-strip {
-            justify-content: flex-end;
-            margin: 0;
+            display: none !important;
         }
         #videoStep-correct:fullscreen .video-correction-key-hints,
         #videoStep-correct:-webkit-full-screen .video-correction-key-hints,
@@ -4037,7 +4042,9 @@
                             var url = URL.createObjectURL(file);
                             window.__kendoEarlyVideoUrl = url;
                             text('videoAnalysisStatus', '動画選択済み');
-                            text('videoUrlStatus', '動画を選択しました。開始/終了を置いて解析できます。');
+                            text('videoUrlStatus', '動画を選択しました。次は打突開始の位置へ動かして、開始を押してください。');
+                            text('videoNextActionBanner', '次: 打突が始まる位置まで動画を動かして、開始を押してください');
+                            text('videoStepHint', '動画を再生・スライダー移動して、打突開始のコマで開始、打突終了のコマで終了を押します。');
                             video.removeAttribute('crossorigin');
                             video.muted = true;
                             video.playsInline = true;
@@ -4139,7 +4146,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v149-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v150-reset=' + Date.now();
                                 });
                             });
                         }
@@ -4733,13 +4740,12 @@
 	                            <div class="video-correction-dock-card duration"><span>補正後</span><strong id="videoCorrectionDockDuration" class="font-mono-num">---</strong><small id="videoCorrectionDockStatus">未確定</small></div>
 	                        </div>
 	                        <div class="video-correction-dock-actions">
-	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(-10)"><i class="fa-solid fa-backward-fast"></i><span>-10F</span></button>
-	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(-1)"><i class="fa-solid fa-backward-step"></i><span>-1F</span></button>
-	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(1)"><span>+1F</span><i class="fa-solid fa-forward-step"></i></button>
-	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(10)"><span>+10F</span><i class="fa-solid fa-forward-fast"></i></button>
+	                            <button type="button" class="dock-btn range" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play"></i><span>再生</span></button>
+	                            <button type="button" class="dock-btn neutral" onclick="window.setVideoSlowRateValue?.(0.25)"><i class="fa-solid fa-gauge-low"></i><span>0.25x</span></button>
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(-1)"><i class="fa-solid fa-backward-step"></i><span>1コマ戻る</span></button>
+	                            <button type="button" class="dock-btn neutral" onclick="stepVideoAnalysisFrame(1)"><span>1コマ進む</span><i class="fa-solid fa-forward-step"></i></button>
 	                            <button type="button" class="dock-btn start" onclick="markVideoCurrentFrame('start')"><i class="fa-solid fa-flag"></i><span>開始にする</span></button>
 	                            <button type="button" class="dock-btn end" onclick="markVideoCurrentFrame('end')"><i class="fa-solid fa-flag-checkered"></i><span>終了にする</span></button>
-	                            <button type="button" class="dock-btn range" onclick="playCorrectedStrikeRange()"><i class="fa-solid fa-play"></i><span>範囲再生</span></button>
 	                            <button type="button" class="dock-btn confirm" onclick="confirmVideoTimingCorrection()"><i class="fa-solid fa-circle-check"></i><span>確定</span></button>
 	                            <button type="button" class="dock-btn save" onclick="switchVideoStep('report')"><i class="fa-solid fa-floppy-disk"></i><span>保存へ</span></button>
 	                        </div>
@@ -5810,7 +5816,7 @@
             const hasManualRange = Number.isFinite(AppState.videoManualStartSec) && Number.isFinite(AppState.videoManualEndSec) && AppState.videoManualEndSec > AppState.videoManualStartSec;
             const messages = {
                 load: hasAnalysis ? '別の動画を選ぶ' : 'PCは動画ファイルを選択、iPhoneは写真アプリから動画を共有して読み込みます。',
-                mark: hasVideo ? (hasManualRange ? '指定した範囲だけを解析できます。' : '動画を動かして、打突が入っている範囲を開始/終了で囲みます。') : '先に動画を選んでください。',
+                mark: hasVideo ? (hasManualRange ? '指定した範囲だけを解析できます。' : '動画を動かして、打突開始のコマで開始、打突終了のコマで終了を押します。') : '先に動画を選んでください。',
                 analyze: hasVideo ? (hasManualRange ? '指定範囲を解析します。' : '動画から打突候補を自動分割します。') : '動画未選択',
                 result: hasAnalysis ? '最初に見る数字は、打突時間・ピーク時刻・右肘・体幹・刃筋だけです。補助情報は必要な時だけ開きます。' : 'まだ解析されていません。',
                 correct: hasAnalysis ? '大きい映像を見ながら、開始/終了を1コマ単位で補正します。' : '解析後に補正できます。',
@@ -5821,7 +5827,7 @@
             if (next) {
                 const nextMessages = {
                     load: hasVideo ? '次: 打突を選ぶ' : '動画を選んでください',
-                    mark: hasManualRange ? '解析できます' : '開始/終了を置いてください',
+                    mark: hasManualRange ? '解析できます' : '次: 打突が始まる位置まで動画を動かして、開始を押してください',
                     analyze: hasManualRange ? '範囲を解析' : '打突を自動分割',
                     result: hasAnalysis ? '結果を見る' : '未解析',
                     correct: hasAnalysis ? '確定できます' : '未解析',
@@ -5957,7 +5963,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v149';
+            const refreshKey = 'kendo-sw-refreshed-v150';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -12714,12 +12720,8 @@
                                     <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
                                 </div>
                                 <div class="strike-actions">
-                                    <button type="button" data-action="jump-start" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
-                                    <button type="button" data-action="jump-peak" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
-                                    <button type="button" data-action="jump-end" data-index="${index}" class="video-strike-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded font-bold">終了</button>
-                                    <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
-                                    <button type="button" data-action="model" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded font-bold">3D</button>
-                                    <button type="button" data-action="save" data-kind="valid" data-index="${index}" class="video-strike-action ${saved ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${saved ? '保存済' : '保存'}</button>
+                                    <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">この打突を補正</button>
+                                    <button type="button" data-action="save" data-kind="valid" data-index="${index}" class="video-strike-action ${saved ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-2 py-1 rounded font-bold">${saved ? '保存済' : 'この打突を保存'}</button>
                                 </div>
                             </div>
                         </td>
@@ -12745,10 +12747,7 @@
                                     <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
                                 </div>
                                 <div class="strike-actions">
-                                    <button type="button" data-action="jump-start" data-kind="rejected" data-index="${index}" class="video-strike-action bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">開始</button>
-                                    <button type="button" data-action="jump-peak" data-kind="rejected" data-index="${index}" class="video-strike-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">最高速</button>
-                                    <button type="button" data-action="jump-end" data-kind="rejected" data-index="${index}" class="video-strike-action bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-bold">終了</button>
-                                    <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">補正</button>
+                                    <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">この候補を補正</button>
                                 </div>
                             </div>
                         </td>
@@ -12869,7 +12868,7 @@
             const current = Math.max(0, refs.findIndex(ref => ref.index === selected.index && !!ref.rejected === !!selected.rejected));
             const next = clamp(current + delta, 0, refs.length - 1);
             const ref = refs[next];
-            applyVideoStrikeSelection(ref.index, 'peak', { rejected: ref.rejected });
+            applyVideoStrikeSelection(ref.index, 'start', { rejected: ref.rejected });
             setVideoFullscreenMode('edit');
             showToast(`${ref.rejected ? '除外候補' : '打突'}#${ref.strike?.number || ref.index + 1}へ移動しました`, 'blue');
         }
@@ -15126,7 +15125,9 @@
                 showToast('動画ファイルが空、または破損しています', 'red');
                 return;
             }
-            setVideoUrlStatus('動画を選択しました。開始/終了を置いて解析できます。', 'green');
+            setVideoUrlStatus('動画を選択しました。次は打突開始の位置へ動かして、開始を押してください。', 'green');
+            safeText('videoNextActionBanner', '次: 打突が始まる位置まで動画を動かして、開始を押してください');
+            safeText('videoStepHint', '動画を再生・スライダー移動して、打突開始のコマで開始、打突終了のコマで終了を押します。');
             const video = document.getElementById('analysisVideoElement');
             if (!video) return;
             if (AppState.videoPreviewUrl) URL.revokeObjectURL(AppState.videoPreviewUrl);
@@ -15753,20 +15754,20 @@
                 if (action === 'jump-end') return applyVideoStrikeSelection(index, 'end', { result: true, rejected });
                 if (rejected && action === 'model') return applyVideoStrikeSelection(index, 'peak', { result: true, rejected });
                 if (action === 'model') return openVideoStrikeInModel(index);
-                if (action === 'edit') return applyVideoStrikeSelection(index, 'peak', { correct: true, rejected });
+                if (action === 'edit') return applyVideoStrikeSelection(index, 'start', { correct: true, rejected });
                 if (rejected && action === 'save') return showToast('除外候補は開始/終了を補正してから保存してください', 'yellow');
                 if (action === 'save') return saveVideoStrikeAsRecord(index);
-                return applyVideoStrikeSelection(index, 'peak', { result: true, rejected });
+                return applyVideoStrikeSelection(index, 'start', { result: true, rejected });
             }
             const row = e.target.closest('.video-strike-row');
             if (!row) return;
-            applyVideoStrikeSelection(Number(row.dataset.index || 0), 'peak', { result: true, rejected: row.dataset.kind === 'rejected' });
+            applyVideoStrikeSelection(Number(row.dataset.index || 0), 'start', { result: true, rejected: row.dataset.kind === 'rejected' });
         });
         const videoStrikeJumpButtons = document.getElementById('videoStrikeJumpButtons');
         if (videoStrikeJumpButtons) videoStrikeJumpButtons.addEventListener('click', e => {
             const btn = e.target.closest('.video-strike-action');
             if (!btn) return;
-            applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', { result: true, rejected: btn.dataset.kind === 'rejected' });
+            applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'start', { result: true, rejected: btn.dataset.kind === 'rejected' });
         });
         document.querySelectorAll('[data-strike-nav-mode]').forEach(nav => {
             nav.addEventListener('click', e => {
@@ -15775,7 +15776,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 const mode = nav.dataset.strikeNavMode || 'correct';
-                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'peak', {
+                applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'start', {
                     rejected: btn.dataset.kind === 'rejected',
                     correct: mode === 'correct',
                     result: mode === 'result'
