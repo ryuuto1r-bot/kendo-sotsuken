@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v150';
+            var version = 'v151';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -87,6 +87,13 @@
         .practice-simple #upperBodyModeIndicator,
         .practice-simple #zanshinIndicator { display: none !important; }
         .practice-simple #canvasOverlayData { max-width: min(280px, 42vw); }
+        .easy-ui .legacy-url-loader,
+        .easy-ui .video-file-fallback,
+        .easy-ui .video-file-drop-note,
+        .easy-ui #videoSlowMotionCard,
+        .easy-ui .settings-tuning {
+            display: none !important;
+        }
         .settings-advanced {
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -3642,7 +3649,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui">
 
 <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -3664,13 +3671,13 @@
                 </button>
             </div>
             <div class="kvc-tab-strip flex space-x-1">
-                <button onclick="switchTab('measure')" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 計測</button>
-                <button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画解析</button>
-                <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 分析</button>
-                <button onclick="switchTab('details')" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 打突詳細</button>
-                <button onclick="switchTab('model')" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 詳細分析</button>
+                <button onclick="switchTab('measure')" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 練習</button>
+                <button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画測定</button>
+                <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 比較</button>
+                <button onclick="switchTab('details')" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 記録</button>
+                <button onclick="switchTab('model')" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 3D角度</button>
                 <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-gear"></i> 設定</button>
-                <a href="./research/" class="research-nav-link text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-graduation-cap"></i> 卒研情報</a>
+                <a href="./research/" class="research-nav-link text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-circle-info"></i> 説明</a>
             </div>
         </div>
     </div>
@@ -3681,7 +3688,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
                 <div class="font-black text-sm"><i class="fa-solid fa-triangle-exclamation mr-2"></i>file:// で開いています</div>
-                <p class="text-xs mt-1 leading-relaxed">カメラ・AIモデル・動画解析はローカルサーバーで開く必要があります。下のボタンで開くと、起動時エラーとカメラ停止が減ります。</p>
+                <p class="text-xs mt-1 leading-relaxed">カメラを使うには localhost で開いてください。</p>
             </div>
             <a href="http://127.0.0.1:4175/index.html" class="inline-flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-bold">
                 localhostで開く
@@ -3691,14 +3698,13 @@
     <div id="tab-measure" class="tab-content active">
         <div id="measureHeader" class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-circle-play text-blue-500 mr-2"></i>リアルタイム分析</h2>
-                <p class="text-xs text-slate-500 mt-1">稽古中の目安用。正式記録は動画解析で開始/終了フレームを補正して保存します。</p>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-circle-play text-blue-500 mr-2"></i>練習</h2>
+                <p class="text-xs text-slate-500 mt-1">カメラで打突時間と角度をすぐ確認します。</p>
             </div>
             <div class="flex items-center gap-2">
-                <span class="hidden md:inline-flex bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full text-xs font-bold">正式測定は動画解析</span>
-                <button id="practiceFocusBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-bold transition">練習画面最大化</button>
+                <button id="practiceFocusBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-bold transition">大きく表示</button>
                 <button id="practiceModeBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-bold transition">
-                    詳細を表示
+                    詳細
                 </button>
                 <div id="systemStatus" class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full text-sm">
                     <span class="h-3 w-3 rounded-full bg-slate-400"></span> 待機中
@@ -3708,18 +3714,18 @@
         <div class="kvc-route-cards practice-secondary">
             <button type="button" class="kvc-route-card video" onclick="switchTab('video')">
                 <span class="kvc-route-icon"><i class="fa-solid fa-film"></i></span>
-                <strong>動画解析で正式測定</strong>
-                <span>高fps動画を読み込み、開始/終了を補正して記録します。</span>
+                <strong>動画で測定</strong>
+                <span>動画を読み込み、開始/終了を直して保存します。</span>
             </button>
             <button type="button" class="kvc-route-card result" onclick="switchTab('details')">
                 <span class="kvc-route-icon"><i class="fa-solid fa-chart-simple"></i></span>
-                <strong>記録・比較を見る</strong>
-                <span>本数、平均時間、右肘角、刃筋の推移を確認します。</span>
+                <strong>記録を見る</strong>
+                <span>本数、平均時間、角度の変化を確認します。</span>
             </button>
             <a class="kvc-route-card research" href="./research/">
                 <span class="kvc-route-icon"><i class="fa-solid fa-graduation-cap"></i></span>
-                <strong>卒研情報センター</strong>
-                <span>測定方法、評価指標、発表用説明をまとめています。</span>
+                <strong>使い方を見る</strong>
+                <span>測定方法と見方を確認します。</span>
             </a>
         </div>
 
@@ -3771,12 +3777,12 @@
 
             <div id="measureSidePanel" class="flex flex-col gap-4">
                 <div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-blue-500 p-4 practice-secondary">
-                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-robot text-blue-500"></i><h3 class="font-bold text-slate-700">AI コメント</h3></div>
+                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-message text-blue-500"></i><h3 class="font-bold text-slate-700">コメント</h3></div>
                     <p id="aiComment" class="text-slate-700 font-medium bg-slate-50 p-3 rounded text-sm md:text-base border border-slate-100">「稽古開始」を押して開始</p>
                 </div>
 
 	                <div class="bg-white rounded-xl shadow-sm border p-4">
-	                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">練習結果 / 上半身</h3>
+	                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">直近の打突</h3>
 	                    <div class="grid grid-cols-2 gap-2 text-center">
                         <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2 relative">
                             <span class="text-[10px] text-slate-500" id="timeLabel">打突時間</span>
@@ -3798,7 +3804,7 @@
 
 	                <div id="realtimeConditionCard" class="bg-white rounded-xl shadow-sm border p-4 condition-bad">
 	                    <div class="flex items-center justify-between gap-3 mb-2">
-	                        <div class="flex items-center gap-2"><i class="fa-solid fa-clipboard-check"></i><h3 class="font-bold text-sm">測定条件チェック</h3></div>
+	                        <div class="flex items-center gap-2"><i class="fa-solid fa-clipboard-check"></i><h3 class="font-bold text-sm">撮影チェック</h3></div>
 	                        <span id="realtimeConditionVerdict" class="text-xs font-black">条件不足</span>
 	                    </div>
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
@@ -3949,13 +3955,12 @@
     <div id="tab-video" class="tab-content">
         <div class="app-section-header video-page-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画解析 / 正式測定</h2>
-                <p class="text-xs text-slate-500 mt-1">動画ファイルを読み込み、開始/終了フレームを補正して打突時間と角度を保存します。</p>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-film text-indigo-500 mr-2"></i>動画測定</h2>
+                <p class="text-xs text-slate-500 mt-1">動画を選び、開始/終了を直して結果を保存します。</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><i class="fa-solid fa-certificate mr-1"></i>正式測定モード</span>
-                <button onclick="switchTab('measure')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">リアルタイム計測へ</button>
-                <button onclick="switchTab('details')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded text-sm font-bold">記録を見る</button>
+                <button onclick="switchTab('measure')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">練習へ</button>
+                <button onclick="switchTab('details')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded text-sm font-bold">記録</button>
             </div>
         </div>
 
@@ -3971,7 +3976,7 @@
         <div class="video-workflow-layout grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
             <div class="video-workflow-main bg-white p-4 rounded-xl shadow-sm border">
                 <div class="video-workflow-main-head flex items-center justify-between gap-3 mb-3">
-                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>4ステップ測定</h3>
+                    <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-video text-indigo-500 mr-2"></i>次にやること</h3>
                     <span id="videoAnalysisStatus" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">待機</span>
                 </div>
                 <div id="videoNextActionBanner" class="video-next-action mb-3"><i class="fa-solid fa-arrow-right mr-2"></i>動画選択</div>
@@ -3982,8 +3987,8 @@
                 <div id="videoFilePickCard" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
-                        <span class="block text-base font-black text-slate-900">ここをクリックして動画を読み込む</span>
-                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">PCはmp4/movを選択。iPhone動画は写真アプリからMacへ送った動画、または共有で保存した動画を選びます。</span>
+                        <span class="block text-base font-black text-slate-900">動画を選ぶ</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov に対応しています。</span>
                     </span>
                     <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>ファイルを選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
@@ -3992,12 +3997,12 @@
                         <div class="video-file-step">2. 開始/終了を置く</div>
                         <div class="video-file-step">3. 解析して保存</div>
                     </div>
-                    <div class="video-file-drop-note"><i class="fa-solid fa-hand mr-1"></i>反応しない場合は、Finderから動画をこの枠へドラッグ＆ドロップしてください。</div>
+                    <div class="video-file-drop-note"><i class="fa-solid fa-hand mr-1"></i>ドラッグ＆ドロップでも読み込めます。</div>
                 </div>
                 <div class="video-file-fallback">
-                    <div class="text-xs font-black text-slate-700 mb-2"><i class="fa-solid fa-life-ring text-amber-600 mr-1"></i>予備の動画選択</div>
+                    <div class="text-xs font-black text-slate-700 mb-2"><i class="fa-solid fa-life-ring text-amber-600 mr-1"></i>開けない時</div>
                     <input type="file" id="videoFileInputFallback" accept="video/*,video/quicktime,.mp4,.mov,.m4v" aria-label="予備の動画ファイル選択" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
-                    <button type="button" id="videoCacheResetBtn" class="video-cache-reset-btn mt-3"><i class="fa-solid fa-rotate mr-1"></i>開けない時はアプリを完全更新</button>
+                    <button type="button" id="videoCacheResetBtn" class="video-cache-reset-btn mt-3"><i class="fa-solid fa-rotate mr-1"></i>更新</button>
                 </div>
                 <script>
                     // 動画選択だけはメイン初期化に依存させない。大きなAI/描画スクリプトの読み込みが遅くても、先に動画を投入できるようにする。
@@ -4146,7 +4151,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v150-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v151-reset=' + Date.now();
                                 });
                             });
                         }
@@ -4154,7 +4159,7 @@
                 </script>
                 <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
                 <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">動画URL解析（mp4/mov直接URLのみ）</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">URL読込</label>
                     <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                         <input id="videoUrlInput" type="url" inputmode="url" placeholder="https://example.com/suburi.mp4" class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white">
                         <button id="loadVideoUrlBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">URL読込</button>
@@ -4168,23 +4173,23 @@
                     <div class="flex items-center justify-between gap-3">
                         <div>
                             <div id="videoDeviceCheckVerdict" class="text-sm font-black">動画未選択</div>
-                            <div id="videoDeviceCheckReason" class="text-xs mt-1 opacity-80">解像度 / fps / 信頼度</div>
+                            <div id="videoDeviceCheckReason" class="text-xs mt-1 opacity-80">動画情報</div>
                         </div>
                         <i id="videoDeviceCheckIcon" class="fa-solid fa-circle-question text-2xl"></i>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mt-3 text-xs">
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解像度</span><div id="videoDiagResolution" class="font-black font-mono-num">---</div></div>
-                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">動画fps実測/推定</span><div id="videoDiagNativeFps" class="font-black font-mono-num">---</div></div>
+                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">動画fps</span><div id="videoDiagNativeFps" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析fps</span><div id="videoDiagFps" class="font-black font-mono-num">---</div></div>
-                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">解析フレーム</span><div id="videoDiagFrames" class="font-black font-mono-num">---</div></div>
-                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">検出信頼度</span><div id="videoDiagConfidence" class="font-black font-mono-num">---</div></div>
+                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">フレーム</span><div id="videoDiagFrames" class="font-black font-mono-num">---</div></div>
+                        <div class="bg-white/70 rounded p-2"><span class="opacity-70">検出</span><div id="videoDiagConfidence" class="font-black font-mono-num">---</div></div>
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">判定</span><div id="videoDiagUsability" class="font-black">---</div></div>
                     </div>
                 </div>
                 <div id="videoSlowMotionCard" class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-950">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <div class="font-black text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>スローモーション補正</div>
+                    <div class="font-black text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>スロー動画</div>
                             <p id="videoSlowMotionStatus" class="mt-1 text-[11px] leading-relaxed">補正なし</p>
                         </div>
                         <label class="font-bold min-w-[220px]">動画の種類
@@ -4208,7 +4213,7 @@
                     <p id="videoSlowMotionHint" class="mt-2 text-[11px] leading-relaxed text-indigo-800">通常 / 120→60 / 240→30</p>
                 </div>
                 <div class="flex justify-end mt-3">
-                    <button type="button" onclick="switchVideoStep('mark')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">開始/終了を置くへ</button>
+                    <button type="button" onclick="switchVideoStep('mark')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">次へ</button>
                 </div>
                 </div>
                 <div id="videoStep-mark" class="video-step-panel space-y-3">
@@ -5274,12 +5279,12 @@
 
     <div id="tab-settings" class="tab-content">
         <div class="bg-white p-6 rounded-xl shadow-sm border max-w-2xl mx-auto">
-            <h3 class="font-bold text-lg mb-6 border-b pb-2"><i class="fa-solid fa-sliders text-slate-500 mr-2"></i>検出パラメータ調整</h3>
+            <h3 class="font-bold text-lg mb-6 border-b pb-2"><i class="fa-solid fa-sliders text-slate-500 mr-2"></i>設定</h3>
             <div class="space-y-6">
 
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <h4 class="text-sm font-bold text-slate-800 mb-2"><i class="fa-solid fa-camera mr-1"></i>カメラ選択 / 外部カメラ</h4>
-                    <p class="text-xs text-slate-600 mb-3">iPhone・USBカメラ・Webカメラをブラウザが認識していれば選択できます。初回はカメラ許可後に名前が表示されます。</p>
+                    <h4 class="text-sm font-bold text-slate-800 mb-2"><i class="fa-solid fa-camera mr-1"></i>カメラ</h4>
+                    <p class="text-xs text-slate-600 mb-3">使うカメラを選びます。</p>
                     <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                         <select id="cameraDeviceSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white"><option value="">自動選択（内蔵/既定カメラ）</option><option value="">カメラ 1</option></select>
                         <button id="refreshCameraBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">再読込</button>
@@ -5288,8 +5293,8 @@
                     <div class="mt-3 bg-white border border-slate-200 rounded p-3">
                         <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
                             <div>
-                                <label for="cameraPerformanceMode" class="text-xs font-black text-slate-800">リアルタイム処理モード</label>
-                                <p id="cameraPerformanceHint" class="text-xs text-slate-500 mt-1">安定: 720p / AI 24fps。外部iPhoneカメラでも固まりにくい設定です。</p>
+                                <label for="cameraPerformanceMode" class="text-xs font-black text-slate-800">処理モード</label>
+                                <p id="cameraPerformanceHint" class="text-xs text-slate-500 mt-1">安定: 動作を軽くします。</p>
                             </div>
                             <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
                                 <select id="cameraPerformanceMode" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white font-bold">
@@ -5301,18 +5306,18 @@
                                 <div id="realtimeAnalysisFpsLabel" class="font-black text-slate-900 font-mono-num">24fps</div>
                             </div>
                         </div>
-                        <p class="mt-2 text-[11px] text-slate-500">120/240fpsはブラウザと接続方法が対応した場合だけ有効です。実際に取得できたfpsは「計測条件」に表示されます。</p>
+                        <p class="mt-2 text-[11px] text-slate-500">迷ったら「安定」を使ってください。</p>
                     </div>
                 </div>
 
                 <details class="settings-advanced">
-                    <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>高度・実験機能</span></summary>
-                    <p class="text-xs text-slate-500 mt-2">通常の素振り測定では使わない項目です。発表・検証で必要な時だけ開いて調整します。</p>
+                    <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>上級設定</span></summary>
+                    <p class="text-xs text-slate-500 mt-2">通常は変更不要です。</p>
                     <div class="advanced-body mt-4 space-y-4">
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                             <label class="flex items-center gap-3 cursor-pointer">
                                 <input type="checkbox" id="paramSignalMode" class="w-5 h-5 text-blue-600 rounded border-gray-300">
-                                <span class="text-base font-bold text-blue-900">シグナル反応モードを有効にする</span>
+                                <span class="text-base font-bold text-blue-900">シグナル反応</span>
                             </label>
                             <p class="text-xs text-blue-700 mt-2 ml-8">構えて静止すると、1〜3秒後にランダムで「ピーッ」と鳴ります。音が鳴ってから打突が完了するまでの時間を計測します。</p>
                         </div>
@@ -5322,23 +5327,23 @@
 	                            <input type="checkbox" id="paramTsukiMode" class="w-5 h-5 text-red-600 rounded border-gray-300">
                                 <span class="text-base font-bold text-red-900">突き（ツキ）モードを有効にする</span>
                             </label>
-	                        <p class="text-xs text-red-700 mt-2 ml-8">振りかぶりではなく、「肘の急激な伸び」と「伸びきった瞬間の停止」を使って突き動作の打突時間と角度を確認します。</p>
+	                        <p class="text-xs text-red-700 mt-2 ml-8">突き動作を測る時だけ使います。</p>
 	                    </div>
 
 	                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
 	                        <label class="flex items-center gap-3 cursor-pointer">
 	                            <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
-	                            <span class="text-base font-bold text-cyan-900">高精度Pose Landmarkerを試す</span>
+	                            <span class="text-base font-bold text-cyan-900">高精度解析を試す</span>
 	                        </label>
-	                        <p class="text-xs text-cyan-700 mt-2 ml-8">実験用です。通常は安定する従来版で解析します。オンにした場合も失敗時は従来版へ自動で戻ります。</p>
+	                        <p class="text-xs text-cyan-700 mt-2 ml-8">重い場合は自動で安定モードに戻ります。</p>
 	                    </div>
 
 	                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
 	                        <label class="flex items-center gap-3 cursor-pointer">
 	                            <input type="checkbox" id="paramTipTracking" class="w-5 h-5 text-amber-600 rounded border-gray-300">
-	                            <span class="text-base font-bold text-amber-900">竹刀先端テープ検出を使う</span>
+	                            <span class="text-base font-bold text-amber-900">竹刀先端テープ検出</span>
 	                        </label>
-	                        <p class="text-xs text-amber-700 mt-2 ml-8">両手首から推定した竹刀方向の先をROI探索します。竹刀先端に黄色テープを貼ると、推定刃筋と剣先ピークの補助指標として使えます。</p>
+	                        <p class="text-xs text-amber-700 mt-2 ml-8">竹刀先端に色テープを貼る時だけ使います。</p>
 	                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
 	                            <div>
 	                                <label class="block text-xs font-bold text-amber-900 mb-1">テープ色</label>
@@ -5359,8 +5364,8 @@
                 </details>
 
 	                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>実測キャリブレーション</h4>
-	                    <p class="text-xs text-emerald-700 mb-3">ピーク検出を安定させるため、体格・竹刀・撮影条件を登録します。正式記録は打突時間・ピーク時刻・角度を中心に扱います。</p>
+	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>測定条件</h4>
+	                    <p class="text-xs text-emerald-700 mb-3">体格と撮影条件を入れます。</p>
 	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 	                        <label class="text-xs font-bold text-emerald-900">肩幅(cm)
 	                            <input id="paramShoulderWidthCm" type="number" min="30" max="60" step="0.5" value="42" class="mt-1 w-full border border-emerald-200 rounded px-2 py-2 bg-white font-mono-num">
@@ -5379,24 +5384,24 @@
 	                </div>
 
 	                <div class="bg-violet-50 p-4 rounded-lg border border-violet-100">
-	                    <h4 class="text-sm font-bold text-violet-900 mb-2"><i class="fa-solid fa-draw-polygon mr-1"></i>角度の色覚化</h4>
+	                    <h4 class="text-sm font-bold text-violet-900 mb-2"><i class="fa-solid fa-draw-polygon mr-1"></i>角度表示</h4>
 	                    <label class="flex items-center gap-3 cursor-pointer mb-3">
 	                        <input type="checkbox" id="paramAngleOverlay" checked="" class="w-5 h-5 text-violet-600 rounded border-gray-300">
-	                        <span class="text-sm font-bold text-violet-900">角度を映像上に表示する</span>
+	                        <span class="text-sm font-bold text-violet-900">映像に角度を表示</span>
 	                    </label>
 	                    <label class="block text-xs font-bold text-violet-900 mb-1">表示する角度</label>
 	                    <select id="paramAngleTarget" class="w-full border border-violet-200 rounded px-2 py-2 text-sm bg-white">
 	                        <option value="all" selected="">主要角度すべて</option>
-	                        <option value="rightElbow">右肘角: 右肩-右肘-右手首</option>
-	                        <option value="leftElbow">左肘角: 左肩-左肘-左手首</option>
-	                        <option value="torso">体幹軸: 肩中点-腰中点</option>
-	                        <option value="hasuji">刃筋: 両手首/剣先推定</option>
-	                        <option value="shoulders">肩ライン: 左肩-右肩</option>
+	                        <option value="rightElbow">右肘</option>
+	                        <option value="leftElbow">左肘</option>
+	                        <option value="torso">体幹軸</option>
+	                        <option value="hasuji">刃筋</option>
+	                        <option value="shoulders">肩ライン</option>
 	                    </select>
 	                    <p id="angleOverlayHint" class="text-xs text-violet-700 mt-2">黄色の点が基準点、色つき線が計算に使う線です。</p>
 	                </div>
 
-                <div>
+                <div class="settings-tuning">
                     <label class="block text-sm font-bold text-slate-700 mb-1">振りかぶり高さオフセット</label>
                     <div class="flex items-center gap-4">
                         <input type="range" id="paramRaisedY" min="-0.2" max="0.2" step="0.05" value="0.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -5404,7 +5409,7 @@
                     </div>
                 </div>
                 
-	                <div class="border-t border-slate-100 pt-4">
+	                <div class="settings-tuning border-t border-slate-100 pt-4">
                     <label class="block text-sm font-bold text-slate-700 mb-1">スイング開始速度閾値</label>
                     <div class="flex items-center gap-4">
                         <input type="range" id="paramSwingVel" min="0.005" max="0.05" step="0.005" value="0.015" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -5427,7 +5432,7 @@
                 <div class="border-t border-slate-100 pt-4">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" id="paramShowGuide" checked="" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                        <span class="text-sm font-bold text-slate-700">初心者向けガイドライン（画面上の線）を表示</span>
+                        <span class="text-sm font-bold text-slate-700">ガイド線を表示</span>
                     </label>
                 </div>
                 
@@ -5963,7 +5968,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v150';
+            const refreshKey = 'kendo-sw-refreshed-v151';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6000,7 +6005,7 @@
                     document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-blue-400"></span> iPhone互換`;
                 }
             }
-            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
+            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps} / ${Params.cameraStableFps}fps`);
         }
 
         function reportRuntimeIssue(message, color = 'yellow') {
@@ -6023,7 +6028,7 @@
                     cameraFps: 30,
                     maxFps: 60,
                     aiFps: 24,
-                    hint: '安定: 720p / カメラ30fps目標 / AI 24fps。外部iPhoneカメラでも固まりにくい設定です。'
+                    hint: '安定: 720p / 解析24fps。動作を軽くします。'
                 },
                 precision: {
                     key: 'precision',
@@ -6033,7 +6038,7 @@
                     cameraFps: 60,
                     maxFps: 60,
                     aiFps: 30,
-                    hint: '高精度: 1080p / カメラ60fps目標 / AI 30fps。映像が重い場合は安定へ戻してください。'
+                    hint: '高精度: 1080p / 解析30fps。重い場合は安定へ戻してください。'
                 },
                 iphone120: {
                     key: 'iphone120',
@@ -6043,7 +6048,7 @@
                     cameraFps: 120,
                     maxFps: 120,
                     aiFps: 45,
-                    hint: 'iPhone 120fps: 1080p / カメラ120fps目標 / AI 45fps。対応しない接続では自動で60/30fps相当に落ちます。'
+                    hint: 'iPhone 120fps: 対応時だけ有効です。'
                 },
                 iphone240: {
                     key: 'iphone240',
@@ -6053,7 +6058,7 @@
                     cameraFps: 240,
                     maxFps: 240,
                     aiFps: 60,
-                    hint: 'iPhone 240fps検証: 720p / カメラ240fps目標 / AI 60fps。リアルタイムでは重いため、正式測定は動画解析240fps推奨です。'
+                    hint: 'iPhone 240fps検証: 重い場合は動画測定で使ってください。'
                 }
             };
             return profiles[mode] || profiles.stable;
@@ -6070,7 +6075,7 @@
             safeText('cameraPerformanceHint', profile.hint);
             const select = document.getElementById('cameraPerformanceMode');
             if (select) select.value = AppState.cameraPerformanceMode;
-            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
+            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps} / ${Params.cameraStableFps}fps`);
             updatePrecisionPanel();
             if (options.restart && AppState.isCameraRunning) {
                 startCameraStream()
@@ -6251,7 +6256,7 @@
             if (videoTapeMinPixels) { videoTapeMinPixels.value = Params.tapeMinPixels; safeText('videoTapeMinPixelsValue', String(Params.tapeMinPixels)); }
             if (videoTapeRoiVisible) videoTapeRoiVisible.checked = true;
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
-            safeText('realtimeAnalysisFpsLabel', `AI ${Params.realtimeAnalysisFps} / Cam ${Params.cameraStableFps}`);
+            safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps} / ${Params.cameraStableFps}fps`);
             setVideoStrikeMode('multi');
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
                 const values = [42, 120, 250, 60];
@@ -10149,7 +10154,7 @@
             await videoElement.play();
             canvasElement.width = videoElement.videoWidth || 1280;
             canvasElement.height = videoElement.videoHeight || 720;
-            drawCameraFrameOnly('カメラ起動中 / AI準備中');
+            drawCameraFrameOnly('カメラ起動中 / 解析準備中');
             AppState.frameSyncMode = isIOSLikeBrowser() ? 'RAF/iPhone' : (videoElement.requestVideoFrameCallback ? 'rVFC' : 'RAF');
             AppState.frameLoopRunning = true;
             AppState.lastFrameTimeMs = 0;
@@ -10207,7 +10212,7 @@
             }
             AppState.currentFrameTimeMs = frameTimeMs;
             const aiReady = AppState.poseLandmarker || pose;
-            drawCameraFrameOnly(aiReady ? '' : 'AI準備中 / カメラ映像のみ表示');
+                    drawCameraFrameOnly(aiReady ? '' : '解析準備中 / カメラ映像のみ表示');
             if (aiReady) AppState.lastPoseAttemptAt = performance.now();
             const minAnalysisInterval = 1000 / clamp(Params.realtimeAnalysisFps || 24, 8, 60);
             if (aiReady && AppState.lastAnalysisFrameTimeMs && frameTimeMs - AppState.lastAnalysisFrameTimeMs < minAnalysisInterval) {
@@ -10233,8 +10238,8 @@
                     && String(err && (err.message || err)).includes('Legacy Pose frame timeout')
                     && now - (AppState.legacyPoseCreatedAt || 0) < 32000;
                 if (isLegacyWarmupTimeout) {
-                    safeText('cameraDeviceStatus', 'AI準備中 / 映像表示OK');
-                    drawCameraFrameOnly('AI準備中 / カメラ映像のみ表示');
+                    safeText('cameraDeviceStatus', '解析準備中 / 映像表示OK');
+                    drawCameraFrameOnly('解析準備中 / カメラ映像のみ表示');
                     updatePrecisionPanel();
                     return;
                 }
@@ -10243,7 +10248,7 @@
                     console.warn('リアルタイム解析を一時スキップしました', err);
                     safeText('cameraDeviceStatus', '映像表示を継続中 / AI解析を一時スキップ');
                 }
-                drawCameraFrameOnly('AI準備中 / カメラ映像のみ表示');
+                drawCameraFrameOnly('解析準備中 / カメラ映像のみ表示');
                 updatePrecisionPanel();
             }
         }
@@ -14990,7 +14995,7 @@
                 document.getElementById('stateIndicator').classList.remove('hidden'); 
                 document.getElementById('canvasOverlayData').classList.remove('hidden');
                 document.getElementById('canvasOverlayData').classList.add('flex');
-                document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / AI準備中`;
+                document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / 解析準備中`;
                 updatePrecisionPanel();
                 poseReadyPromise = ensurePoseReady({ purpose: 'realtime' });
                 Promise.resolve(poseReadyPromise).then(() => {
@@ -14998,8 +15003,8 @@
                     updatePrecisionPanel();
                 }).catch(err => {
                     console.warn('AI初期化に失敗しましたがカメラ表示を継続します', err);
-                    document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / AI未起動`;
-                    showToast('AI初期化中です。映像は先に表示します', 'yellow');
+                    document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / 解析準備中`;
+                    showToast('解析準備中です。映像は先に表示します', 'yellow');
                 });
             } catch(e) {
                 console.error('カメラ起動エラー', e);
@@ -15076,7 +15081,7 @@
         document.getElementById('practiceModeBtn').addEventListener('click', function(){
             AppState.simplePracticeMode = !AppState.simplePracticeMode;
             document.body.classList.toggle('practice-simple', AppState.simplePracticeMode);
-            this.innerText = AppState.simplePracticeMode ? '詳細UI' : '稽古UI';
+            this.innerText = AppState.simplePracticeMode ? '詳細' : 'シンプル';
             this.className = AppState.simplePracticeMode
                 ? 'bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-bold transition'
                 : 'bg-slate-900 hover:bg-slate-700 text-white px-3 py-1 rounded-full text-xs font-bold transition';
