@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v152';
+            var version = 'v153';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -122,6 +122,78 @@
         }
         @media (max-width: 640px) {
             .realtime-session-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-center-panel {
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+        .data-center-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+        }
+        .data-center-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+            padding: 1rem;
+        }
+        .data-center-kpi {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.85rem;
+            background: #f8fafc;
+            padding: 0.8rem;
+        }
+        .data-center-kpi span {
+            display: block;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 900;
+        }
+        .data-center-kpi strong {
+            display: block;
+            margin-top: 0.2rem;
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 1000;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+        .data-center-table-wrap {
+            max-height: 360px;
+            overflow: auto;
+            border-top: 1px solid #e2e8f0;
+        }
+        .data-center-table {
+            width: 100%;
+            min-width: 860px;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .data-center-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 900;
+            padding: 0.65rem 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-center-table td {
+            padding: 0.65rem 0.5rem;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .data-center-table tbody tr:hover { background: #f8fafc; }
+        @media (max-width: 768px) {
+            .data-center-panel-header { flex-direction: column; }
+            .data-center-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .settings-advanced {
             border: 1px solid #e2e8f0;
@@ -3703,6 +3775,7 @@
                 <button onclick="switchTab('measure')" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 練習</button>
                 <button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画測定</button>
                 <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 比較</button>
+                <button onclick="switchTab('data')" id="tabBtn-data" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-database"></i> データ</button>
                 <button onclick="switchTab('details')" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 記録</button>
                 <button onclick="switchTab('model')" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 3D角度</button>
                 <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-gear"></i> 設定</button>
@@ -3750,6 +3823,11 @@
                 <span class="kvc-route-icon"><i class="fa-solid fa-chart-simple"></i></span>
                 <strong>記録を見る</strong>
                 <span>本数、平均時間、角度の変化を確認します。</span>
+            </button>
+            <button type="button" class="kvc-route-card result" onclick="switchTab('data')">
+                <span class="kvc-route-icon"><i class="fa-solid fa-database"></i></span>
+                <strong>データを蓄積</strong>
+                <span>リアルタイムと動画測定を分けて保存・出力します。</span>
             </button>
             <a class="kvc-route-card research" href="./research/">
                 <span class="kvc-route-icon"><i class="fa-solid fa-graduation-cap"></i></span>
@@ -3997,6 +4075,85 @@
 
     </div>
 
+    <div id="tab-data" class="tab-content">
+        <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
+            <div>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-database text-sky-500 mr-2"></i>データセンター</h2>
+                <p class="text-xs text-slate-500 mt-1">分析した結果だけを蓄積します。リアルタイム分析と動画測定は別々に管理します。</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="exportDataCenterCSV('realtime')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>リアルタイムCSV</button>
+                <button type="button" onclick="exportDataCenterCSV('formal')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>動画測定CSV</button>
+                <button type="button" onclick="switchTab('analysis')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">比較へ</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+            <section class="data-center-panel">
+                <div class="data-center-panel-header">
+                    <div>
+                        <h3 class="font-black text-slate-900"><i class="fa-solid fa-video text-blue-500 mr-2"></i>リアルタイム分析データ</h3>
+                        <p class="text-xs text-slate-500 mt-1">練習中に自動保存された目安データ。日々の練習量と傾向確認に使います。</p>
+                    </div>
+                    <span id="dataRealtimeBadge" class="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-black">0本</span>
+                </div>
+                <div class="data-center-kpis">
+                    <div class="data-center-kpi"><span>保存本数</span><strong id="dataRealtimeCount">0本</strong></div>
+                    <div class="data-center-kpi"><span>平均打突時間</span><strong id="dataRealtimeAvgTime">---</strong></div>
+                    <div class="data-center-kpi"><span>最短時間</span><strong id="dataRealtimeBestTime">---</strong></div>
+                    <div class="data-center-kpi"><span>平均右肘</span><strong id="dataRealtimeAvgElbow">---</strong></div>
+                    <div class="data-center-kpi"><span>平均体幹</span><strong id="dataRealtimeAvgTorso">---</strong></div>
+                    <div class="data-center-kpi"><span>最新保存</span><strong id="dataRealtimeLatest">---</strong></div>
+                </div>
+                <div class="data-center-table-wrap">
+                    <table class="data-center-table">
+                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>評価</th></tr></thead>
+                        <tbody id="dataRealtimeBody"><tr><td colspan="8" class="text-slate-400 py-8">データなし</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="data-center-panel">
+                <div class="data-center-panel-header">
+                    <div>
+                        <h3 class="font-black text-slate-900"><i class="fa-solid fa-film text-emerald-500 mr-2"></i>動画測定データ</h3>
+                        <p class="text-xs text-slate-500 mt-1">開始/終了フレームを補正して保存した正式データ。卒研・検証の中心値にします。</p>
+                    </div>
+                    <span id="dataFormalBadge" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full text-xs font-black">0本</span>
+                </div>
+                <div class="data-center-kpis">
+                    <div class="data-center-kpi"><span>保存本数</span><strong id="dataFormalCount">0本</strong></div>
+                    <div class="data-center-kpi"><span>平均打突時間</span><strong id="dataFormalAvgTime">---</strong></div>
+                    <div class="data-center-kpi"><span>最短時間</span><strong id="dataFormalBestTime">---</strong></div>
+                    <div class="data-center-kpi"><span>平均右肘</span><strong id="dataFormalAvgElbow">---</strong></div>
+                    <div class="data-center-kpi"><span>平均体幹</span><strong id="dataFormalAvgTorso">---</strong></div>
+                    <div class="data-center-kpi"><span>最新保存</span><strong id="dataFormalLatest">---</strong></div>
+                </div>
+                <div class="data-center-table-wrap">
+                    <table class="data-center-table">
+                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>補正/方式</th></tr></thead>
+                        <tbody id="dataFormalBody"><tr><td colspan="8" class="text-slate-400 py-8">データなし</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border p-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-graduation-cap text-indigo-500 mr-2"></i>卒研での扱い</h3>
+                    <p class="text-sm text-slate-600 mt-1">リアルタイム分析は稽古中の目安、動画測定は正式測定として分けます。CSV出力も別々なので、発表用の表やグラフを作る時に混ざりません。</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-center">
+                    <div class="bg-slate-50 border rounded-lg px-3 py-2"><span class="text-slate-500 font-bold">全データ</span><div id="dataAllCount" class="font-black text-slate-900 font-mono-num">0本</div></div>
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2"><span class="text-blue-700 font-bold">目安</span><div id="dataAllRealtimeCount" class="font-black text-blue-800 font-mono-num">0本</div></div>
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2"><span class="text-emerald-700 font-bold">正式</span><div id="dataAllFormalCount" class="font-black text-emerald-800 font-mono-num">0本</div></div>
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2"><span class="text-indigo-700 font-bold">最新</span><div id="dataAllLatest" class="font-black text-indigo-800">---</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="tab-video" class="tab-content">
         <div class="app-section-header video-page-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
@@ -4196,7 +4353,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v152-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v153-reset=' + Date.now();
                                 });
                             });
                         }
@@ -5753,6 +5910,7 @@
             document.getElementById(`tabBtn-${tab}`).classList.remove('text-slate-300');
             document.getElementById(`tabBtn-${tab}`).classList.add('bg-slate-800','text-white');
             if(tab==='analysis') updateCharts();
+            if(tab==='data') updateDataCenter();
             if(tab==='video') updateVideoAnalysisLabels();
             if(tab==='details') updateDetailsTab();
             if(tab==='model') updateModelAnalysisTab();
@@ -6015,7 +6173,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v152';
+            const refreshKey = 'kendo-sw-refreshed-v153';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6551,6 +6709,7 @@
                 updateRecordComparisonSummary();
                 updateCharts();
                 updateDetailsTab();
+                updateDataCenter();
             }
         }
 
@@ -6588,6 +6747,148 @@
             safeText('recordSummaryAvgTorso', torso.length ? `${avg(torso).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
             safeText('recordSummaryLastSaved', latest ? `${formatRecordDate(latest)} / ${recordTypeLabel(latest)}` : '---');
+        }
+
+        function recordsByDataKind(kind) {
+            const target = kind === 'formal' ? 'formal' : 'realtime';
+            return (AppState.records || [])
+                .map(normalizeRecordMeta)
+                .filter(record => recordTypeOf(record) === target)
+                .sort((a, b) => new Date(a.recordedAt || 0) - new Date(b.recordedAt || 0));
+        }
+
+        function summarizeRecordsForDataCenter(records) {
+            const values = (key, predicate = Number.isFinite) => records
+                .map(record => Number(record?.[key]))
+                .filter(value => Number.isFinite(value) && predicate(value));
+            const avg = list => list.length ? list.reduce((sum, value) => sum + value, 0) / list.length : null;
+            const times = values('timeMs');
+            const elbows = values('rightAng', value => value > 0);
+            const torso = values('torsoAng').map(Math.abs);
+            const best = times.length
+                ? records.reduce((current, record) => Number(record.timeMs || Infinity) < Number(current.timeMs || Infinity) ? record : current, records[0])
+                : null;
+            const latest = records.length
+                ? [...records].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0]
+                : null;
+            return {
+                count: records.length,
+                avgTime: avg(times),
+                bestTime: best && Number.isFinite(Number(best.timeMs)) ? Number(best.timeMs) : null,
+                avgElbow: avg(elbows),
+                avgTorso: avg(torso),
+                latest
+            };
+        }
+
+        function updateDataCenterKpis(prefix, records) {
+            const summary = summarizeRecordsForDataCenter(records);
+            safeText(`${prefix}Badge`, `${summary.count}本`);
+            safeText(`${prefix}Count`, `${summary.count}本`);
+            safeText(`${prefix}AvgTime`, summary.avgTime !== null ? `${Math.round(summary.avgTime)} ms` : '---');
+            safeText(`${prefix}BestTime`, summary.bestTime !== null ? `${Math.round(summary.bestTime)} ms` : '---');
+            safeText(`${prefix}AvgElbow`, summary.avgElbow !== null ? `${summary.avgElbow.toFixed(1)}°` : '---');
+            safeText(`${prefix}AvgTorso`, summary.avgTorso !== null ? `${summary.avgTorso.toFixed(1)}°` : '---');
+            safeText(`${prefix}Latest`, summary.latest ? formatRecordDate(summary.latest) : '---');
+        }
+
+        function dataCenterRowMeta(record, kind) {
+            if (kind === 'formal') {
+                const frames = [record.startFrameIndex, record.peakFrameIndex, record.endFrameIndex]
+                    .filter(value => value !== undefined && value !== null && value !== '')
+                    .join(' / ');
+                return frames ? `f ${frames}` : (record.measurementMethod || '動画測定');
+            }
+            return record.shortLabel || record.measurementMethod || 'リアルタイム';
+        }
+
+        function renderDataCenterTable(kind, records) {
+            const body = document.getElementById(kind === 'formal' ? 'dataFormalBody' : 'dataRealtimeBody');
+            if (!body) return;
+            if (!records.length) {
+                body.innerHTML = '<tr><td colspan="8" class="text-slate-400 py-8">データなし</td></tr>';
+                return;
+            }
+            const newest = [...records].reverse();
+            body.innerHTML = newest.map(record => `
+                <tr>
+                    <td class="font-mono-num text-slate-500">#${record.id}</td>
+                    <td class="whitespace-nowrap text-slate-600">${formatRecordDate(record)}</td>
+                    <td class="font-black text-blue-700 font-mono-num">${Number.isFinite(Number(record.timeMs)) ? Math.round(Number(record.timeMs)) + 'ms' : '---'}</td>
+                    <td class="font-black text-cyan-700 font-mono-num">${recordPeakOffsetText(record, 'official')}</td>
+                    <td class="font-black text-purple-700 font-mono-num">${record.rightAng || '---'}°</td>
+                    <td class="font-black text-emerald-700 font-mono-num">${Number.isFinite(Number(record.torsoAng)) ? Number(record.torsoAng).toFixed(1) + '°' : '---'}</td>
+                    <td class="font-black text-amber-700 font-mono-num">${record.hasujiAngle || '---'}°</td>
+                    <td class="text-left text-slate-700">${escapeHtml(dataCenterRowMeta(record, kind))}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateDataCenter() {
+            const realtime = recordsByDataKind('realtime');
+            const formal = recordsByDataKind('formal');
+            updateDataCenterKpis('dataRealtime', realtime);
+            updateDataCenterKpis('dataFormal', formal);
+            renderDataCenterTable('realtime', realtime);
+            renderDataCenterTable('formal', formal);
+            const all = [...realtime, ...formal];
+            const latest = all.length ? [...all].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0] : null;
+            safeText('dataAllCount', `${all.length}本`);
+            safeText('dataAllRealtimeCount', `${realtime.length}本`);
+            safeText('dataAllFormalCount', `${formal.length}本`);
+            safeText('dataAllLatest', latest ? formatRecordDate(latest) : '---');
+        }
+
+        function csvCell(value) {
+            return `"${String(value ?? '').replace(/"/g, '""')}"`;
+        }
+
+        function exportDataCenterCSV(kind = 'formal') {
+            const normalized = kind === 'realtime' ? 'realtime' : 'formal';
+            const records = recordsByDataKind(normalized);
+            if (!records.length) return showToast(normalized === 'formal' ? '動画測定データがありません' : 'リアルタイム分析データがありません', 'yellow');
+            const labels = [
+                'No.', '区分', '記録日時', '打突時間(ms)', '正式ピーク時刻(ms)', '手首ピーク時刻(ms)', '推定剣先ピーク時刻(ms)', 'テープ剣先ピーク時刻(ms)',
+                '右肘(deg)', '左肘(deg)', '体幹軸(deg)', '刃筋(deg)', '肩ライン(deg)', '姿勢信頼度', '角度品質',
+                '開始フレーム', '最高速フレーム', '終了フレーム', '開始時刻(ms)', '最高速時刻(ms)', '終了時刻(ms)', '測定方式', '評価', 'メモ', '打突時間定義'
+            ];
+            const rows = records.map(record => [
+                record.id,
+                normalized === 'formal' ? '動画測定' : 'リアルタイム分析',
+                formatRecordDate(record),
+                record.timeMs ?? '',
+                recordPeakOffsetMs(record, 'official') ?? '',
+                recordPeakOffsetMs(record, 'wrist') ?? '',
+                recordPeakOffsetMs(record, 'tip') ?? '',
+                recordPeakOffsetMs(record, 'tape') ?? '',
+                record.rightAng ?? '',
+                record.leftAng ?? '',
+                record.torsoAng ?? '',
+                record.hasujiAngle ?? '',
+                record.shoulderLineAng ?? '',
+                record.avgVisibility ?? '',
+                record.angleQuality ?? '',
+                record.startFrameIndex ?? '',
+                record.peakFrameIndex ?? '',
+                record.endFrameIndex ?? '',
+                record.startTimeMs ?? '',
+                record.peakTimeMs ?? '',
+                record.endTimeMs ?? '',
+                record.measurementMethod ?? '',
+                record.shortLabel ?? '',
+                record.memo ?? '',
+                record.timingDefinition ?? ''
+            ]);
+            const csv = '\uFEFF' + [labels, ...rows].map(row => row.map(csvCell).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `kendo_data_center_${normalized}_${Date.now()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            URL.revokeObjectURL(link.href);
+            link.remove();
+            showToast(`${normalized === 'formal' ? '動画測定' : 'リアルタイム分析'}データをCSV出力しました`, 'green');
         }
 
         function persistRecords() {
@@ -9188,6 +9489,7 @@
             updateHistoryTable();
             updateDetailsTab();
             updateRealtimePracticeSummary();
+            updateDataCenter();
             prepareReplay();
             
             AppState.zanshinBroken = false;
@@ -9331,6 +9633,7 @@
             updateDetailsTab();
             updateCharts();
             updateRealtimePracticeSummary();
+            updateDataCenter();
             showToast('履歴を1件削除しました', 'blue');
         }
 
@@ -9343,6 +9646,7 @@
             persistRecords();
             updateHistoryTable();
             updateDetailsTab();
+            updateDataCenter();
             showToast('メモを保存しました', 'green');
         }
 
@@ -14865,6 +15169,7 @@
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
+            updateDataCenter();
             safeText('latestTime', `${record.timeMs} ms`);
 	            safeText('latestSync', '---');
 	            safeText('latestSae', '---');
@@ -14965,6 +15270,7 @@
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
+            updateDataCenter();
             safeText('latestTime', `${record.timeMs} ms`);
 	            safeText('latestSync', '---');
 	            safeText('latestSae', '---');
@@ -15078,6 +15384,7 @@
                 updateCharts();
                 updateDetailsTab();
                 updateRealtimePracticeSummary();
+                updateDataCenter();
                 showToast('履歴をクリアしました', 'blue');
             }
         }
@@ -16223,7 +16530,7 @@
         window.addEventListener('pointerup', stopAngleModelViewDrag);
         window.addEventListener('pointercancel', stopAngleModelViewDrag);
 
-        ['measure', 'video', 'analysis', 'details', 'model', 'settings'].forEach(tabName => {
+        ['measure', 'video', 'analysis', 'data', 'details', 'model', 'settings'].forEach(tabName => {
             const btn = document.getElementById(`tabBtn-${tabName}`);
             if (!btn) return;
             btn.addEventListener('click', event => {
@@ -16244,6 +16551,7 @@
         updateHistoryTable();
         updateDetailsTab();
         updateRealtimePracticeSummary();
+        updateDataCenter();
         applyCalibrationInputs();
         ensureVideoSideDrawer();
         checkLaunchEnvironment();
@@ -16280,6 +16588,7 @@
         window.confirmVideoManualRange = confirmVideoManualRange;
         window.confirmVideoTimingCorrection = confirmVideoTimingCorrection;
         window.exportCSV = exportCSV;
+        window.exportDataCenterCSV = exportDataCenterCSV;
         window.clearHistory = clearHistory;
         window.resetSettings = resetSettings;
         if (['127.0.0.1', 'localhost'].includes(location.hostname) || new URLSearchParams(location.search).has('debug')) {
