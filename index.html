@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v151';
+            var version = 'v152';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -93,6 +93,35 @@
         .easy-ui #videoSlowMotionCard,
         .easy-ui .settings-tuning {
             display: none !important;
+        }
+        .realtime-session-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+        .realtime-session-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #f8fafc;
+            padding: 0.65rem;
+            text-align: center;
+        }
+        .realtime-session-item span {
+            display: block;
+            color: #64748b;
+            font-size: 0.68rem;
+            font-weight: 900;
+        }
+        .realtime-session-item strong {
+            display: block;
+            margin-top: 0.15rem;
+            color: #0f172a;
+            font-size: 1rem;
+            font-weight: 1000;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+        @media (max-width: 640px) {
+            .realtime-session-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .settings-advanced {
             border: 1px solid #e2e8f0;
@@ -3802,6 +3831,22 @@
 	                    </div>
 	                </div>
 
+	                <div id="realtimeSessionCard" class="bg-white rounded-xl shadow-sm border p-4">
+	                    <div class="flex items-center justify-between gap-3 mb-3">
+	                        <div class="flex items-center gap-2"><i class="fa-solid fa-stopwatch text-blue-500"></i><h3 class="font-bold text-sm">今日の練習</h3></div>
+	                        <button type="button" onclick="switchTab('details')" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-full px-3 py-1">記録を見る</button>
+	                    </div>
+	                    <div class="realtime-session-grid">
+	                        <div class="realtime-session-item"><span>本数</span><strong id="realtimeSessionCount">0本</strong></div>
+	                        <div class="realtime-session-item"><span>平均時間</span><strong id="realtimeSessionAvgTime">---</strong></div>
+	                        <div class="realtime-session-item"><span>最短時間</span><strong id="realtimeSessionBestTime">---</strong></div>
+	                        <div class="realtime-session-item"><span>平均右肘</span><strong id="realtimeSessionAvgElbow">---</strong></div>
+	                        <div class="realtime-session-item"><span>平均体幹</span><strong id="realtimeSessionAvgTorso">---</strong></div>
+	                        <div class="realtime-session-item"><span>直近保存</span><strong id="realtimeSessionLastSaved">---</strong></div>
+	                    </div>
+	                    <p id="realtimeSessionHint" class="mt-3 text-[11px] text-slate-500">1本打つと自動で更新されます。</p>
+	                </div>
+
 	                <div id="realtimeConditionCard" class="bg-white rounded-xl shadow-sm border p-4 condition-bad">
 	                    <div class="flex items-center justify-between gap-3 mb-2">
 	                        <div class="flex items-center gap-2"><i class="fa-solid fa-clipboard-check"></i><h3 class="font-bold text-sm">撮影チェック</h3></div>
@@ -4151,7 +4196,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v151-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v152-reset=' + Date.now();
                                 });
                             });
                         }
@@ -5558,6 +5603,7 @@
             replayTimer: null,
             replayIndex: 0,
             replayPlaying: false,
+            lastRealtimeRecordAt: 0,
             currentPoseSnapshot: null,
             modelPoseSnapshot: null,
             modelAngleValues: null,
@@ -5663,6 +5709,7 @@
             timingStartConsecutiveFrames: 2,
             timingMaxDurationMs: 650,
             timingMinDurationMs: 90,
+            realtimeRecordCooldownMs: 650,
             minAngleVisibility: 0.45,
             maxReasonableSpeedMps: 18
         };
@@ -5881,7 +5928,7 @@
             AppState.practiceFocus = !!enabled;
             document.body.classList.toggle('practice-focus', AppState.practiceFocus);
             const btn = document.getElementById('practiceFocusBtn');
-            if (btn) btn.innerText = AppState.practiceFocus ? '最大化解除' : '練習画面最大化';
+            if (btn) btn.innerText = AppState.practiceFocus ? '戻る' : '大きく表示';
             if (AppState.practiceFocus && document.documentElement.requestFullscreen && !document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(() => {});
             } else if (!AppState.practiceFocus && document.fullscreenElement && document.exitFullscreen) {
@@ -5968,7 +6015,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v151';
+            const refreshKey = 'kendo-sw-refreshed-v152';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6440,6 +6487,49 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        function isTodayRecord(record) {
+            const date = new Date(record?.recordedAt || 0);
+            if (Number.isNaN(date.getTime())) return false;
+            const now = new Date();
+            return date.getFullYear() === now.getFullYear()
+                && date.getMonth() === now.getMonth()
+                && date.getDate() === now.getDate();
+        }
+
+        function averageNumber(records, key) {
+            const values = records.map(record => Number(record?.[key])).filter(Number.isFinite);
+            if (!values.length) return null;
+            return values.reduce((sum, value) => sum + value, 0) / values.length;
+        }
+
+        function updateRealtimePracticeSummary() {
+            const records = (AppState.records || [])
+                .map(normalizeRecordMeta)
+                .filter(record => recordTypeOf(record) === 'realtime' && isTodayRecord(record));
+            const count = records.length;
+            safeText('realtimeSessionCount', `${count}本`);
+            if (!count) {
+                safeText('realtimeSessionAvgTime', '---');
+                safeText('realtimeSessionBestTime', '---');
+                safeText('realtimeSessionAvgElbow', '---');
+                safeText('realtimeSessionAvgTorso', '---');
+                safeText('realtimeSessionLastSaved', '---');
+                safeText('realtimeSessionHint', '1本打つと自動で更新されます。');
+                return;
+            }
+            const avgTime = averageNumber(records, 'timeMs');
+            const avgElbow = averageNumber(records, 'rightAng');
+            const avgTorso = averageNumber(records, 'torsoAng');
+            const best = records.reduce((current, record) => Number(record.timeMs || Infinity) < Number(current.timeMs || Infinity) ? record : current, records[0]);
+            const latest = records[records.length - 1];
+            safeText('realtimeSessionAvgTime', avgTime !== null ? `${Math.round(avgTime)} ms` : '---');
+            safeText('realtimeSessionBestTime', Number.isFinite(Number(best?.timeMs)) ? `${Math.round(Number(best.timeMs))} ms` : '---');
+            safeText('realtimeSessionAvgElbow', avgElbow !== null ? `${avgElbow.toFixed(1)}°` : '---');
+            safeText('realtimeSessionAvgTorso', avgTorso !== null ? `${avgTorso.toFixed(1)}°` : '---');
+            safeText('realtimeSessionLastSaved', formatRecordDate(latest));
+            safeText('realtimeSessionHint', `直近 #${latest.id} / ${latest.shortLabel || '記録済み'}。練習後は「記録」で確認できます。`);
         }
 
         function analysisRecords() {
@@ -9000,6 +9090,9 @@
         }
 
         function saveRecord(timeMs, rawSyncDiffMs, _impactSignal, hasujiAngle, rightAng, torsoAng, _unusedAudioVolume, trajectorySway, _unusedFootRatio, metrics = {}) {
+            const recordNow = performance.now();
+            if (recordNow - (AppState.lastRealtimeRecordAt || 0) < Params.realtimeRecordCooldownMs) return;
+            AppState.lastRealtimeRecordAt = recordNow;
             let comment = "", shortLabel = "";
             const hasujiAbs = Math.abs(Number(hasujiAngle || 0));
             
@@ -9094,6 +9187,7 @@
             
             updateHistoryTable();
             updateDetailsTab();
+            updateRealtimePracticeSummary();
             prepareReplay();
             
             AppState.zanshinBroken = false;
@@ -9236,6 +9330,7 @@
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
+            updateRealtimePracticeSummary();
             showToast('履歴を1件削除しました', 'blue');
         }
 
@@ -10329,6 +10424,7 @@
 	                safeText('latestFrameMode', latest.frameSyncMode || '---');
 	                updateDetailsTab();
 	                updateCharts();
+                    updateRealtimePracticeSummary();
 	            }
         }
 
@@ -14981,6 +15077,7 @@
                 });
                 updateCharts();
                 updateDetailsTab();
+                updateRealtimePracticeSummary();
                 showToast('履歴をクリアしました', 'blue');
             }
         }
@@ -16146,6 +16243,7 @@
         }
         updateHistoryTable();
         updateDetailsTab();
+        updateRealtimePracticeSummary();
         applyCalibrationInputs();
         ensureVideoSideDrawer();
         checkLaunchEnvironment();
@@ -16165,7 +16263,7 @@
                 AppState.practiceFocus = false;
                 document.body.classList.remove('practice-focus');
                 const btn = document.getElementById('practiceFocusBtn');
-                if (btn) btn.innerText = '練習画面最大化';
+                if (btn) btn.innerText = '大きく表示';
             }
             if (AppState.videoAnalysis?.frames?.length) {
                 const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
