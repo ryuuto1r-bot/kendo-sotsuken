@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v153';
+            var version = 'v154';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -4152,6 +4152,58 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-xl shadow-sm border p-4 mt-6">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-cloud-arrow-up text-sky-500 mr-2"></i>Firebaseクラウド同期</h3>
+                    <p class="text-sm text-slate-600 mt-1">分析結果の数値だけをFirestoreへ保存します。動画ファイル本体は送信しません。</p>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span id="firebaseStatusBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-black">未接続</span>
+                    <span id="firebaseProjectBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-black">project: ---</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
+                <div>
+                    <label for="firebaseConfigInput" class="block text-xs font-black text-slate-500 mb-2">Firebase設定JSON</label>
+                    <textarea id="firebaseConfigInput" class="w-full min-h-[160px] rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-200" placeholder='Firebase Console の Webアプリ設定を貼ります。例: {"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <button id="firebaseConnectBtn" type="button" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug mr-1"></i>保存して接続</button>
+                        <button id="firebaseSyncAllBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>ローカル全件を同期</button>
+                        <button id="firebasePullBtn" type="button" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>クラウドから取り込み</button>
+                        <button id="firebaseClearConfigBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-eraser mr-1"></i>設定を消す</button>
+                    </div>
+                    <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+                        <input id="firebaseAutoSyncToggle" type="checkbox" class="rounded border-slate-300">
+                        保存時に自動でFirebaseへ同期
+                    </label>
+                    <p id="firebaseStatusText" class="mt-3 text-xs text-slate-500">未接続です。Firebase Consoleで匿名認証とFirestoreを有効にしてから接続してください。</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-slate-50 border rounded-lg p-3"><span class="text-slate-500 font-bold">UID</span><div id="firebaseUidLabel" class="mt-1 font-black text-slate-900 break-all">---</div></div>
+                    <div class="bg-slate-50 border rounded-lg p-3"><span class="text-slate-500 font-bold">最終同期</span><div id="firebaseLastSyncLabel" class="mt-1 font-black text-slate-900">---</div></div>
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3"><span class="text-blue-700 font-bold">クラウド目安</span><div id="firebaseRealtimeCloudCount" class="mt-1 font-black text-blue-800 font-mono-num">---</div></div>
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3"><span class="text-emerald-700 font-bold">クラウド正式</span><div id="firebaseFormalCloudCount" class="mt-1 font-black text-emerald-800 font-mono-num">---</div></div>
+                    <details class="col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <summary class="cursor-pointer font-black text-slate-700">Firestoreルール例</summary>
+                        <pre class="mt-3 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-700">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/realtimeRecords/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/videoRecords/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}</pre>
+                    </details>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="tab-video" class="tab-content">
@@ -4353,7 +4405,7 @@
                                     ('serviceWorker' in navigator ? navigator.serviceWorker.getRegistrations().then(function(registrations){ return Promise.all(registrations.map(function(registration){ return registration.unregister(); })); }) : Promise.resolve()),
                                     ('caches' in window ? caches.keys().then(function(keys){ return Promise.all(keys.filter(function(name){ return name.indexOf('kendo-virtual-coach') === 0; }).map(function(name){ return caches.delete(name); })); }) : Promise.resolve())
                                 ]).finally(function(){
-                                    location.href = location.pathname + '?ui-v153-reset=' + Date.now();
+                                    location.href = location.pathname + '?ui-v154-reset=' + Date.now();
                                 });
                             });
                         }
@@ -5823,7 +5875,17 @@
             lastRuntimePoseErrorAt: 0,
             videoStream: null,
             scanCanvas: null,
-            scanCtx: null
+            scanCtx: null,
+            firebaseModules: null,
+            firebaseApp: null,
+            firebaseAuth: null,
+            firebaseDb: null,
+            firebaseUser: null,
+            firebaseConfig: null,
+            firebaseReady: false,
+            firebaseAutoSync: false,
+            firebaseSyncing: false,
+            firebaseLastSyncAt: ''
         };
 
         const Params = {
@@ -5910,7 +5972,11 @@
             document.getElementById(`tabBtn-${tab}`).classList.remove('text-slate-300');
             document.getElementById(`tabBtn-${tab}`).classList.add('bg-slate-800','text-white');
             if(tab==='analysis') updateCharts();
-            if(tab==='data') updateDataCenter();
+            if(tab==='data') {
+                updateDataCenter();
+                updateFirebaseConfigUi();
+                refreshFirebaseCloudCounts();
+            }
             if(tab==='video') updateVideoAnalysisLabels();
             if(tab==='details') updateDetailsTab();
             if(tab==='model') updateModelAnalysisTab();
@@ -6173,7 +6239,7 @@
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
             if (location.hostname.endsWith('github.io')) return;
-            const refreshKey = 'kendo-sw-refreshed-v153';
+            const refreshKey = 'kendo-sw-refreshed-v154';
             let refreshedByServiceWorker = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshedByServiceWorker || sessionStorage.getItem(refreshKey) === '1') return;
@@ -6889,6 +6955,344 @@
             URL.revokeObjectURL(link.href);
             link.remove();
             showToast(`${normalized === 'formal' ? '動画測定' : 'リアルタイム分析'}データをCSV出力しました`, 'green');
+        }
+
+        function updateFirebaseStatus(status = '未接続', detail = '') {
+            const ready = !!AppState.firebaseReady;
+            const badge = document.getElementById('firebaseStatusBadge');
+            if (badge) {
+                badge.textContent = status;
+                badge.className = ready
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full font-black'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-black';
+            }
+            safeText('firebaseStatusText', detail || (ready ? 'Firebaseへ接続済みです。保存した分析結果をクラウドへ同期できます。' : '未接続です。Firebase設定JSONを貼って接続してください。'));
+            safeText('firebaseUidLabel', AppState.firebaseUser?.uid || '---');
+            safeText('firebaseLastSyncLabel', AppState.firebaseLastSyncAt ? formatRecordDate({ recordedAt: AppState.firebaseLastSyncAt }) : '---');
+            safeText('firebaseProjectBadge', `project: ${AppState.firebaseConfig?.projectId || '---'}`);
+        }
+
+        function parseFirebaseConfigText(text) {
+            let value = String(text || '').trim();
+            if (!value) throw new Error('Firebase設定JSONが空です');
+            if (value.includes('firebaseConfig')) {
+                const start = value.indexOf('{');
+                const end = value.lastIndexOf('}');
+                if (start >= 0 && end > start) value = value.slice(start, end + 1);
+            }
+            try {
+                return JSON.parse(value);
+            } catch (_) {
+                const normalized = value
+                    .replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":')
+                    .replace(/'/g, '"')
+                    .replace(/,\s*}/g, '}');
+                return JSON.parse(normalized);
+            }
+        }
+
+        function validateFirebaseConfig(config) {
+            if (!config || typeof config !== 'object') throw new Error('Firebase設定を読み取れません');
+            ['apiKey', 'authDomain', 'projectId', 'appId'].forEach(key => {
+                if (!config[key]) throw new Error(`${key} が不足しています`);
+            });
+            return config;
+        }
+
+        async function loadFirebaseModules() {
+            if (AppState.firebaseModules) return AppState.firebaseModules;
+            const version = '12.14.0';
+            const [appMod, authMod, firestoreMod] = await Promise.all([
+                import(`https://www.gstatic.com/firebasejs/${version}/firebase-app.js`),
+                import(`https://www.gstatic.com/firebasejs/${version}/firebase-auth.js`),
+                import(`https://www.gstatic.com/firebasejs/${version}/firebase-firestore.js`)
+            ]);
+            AppState.firebaseModules = { ...appMod, ...authMod, ...firestoreMod };
+            return AppState.firebaseModules;
+        }
+
+        async function connectFirebase(config, options = {}) {
+            const modules = await loadFirebaseModules();
+            const firebaseConfig = validateFirebaseConfig(config);
+            AppState.firebaseConfig = firebaseConfig;
+            updateFirebaseStatus('接続中', 'Firebaseへ接続しています...');
+            const existing = modules.getApps().find(app => app.name === 'kendoDataCenter');
+            const app = existing || modules.initializeApp(firebaseConfig, 'kendoDataCenter');
+            const auth = modules.getAuth(app);
+            const db = modules.getFirestore(app);
+            const credential = auth.currentUser ? { user: auth.currentUser } : await modules.signInAnonymously(auth);
+            AppState.firebaseApp = app;
+            AppState.firebaseAuth = auth;
+            AppState.firebaseDb = db;
+            AppState.firebaseUser = credential.user || auth.currentUser;
+            AppState.firebaseReady = !!AppState.firebaseUser;
+            safeStorageSet('kendoFirebaseConfig', JSON.stringify(firebaseConfig));
+            updateFirebaseConfigUi();
+            updateFirebaseStatus('接続済み', `匿名UID ${AppState.firebaseUser.uid} で接続しました。`);
+            await refreshFirebaseCloudCounts();
+            if (!options.silent) showToast('Firebaseに接続しました', 'green');
+            return true;
+        }
+
+        async function connectFirebaseFromUi() {
+            try {
+                const text = document.getElementById('firebaseConfigInput')?.value || '';
+                await connectFirebase(parseFirebaseConfigText(text));
+            } catch (err) {
+                console.error('Firebase接続エラー', err);
+                AppState.firebaseReady = false;
+                updateFirebaseStatus('接続失敗', `Firebase接続に失敗しました: ${err.message || err}`);
+                showToast('Firebase接続に失敗しました', 'red');
+            }
+        }
+
+        function updateFirebaseConfigUi() {
+            const input = document.getElementById('firebaseConfigInput');
+            const saved = safeStorageGet('kendoFirebaseConfig');
+            if (input && saved && !input.value.trim()) input.value = saved;
+            const toggle = document.getElementById('firebaseAutoSyncToggle');
+            if (toggle) toggle.checked = !!AppState.firebaseAutoSync;
+            updateFirebaseStatus(AppState.firebaseReady ? '接続済み' : '未接続');
+        }
+
+        function setFirebaseAutoSync(enabled) {
+            AppState.firebaseAutoSync = !!enabled;
+            safeStorageSet('kendoFirebaseAutoSync', AppState.firebaseAutoSync ? '1' : '0');
+            const toggle = document.getElementById('firebaseAutoSyncToggle');
+            if (toggle && toggle.checked !== AppState.firebaseAutoSync) toggle.checked = AppState.firebaseAutoSync;
+            updateFirebaseStatus(AppState.firebaseReady ? '接続済み' : '未接続', AppState.firebaseAutoSync ? '自動同期ON。保存時にFirestoreへ同期します。' : '自動同期OFF。必要な時だけ手動同期します。');
+        }
+
+        function firebaseCollectionName(record) {
+            return recordTypeOf(record) === 'formal' ? 'videoRecords' : 'realtimeRecords';
+        }
+
+        function firebaseDocIdForRecord(record) {
+            if (record.firebaseDocId) return record.firebaseDocId;
+            const type = recordTypeOf(record);
+            const date = String(record.recordedAt || '').replace(/[^\dA-Za-z_-]/g, '').slice(0, 40) || String(Date.now());
+            return `${type}-${record.id}-${date}`;
+        }
+
+        function toFiniteOrNull(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function cloudRecordPayload(record) {
+            const normalized = normalizeRecordMeta(record);
+            return {
+                appVersion: 'v154',
+                recordId: String(normalized.id),
+                recordType: recordTypeOf(normalized),
+                source: normalized.source || '',
+                recordedAt: normalized.recordedAt || new Date().toISOString(),
+                timeMs: toFiniteOrNull(normalized.timeMs),
+                officialPeakOffsetMs: recordPeakOffsetMs(normalized, 'official'),
+                wristPeakOffsetMs: recordPeakOffsetMs(normalized, 'wrist'),
+                tipPeakOffsetMs: recordPeakOffsetMs(normalized, 'tip'),
+                tapePeakOffsetMs: recordPeakOffsetMs(normalized, 'tape'),
+                rightAng: toFiniteOrNull(normalized.rightAng),
+                leftAng: toFiniteOrNull(normalized.leftAng),
+                torsoAng: toFiniteOrNull(normalized.torsoAng),
+                hasujiAngle: toFiniteOrNull(normalized.hasujiAngle),
+                shoulderLineAng: toFiniteOrNull(normalized.shoulderLineAng),
+                avgVisibility: toFiniteOrNull(normalized.avgVisibility),
+                angleQuality: toFiniteOrNull(normalized.angleQuality),
+                analysisFps: toFiniteOrNull(normalized.analysisFps),
+                videoFpsEstimate: toFiniteOrNull(normalized.videoFpsEstimate),
+                slowMotionFactor: toFiniteOrNull(normalized.slowMotionFactor),
+                startFrameIndex: normalized.startFrameIndex ?? null,
+                peakFrameIndex: normalized.peakFrameIndex ?? null,
+                endFrameIndex: normalized.endFrameIndex ?? null,
+                startTimeMs: toFiniteOrNull(normalized.startTimeMs),
+                peakTimeMs: toFiniteOrNull(normalized.peakTimeMs),
+                endTimeMs: toFiniteOrNull(normalized.endTimeMs),
+                frameSyncMode: normalized.frameSyncMode || '',
+                poseEngine: normalized.poseEngine || '',
+                measurementMethod: normalized.measurementMethod || '',
+                shortLabel: normalized.shortLabel || '',
+                memo: normalized.memo || '',
+                timingDefinition: normalized.timingDefinition || '',
+                savedFrom: location.hostname || 'local',
+                localUpdatedAt: new Date().toISOString()
+            };
+        }
+
+        async function ensureFirebaseReady() {
+            if (AppState.firebaseReady && AppState.firebaseDb && AppState.firebaseUser) return true;
+            const saved = safeStorageGet('kendoFirebaseConfig');
+            if (!saved) throw new Error('Firebase設定が未保存です');
+            await connectFirebase(JSON.parse(saved), { silent: true });
+            return true;
+        }
+
+        async function syncRecordToFirebase(record, options = {}) {
+            if (!record || (!AppState.firebaseAutoSync && !options.force)) return false;
+            try {
+                await ensureFirebaseReady();
+                const modules = await loadFirebaseModules();
+                const docId = firebaseDocIdForRecord(record);
+                const collectionName = firebaseCollectionName(record);
+                const ref = modules.doc(AppState.firebaseDb, 'users', AppState.firebaseUser.uid, collectionName, docId);
+                await modules.setDoc(ref, { ...cloudRecordPayload(record), firebaseDocId: docId, updatedAt: modules.serverTimestamp() }, { merge: true });
+                record.firebaseDocId = docId;
+                record.firebaseSyncedAt = new Date().toISOString();
+                AppState.firebaseLastSyncAt = record.firebaseSyncedAt;
+                persistRecords();
+                updateFirebaseStatus('同期済み', `#${record.id} を ${collectionName} に同期しました。`);
+                if (!options.silent) showToast('Firebaseへ同期しました', 'green');
+                return true;
+            } catch (err) {
+                console.warn('Firebase同期エラー', err);
+                updateFirebaseStatus('同期失敗', `Firebase同期に失敗しました: ${err.message || err}`);
+                if (!options.silent) showToast('Firebase同期に失敗しました', 'yellow');
+                return false;
+            }
+        }
+
+        async function syncAllRecordsToFirebase() {
+            if (!(AppState.records || []).length) return showToast('同期するデータがありません', 'yellow');
+            try {
+                await ensureFirebaseReady();
+                AppState.firebaseSyncing = true;
+                updateFirebaseStatus('同期中', 'ローカル記録をFirebaseへ同期しています...');
+                let count = 0;
+                for (const record of AppState.records) {
+                    const ok = await syncRecordToFirebase(record, { force: true, silent: true });
+                    if (ok) count++;
+                }
+                AppState.firebaseLastSyncAt = new Date().toISOString();
+                updateFirebaseStatus('同期済み', `${count}件をFirestoreへ同期しました。`);
+                await refreshFirebaseCloudCounts();
+                showToast(`${count}件をFirebaseへ同期しました`, 'green');
+            } catch (err) {
+                console.error('Firebase全件同期エラー', err);
+                updateFirebaseStatus('同期失敗', `全件同期に失敗しました: ${err.message || err}`);
+                showToast('Firebase全件同期に失敗しました', 'red');
+            } finally {
+                AppState.firebaseSyncing = false;
+            }
+        }
+
+        function cloudPayloadToLocalRecord(payload, fallbackType) {
+            const type = payload.recordType === 'formal' || payload.recordType === 'realtime' ? payload.recordType : fallbackType;
+            return normalizeRecordMeta({
+                id: AppState.records.length + 1,
+                recordType: type,
+                source: payload.source || (type === 'formal' ? 'firebase-video' : 'firebase-realtime'),
+                recordedAt: payload.recordedAt || new Date().toISOString(),
+                timeMs: payload.timeMs ?? '',
+                officialPeakOffsetMs: payload.officialPeakOffsetMs,
+                wristPeakOffsetMs: payload.wristPeakOffsetMs,
+                tipPeakOffsetMs: payload.tipPeakOffsetMs,
+                tapePeakOffsetMs: payload.tapePeakOffsetMs,
+                rightAng: payload.rightAng ?? '',
+                leftAng: payload.leftAng ?? '',
+                torsoAng: payload.torsoAng ?? '',
+                hasujiAngle: payload.hasujiAngle ?? '',
+                shoulderLineAng: payload.shoulderLineAng ?? '',
+                avgVisibility: payload.avgVisibility ?? '',
+                angleQuality: payload.angleQuality ?? '',
+                analysisFps: payload.analysisFps ?? '',
+                videoFpsEstimate: payload.videoFpsEstimate ?? '',
+                slowMotionFactor: payload.slowMotionFactor ?? '',
+                startFrameIndex: payload.startFrameIndex ?? '',
+                peakFrameIndex: payload.peakFrameIndex ?? '',
+                endFrameIndex: payload.endFrameIndex ?? '',
+                startTimeMs: payload.startTimeMs ?? '',
+                peakTimeMs: payload.peakTimeMs ?? '',
+                endTimeMs: payload.endTimeMs ?? '',
+                frameSyncMode: payload.frameSyncMode || (type === 'formal' ? '動画解析' : 'リアルタイム'),
+                poseEngine: payload.poseEngine || '',
+                measurementMethod: payload.measurementMethod || '',
+                shortLabel: payload.shortLabel || 'クラウド取込',
+                memo: payload.memo || '',
+                timingDefinition: payload.timingDefinition || '',
+                firebaseDocId: payload.firebaseDocId || '',
+                firebaseSyncedAt: new Date().toISOString(),
+                cloudRecordKey: `${type}:${payload.recordId || payload.firebaseDocId || payload.recordedAt}`
+            });
+        }
+
+        async function pullFirebaseRecords() {
+            try {
+                await ensureFirebaseReady();
+                const modules = await loadFirebaseModules();
+                const collections = [
+                    { name: 'realtimeRecords', type: 'realtime' },
+                    { name: 'videoRecords', type: 'formal' }
+                ];
+                let imported = 0;
+                const existingKeys = new Set((AppState.records || []).map(record => `${recordTypeOf(record)}:${record.recordedAt}:${record.timeMs}`));
+                for (const item of collections) {
+                    const ref = modules.collection(AppState.firebaseDb, 'users', AppState.firebaseUser.uid, item.name);
+                    const snap = await modules.getDocs(ref);
+                    snap.forEach(docSnap => {
+                        const data = { ...docSnap.data(), firebaseDocId: docSnap.id };
+                        const key = `${data.recordType || item.type}:${data.recordedAt}:${data.timeMs}`;
+                        if (existingKeys.has(key)) return;
+                        AppState.records.push(cloudPayloadToLocalRecord(data, item.type));
+                        existingKeys.add(key);
+                        imported++;
+                    });
+                }
+                persistRecords();
+                updateHistoryTable();
+                updateDetailsTab();
+                updateCharts();
+                updateRealtimePracticeSummary();
+                updateDataCenter();
+                await refreshFirebaseCloudCounts();
+                updateFirebaseStatus('取込完了', `${imported}件をクラウドから取り込みました。`);
+                showToast(`${imported}件をクラウドから取り込みました`, 'green');
+            } catch (err) {
+                console.error('Firebase取込エラー', err);
+                updateFirebaseStatus('取込失敗', `クラウド取込に失敗しました: ${err.message || err}`);
+                showToast('クラウド取込に失敗しました', 'red');
+            }
+        }
+
+        async function refreshFirebaseCloudCounts() {
+            if (!AppState.firebaseReady || !AppState.firebaseDb || !AppState.firebaseUser) {
+                safeText('firebaseRealtimeCloudCount', '---');
+                safeText('firebaseFormalCloudCount', '---');
+                return;
+            }
+            try {
+                const modules = await loadFirebaseModules();
+                const realtimeSnap = await modules.getDocs(modules.collection(AppState.firebaseDb, 'users', AppState.firebaseUser.uid, 'realtimeRecords'));
+                const formalSnap = await modules.getDocs(modules.collection(AppState.firebaseDb, 'users', AppState.firebaseUser.uid, 'videoRecords'));
+                safeText('firebaseRealtimeCloudCount', `${realtimeSnap.size}件`);
+                safeText('firebaseFormalCloudCount', `${formalSnap.size}件`);
+            } catch (err) {
+                console.warn('Firebase件数取得エラー', err);
+            }
+        }
+
+        async function deleteFirebaseRecord(record) {
+            if (!record || !AppState.firebaseReady || !AppState.firebaseDb || !AppState.firebaseUser) return;
+            try {
+                const modules = await loadFirebaseModules();
+                const docId = firebaseDocIdForRecord(record);
+                const ref = modules.doc(AppState.firebaseDb, 'users', AppState.firebaseUser.uid, firebaseCollectionName(record), docId);
+                await modules.deleteDoc(ref);
+                await refreshFirebaseCloudCounts();
+            } catch (err) {
+                console.warn('Firebase削除エラー', err);
+            }
+        }
+
+        function clearFirebaseConfig() {
+            safeStorageRemove('kendoFirebaseConfig');
+            safeStorageRemove('kendoFirebaseAutoSync');
+            AppState.firebaseConfig = null;
+            AppState.firebaseReady = false;
+            AppState.firebaseAutoSync = false;
+            const input = document.getElementById('firebaseConfigInput');
+            if (input) input.value = '';
+            updateFirebaseConfigUi();
+            showToast('Firebase設定を削除しました', 'blue');
         }
 
         function persistRecords() {
@@ -9467,6 +9871,7 @@
             AppState.records.push(record);
             setRecordFilterMode('realtime', { skipUpdate: true });
             persistRecords();
+            if (AppState.firebaseAutoSync) syncRecordToFirebase(record, { silent: true });
             
             document.getElementById('latestTime').innerText = timeMs + ' ms';
             document.getElementById('latestSync').innerText = '---';
@@ -9629,6 +10034,7 @@
             if (!confirm(`#${record.id} の履歴を削除しますか？`)) return;
             AppState.records = AppState.records.filter(item => String(item.id) !== String(id));
             persistRecords();
+            deleteFirebaseRecord(record);
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
@@ -15166,6 +15572,7 @@
             data.savedRecordId = record.id;
             setRecordFilterMode('formal', { skipUpdate: true });
             persistRecords();
+            if (AppState.firebaseAutoSync) syncRecordToFirebase(record, { silent: true });
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
@@ -15267,6 +15674,7 @@
             if (!record) return;
             setRecordFilterMode('formal', { skipUpdate: true });
             persistRecords();
+            if (AppState.firebaseAutoSync) syncRecordToFirebase(record, { silent: true });
             updateHistoryTable();
             updateDetailsTab();
             updateCharts();
@@ -16325,6 +16733,26 @@
             setRecordFilterMode(e.target.value || 'formal');
         });
 
+        const firebaseConnectBtn = document.getElementById('firebaseConnectBtn');
+        if (firebaseConnectBtn) firebaseConnectBtn.addEventListener('click', connectFirebaseFromUi);
+        const firebaseSyncAllBtn = document.getElementById('firebaseSyncAllBtn');
+        if (firebaseSyncAllBtn) firebaseSyncAllBtn.addEventListener('click', syncAllRecordsToFirebase);
+        const firebasePullBtn = document.getElementById('firebasePullBtn');
+        if (firebasePullBtn) firebasePullBtn.addEventListener('click', pullFirebaseRecords);
+        const firebaseClearConfigBtn = document.getElementById('firebaseClearConfigBtn');
+        if (firebaseClearConfigBtn) firebaseClearConfigBtn.addEventListener('click', clearFirebaseConfig);
+        const firebaseAutoSyncToggle = document.getElementById('firebaseAutoSyncToggle');
+        if (firebaseAutoSyncToggle) firebaseAutoSyncToggle.addEventListener('change', async e => {
+            setFirebaseAutoSync(e.target.checked);
+            if (AppState.firebaseAutoSync && !AppState.firebaseReady && safeStorageGet('kendoFirebaseConfig')) {
+                try {
+                    await connectFirebase(JSON.parse(safeStorageGet('kendoFirebaseConfig')), { silent: true });
+                } catch (err) {
+                    updateFirebaseStatus('接続失敗', `自動同期を有効化しましたが、接続に失敗しました: ${err.message || err}`);
+                }
+            }
+        });
+
         const cameraDeviceSelect = document.getElementById('cameraDeviceSelect');
         if (cameraDeviceSelect) cameraDeviceSelect.addEventListener('change', async e => {
             AppState.selectedCameraId = e.target.value;
@@ -16548,6 +16976,19 @@
                 AppState.records = [];
             }
         }
+        AppState.firebaseAutoSync = safeStorageGet('kendoFirebaseAutoSync') === '1';
+        updateFirebaseConfigUi();
+        const savedFirebaseConfig = safeStorageGet('kendoFirebaseConfig');
+        if (savedFirebaseConfig && AppState.firebaseAutoSync) {
+            try {
+                connectFirebase(JSON.parse(savedFirebaseConfig), { silent: true }).catch(err => {
+                    console.warn('Firebase自動接続に失敗しました', err);
+                    updateFirebaseStatus('接続失敗', `Firebase自動接続に失敗しました: ${err.message || err}`);
+                });
+            } catch (err) {
+                updateFirebaseStatus('設定エラー', '保存済みFirebase設定を読み取れません。設定を貼り直してください。');
+            }
+        }
         updateHistoryTable();
         updateDetailsTab();
         updateRealtimePracticeSummary();
@@ -16599,6 +17040,8 @@
                     persistRecords();
                     updateHistoryTable();
                     updateDetailsTab();
+                    updateRealtimePracticeSummary();
+                    updateDataCenter();
                     return true;
                 },
                 snapshot() {
