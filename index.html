@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v154';
+            var version = 'v155';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -34,6 +34,7 @@
     <script defer src="./vendor/tailwind/tailwindcss.js"></script>
     <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css">
     <script defer src="./vendor/chartjs/chart.umd.js"></script>
+    <script defer src="./vendor/exceljs/exceljs.min.js"></script>
     <script async src="./vendor/mediapipe/camera_utils/camera_utils.js"></script>
     <script async src="./vendor/mediapipe/control_utils/control_utils.js"></script>
     <script async src="./vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
@@ -194,6 +195,70 @@
         @media (max-width: 768px) {
             .data-center-panel-header { flex-direction: column; }
             .data-center-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .research-data-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+        .research-data-field label {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 900;
+        }
+        .research-data-field input,
+        .research-data-field select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.65rem;
+            background: #fff;
+            padding: 0.55rem 0.7rem;
+            color: #0f172a;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .research-chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+        .research-chart-card {
+            min-width: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.9rem;
+            background: #fff;
+            padding: 0.9rem;
+        }
+        .research-chart-card h4 {
+            margin-bottom: 0.5rem;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 1000;
+        }
+        .research-chart-canvas {
+            position: relative;
+            width: 100%;
+            height: 250px;
+        }
+        .research-excel-status {
+            border: 1px solid #dbeafe;
+            border-radius: 0.8rem;
+            background: #eff6ff;
+            padding: 0.75rem;
+            color: #1e3a8a;
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+        @media (max-width: 1024px) {
+            .research-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 720px) {
+            .research-data-grid,
+            .research-chart-grid { grid-template-columns: 1fr; }
+            .research-chart-canvas { height: 220px; }
         }
         .settings-advanced {
             border: 1px solid #e2e8f0;
@@ -3758,12 +3823,12 @@
             <div class="flex items-center gap-4">
                 <i class="fa-solid fa-helmet-battle text-blue-400 text-2xl"></i>
                 <span class="font-bold text-xl tracking-tight hidden sm:block">Kendo Virtual Coach</span>
-                
+
                 <!-- 【★追加】左右反転ボタン -->
                 <button id="flipCameraBtn" class="ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600">
                     <i class="fa-solid fa-right-left"></i> 左右反転: OFF
                 </button>
-                
+
                 <button id="audioToggleBtn" class="hidden ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs items-center gap-2 transition border border-slate-600">
                     <i class="fa-solid fa-volume-xmark" id="audioIcon"></i> 音声OFF
                 </button>
@@ -3841,7 +3906,7 @@
                 <div class="relative bg-black rounded-xl overflow-hidden shadow-xl border border-slate-700 aspect-video" id="videoContainer">
                     <video id="videoElement" class="absolute inset-0 w-full h-full object-contain bg-black z-0" autoplay="" playsinline="" muted="" style="transform-origin: center center;"></video>
                     <canvas id="outputCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></canvas>
-                    
+
                     <div id="flashOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
 
                     <div id="startOverlay" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
@@ -4137,6 +4202,70 @@
                 </div>
             </section>
         </div>
+
+        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-flask text-indigo-500 mr-2"></i>研究条件</h3>
+                    <p class="text-xs text-slate-500 mt-1">ここで指定した条件を、これから保存する測定データへ自動で付けます。個人名は入力せず匿名IDを使用してください。</p>
+                </div>
+                <span id="researchProfileStatus" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black">未設定</span>
+            </div>
+            <div class="research-data-grid">
+                <div class="research-data-field"><label for="researchParticipantId">被験者ID</label><input id="researchParticipantId" type="text" maxlength="32" placeholder="例: P001"></div>
+                <div class="research-data-field"><label for="researchSessionId">セッションID</label><input id="researchSessionId" type="text" maxlength="32" placeholder="例: 2026-06-18-A"></div>
+                <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="小手">小手</option><option value="胴">胴</option><option value="突き">突き</option><option value="素振り">素振り</option></select></div>
+                <div class="research-data-field"><label for="researchExperienceYears">経験年数</label><input id="researchExperienceYears" type="number" min="0" max="80" step="0.5" placeholder="例: 8"></div>
+                <div class="research-data-field"><label for="researchGrade">段級位</label><input id="researchGrade" type="text" maxlength="20" placeholder="例: 二段"></div>
+                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="正面">正面</option><option value="斜め前">斜め前</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
+                <div class="research-data-field"><label for="researchCameraDistance">カメラ距離 (m)</label><input id="researchCameraDistance" type="number" min="0.5" max="10" step="0.1" value="2.5"></div>
+                <div class="research-data-field"><label for="researchDeviceLabel">撮影端末</label><input id="researchDeviceLabel" type="text" maxlength="50" placeholder="例: iPhone 16 / MacBook"></div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>研究用自動集計</h3>
+                    <p class="text-xs text-slate-500 mt-1">採用基準を通過したデータから分布を自動更新します。記録を保存するたびに再集計されます。</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full font-black">採用 <b id="researchAcceptedCount">0</b>件</span>
+                    <span class="bg-red-50 text-red-700 border border-red-100 px-3 py-1 rounded-full font-black">除外 <b id="researchRejectedCount">0</b>件</span>
+                </div>
+            </div>
+            <div class="research-chart-grid">
+                <div class="research-chart-card"><h4>打突時間の分布</h4><div class="research-chart-canvas"><canvas id="researchDurationHistogram"></canvas></div></div>
+                <div class="research-chart-card"><h4>右肘・体幹・推定刃筋角の分布</h4><div class="research-chart-canvas"><canvas id="researchAngleDistribution"></canvas></div></div>
+                <div class="research-chart-card"><h4>開始・最高速・終了時の角度</h4><div class="research-chart-canvas"><canvas id="researchPhaseAngles"></canvas></div></div>
+                <div class="research-chart-card"><h4>打突時間と右肘角</h4><div class="research-chart-canvas"><canvas id="researchDurationScatter"></canvas></div></div>
+                <div class="research-chart-card"><h4>自動判定と手動補正の差</h4><div class="research-chart-canvas"><canvas id="researchCorrectionHistogram"></canvas></div></div>
+                <div class="research-chart-card"><h4>被験者・撮影日・セッション別の箱ひげ図</h4><div class="research-chart-canvas"><canvas id="researchSessionBoxplot"></canvas></div></div>
+                <div class="research-chart-card xl:col-span-2"><h4>リアルタイム分析と動画解析の比較</h4><div class="research-chart-canvas"><canvas id="researchSourceComparison"></canvas></div></div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>研究用Excel</h3>
+                    <p class="text-xs text-slate-500 mt-1">全測定・採用・除外・集計・補正比較・グラフの6シートを、現在までの全データから作成します。</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="researchExcelDownloadBtn" type="button" onclick="exportResearchExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>最新版Excelを出力</button>
+                    <button id="researchExcelBindBtn" type="button" onclick="connectResearchExcelFile()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-link mr-1"></i>同じExcelへ自動更新</button>
+                    <button id="researchExcelUpdateBtn" type="button" onclick="updateConnectedResearchExcel()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>今すぐ更新</button>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
+                <div id="researchExcelStatus" class="research-excel-status">測定データはデータセンターへ自動蓄積されます。Excelを出力すると、その時点までの全件が入ります。</div>
+                <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
+                    <input id="researchExcelAutoToggle" type="checkbox" class="rounded border-slate-300">
+                    記録保存時に接続Excelを更新
+                </label>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-500">同じExcelへの自動更新は、HTTPSで開いたデスクトップChrome/Edgeのみ対応します。iPhone・Safariではデータを内部とFirebaseへ蓄積し、「最新版Excelを出力」で一括保存します。</p>
+        </section>
 
         <div class="bg-white rounded-xl shadow-sm border p-4">
             <div class="flex flex-wrap items-start justify-between gap-3">
@@ -5885,7 +6014,14 @@ service cloud.firestore {
             firebaseReady: false,
             firebaseAutoSync: false,
             firebaseSyncing: false,
-            firebaseLastSyncAt: ''
+            firebaseLastSyncAt: '',
+            researchProfile: {},
+            researchCharts: {},
+            researchExcelHandle: null,
+            researchExcelAutoUpdate: false,
+            researchExcelUpdating: false,
+            researchExcelUpdateTimer: null,
+            researchLastExcelUpdatedAt: ''
         };
 
         const Params = {
@@ -5976,6 +6112,7 @@ service cloud.firestore {
                 updateDataCenter();
                 updateFirebaseConfigUi();
                 refreshFirebaseCloudCounts();
+                setTimeout(updateResearchDashboard, 80);
             }
             if(tab==='video') updateVideoAnalysisLabels();
             if(tab==='details') updateDetailsTab();
@@ -6903,6 +7040,9 @@ service cloud.firestore {
             safeText('dataAllRealtimeCount', `${realtime.length}本`);
             safeText('dataAllFormalCount', `${formal.length}本`);
             safeText('dataAllLatest', latest ? formatRecordDate(latest) : '---');
+            safeText('researchAcceptedCount', String(buildResearchDataset().accepted.length));
+            safeText('researchRejectedCount', String(buildResearchDataset().rejected.length));
+            if (document.body.dataset.activeTab === 'data') requestAnimationFrame(updateResearchDashboard);
         }
 
         function csvCell(value) {
@@ -6955,6 +7095,1223 @@ service cloud.firestore {
             URL.revokeObjectURL(link.href);
             link.remove();
             showToast(`${normalized === 'formal' ? '動画測定' : 'リアルタイム分析'}データをCSV出力しました`, 'green');
+        }
+
+        const RESEARCH_RULES = Object.freeze({
+            minDurationMs: 50,
+            maxDurationMs: 2000,
+            minConfidence: 0.45,
+            minRightElbowDeg: 20,
+            maxRightElbowDeg: 175
+        });
+
+        const RESEARCH_PROFILE_FIELDS = Object.freeze([
+            ['researchParticipantId', 'participantId'],
+            ['researchSessionId', 'sessionId'],
+            ['researchStrikeType', 'strikeType'],
+            ['researchExperienceYears', 'experienceYears'],
+            ['researchGrade', 'grade'],
+            ['researchCameraDirection', 'cameraDirection'],
+            ['researchCameraDistance', 'cameraDistanceMeters'],
+            ['researchDeviceLabel', 'deviceLabel']
+        ]);
+
+        function researchNumber(value) {
+            if (value === '' || value === null || value === undefined) return null;
+            const number = Number(value);
+            return Number.isFinite(number) ? number : null;
+        }
+
+        function researchMean(values) {
+            const list = values.map(researchNumber).filter(Number.isFinite);
+            return list.length ? list.reduce((sum, value) => sum + value, 0) / list.length : null;
+        }
+
+        function researchMedian(values) {
+            const list = values.map(researchNumber).filter(Number.isFinite).sort((a, b) => a - b);
+            if (!list.length) return null;
+            const middle = Math.floor(list.length / 2);
+            return list.length % 2 ? list[middle] : (list[middle - 1] + list[middle]) / 2;
+        }
+
+        function researchQuantile(values, quantile) {
+            const list = values.map(researchNumber).filter(Number.isFinite).sort((a, b) => a - b);
+            if (!list.length) return null;
+            const position = (list.length - 1) * quantile;
+            const lower = Math.floor(position);
+            const rest = position - lower;
+            return list[lower + 1] !== undefined ? list[lower] + rest * (list[lower + 1] - list[lower]) : list[lower];
+        }
+
+        function researchStdDev(values) {
+            const list = values.map(researchNumber).filter(Number.isFinite);
+            if (list.length < 2) return null;
+            const mean = researchMean(list);
+            return Math.sqrt(list.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (list.length - 1));
+        }
+
+        function loadResearchProfile() {
+            const defaults = {
+                participantId: '',
+                sessionId: '',
+                strikeType: '面',
+                experienceYears: '',
+                grade: '',
+                cameraDirection: '正面',
+                cameraDistanceMeters: '2.5',
+                deviceLabel: ''
+            };
+            try {
+                return { ...defaults, ...JSON.parse(safeStorageGet('kendoResearchProfile') || '{}') };
+            } catch (_) {
+                return defaults;
+            }
+        }
+
+        function updateResearchProfileStatus() {
+            const profile = AppState.researchProfile || {};
+            const ready = !!(profile.participantId && profile.sessionId);
+            const badge = document.getElementById('researchProfileStatus');
+            if (!badge) return;
+            badge.textContent = ready ? profile.participantId + ' / ' + profile.sessionId : '被験者ID・セッションIDを設定';
+            badge.className = ready
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full text-xs font-black'
+                : 'bg-amber-50 text-amber-700 border border-amber-100 px-3 py-1 rounded-full text-xs font-black';
+        }
+
+        function applyResearchProfileToUi() {
+            const profile = AppState.researchProfile || loadResearchProfile();
+            RESEARCH_PROFILE_FIELDS.forEach(([id, key]) => {
+                const element = document.getElementById(id);
+                if (element) element.value = profile[key] ?? '';
+            });
+            updateResearchProfileStatus();
+        }
+
+        function saveResearchProfileFromUi() {
+            const profile = { ...(AppState.researchProfile || {}) };
+            RESEARCH_PROFILE_FIELDS.forEach(([id, key]) => {
+                const element = document.getElementById(id);
+                if (element) profile[key] = String(element.value || '').trim();
+            });
+            AppState.researchProfile = profile;
+            safeStorageSet('kendoResearchProfile', JSON.stringify(profile));
+            updateResearchProfileStatus();
+            return profile;
+        }
+
+        function researchRecordMetadata() {
+            const profile = saveResearchProfileFromUi();
+            return {
+                participantId: profile.participantId || '',
+                sessionId: profile.sessionId || '',
+                strikeType: profile.strikeType || '面',
+                experienceYears: researchNumber(profile.experienceYears),
+                grade: profile.grade || '',
+                cameraDirection: profile.cameraDirection || '',
+                cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
+                deviceLabel: profile.deviceLabel || '',
+                appVersion: 'v155',
+                researchCapturedAt: new Date().toISOString()
+            };
+        }
+
+        function researchAnglesFromLandmarks(landmarks) {
+            if (!landmarks?.length) return null;
+            const rightShoulder = landmarks[12];
+            const rightElbow = landmarks[14];
+            const rightWrist = landmarks[16];
+            const leftShoulder = landmarks[11];
+            const leftHip = landmarks[23];
+            const rightHip = landmarks[24];
+            if (!rightShoulder || !rightElbow || !rightWrist) return null;
+            const right = calculateJointAngle(rightShoulder, rightElbow, rightWrist);
+            let torso = null;
+            if (leftShoulder && rightShoulder && leftHip && rightHip) {
+                const shoulderMid = { x: (leftShoulder.x + rightShoulder.x) / 2, y: (leftShoulder.y + rightShoulder.y) / 2 };
+                const hipMid = { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 };
+                torso = axisTiltFromVertical(shoulderMid.x - hipMid.x, shoulderMid.y - hipMid.y);
+            }
+            const hasuji = Params.angleReference === 'torso'
+                ? calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks)
+                : calculateShinaiHasuji(landmarks);
+            return { rightElbow: right, torso, hasuji };
+        }
+
+        function researchAnglesFromFrame(frame) {
+            if (!frame) return null;
+            const fromLandmarks = researchAnglesFromLandmarks(frame.landmarks);
+            const rightElbow = researchNumber(frame.rightAng) ?? fromLandmarks?.rightElbow ?? null;
+            const torso = researchNumber(frame.torsoAng) ?? fromLandmarks?.torso ?? null;
+            const hasuji = researchNumber(frame.hasuji) ?? researchNumber(frame.hasujiAngle) ?? fromLandmarks?.hasuji ?? null;
+            if (![rightElbow, torso, hasuji].some(Number.isFinite)) return null;
+            return {
+                rightElbow,
+                torso: Number.isFinite(torso) ? Math.abs(torso) : null,
+                hasuji: Number.isFinite(hasuji) ? Math.abs(hasuji) : null
+            };
+        }
+
+        function researchNearestFrame(frames, targetTimeMs) {
+            if (!frames?.length) return null;
+            if (!Number.isFinite(Number(targetTimeMs))) return frames[0];
+            return frames.reduce((best, frame) => {
+                if (!best) return frame;
+                return Math.abs(Number(frame.timeMs || 0) - Number(targetTimeMs)) < Math.abs(Number(best.timeMs || 0) - Number(targetTimeMs)) ? frame : best;
+            }, null);
+        }
+
+        function buildResearchAngleMetric(series, startValue, endValue, durationMs) {
+            const points = series.filter(point => Number.isFinite(point.value));
+            const values = points.map(point => point.value);
+            let maxAngularVelocity = null;
+            for (let index = 1; index < points.length; index++) {
+                const dt = (points[index].timeMs - points[index - 1].timeMs) / 1000;
+                if (dt <= 0) continue;
+                const velocity = Math.abs(points[index].value - points[index - 1].value) / dt;
+                maxAngularVelocity = maxAngularVelocity === null ? velocity : Math.max(maxAngularVelocity, velocity);
+            }
+            const change = Number.isFinite(startValue) && Number.isFinite(endValue) ? endValue - startValue : null;
+            return {
+                min: values.length ? Math.min(...values) : null,
+                max: values.length ? Math.max(...values) : null,
+                change,
+                averageAngularVelocity: change !== null && durationMs > 0 ? change / (durationMs / 1000) : null,
+                maxAngularVelocity
+            };
+        }
+
+        function buildResearchAngleSummary(frames, startTimeMs, peakTimeMs, endTimeMs) {
+            if (!frames?.length) return null;
+            const startFrame = researchNearestFrame(frames, startTimeMs);
+            const peakFrame = researchNearestFrame(frames, peakTimeMs);
+            const endFrame = researchNearestFrame(frames, endTimeMs);
+            const start = researchAnglesFromFrame(startFrame);
+            const peak = researchAnglesFromFrame(peakFrame);
+            const end = researchAnglesFromFrame(endFrame);
+            if (!start && !peak && !end) return null;
+            const rangeStart = Number(startTimeMs || frames[0]?.timeMs || 0);
+            const rangeEnd = Number(endTimeMs || frames[frames.length - 1]?.timeMs || rangeStart);
+            const selected = frames
+                .filter(frame => Number(frame.timeMs || 0) >= rangeStart && Number(frame.timeMs || 0) <= rangeEnd)
+                .map(frame => ({ timeMs: Number(frame.timeMs || 0), values: researchAnglesFromFrame(frame) }))
+                .filter(point => point.values);
+            const durationMs = Math.max(0, rangeEnd - rangeStart);
+            const metric = key => buildResearchAngleMetric(
+                selected.map(point => ({ timeMs: point.timeMs, value: point.values[key] })),
+                start?.[key],
+                end?.[key],
+                durationMs
+            );
+            return {
+                start: start || {},
+                peak: peak || {},
+                end: end || {},
+                stats: {
+                    rightElbow: metric('rightElbow'),
+                    torso: metric('torso'),
+                    hasuji: metric('hasuji')
+                },
+                sampleCount: selected.length,
+                durationMs
+            };
+        }
+
+        function buildResearchCorrection(data) {
+            if (!data?.frames?.length) return null;
+            const autoStart = researchNumber(data.autoStartFrame);
+            const autoPeak = researchNumber(data.autoPeakFrame);
+            const autoEnd = researchNumber(data.autoEndFrame);
+            const correctedStart = researchNumber(data.startFrame);
+            const correctedPeak = researchNumber(data.peakFrame);
+            const correctedEnd = researchNumber(data.endFrame);
+            const frameTime = index => Number.isFinite(index) ? researchNumber(data.frames[index]?.timeMs) : null;
+            const autoDuration = Number.isFinite(autoStart) && Number.isFinite(autoEnd) ? frameTime(autoEnd) - frameTime(autoStart) : null;
+            const correctedDuration = Number.isFinite(correctedStart) && Number.isFinite(correctedEnd) ? frameTime(correctedEnd) - frameTime(correctedStart) : null;
+            return {
+                autoStartFrame: autoStart,
+                autoPeakFrame: autoPeak,
+                autoEndFrame: autoEnd,
+                correctedStartFrame: correctedStart,
+                correctedPeakFrame: correctedPeak,
+                correctedEndFrame: correctedEnd,
+                autoDurationMs: Number.isFinite(autoDuration) ? autoDuration : null,
+                correctedDurationMs: Number.isFinite(correctedDuration) ? correctedDuration : null,
+                startDiffFrames: Number.isFinite(autoStart) && Number.isFinite(correctedStart) ? correctedStart - autoStart : null,
+                endDiffFrames: Number.isFinite(autoEnd) && Number.isFinite(correctedEnd) ? correctedEnd - autoEnd : null,
+                durationDiffMs: Number.isFinite(autoDuration) && Number.isFinite(correctedDuration) ? correctedDuration - autoDuration : null,
+                wasCorrected: Number.isFinite(autoStart) && Number.isFinite(autoEnd)
+                    ? autoStart !== correctedStart || autoEnd !== correctedEnd
+                    : false,
+                confirmed: isVideoTimingConfirmed(data)
+            };
+        }
+
+        function researchValidateRecord(record) {
+            const reasons = [];
+            const duration = researchNumber(record?.timeMs);
+            const rightElbow = researchNumber(record?.rightAng);
+            const confidence = researchNumber(record?.avgVisibility);
+            if (!Number.isFinite(duration)) reasons.push('打突時間なし');
+            else if (duration < RESEARCH_RULES.minDurationMs) reasons.push('打突時間が短すぎる');
+            else if (duration > RESEARCH_RULES.maxDurationMs) reasons.push('打突時間が長すぎる');
+            if (!Number.isFinite(rightElbow)) reasons.push('右肘角なし');
+            else if (rightElbow <= RESEARCH_RULES.minRightElbowDeg || rightElbow >= RESEARCH_RULES.maxRightElbowDeg) reasons.push('右肘角が異常');
+            if (Number.isFinite(confidence) && confidence > 0 && confidence < RESEARCH_RULES.minConfidence) reasons.push('姿勢信頼度が低い');
+            if (recordTypeOf(record) === 'formal') {
+                const start = researchNumber(record.startFrameIndex);
+                const end = researchNumber(record.endFrameIndex);
+                if (Number.isFinite(start) && Number.isFinite(end) && end <= start) reasons.push('開始終了フレームが逆転');
+            }
+            return { accepted: reasons.length === 0, reasons };
+        }
+
+        function buildResearchDataset() {
+            const entries = (AppState.records || [])
+                .map(normalizeRecordMeta)
+                .map((record, index) => {
+                    const validation = researchValidateRecord(record);
+                    return { record, index, accepted: validation.accepted, reasons: [...validation.reasons] };
+                })
+                .sort((a, b) => new Date(a.record.recordedAt || 0) - new Date(b.record.recordedAt || 0));
+            let runStart = 0;
+            while (runStart < entries.length) {
+                const signature = entry => [
+                    entry.record.timeMs,
+                    entry.record.rightAng,
+                    entry.record.torsoAng,
+                    entry.record.hasujiAngle
+                ].join('|');
+                let runEnd = runStart + 1;
+                while (runEnd < entries.length && signature(entries[runEnd]) === signature(entries[runStart])) runEnd++;
+                if (runEnd - runStart >= 4) {
+                    entries.slice(runStart, runEnd).forEach(entry => {
+                        entry.accepted = false;
+                        entry.reasons.push('同一値が4件以上連続');
+                    });
+                }
+                runStart = runEnd;
+            }
+            return {
+                all: entries,
+                accepted: entries.filter(entry => entry.accepted),
+                rejected: entries.filter(entry => !entry.accepted)
+            };
+        }
+
+        function researchHistogram(values, binSize, fixedMin = null, fixedMax = null) {
+            const list = values.map(researchNumber).filter(Number.isFinite);
+            if (!list.length) return { labels: [], counts: [] };
+            const min = fixedMin ?? Math.floor(Math.min(...list) / binSize) * binSize;
+            const max = fixedMax ?? Math.ceil(Math.max(...list) / binSize) * binSize;
+            const bins = Math.max(1, Math.ceil((max - min) / binSize));
+            const counts = Array.from({ length: bins }, () => 0);
+            list.forEach(value => {
+                const index = Math.min(bins - 1, Math.max(0, Math.floor((value - min) / binSize)));
+                counts[index]++;
+            });
+            return {
+                labels: counts.map((_, index) => String(Math.round(min + index * binSize)) + '-' + String(Math.round(min + (index + 1) * binSize))),
+                counts
+            };
+        }
+
+        function researchEntryValues(entries, getter) {
+            return entries.map(entry => getter(entry.record)).map(researchNumber).filter(Number.isFinite);
+        }
+
+        function researchGroupBoxData(entries) {
+            const groups = new Map();
+            entries.forEach(entry => {
+                const record = entry.record;
+                const recordedDate = Number.isFinite(new Date(record.recordedAt || '').getTime())
+                    ? new Date(record.recordedAt).toISOString().slice(0, 10)
+                    : '日付未設定';
+                const key = [record.participantId || 'ID未設定', recordedDate, record.sessionId || 'セッション未設定'].join(' / ');
+                if (!groups.has(key)) groups.set(key, []);
+                const value = researchNumber(record.timeMs);
+                if (Number.isFinite(value)) groups.get(key).push(value);
+            });
+            return [...groups.entries()].slice(0, 12).map(([label, values]) => ({
+                label,
+                min: Math.min(...values),
+                q1: researchQuantile(values, 0.25),
+                median: researchMedian(values),
+                q3: researchQuantile(values, 0.75),
+                max: Math.max(...values),
+                count: values.length
+            }));
+        }
+
+        function buildResearchChartConfigs(dataset = buildResearchDataset()) {
+            const accepted = dataset.accepted;
+            const durationHistogram = researchHistogram(researchEntryValues(accepted, record => record.timeMs), 100, 0, RESEARCH_RULES.maxDurationMs);
+            const angleBins = Array.from({ length: 18 }, (_, index) => String(index * 10) + '-' + String((index + 1) * 10));
+            const angleCounts = key => {
+                const values = researchEntryValues(accepted, record => record[key]);
+                return angleBins.map((_, index) => values.filter(value => value >= index * 10 && value < (index + 1) * 10).length);
+            };
+            const phaseValue = (record, phase, key, fallback) => researchNumber(record.researchAngles?.[phase]?.[key]) ?? researchNumber(record[fallback]);
+            const phaseLabels = ['開始', '最高速', '終了'];
+            const phaseMeans = (key, fallback) => ['start', 'peak', 'end'].map(phase => researchMean(accepted.map(entry => phaseValue(entry.record, phase, key, fallback))));
+            const correctionDiffs = researchEntryValues(dataset.all, record => record.researchCorrection?.durationDiffMs);
+            const correctionHistogram = researchHistogram(correctionDiffs, 25);
+            const sourceGroups = ['realtime', 'formal'].map(type => accepted.filter(entry => recordTypeOf(entry.record) === type));
+            const sourceMetric = getter => sourceGroups.map(group => researchMean(group.map(entry => getter(entry.record))));
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { labels: { boxWidth: 12, font: { size: 10 } } } },
+                scales: {
+                    x: { ticks: { color: '#64748b', maxRotation: 0, autoSkip: true }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } }
+                }
+            };
+            return {
+                duration: {
+                    type: 'bar',
+                    data: { labels: durationHistogram.labels, datasets: [{ label: '件数', data: durationHistogram.counts, backgroundColor: '#3b82f6', borderRadius: 5 }] },
+                    options: { ...baseOptions, plugins: { legend: { display: false } } }
+                },
+                angles: {
+                    type: 'line',
+                    data: { labels: angleBins, datasets: [
+                        { label: '右肘', data: angleCounts('rightAng'), borderColor: '#7c3aed', backgroundColor: '#7c3aed22', tension: 0.25 },
+                        { label: '体幹', data: angleCounts('torsoAng'), borderColor: '#059669', backgroundColor: '#05966922', tension: 0.25 },
+                        { label: '推定刃筋', data: angleCounts('hasujiAngle'), borderColor: '#d97706', backgroundColor: '#d9770622', tension: 0.25 }
+                    ]},
+                    options: baseOptions
+                },
+                phases: {
+                    type: 'bar',
+                    data: { labels: phaseLabels, datasets: [
+                        { label: '右肘', data: phaseMeans('rightElbow', 'rightAng'), backgroundColor: '#8b5cf6' },
+                        { label: '体幹', data: phaseMeans('torso', 'torsoAng'), backgroundColor: '#10b981' },
+                        { label: '推定刃筋', data: phaseMeans('hasuji', 'hasujiAngle'), backgroundColor: '#f59e0b' }
+                    ]},
+                    options: baseOptions
+                },
+                scatter: {
+                    type: 'scatter',
+                    data: { datasets: [{ label: '採用データ', data: accepted.map(entry => ({ x: researchNumber(entry.record.timeMs), y: researchNumber(entry.record.rightAng) })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y)), backgroundColor: '#2563eb' }] },
+                    options: {
+                        ...baseOptions,
+                        scales: {
+                            x: { title: { display: true, text: '打突時間 (ms)' }, grid: { color: '#e2e8f0' } },
+                            y: { title: { display: true, text: '右肘角 (deg)' }, grid: { color: '#e2e8f0' } }
+                        }
+                    }
+                },
+                correction: {
+                    type: 'bar',
+                    data: { labels: correctionHistogram.labels, datasets: [{ label: '件数', data: correctionHistogram.counts, backgroundColor: '#ef4444', borderRadius: 5 }] },
+                    options: { ...baseOptions, plugins: { legend: { display: false } } }
+                },
+                sources: {
+                    type: 'bar',
+                    data: { labels: ['打突時間(ms)', '右肘(deg)', '体幹(deg)', '推定刃筋(deg)'], datasets: [
+                        { label: 'リアルタイム', data: [
+                            sourceMetric(record => record.timeMs)[0],
+                            sourceMetric(record => record.rightAng)[0],
+                            sourceMetric(record => Math.abs(Number(record.torsoAng)))[0],
+                            sourceMetric(record => Math.abs(Number(record.hasujiAngle)))[0]
+                        ], backgroundColor: '#3b82f6' },
+                        { label: '動画解析', data: [
+                            sourceMetric(record => record.timeMs)[1],
+                            sourceMetric(record => record.rightAng)[1],
+                            sourceMetric(record => Math.abs(Number(record.torsoAng)))[1],
+                            sourceMetric(record => Math.abs(Number(record.hasujiAngle)))[1]
+                        ], backgroundColor: '#10b981' }
+                    ]},
+                    options: baseOptions
+                }
+            };
+        }
+
+        function drawResearchBoxplot(canvas, groups) {
+            if (!canvas) return;
+            const host = canvas.parentElement;
+            const hostWidth = Math.round(host?.clientWidth || 0);
+            const hostHeight = Math.round(host?.clientHeight || 0);
+            const detachedWidth = Math.round(Number(canvas.dataset.exportWidth) || canvas.width || 0);
+            const detachedHeight = Math.round(Number(canvas.dataset.exportHeight) || canvas.height || 0);
+            const width = hostWidth
+                ? Math.min(1200, Math.max(320, hostWidth))
+                : Math.min(1200, Math.max(640, detachedWidth || 820));
+            const height = hostHeight
+                ? Math.min(460, Math.max(250, hostHeight))
+                : Math.min(460, Math.max(260, detachedHeight || 300));
+            const ratio = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.style.width = '100%';
+            canvas.style.height = host ? '100%' : `${height}px`;
+            canvas.width = width * ratio;
+            canvas.height = height * ratio;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(ratio, ratio);
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            const margin = { left: 52, right: 20, top: 18, bottom: 64 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+            if (!groups.length) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('被験者ID・セッションID付きの採用データがありません', width / 2, height / 2);
+                return;
+            }
+            const yMin = Math.max(0, Math.floor(Math.min(...groups.map(group => group.min)) / 50) * 50);
+            const yMax = Math.ceil(Math.max(...groups.map(group => group.max)) / 50) * 50 || 700;
+            const y = value => margin.top + plotHeight - ((value - yMin) / Math.max(1, yMax - yMin)) * plotHeight;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.fillStyle = '#64748b';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            for (let tick = yMin; tick <= yMax; tick += 100) {
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y(tick));
+                ctx.lineTo(width - margin.right, y(tick));
+                ctx.stroke();
+                ctx.fillText(String(tick), margin.left - 8, y(tick) + 4);
+            }
+            const slot = plotWidth / groups.length;
+            groups.forEach((group, index) => {
+                const x = margin.left + slot * (index + 0.5);
+                const boxWidth = Math.min(38, slot * 0.5);
+                ctx.strokeStyle = '#1d4ed8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x, y(group.min));
+                ctx.lineTo(x, y(group.max));
+                ctx.moveTo(x - boxWidth / 3, y(group.min));
+                ctx.lineTo(x + boxWidth / 3, y(group.min));
+                ctx.moveTo(x - boxWidth / 3, y(group.max));
+                ctx.lineTo(x + boxWidth / 3, y(group.max));
+                ctx.stroke();
+                ctx.fillStyle = '#dbeafe';
+                ctx.fillRect(x - boxWidth / 2, y(group.q3), boxWidth, y(group.q1) - y(group.q3));
+                ctx.strokeRect(x - boxWidth / 2, y(group.q3), boxWidth, y(group.q1) - y(group.q3));
+                ctx.strokeStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(x - boxWidth / 2, y(group.median));
+                ctx.lineTo(x + boxWidth / 2, y(group.median));
+                ctx.stroke();
+                ctx.save();
+                ctx.translate(x, height - margin.bottom + 10);
+                ctx.rotate(-Math.PI / 5);
+                ctx.fillStyle = '#475569';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(group.label.length > 20 ? group.label.slice(0, 19) + '…' : group.label, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        function updateResearchDashboard() {
+            const dataset = buildResearchDataset();
+            safeText('researchAcceptedCount', String(dataset.accepted.length));
+            safeText('researchRejectedCount', String(dataset.rejected.length));
+            if (!window.Chart) return dataset;
+            const configs = buildResearchChartConfigs(dataset);
+            const chartTargets = {
+                duration: 'researchDurationHistogram',
+                angles: 'researchAngleDistribution',
+                phases: 'researchPhaseAngles',
+                scatter: 'researchDurationScatter',
+                correction: 'researchCorrectionHistogram',
+                sources: 'researchSourceComparison'
+            };
+            Object.entries(chartTargets).forEach(([key, id]) => {
+                const canvas = document.getElementById(id);
+                if (!canvas) return;
+                AppState.researchCharts[key]?.destroy?.();
+                AppState.researchCharts[key] = new Chart(canvas.getContext('2d'), configs[key]);
+            });
+            drawResearchBoxplot(document.getElementById('researchSessionBoxplot'), researchGroupBoxData(dataset.accepted));
+            return dataset;
+        }
+
+        const RESEARCH_EXCEL_COLUMNS = Object.freeze([
+            ['recordId', '記録ID', 10],
+            ['recordType', '区分', 14],
+            ['researchStatus', '研究採否', 12],
+            ['exclusionReason', '除外理由', 30],
+            ['recordedAt', '記録日時', 21],
+            ['participantId', '被験者ID', 14],
+            ['sessionId', 'セッションID', 20],
+            ['strikeType', '打突種別', 12],
+            ['experienceYears', '経験年数', 11],
+            ['grade', '段級位', 11],
+            ['cameraDirection', '撮影方向', 11],
+            ['cameraDistanceMeters', 'カメラ距離(m)', 14],
+            ['deviceLabel', '撮影端末', 22],
+            ['appVersion', 'アプリ版', 11],
+            ['timeMs', '打突時間(ms)', 14],
+            ['officialPeakOffsetMs', '正式ピーク時刻(ms)', 18],
+            ['wristPeakOffsetMs', '手首ピーク時刻(ms)', 18],
+            ['tipPeakOffsetMs', '推定剣先ピーク時刻(ms)', 20],
+            ['tapePeakOffsetMs', 'テープ剣先ピーク時刻(ms)', 21],
+            ['rightAng', '終了右肘角(deg)', 16],
+            ['torsoAng', '終了体幹軸(deg)', 16],
+            ['hasujiAngle', '終了推定刃筋角(deg)', 20],
+            ['rightStart', '開始右肘角(deg)', 16],
+            ['rightPeak', '最高速右肘角(deg)', 18],
+            ['rightEnd', '終了右肘角区間(deg)', 20],
+            ['rightMin', '右肘最小(deg)', 14],
+            ['rightMax', '右肘最大(deg)', 14],
+            ['rightChange', '右肘変化量(deg)', 16],
+            ['rightAvgVelocity', '右肘平均角速度(deg/s)', 22],
+            ['rightMaxVelocity', '右肘最大角速度(deg/s)', 22],
+            ['torsoStart', '開始体幹軸(deg)', 16],
+            ['torsoPeak', '最高速体幹軸(deg)', 18],
+            ['torsoEnd', '終了体幹軸区間(deg)', 20],
+            ['torsoMin', '体幹最小(deg)', 14],
+            ['torsoMax', '体幹最大(deg)', 14],
+            ['torsoChange', '体幹変化量(deg)', 16],
+            ['torsoAvgVelocity', '体幹平均角速度(deg/s)', 22],
+            ['torsoMaxVelocity', '体幹最大角速度(deg/s)', 22],
+            ['hasujiStart', '開始推定刃筋(deg)', 18],
+            ['hasujiPeak', '最高速推定刃筋(deg)', 20],
+            ['hasujiEnd', '終了推定刃筋区間(deg)', 21],
+            ['hasujiMin', '推定刃筋最小(deg)', 18],
+            ['hasujiMax', '推定刃筋最大(deg)', 18],
+            ['hasujiChange', '推定刃筋変化量(deg)', 20],
+            ['hasujiAvgVelocity', '推定刃筋平均角速度(deg/s)', 24],
+            ['hasujiMaxVelocity', '推定刃筋最大角速度(deg/s)', 24],
+            ['avgVisibility', '姿勢信頼度', 13],
+            ['angleQuality', '角度品質', 12],
+            ['analysisFps', '解析fps', 11],
+            ['videoFpsEstimate', '動画fps推定', 13],
+            ['startFrameIndex', '開始フレーム', 14],
+            ['peakFrameIndex', '最高速フレーム', 16],
+            ['endFrameIndex', '終了フレーム', 14],
+            ['autoDurationMs', '自動打突時間(ms)', 17],
+            ['correctedDurationMs', '補正後打突時間(ms)', 19],
+            ['durationDiffMs', '補正差(ms)', 13],
+            ['startDiffFrames', '開始補正差(frame)', 17],
+            ['endDiffFrames', '終了補正差(frame)', 17],
+            ['wasCorrected', '手動補正', 11],
+            ['measurementMethod', '測定方式', 32],
+            ['poseEngine', '姿勢推定エンジン', 22],
+            ['shortLabel', '評価', 14],
+            ['memo', 'メモ', 28],
+            ['timingDefinition', '打突時間定義', 55]
+        ]);
+
+        function researchExcelRow(entry) {
+            const record = entry.record;
+            const angles = record.researchAngles || {};
+            const correction = record.researchCorrection || {};
+            const recordedAtDate = record.recordedAt ? new Date(record.recordedAt) : null;
+            const phase = (name, key) => researchNumber(angles?.[name]?.[key]);
+            const stat = (key, name) => researchNumber(angles?.stats?.[key]?.[name]);
+            return {
+                recordId: record.id,
+                recordType: recordTypeOf(record) === 'formal' ? '動画解析' : 'リアルタイム',
+                researchStatus: entry.accepted ? '採用' : '除外',
+                exclusionReason: entry.reasons.join(' / '),
+                recordedAt: recordedAtDate && Number.isFinite(recordedAtDate.getTime()) ? recordedAtDate : '',
+                participantId: record.participantId || '',
+                sessionId: record.sessionId || '',
+                strikeType: record.strikeType || '',
+                experienceYears: researchNumber(record.experienceYears),
+                grade: record.grade || '',
+                cameraDirection: record.cameraDirection || '',
+                cameraDistanceMeters: researchNumber(record.cameraDistanceMeters),
+                deviceLabel: record.deviceLabel || '',
+                appVersion: record.appVersion || '',
+                timeMs: researchNumber(record.timeMs),
+                officialPeakOffsetMs: recordPeakOffsetMs(record, 'official'),
+                wristPeakOffsetMs: recordPeakOffsetMs(record, 'wrist'),
+                tipPeakOffsetMs: recordPeakOffsetMs(record, 'tip'),
+                tapePeakOffsetMs: recordPeakOffsetMs(record, 'tape'),
+                rightAng: researchNumber(record.rightAng),
+                torsoAng: researchNumber(record.torsoAng),
+                hasujiAngle: researchNumber(record.hasujiAngle),
+                rightStart: phase('start', 'rightElbow'),
+                rightPeak: phase('peak', 'rightElbow'),
+                rightEnd: phase('end', 'rightElbow'),
+                rightMin: stat('rightElbow', 'min'),
+                rightMax: stat('rightElbow', 'max'),
+                rightChange: stat('rightElbow', 'change'),
+                rightAvgVelocity: stat('rightElbow', 'averageAngularVelocity'),
+                rightMaxVelocity: stat('rightElbow', 'maxAngularVelocity'),
+                torsoStart: phase('start', 'torso'),
+                torsoPeak: phase('peak', 'torso'),
+                torsoEnd: phase('end', 'torso'),
+                torsoMin: stat('torso', 'min'),
+                torsoMax: stat('torso', 'max'),
+                torsoChange: stat('torso', 'change'),
+                torsoAvgVelocity: stat('torso', 'averageAngularVelocity'),
+                torsoMaxVelocity: stat('torso', 'maxAngularVelocity'),
+                hasujiStart: phase('start', 'hasuji'),
+                hasujiPeak: phase('peak', 'hasuji'),
+                hasujiEnd: phase('end', 'hasuji'),
+                hasujiMin: stat('hasuji', 'min'),
+                hasujiMax: stat('hasuji', 'max'),
+                hasujiChange: stat('hasuji', 'change'),
+                hasujiAvgVelocity: stat('hasuji', 'averageAngularVelocity'),
+                hasujiMaxVelocity: stat('hasuji', 'maxAngularVelocity'),
+                avgVisibility: researchNumber(record.avgVisibility),
+                angleQuality: researchNumber(record.angleQuality),
+                analysisFps: researchNumber(record.analysisFps) ?? (researchNumber(record.frameDtMs) ? 1000 / researchNumber(record.frameDtMs) : null),
+                videoFpsEstimate: researchNumber(record.videoFpsEstimate),
+                startFrameIndex: researchNumber(record.startFrameIndex),
+                peakFrameIndex: researchNumber(record.peakFrameIndex),
+                endFrameIndex: researchNumber(record.endFrameIndex),
+                autoDurationMs: researchNumber(correction.autoDurationMs),
+                correctedDurationMs: researchNumber(correction.correctedDurationMs) ?? researchNumber(record.timeMs),
+                durationDiffMs: researchNumber(correction.durationDiffMs),
+                startDiffFrames: researchNumber(correction.startDiffFrames),
+                endDiffFrames: researchNumber(correction.endDiffFrames),
+                wasCorrected: correction.wasCorrected ? 'あり' : (recordTypeOf(record) === 'formal' ? 'なし' : ''),
+                measurementMethod: record.measurementMethod || '',
+                poseEngine: record.poseEngine || '',
+                shortLabel: record.shortLabel || '',
+                memo: record.memo || '',
+                timingDefinition: record.timingDefinition || ''
+            };
+        }
+
+        function researchExcelColumnLetter(index) {
+            let number = index + 1;
+            let letters = '';
+            while (number > 0) {
+                const remainder = (number - 1) % 26;
+                letters = String.fromCharCode(65 + remainder) + letters;
+                number = Math.floor((number - 1) / 26);
+            }
+            return letters;
+        }
+
+        function styleResearchWorksheet(sheet, rowCount) {
+            sheet.views = [{ state: 'frozen', ySplit: 1 }];
+            sheet.autoFilter = { from: 'A1', to: researchExcelColumnLetter(RESEARCH_EXCEL_COLUMNS.length - 1) + String(Math.max(1, rowCount + 1)) };
+            const header = sheet.getRow(1);
+            header.height = 30;
+            header.eachCell(cell => {
+                cell.font = { name: 'Yu Gothic', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
+            });
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) return;
+                row.height = 22;
+                row.eachCell(cell => {
+                    cell.font = { name: 'Yu Gothic', size: 9, color: { argb: 'FF1E293B' } };
+                    cell.alignment = { vertical: 'middle', horizontal: typeof cell.value === 'number' ? 'right' : 'left' };
+                    cell.border = { bottom: { style: 'hair', color: { argb: 'FFE2E8F0' } } };
+                    if (rowNumber % 2 === 0) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                });
+            });
+            const dateIndex = RESEARCH_EXCEL_COLUMNS.findIndex(([key]) => key === 'recordedAt') + 1;
+            const confidenceIndexes = ['avgVisibility', 'angleQuality'].map(key => RESEARCH_EXCEL_COLUMNS.findIndex(([columnKey]) => columnKey === key) + 1);
+            confidenceIndexes.forEach(index => {
+                if (index > 0 && rowCount) sheet.getColumn(index).numFmt = '0.0%';
+            });
+            sheet.getColumn(dateIndex).numFmt = 'yyyy-mm-dd hh:mm:ss';
+        }
+
+        function addResearchDataSheet(workbook, name, entries) {
+            const sheet = workbook.addWorksheet(name, { properties: { tabColor: { argb: name === '除外データ' ? 'FFDC2626' : (name === '採用データ' ? 'FF16A34A' : 'FF2563EB') } } });
+            sheet.columns = RESEARCH_EXCEL_COLUMNS.map(([key, header, width]) => ({ key, header, width }));
+            entries.forEach(entry => sheet.addRow(researchExcelRow(entry)));
+            styleResearchWorksheet(sheet, entries.length);
+            return sheet;
+        }
+
+        function researchMetricStats(entries, getter) {
+            const values = entries.map(entry => getter(entry.record)).map(researchNumber).filter(Number.isFinite);
+            return {
+                count: values.length,
+                mean: researchMean(values),
+                median: researchMedian(values),
+                stdDev: researchStdDev(values),
+                min: values.length ? Math.min(...values) : null,
+                max: values.length ? Math.max(...values) : null
+            };
+        }
+
+        function setResearchSummaryHeader(sheet, range, title, fill = 'FF1E3A5F') {
+            sheet.mergeCells(range);
+            const cell = sheet.getCell(range.split(':')[0]);
+            cell.value = title;
+            cell.font = { name: 'Yu Gothic', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        }
+
+        function forEachResearchExcelCell(sheet, startRow, endRow, startColumn, endColumn, callback) {
+            for (let row = startRow; row <= endRow; row++) {
+                for (let column = startColumn; column <= endColumn; column++) callback(sheet.getCell(row, column), row, column);
+            }
+        }
+
+        function buildResearchSummarySheet(workbook, dataset) {
+            const sheet = workbook.addWorksheet('集計', { properties: { tabColor: { argb: 'FF4F46E5' } } });
+            sheet.views = [{ state: 'frozen', ySplit: 4 }];
+            sheet.properties.defaultRowHeight = 22;
+            sheet.columns = [
+                { width: 27 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 18 }, { width: 18 }
+            ];
+            sheet.mergeCells('A1:H1');
+            sheet.getCell('A1').value = 'Kendo Virtual Coach 研究データ集計';
+            sheet.getCell('A1').font = { name: 'Yu Gothic', size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
+            sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+            sheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+            sheet.getRow(1).height = 40;
+            sheet.getCell('A2').value = '生成日時';
+            sheet.getCell('B2').value = new Date();
+            sheet.getCell('B2').numFmt = 'yyyy-mm-dd hh:mm:ss';
+            sheet.getCell('D2').value = '全測定';
+            sheet.getCell('E2').value = dataset.all.length;
+            sheet.getCell('F2').value = '採用';
+            sheet.getCell('G2').value = dataset.accepted.length;
+            sheet.getCell('H2').value = '除外 ' + dataset.rejected.length;
+            sheet.getCell('A3').value = '採用基準';
+            sheet.mergeCells('B3:H3');
+            sheet.getCell('B3').value = '打突時間 ' + RESEARCH_RULES.minDurationMs + '-' + RESEARCH_RULES.maxDurationMs + 'ms / 姿勢信頼度 ' + Math.round(RESEARCH_RULES.minConfidence * 100) + '%以上 / 右肘角 ' + RESEARCH_RULES.minRightElbowDeg + '-' + RESEARCH_RULES.maxRightElbowDeg + 'deg / フレーム逆転なし';
+            setResearchSummaryHeader(sheet, 'A5:G5', '採用データの記述統計');
+            sheet.getRow(6).values = ['項目', '件数', '平均', '中央値', '標準偏差', '最小', '最大'];
+            const metrics = [
+                ['打突時間 (ms)', record => record.timeMs],
+                ['正式ピーク時刻 (ms)', record => recordPeakOffsetMs(record, 'official')],
+                ['終了右肘角 (deg)', record => record.rightAng],
+                ['終了体幹軸 (deg)', record => Math.abs(Number(record.torsoAng))],
+                ['終了推定刃筋角 (deg)', record => Math.abs(Number(record.hasujiAngle))],
+                ['姿勢信頼度', record => record.avgVisibility]
+            ];
+            metrics.forEach(([label, getter], index) => {
+                const stats = researchMetricStats(dataset.accepted, getter);
+                sheet.addRow([label, stats.count, stats.mean, stats.median, stats.stdDev, stats.min, stats.max]);
+            });
+            forEachResearchExcelCell(sheet, 6, 12, 1, 7, (cell, rowNumber) => {
+                    cell.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+                    if (rowNumber === 6) {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
+                    }
+            });
+            forEachResearchExcelCell(sheet, 7, 12, 3, 7, cell => { cell.numFmt = '0.00'; });
+            setResearchSummaryHeader(sheet, 'A14:F14', 'リアルタイム分析と動画解析');
+            sheet.getRow(15).values = ['区分', '件数', '平均打突時間(ms)', '平均右肘(deg)', '平均体幹(deg)', '平均推定刃筋(deg)'];
+            ['realtime', 'formal'].forEach(type => {
+                const subset = dataset.accepted.filter(entry => recordTypeOf(entry.record) === type);
+                sheet.addRow([
+                    type === 'formal' ? '動画解析' : 'リアルタイム',
+                    subset.length,
+                    researchMean(subset.map(entry => entry.record.timeMs)),
+                    researchMean(subset.map(entry => entry.record.rightAng)),
+                    researchMean(subset.map(entry => Math.abs(Number(entry.record.torsoAng)))),
+                    researchMean(subset.map(entry => Math.abs(Number(entry.record.hasujiAngle))))
+                ]);
+            });
+            setResearchSummaryHeader(sheet, 'A20:G20', '打突種別別集計');
+            sheet.getRow(21).values = ['打突種別', '件数', '平均時間(ms)', '中央値(ms)', '標準偏差(ms)', '最小(ms)', '最大(ms)'];
+            const strikeMap = new Map();
+            dataset.accepted.forEach(entry => {
+                const key = entry.record.strikeType || '未設定';
+                if (!strikeMap.has(key)) strikeMap.set(key, []);
+                strikeMap.get(key).push(entry.record);
+            });
+            strikeMap.forEach((records, strikeType) => {
+                const times = records.map(record => researchNumber(record.timeMs)).filter(Number.isFinite);
+                sheet.addRow([
+                    strikeType,
+                    times.length,
+                    researchMean(times),
+                    researchMedian(times),
+                    researchStdDev(times),
+                    times.length ? Math.min(...times) : null,
+                    times.length ? Math.max(...times) : null
+                ]);
+            });
+            const participantHeaderRow = 23 + strikeMap.size;
+            setResearchSummaryHeader(sheet, `A${participantHeaderRow}:H${participantHeaderRow}`, '被験者・撮影日・セッション別集計');
+            const participantColumnRow = participantHeaderRow + 1;
+            sheet.getRow(participantColumnRow).values = ['被験者ID', '撮影日', 'セッションID', '件数', '平均時間(ms)', '中央値(ms)', '標準偏差(ms)', '最小-最大(ms)'];
+            const groupMap = new Map();
+            dataset.accepted.forEach(entry => {
+                const record = entry.record;
+                const date = Number.isFinite(new Date(record.recordedAt || '').getTime())
+                    ? new Date(record.recordedAt).toISOString().slice(0, 10)
+                    : '未設定';
+                const key = [record.participantId || '未設定', date, record.sessionId || '未設定'].join('|');
+                if (!groupMap.has(key)) groupMap.set(key, []);
+                groupMap.get(key).push(record);
+            });
+            groupMap.forEach((records, key) => {
+                const [participantId, date, sessionId] = key.split('|');
+                const times = records.map(record => researchNumber(record.timeMs)).filter(Number.isFinite);
+                sheet.addRow([
+                    participantId,
+                    date,
+                    sessionId,
+                    times.length,
+                    researchMean(times),
+                    researchMedian(times),
+                    researchStdDev(times),
+                    times.length ? Math.min(...times) + '-' + Math.max(...times) : ''
+                ]);
+            });
+            forEachResearchExcelCell(sheet, 16, 17, 3, 6, cell => { cell.numFmt = '0.00'; });
+            if (strikeMap.size) forEachResearchExcelCell(sheet, 22, 21 + strikeMap.size, 3, 7, cell => { cell.numFmt = '0.00'; });
+            if (groupMap.size) forEachResearchExcelCell(sheet, participantColumnRow + 1, participantColumnRow + groupMap.size, 5, 7, cell => { cell.numFmt = '0.00'; });
+            [[6, 1, 7], [15, 1, 6], [21, 1, 7], [participantColumnRow, 1, 8]].forEach(([row, startColumn, endColumn]) => {
+                forEachResearchExcelCell(sheet, row, row, startColumn, endColumn, cell => {
+                    cell.font = { name: 'Yu Gothic', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                });
+            });
+            sheet.eachRow(row => row.eachCell(cell => {
+                if (!cell.font?.name) cell.font = { name: 'Yu Gothic', size: 10, color: { argb: 'FF1E293B' } };
+            }));
+            return sheet;
+        }
+
+        function buildResearchCorrectionSheet(workbook, dataset) {
+            const sheet = workbook.addWorksheet('補正比較', { properties: { tabColor: { argb: 'FFF59E0B' } } });
+            sheet.columns = [
+                { header: '記録ID', key: 'id', width: 10 },
+                { header: '記録日時', key: 'recordedAt', width: 21 },
+                { header: '被験者ID', key: 'participantId', width: 14 },
+                { header: 'セッションID', key: 'sessionId', width: 20 },
+                { header: '自動開始', key: 'autoStart', width: 12 },
+                { header: '補正開始', key: 'correctedStart', width: 12 },
+                { header: '開始差(frame)', key: 'startDiff', width: 15 },
+                { header: '自動終了', key: 'autoEnd', width: 12 },
+                { header: '補正終了', key: 'correctedEnd', width: 12 },
+                { header: '終了差(frame)', key: 'endDiff', width: 15 },
+                { header: '自動時間(ms)', key: 'autoDuration', width: 15 },
+                { header: '補正後時間(ms)', key: 'correctedDuration', width: 17 },
+                { header: '時間差(ms)', key: 'durationDiff', width: 13 },
+                { header: '補正有無', key: 'wasCorrected', width: 12 }
+            ];
+            dataset.all.forEach(entry => {
+                const record = entry.record;
+                const correction = record.researchCorrection;
+                if (!correction || !Number.isFinite(researchNumber(correction.autoDurationMs))) return;
+                const recordedAtDate = record.recordedAt ? new Date(record.recordedAt) : null;
+                sheet.addRow({
+                    id: record.id,
+                    recordedAt: recordedAtDate && Number.isFinite(recordedAtDate.getTime()) ? recordedAtDate : '',
+                    participantId: record.participantId || '',
+                    sessionId: record.sessionId || '',
+                    autoStart: correction.autoStartFrame,
+                    correctedStart: correction.correctedStartFrame,
+                    startDiff: correction.startDiffFrames,
+                    autoEnd: correction.autoEndFrame,
+                    correctedEnd: correction.correctedEndFrame,
+                    endDiff: correction.endDiffFrames,
+                    autoDuration: correction.autoDurationMs,
+                    correctedDuration: correction.correctedDurationMs,
+                    durationDiff: correction.durationDiffMs,
+                    wasCorrected: correction.wasCorrected ? 'あり' : 'なし'
+                });
+            });
+            sheet.views = [{ state: 'frozen', ySplit: 1 }];
+            sheet.autoFilter = { from: 'A1', to: 'N' + String(Math.max(1, sheet.rowCount)) };
+            sheet.getRow(1).eachCell(cell => {
+                cell.font = { name: 'Yu Gothic', bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB45309' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            });
+            sheet.getColumn('recordedAt').numFmt = 'yyyy-mm-dd hh:mm:ss';
+            return sheet;
+        }
+
+        async function buildResearchChartImages(dataset) {
+            if (!window.Chart) return [];
+            const configs = buildResearchChartConfigs(dataset);
+            const definitions = [
+                ['打突時間ヒストグラム', 'duration'],
+                ['角度分布', 'angles'],
+                ['開始・最高速・終了時の角度', 'phases'],
+                ['打突時間と右肘角', 'scatter'],
+                ['補正差分布', 'correction'],
+                ['リアルタイムと動画解析', 'sources']
+            ];
+            const images = [];
+            for (const [title, key] of definitions) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 960;
+                canvas.height = 460;
+                const config = JSON.parse(JSON.stringify(configs[key]));
+                config.options = { ...(config.options || {}), responsive: false, animation: false };
+                const chart = new Chart(canvas.getContext('2d'), config);
+                chart.update('none');
+                images.push({ title, dataUrl: canvas.toDataURL('image/png') });
+                chart.destroy();
+            }
+            const boxCanvas = document.createElement('canvas');
+            boxCanvas.dataset.exportWidth = '960';
+            boxCanvas.dataset.exportHeight = '460';
+            drawResearchBoxplot(boxCanvas, researchGroupBoxData(dataset.accepted));
+            images.splice(5, 0, { title: '被験者・撮影日・セッション別箱ひげ図', dataUrl: boxCanvas.toDataURL('image/png') });
+            return images;
+        }
+
+        async function buildResearchWorkbookBlob() {
+            if (!window.ExcelJS) throw new Error('Excel生成ライブラリを読み込めません');
+            const dataset = buildResearchDataset();
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'Kendo Virtual Coach';
+            workbook.lastModifiedBy = 'Kendo Virtual Coach';
+            workbook.created = new Date();
+            workbook.modified = new Date();
+            workbook.calcProperties.fullCalcOnLoad = true;
+            workbook.title = '剣道打突動作 研究データ';
+            workbook.subject = 'MediaPipeによる剣道打突動作分析';
+            workbook.description = 'リアルタイム分析と動画解析の累積研究データ';
+            addResearchDataSheet(workbook, '全測定データ', dataset.all);
+            addResearchDataSheet(workbook, '採用データ', dataset.accepted);
+            addResearchDataSheet(workbook, '除外データ', dataset.rejected);
+            buildResearchSummarySheet(workbook, dataset);
+            buildResearchCorrectionSheet(workbook, dataset);
+            const graphSheet = workbook.addWorksheet('グラフ', { properties: { tabColor: { argb: 'FF0EA5E9' } } });
+            graphSheet.views = [{ showGridLines: false }];
+            graphSheet.columns = Array.from({ length: 20 }, () => ({ width: 12 }));
+            graphSheet.mergeCells('A1:T2');
+            graphSheet.getCell('A1').value = '研究用グラフ';
+            graphSheet.getCell('A1').font = { name: 'Yu Gothic', size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
+            graphSheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+            graphSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+            const images = await buildResearchChartImages(dataset);
+            images.forEach((image, index) => {
+                const row = 3 + Math.floor(index / 2) * 24;
+                const col = (index % 2) * 10;
+                const imageId = workbook.addImage({ base64: image.dataUrl, extension: 'png' });
+                graphSheet.getCell(row, col + 1).value = image.title;
+                graphSheet.getCell(row, col + 1).font = { name: 'Yu Gothic', size: 12, bold: true, color: { argb: 'FF334155' } };
+                graphSheet.addImage(imageId, { tl: { col, row: row + 1 }, ext: { width: 690, height: 330 } });
+            });
+            const buffer = await workbook.xlsx.writeBuffer();
+            return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        }
+
+        function researchExcelFileName() {
+            const date = new Date();
+            const stamp = [
+                date.getFullYear(),
+                String(date.getMonth() + 1).padStart(2, '0'),
+                String(date.getDate()).padStart(2, '0')
+            ].join('');
+            return 'kendo_research_data_' + stamp + '.xlsx';
+        }
+
+        function updateResearchExcelStatus(message, tone = 'blue') {
+            const element = document.getElementById('researchExcelStatus');
+            if (!element) return;
+            element.textContent = message;
+            const toneClass = {
+                blue: 'research-excel-status',
+                green: 'research-excel-status border-emerald-200 bg-emerald-50 text-emerald-800',
+                amber: 'research-excel-status border-amber-200 bg-amber-50 text-amber-800',
+                red: 'research-excel-status border-red-200 bg-red-50 text-red-800'
+            };
+            element.className = toneClass[tone] || toneClass.blue;
+        }
+
+        function downloadResearchWorkbookBlob(blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = researchExcelFileName();
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function openResearchHandleDb() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) return reject(new Error('IndexedDBを利用できません'));
+                const request = indexedDB.open('kendoResearchFiles', 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains('handles')) db.createObjectStore('handles');
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('ファイル接続情報を保存できません'));
+            });
+        }
+
+        async function storeResearchExcelHandle(handle) {
+            const db = await openResearchHandleDb();
+            await new Promise((resolve, reject) => {
+                const transaction = db.transaction('handles', 'readwrite');
+                transaction.objectStore('handles').put(handle, 'researchWorkbook');
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error);
+            });
+            db.close();
+        }
+
+        async function restoreResearchExcelHandle() {
+            if (!('showSaveFilePicker' in window)) {
+                updateResearchExcelStatus('このブラウザでは同一Excelへの自動更新に対応していません。最新版Excelの一括出力を利用できます。', 'amber');
+                const bindButton = document.getElementById('researchExcelBindBtn');
+                const updateButton = document.getElementById('researchExcelUpdateBtn');
+                if (bindButton) bindButton.disabled = true;
+                if (updateButton) updateButton.disabled = true;
+                return null;
+            }
+            try {
+                const db = await openResearchHandleDb();
+                const handle = await new Promise((resolve, reject) => {
+                    const transaction = db.transaction('handles', 'readonly');
+                    const request = transaction.objectStore('handles').get('researchWorkbook');
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => reject(request.error);
+                });
+                db.close();
+                AppState.researchExcelHandle = handle;
+                if (!handle) {
+                    updateResearchExcelStatus('測定データは自動蓄積中です。同じExcelへ更新する場合は、最初にファイルを接続してください。');
+                    return null;
+                }
+                const permission = await handle.queryPermission({ mode: 'readwrite' });
+                updateResearchExcelStatus(
+                    permission === 'granted'
+                        ? '接続済み: ' + handle.name + '。記録保存時に同じExcelを更新できます。'
+                        : '接続候補: ' + handle.name + '。今すぐ更新を押して書き込みを許可してください。',
+                    permission === 'granted' ? 'green' : 'amber'
+                );
+                return handle;
+            } catch (error) {
+                console.warn('Excel接続情報を復元できません', error);
+                updateResearchExcelStatus('Excel接続情報を復元できません。再度ファイルを接続してください。', 'amber');
+                return null;
+            }
+        }
+
+        async function researchHandlePermission(handle, request = false) {
+            if (!handle) return false;
+            let state = await handle.queryPermission({ mode: 'readwrite' });
+            if (state !== 'granted' && request) state = await handle.requestPermission({ mode: 'readwrite' });
+            return state === 'granted';
+        }
+
+        async function writeResearchWorkbookToHandle(options = {}) {
+            const handle = AppState.researchExcelHandle;
+            if (!handle) throw new Error('更新するExcelが接続されていません');
+            if (!(await researchHandlePermission(handle, !!options.requestPermission))) throw new Error('Excelへの書き込みが許可されていません');
+            const blob = await buildResearchWorkbookBlob();
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            AppState.researchLastExcelUpdatedAt = new Date().toISOString();
+            safeStorageSet('kendoResearchLastExcelUpdatedAt', AppState.researchLastExcelUpdatedAt);
+            updateResearchExcelStatus('更新済み: ' + handle.name + ' / ' + new Date().toLocaleString('ja-JP') + ' / ' + AppState.records.length + '件', 'green');
+            return true;
+        }
+
+        async function connectResearchExcelFile() {
+            if (!('showSaveFilePicker' in window)) {
+                showToast('このブラウザでは同一Excelへの自動更新に対応していません', 'yellow');
+                return false;
+            }
+            try {
+                const handle = await window.showSaveFilePicker({
+                    id: 'kendoResearchWorkbook',
+                    suggestedName: researchExcelFileName(),
+                    types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
+                });
+                AppState.researchExcelHandle = handle;
+                await storeResearchExcelHandle(handle);
+                AppState.researchExcelAutoUpdate = true;
+                safeStorageSet('kendoResearchExcelAutoUpdate', '1');
+                const toggle = document.getElementById('researchExcelAutoToggle');
+                if (toggle) toggle.checked = true;
+                updateResearchExcelStatus('Excelを作成しています...', 'blue');
+                await writeResearchWorkbookToHandle({ requestPermission: true });
+                showToast('研究用Excelを接続しました', 'green');
+                return true;
+            } catch (error) {
+                if (error?.name === 'AbortError') return false;
+                console.error('Excel接続エラー', error);
+                updateResearchExcelStatus('Excel接続に失敗しました: ' + (error.message || error), 'red');
+                showToast('Excel接続に失敗しました', 'red');
+                return false;
+            }
+        }
+
+        async function exportResearchExcel() {
+            if (!(AppState.records || []).length) return showToast('出力する測定データがありません', 'yellow');
+            if (AppState.researchExcelUpdating) return;
+            AppState.researchExcelUpdating = true;
+            const button = document.getElementById('researchExcelDownloadBtn');
+            if (button) button.disabled = true;
+            updateResearchExcelStatus('研究用Excelを生成しています...', 'blue');
+            try {
+                const blob = await buildResearchWorkbookBlob();
+                downloadResearchWorkbookBlob(blob);
+                updateResearchExcelStatus('最新版Excelを出力しました。全 ' + AppState.records.length + '件を収録しています。', 'green');
+                showToast('研究用Excelを出力しました', 'green');
+            } catch (error) {
+                console.error('研究用Excel生成エラー', error);
+                updateResearchExcelStatus('Excel生成に失敗しました: ' + (error.message || error), 'red');
+                showToast('研究用Excelを生成できませんでした', 'red');
+            } finally {
+                AppState.researchExcelUpdating = false;
+                if (button) button.disabled = false;
+            }
+        }
+
+        async function updateConnectedResearchExcel() {
+            if (AppState.researchExcelUpdating) return false;
+            if (!AppState.researchExcelHandle) {
+                updateResearchExcelStatus('先に「同じExcelへ自動更新」でファイルを接続してください。', 'amber');
+                return false;
+            }
+            AppState.researchExcelUpdating = true;
+            try {
+                await writeResearchWorkbookToHandle({ requestPermission: true });
+                showToast('接続Excelを更新しました', 'green');
+                return true;
+            } catch (error) {
+                console.error('接続Excel更新エラー', error);
+                updateResearchExcelStatus('Excel更新に失敗しました: ' + (error.message || error), 'red');
+                showToast('接続Excelを更新できませんでした', 'yellow');
+                return false;
+            } finally {
+                AppState.researchExcelUpdating = false;
+            }
+        }
+
+        function setResearchExcelAutoUpdate(enabled) {
+            AppState.researchExcelAutoUpdate = !!enabled;
+            safeStorageSet('kendoResearchExcelAutoUpdate', enabled ? '1' : '0');
+            const toggle = document.getElementById('researchExcelAutoToggle');
+            if (toggle && toggle.checked !== AppState.researchExcelAutoUpdate) toggle.checked = AppState.researchExcelAutoUpdate;
+            if (enabled && !AppState.researchExcelHandle) {
+                updateResearchExcelStatus('自動更新には、最初にExcelファイルの接続が必要です。', 'amber');
+            }
+        }
+
+        function scheduleResearchExcelAutoUpdate() {
+            if (!AppState.researchExcelAutoUpdate || !AppState.researchExcelHandle) return;
+            clearTimeout(AppState.researchExcelUpdateTimer);
+            AppState.researchExcelUpdateTimer = setTimeout(async () => {
+                if (AppState.researchExcelUpdating) return;
+                try {
+                    if (!(await researchHandlePermission(AppState.researchExcelHandle, false))) {
+                        updateResearchExcelStatus('測定データは蓄積済みです。Excel更新には「今すぐ更新」で再許可してください。', 'amber');
+                        return;
+                    }
+                    AppState.researchExcelUpdating = true;
+                    await writeResearchWorkbookToHandle();
+                } catch (error) {
+                    console.warn('研究用Excelの自動更新を保留しました', error);
+                    updateResearchExcelStatus('測定データは蓄積済みですが、Excelの自動更新を保留しました。今すぐ更新を押してください。', 'amber');
+                } finally {
+                    AppState.researchExcelUpdating = false;
+                }
+            }, 1600);
         }
 
         function updateFirebaseStatus(status = '未接続', detail = '') {
@@ -7082,7 +8439,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: 'v154',
+                appVersion: normalized.appVersion || 'v155',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -7114,6 +8471,16 @@ service cloud.firestore {
                 shortLabel: normalized.shortLabel || '',
                 memo: normalized.memo || '',
                 timingDefinition: normalized.timingDefinition || '',
+                participantId: normalized.participantId || '',
+                sessionId: normalized.sessionId || '',
+                strikeType: normalized.strikeType || '',
+                experienceYears: toFiniteOrNull(normalized.experienceYears),
+                grade: normalized.grade || '',
+                cameraDirection: normalized.cameraDirection || '',
+                cameraDistanceMeters: toFiniteOrNull(normalized.cameraDistanceMeters),
+                deviceLabel: normalized.deviceLabel || '',
+                researchAngles: normalized.researchAngles || null,
+                researchCorrection: normalized.researchCorrection || null,
                 savedFrom: location.hostname || 'local',
                 localUpdatedAt: new Date().toISOString()
             };
@@ -7209,6 +8576,17 @@ service cloud.firestore {
                 shortLabel: payload.shortLabel || 'クラウド取込',
                 memo: payload.memo || '',
                 timingDefinition: payload.timingDefinition || '',
+                participantId: payload.participantId || '',
+                sessionId: payload.sessionId || '',
+                strikeType: payload.strikeType || '',
+                experienceYears: payload.experienceYears ?? '',
+                grade: payload.grade || '',
+                cameraDirection: payload.cameraDirection || '',
+                cameraDistanceMeters: payload.cameraDistanceMeters ?? '',
+                deviceLabel: payload.deviceLabel || '',
+                appVersion: payload.appVersion || '',
+                researchAngles: payload.researchAngles || null,
+                researchCorrection: payload.researchCorrection || null,
                 firebaseDocId: payload.firebaseDocId || '',
                 firebaseSyncedAt: new Date().toISOString(),
                 cloudRecordKey: `${type}:${payload.recordId || payload.firebaseDocId || payload.recordedAt}`
@@ -7301,6 +8679,7 @@ service cloud.firestore {
                 return rest;
             });
             safeStorageSet('kendoRecords', JSON.stringify(compact));
+            scheduleResearchExcelAutoUpdate();
         }
 
         function setTimingStatus(start = AppState.timingStartStatus, peak = AppState.timingPeakStatus, end = AppState.timingEndStatus) {
@@ -9831,6 +11210,7 @@ service cloud.firestore {
 
             const record = {
                 id: AppState.records.length + 1,
+                ...researchRecordMetadata(),
                 recordType: 'realtime',
                 source: 'realtime',
                 recordedAt: new Date().toISOString(),
@@ -9866,6 +11246,7 @@ service cloud.firestore {
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(24, Math.round((AppState.frameFps || Params.targetFps) * 1.5)));
             record.clipFrames = clipFrames;
+            record.researchAngles = buildResearchAngleSummary(clipFrames, startTimeMs, peakTimeMs, endTimeMs);
             AppState.replayClip = clipFrames;
             AppState.replayClipMeta = buildReplayClipMeta(record, clipFrames);
             AppState.records.push(record);
@@ -15522,6 +16903,7 @@ service cloud.firestore {
             const shortLabel = official.metrics && durationMs <= 350 && rightAng >= 150 && torsoAng <= 15 ? '動画良好' : '動画確認';
             const record = {
 	                id: AppState.records.length + 1,
+                    ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
                     analysisFps: data.fps || data.diagnostics?.fps || '',
@@ -15568,6 +16950,8 @@ service cloud.firestore {
                 clipFrames: [],
                 timingDefinition: `動画解析: 開始frame ${data.startFrame} / 最高速frame ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレームを手動補正後、ピーク検出基準で再計算。`
             };
+            record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs);
+            record.researchCorrection = buildResearchCorrection(data);
             AppState.records.push(record);
             data.savedRecordId = record.id;
             setRecordFilterMode('formal', { skipUpdate: true });
@@ -15622,6 +17006,7 @@ service cloud.firestore {
             const numberLabel = strike.number ? ` #${strike.number}` : '';
             return {
 	                id: AppState.records.length + 1,
+                    ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
                     analysisFps: data.fps || data.diagnostics?.fps || '',
@@ -15666,7 +17051,12 @@ service cloud.firestore {
                     shoulderLineAng: Number(endFrame.shoulderLineAng || 0)
                 },
                 clipFrames: [],
-                timingDefinition: `動画解析${numberLabel}: 開始frame ${strike.startFrame} / 最高速frame ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
+                timingDefinition: `動画解析${numberLabel}: 開始frame ${strike.startFrame} / 最高速frame ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
+                researchAngles: buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs),
+                researchCorrection: (
+                    Number(data.startFrame) === Number(strike.startFrame)
+                    && Number(data.endFrame) === Number(strike.endFrame)
+                ) ? buildResearchCorrection(data) : null
             };
         }
 
@@ -16753,6 +18143,22 @@ service cloud.firestore {
             }
         });
 
+        RESEARCH_PROFILE_FIELDS.forEach(([id]) => {
+            const element = document.getElementById(id);
+            if (!element) return;
+            element.addEventListener(element.tagName === 'SELECT' ? 'change' : 'input', saveResearchProfileFromUi);
+        });
+        const researchExcelDownloadBtn = document.getElementById('researchExcelDownloadBtn');
+        if (researchExcelDownloadBtn) researchExcelDownloadBtn.addEventListener('click', exportResearchExcel);
+        const researchExcelBindBtn = document.getElementById('researchExcelBindBtn');
+        if (researchExcelBindBtn) researchExcelBindBtn.addEventListener('click', connectResearchExcelFile);
+        const researchExcelUpdateBtn = document.getElementById('researchExcelUpdateBtn');
+        if (researchExcelUpdateBtn) researchExcelUpdateBtn.addEventListener('click', updateConnectedResearchExcel);
+        const researchExcelAutoToggle = document.getElementById('researchExcelAutoToggle');
+        if (researchExcelAutoToggle) researchExcelAutoToggle.addEventListener('change', event => {
+            setResearchExcelAutoUpdate(event.target.checked);
+        });
+
         const cameraDeviceSelect = document.getElementById('cameraDeviceSelect');
         if (cameraDeviceSelect) cameraDeviceSelect.addEventListener('change', async e => {
             AppState.selectedCameraId = e.target.value;
@@ -16967,6 +18373,12 @@ service cloud.firestore {
             });
         });
         
+        AppState.researchProfile = loadResearchProfile();
+        applyResearchProfileToUi();
+        AppState.researchExcelAutoUpdate = safeStorageGet('kendoResearchExcelAutoUpdate') === '1';
+        if (researchExcelAutoToggle) researchExcelAutoToggle.checked = AppState.researchExcelAutoUpdate;
+        restoreResearchExcelHandle();
+
         const saved = safeStorageGet('kendoRecords');
         if (saved) {
             try {
@@ -17030,6 +18442,9 @@ service cloud.firestore {
         window.confirmVideoTimingCorrection = confirmVideoTimingCorrection;
         window.exportCSV = exportCSV;
         window.exportDataCenterCSV = exportDataCenterCSV;
+        window.exportResearchExcel = exportResearchExcel;
+        window.connectResearchExcelFile = connectResearchExcelFile;
+        window.updateConnectedResearchExcel = updateConnectedResearchExcel;
         window.clearHistory = clearHistory;
         window.resetSettings = resetSettings;
         if (['127.0.0.1', 'localhost'].includes(location.hostname) || new URLSearchParams(location.search).has('debug')) {
