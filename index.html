@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v160';
+            var version = 'v161';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -31,11 +31,8 @@
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     
-    <script defer src="./vendor/tailwind/tailwindcss.js"></script>
+    <link rel="stylesheet" href="./assets/app-tailwind.css?v=161">
     <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css">
-    <script defer src="./vendor/chartjs/chart.umd.js"></script>
-    <script defer src="./vendor/exceljs/exceljs.min.js"></script>
-    <script defer src="./vendor/msal-browser/msal-browser.min.js"></script>
     <script async src="./vendor/mediapipe/camera_utils/camera_utils.js"></script>
     <script async src="./vendor/mediapipe/control_utils/control_utils.js"></script>
     <script async src="./vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
@@ -5846,6 +5843,42 @@ service cloud.firestore {
     (function(){
         "use strict";
 
+        const optionalScriptPromises = new Map();
+        const optionalScripts = Object.freeze({
+            chart: { src: './vendor/chartjs/chart.umd.js', ready: () => !!window.Chart },
+            excel: { src: './vendor/exceljs/exceljs.min.js', ready: () => !!window.ExcelJS },
+            msal: { src: './vendor/msal-browser/msal-browser.min.js', ready: () => !!window.msal?.PublicClientApplication }
+        });
+
+        function loadOptionalScript(name) {
+            const asset = optionalScripts[name];
+            if (!asset) return Promise.reject(new Error(`不明な追加機能: ${name}`));
+            if (asset.ready()) return Promise.resolve(true);
+            if (optionalScriptPromises.has(name)) return optionalScriptPromises.get(name);
+            const promise = new Promise((resolve, reject) => {
+                const existing = document.querySelector(`script[data-optional-script="${name}"]`);
+                const script = existing || document.createElement('script');
+                const finish = () => asset.ready() ? resolve(true) : reject(new Error(`${name}を初期化できません`));
+                script.addEventListener('load', finish, { once: true });
+                script.addEventListener('error', () => reject(new Error(`${name}を読み込めません`)), { once: true });
+                if (!existing) {
+                    script.src = asset.src;
+                    script.defer = true;
+                    script.dataset.optionalScript = name;
+                    document.head.appendChild(script);
+                }
+            }).catch(error => {
+                optionalScriptPromises.delete(name);
+                throw error;
+            });
+            optionalScriptPromises.set(name, promise);
+            return promise;
+        }
+
+        const ensureChartJs = () => loadOptionalScript('chart');
+        const ensureExcelJs = () => loadOptionalScript('excel');
+        const ensureMsal = () => loadOptionalScript('msal');
+
         const AppState = {
             isCameraRunning: false,
             isFlipped: false, 
@@ -6104,6 +6137,17 @@ service cloud.firestore {
         let pose = null;
         let poseReadyPromise = null;
 
+        async function ensureChartsReady() {
+            await ensureChartJs();
+            if (!timeChart || !radarChart) initCharts();
+            return true;
+        }
+
+        function reportOptionalAssetError(label, error) {
+            console.error(`${label}の読み込みに失敗しました`, error);
+            showToast(`${label}を読み込めませんでした。通信状態を確認してください`, 'yellow');
+        }
+
         function showToast(message, color = 'blue') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -6133,12 +6177,18 @@ service cloud.firestore {
             document.getElementById(`tab-${tab}`).classList.add('active');
             document.getElementById(`tabBtn-${tab}`).classList.remove('text-slate-300');
             document.getElementById(`tabBtn-${tab}`).classList.add('bg-slate-800','text-white');
-            if(tab==='analysis') updateCharts();
+            if(tab==='analysis') {
+                ensureChartsReady()
+                    .then(updateCharts)
+                    .catch(error => reportOptionalAssetError('グラフ', error));
+            }
             if(tab==='data') {
                 updateDataCenter();
                 updateFirebaseConfigUi();
                 refreshFirebaseCloudCounts();
-                setTimeout(updateResearchDashboard, 80);
+                ensureChartJs()
+                    .then(() => setTimeout(updateResearchDashboard, 80))
+                    .catch(error => reportOptionalAssetError('研究グラフ', error));
             }
             if(tab==='video') updateVideoAnalysisLabels();
             if(tab==='details') updateDetailsTab();
@@ -7207,7 +7257,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v160',
+                appVersion: 'v161',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -8211,7 +8261,7 @@ service cloud.firestore {
         }
 
         async function buildResearchWorkbookBlob(options = {}) {
-            if (!window.ExcelJS) throw new Error('Excel生成ライブラリを読み込めません');
+            await Promise.all([ensureExcelJs(), ensureChartJs()]);
             const dataset = options.dataset || buildResearchDataset();
             const workbook = options.workbook || new ExcelJS.Workbook();
             RESEARCH_EXCEL_MANAGED_SHEETS.forEach(name => {
@@ -8393,6 +8443,7 @@ service cloud.firestore {
             const handle = AppState.researchExcelHandle;
             if (!handle) throw new Error('更新するExcelが接続されていません');
             if (!(await researchHandlePermission(handle, !!options.requestPermission))) throw new Error('Excelへの書き込みが許可されていません');
+            await ensureExcelJs();
             const currentFile = await handle.getFile();
             let workbook = null;
             let originalBuffer = null;
@@ -8668,7 +8719,7 @@ service cloud.firestore {
             if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId)) {
                 throw new Error('MicrosoftのクライアントIDを正しく入力してください');
             }
-            if (!window.msal?.PublicClientApplication) throw new Error('Microsoft認証ライブラリを読み込めません');
+            await ensureMsal();
             if (AppState.microsoftInstance && AppState.microsoftInstanceClientId === clientId && !options.force) return AppState.microsoftInstance;
             const instance = new msal.PublicClientApplication({
                 auth: {
@@ -9036,7 +9087,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v160',
+                appVersion: normalized.appVersion || 'v161',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -12999,6 +13050,8 @@ service cloud.firestore {
         }
 
         function initCharts() {
+            if (!window.Chart) return false;
+            if (timeChart && radarChart) return true;
             const createRecordLineChart = (id, label, color, unitLabel) => {
                 const canvas = document.getElementById(id);
                 if (!canvas) return null;
@@ -13076,6 +13129,7 @@ service cloud.firestore {
 	                updateCharts();
                     updateRealtimePracticeSummary();
 	            }
+            return true;
         }
 
         function updateCharts() {
@@ -18940,7 +18994,7 @@ service cloud.firestore {
         updatePrecisionPanel();
         registerServiceWorker();
         
-        window.addEventListener('DOMContentLoaded', initCharts);
+        // グラフは分析・研究データを開いた時だけ読み込む。
     })();
 
 </script>

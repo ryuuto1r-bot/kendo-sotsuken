@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v160';
+const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v161';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,9 +8,8 @@ const APP_SHELL = [
   './research/apple-research.css',
   './manifest.webmanifest',
   './icon.svg',
-  './vendor/three/three.module.min.js',
-  './vendor/exceljs/exceljs.min.js',
-  './vendor/msal-browser/msal-browser.min.js'
+  './assets/app-tailwind.css?v=161',
+  './vendor/fontawesome/css/all.min.css'
 ];
 
 self.addEventListener('install', event => {
