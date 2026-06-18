@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v159';
+            var version = 'v160';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -2355,6 +2355,30 @@
             box-shadow: 0 12px 34px rgba(15, 23, 42, 0.05);
             min-width: 0;
         }
+        .analysis-summary-card {
+            min-height: 112px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .analysis-summary-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+        }
+        .analysis-summary-value {
+            margin-top: 6px;
+            font-size: clamp(1.25rem, 2vw, 1.8rem);
+            line-height: 1.05;
+            font-weight: 950;
+            letter-spacing: 0;
+        }
+        .analysis-toolbar-panel {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 8px;
+        }
         .record-summary-grid [id^="recordSummary"],
         .detail-kpi-grid [id^="detailLatest"],
         .detail-angle-grid [id^="detail"] {
@@ -4061,59 +4085,56 @@
                 <div class="mt-2 flex flex-wrap gap-2 text-xs">
                     <span id="recordVisibleCount" class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-full font-bold">表示 0本</span>
                     <span id="recordFormalCount" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 rounded-full font-bold">正式 0本</span>
-                    <span id="recordRealtimeCount" class="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full font-bold">目安 0本</span>
+                    <span id="recordRealtimeCount" class="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full font-bold">練習 0本</span>
+                    <span class="bg-slate-50 text-slate-600 border border-slate-200 px-2 py-1 rounded-full font-bold">最新 <b id="recordSummaryLastSaved">---</b></span>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <label class="text-xs font-bold text-slate-500" for="recordFilterSelect">表示</label>
+            <div class="analysis-toolbar-panel flex flex-wrap items-center gap-2">
+                <span class="text-xs font-black text-slate-500 px-1">対象</span>
                 <select id="recordFilterSelect" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white font-bold text-slate-700">
-                    <option value="formal" selected>正式記録のみ</option>
-                    <option value="realtime">リアルタイム目安のみ</option>
-                    <option value="all">全記録</option>
+                    <option value="formal" selected>正式測定</option>
+                    <option value="realtime">練習記録</option>
+                    <option value="all">すべて</option>
                 </select>
-                <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded text-sm shadow flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV出力</button>
-                <button onclick="clearHistory()" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-4 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i> 履歴クリア</button>
+                <details class="relative">
+                    <summary class="list-none cursor-pointer bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-bold"><i class="fa-solid fa-ellipsis mr-1"></i>管理</summary>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 transition text-white px-3 py-2 rounded text-sm shadow flex items-center gap-2"><i class="fa-solid fa-download"></i>CSV</button>
+                        <button onclick="clearHistory()" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-3 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i>削除</button>
+                    </div>
+                </details>
             </div>
         </div>
 
-        <div class="record-summary-grid grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3 mb-4">
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">本数</span>
-                <div id="recordSummaryCount" class="mt-1 text-2xl font-black text-slate-900 font-mono-num">0本</div>
+        <div class="record-summary-grid grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
+            <div class="analysis-summary-card bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <span class="analysis-summary-label">本数</span>
+                <div id="recordSummaryCount" class="analysis-summary-value text-slate-900 font-mono-num">0本</div>
             </div>
-            <div class="bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">平均打突時間</span>
-                <div id="recordSummaryAvgTime" class="mt-1 text-2xl font-black text-blue-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">平均打突時間</span>
+                <div id="recordSummaryAvgTime" class="analysis-summary-value text-blue-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">最高評価</span>
-                <div id="recordSummaryBest" class="mt-1 text-xl font-black text-emerald-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-cyan-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">平均ピーク時刻</span>
+                <div id="recordSummaryBest" class="analysis-summary-value text-cyan-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-rose-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">改善優先</span>
-                <div id="recordSummaryWorst" class="mt-1 text-xl font-black text-rose-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">最短時間</span>
+                <div id="recordSummaryWorst" class="analysis-summary-value text-emerald-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-purple-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">右肘平均</span>
-                <div id="recordSummaryAvgElbow" class="mt-1 text-2xl font-black text-purple-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-purple-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">右肘平均</span>
+                <div id="recordSummaryAvgElbow" class="analysis-summary-value text-purple-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">体幹軸平均</span>
-                <div id="recordSummaryAvgTorso" class="mt-1 text-2xl font-black text-emerald-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">刃筋平均</span>
+                <div id="recordSummaryAvgHasuji" class="analysis-summary-value text-amber-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-amber-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">刃筋平均</span>
-                <div id="recordSummaryAvgHasuji" class="mt-1 text-2xl font-black text-amber-700 font-mono-num">---</div>
+            <div class="analysis-summary-card bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
+                <span class="analysis-summary-label">体幹軸平均</span>
+                <div id="recordSummaryAvgTorso" class="analysis-summary-value text-emerald-700 font-mono-num">---</div>
             </div>
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm col-span-2 xl:col-span-1">
-                <span class="text-[11px] font-bold text-slate-500">最新保存</span>
-                <div id="recordSummaryLastSaved" class="mt-1 text-sm font-black text-slate-800">---</div>
-            </div>
-        </div>
-        
-        <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border mb-6">
-            <h3 class="text-sm font-bold text-slate-700 mb-2">平均指標の比較</h3>
-            <div class="h-80 w-full flex justify-center"><canvas id="radarChart" height="640" style="display: block; box-sizing: border-box; height: 320px; width: 527px;" width="1054"></canvas></div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -4136,6 +4157,10 @@
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">刃筋角の推移</h3>
                 <div class="h-64"><canvas id="hasujiChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
+            </div>
+            <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
+                <h3 class="text-sm font-bold text-slate-700 mb-2">総合バランス</h3>
+                <div class="h-72 w-full flex justify-center"><canvas id="radarChart" height="576" style="display: block; box-sizing: border-box; height: 288px; width: 527px;" width="1054"></canvas></div>
             </div>
         </div>
 
@@ -7002,17 +7027,17 @@ service cloud.firestore {
                 return;
             }
             const avg = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-            const times = records.map(record => Number(record.timeMs || 0)).filter(Number.isFinite);
+            const times = records.map(record => Number(record.timeMs)).filter(value => Number.isFinite(value) && value > 0);
+            const peaks = records.map(record => recordPeakOffsetMs(record, 'official')).filter(value => Number.isFinite(value) && value >= 0);
             const elbows = records.map(record => Number(record.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
             const torso = records.map(record => Math.abs(Number(record.torsoAng || 0))).filter(Number.isFinite);
             const hasuji = records.map(record => Math.abs(Number(record.hasujiAngle || 0))).filter(Number.isFinite);
-            const ranked = [...records].sort((a, b) => scoreRecord(b) - scoreRecord(a));
-            const best = ranked[0];
-            const worst = ranked[ranked.length - 1];
+            const timedRecords = records.filter(record => Number.isFinite(Number(record.timeMs)) && Number(record.timeMs) > 0);
+            const fastest = timedRecords.reduce((current, record) => Number(record.timeMs) < Number(current.timeMs) ? record : current, timedRecords[0]);
             const latest = [...records].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0] || records[records.length - 1];
             safeText('recordSummaryAvgTime', times.length ? `${Math.round(avg(times))} ms` : '---');
-            safeText('recordSummaryBest', best ? `#${best.id} / ${scoreRecord(best)}点` : '---');
-            safeText('recordSummaryWorst', worst ? `#${worst.id} / ${scoreRecord(worst)}点` : '---');
+            safeText('recordSummaryBest', peaks.length ? `${Math.round(avg(peaks))} ms` : '---');
+            safeText('recordSummaryWorst', fastest ? `#${fastest.id} / ${Math.round(Number(fastest.timeMs))} ms` : '---');
             safeText('recordSummaryAvgElbow', elbows.length ? `${avg(elbows).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgTorso', torso.length ? `${avg(torso).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
@@ -7278,7 +7303,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v159',
+                appVersion: 'v160',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -9162,7 +9187,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v159',
+                appVersion: normalized.appVersion || 'v160',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
