@@ -2289,8 +2289,7 @@
         .video-result-kpi-card.primary {
             grid-column: span 2;
         }
-        .video-result-kpi-value,
-        #videoResultBasis {
+        .video-result-kpi-value {
             max-width: 100%;
             overflow-wrap: anywhere;
             word-break: keep-all;
@@ -3949,22 +3948,16 @@
                     <div id="canvasOverlayData" class="absolute top-4 right-4 bg-black/50 border border-slate-600 p-3 rounded-lg text-white hidden flex-col gap-2 backdrop-blur-md text-sm shadow-lg z-30">
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>右肘角:</span><span id="overlayRightAng" class="font-mono font-bold">---°</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>体幹傾斜:</span><span id="overlayTorsoAng" class="font-mono font-bold">---°</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-cyan-300">検出信号:</span><span id="overlaySpeed3d" class="font-mono font-bold text-cyan-300">---</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-amber-300">推定剣先:</span><span id="overlayTipSpeed" class="font-mono font-bold text-amber-300">---</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-lime-300">テープ剣先:</span><span id="overlayTapeSpeed" class="font-mono font-bold text-lime-300">OFF</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-slate-300">Δt:</span><span id="overlayFrameDt" class="font-mono font-bold text-slate-200">---</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-yellow-300">刃筋:</span><span id="overlayHasuji" class="font-mono font-bold text-yellow-300">---°</span></div>
+                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-yellow-300">推定刃筋:</span><span id="overlayHasuji" class="font-mono font-bold text-yellow-300">---°</span></div>
+                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span class="text-emerald-300">姿勢信頼度:</span><span id="overlayVisibility" class="font-mono font-bold text-emerald-300">---</span></div>
                         <div class="hidden"><span>補助:</span><span id="overlayStride">---</span></div>
-                        <div class="flex justify-between gap-4 border-b border-slate-600 pb-1 detail-only"><span class="text-blue-300">軌道ブレ:</span><span id="overlaySway" class="font-mono font-bold text-blue-300">---%</span></div>
                         <div class="hidden"><span>補助:</span><span id="overlaySae">---</span></div>
                     </div>
 
                     <div id="upperBodyModeIndicator" class="absolute bottom-4 right-4 bg-slate-800/80 border border-slate-500 px-3 py-1 rounded text-slate-300 hidden text-xs shadow-lg z-30">
                         <i class="fa-solid fa-eye-slash mr-1"></i> 上半身モード
                     </div>
-                    <div id="zanshinIndicator" class="absolute bottom-4 left-4 bg-green-900/90 border border-green-500 px-4 py-2 rounded-lg text-green-300 hidden text-sm font-bold shadow-lg animate-pulse z-30">
-                        <i class="fa-regular fa-clock mr-1"></i> 残心維持中...
-                    </div>
+                    <div id="zanshinIndicator" class="hidden" aria-hidden="true"></div>
                     <div id="practiceExitBar" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-40 items-center gap-2 bg-black/70 border border-slate-600 rounded-full px-3 py-2 backdrop-blur-md">
                         <button id="exitPracticeFocusBtn" type="button" class="bg-white text-slate-900 px-4 py-2 rounded-full text-xs font-bold">戻る</button>
                         <button id="goDetailsFromPracticeBtn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold">打突詳細へ</button>
@@ -4026,7 +4019,7 @@
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">映像</span><div id="realtimeConditionResolution" class="font-black font-mono-num">300x150</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">FPS</span><div id="realtimeConditionFps" class="font-black font-mono-num">---</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">上半身検出</span><div id="realtimeConditionUpperBody" class="font-black font-mono-num">未検出</div></div>
-	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">角度品質</span><div id="realtimeConditionAngleQuality" class="font-black font-mono-num">未検出</div></div>
+	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">姿勢信頼度</span><div id="realtimeConditionAngleQuality" class="font-black font-mono-num">未検出</div></div>
 	                    </div>
 	                    <p id="realtimeConditionAdvice" class="text-[11px] mt-2 opacity-80">上半身が十分に取れていません。距離・明るさ・カメラ向きを調整してください。</p>
 	                </div>
@@ -4036,14 +4029,8 @@
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">AI</span><div id="precisionEngineStatus" class="font-bold text-slate-800">Pose Landmarker</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">フレーム同期</span><div id="precisionFrameSync" class="font-bold text-slate-800">未開始</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">現在参考値</span><div id="precisionSpeed3d" class="font-bold text-cyan-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">推定剣先参考</span><div id="precisionTipSpeed" class="font-bold text-amber-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">テープ剣先参考</span><div id="precisionTapeSpeed" class="font-bold text-lime-700 font-mono-num">OFF</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Δt / FPS</span><div id="precisionFrameDt" class="font-bold text-slate-800 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">手首信頼度</span><div id="precisionVisibility" class="font-bold text-emerald-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">角度品質</span><div id="precisionAngleQuality" class="font-bold text-purple-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">下降速度</span><div id="precisionDownVelocity" class="font-bold text-blue-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">剣先ROI</span><div id="precisionRoiStatus" class="font-bold text-slate-800">OFF</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Landmarker診断</span><div id="precisionLandmarkerDiag" class="font-bold text-slate-800">GPU / 安定サーバ</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">カメラ</span><div id="precisionCameraStatus" class="font-bold text-slate-800">自動選択（内蔵/既定カメラ）</div></div>
 	                    </div>
@@ -4068,7 +4055,7 @@
                     <div class="overflow-y-auto max-h-64 flex-grow">
                         <table class="w-full text-xs text-center">
                             <thead class="bg-white sticky top-0 shadow-sm text-slate-500">
-	                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">ピーク</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2">体幹</th><th class="px-1 py-2 text-left">評価</th><th class="px-1 py-2">操作</th></tr>
+	                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">ピーク</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2">体幹</th><th class="px-1 py-2 text-left">メモ</th><th class="px-1 py-2">操作</th></tr>
                             </thead>
                             <tbody id="recentHistoryBody" class="font-mono-num"><tr><td colspan="8" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr></tbody>
                         </table>
@@ -4205,7 +4192,7 @@
                 </div>
                 <div class="data-center-table-wrap">
                     <table class="data-center-table">
-                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>評価</th></tr></thead>
+                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>推定刃筋</th><th>姿勢信頼度</th></tr></thead>
                         <tbody id="dataRealtimeBody"><tr><td colspan="8" class="text-slate-400 py-8">データなし</td></tr></tbody>
                     </table>
                 </div>
@@ -4229,7 +4216,7 @@
                 </div>
                 <div class="data-center-table-wrap">
                     <table class="data-center-table">
-                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>補正/方式</th></tr></thead>
+                        <thead><tr><th>#</th><th>日時</th><th>時間</th><th>ピーク</th><th>右肘</th><th>体幹</th><th>推定刃筋</th><th>姿勢信頼度</th></tr></thead>
                         <tbody id="dataFormalBody"><tr><td colspan="8" class="text-slate-400 py-8">データなし</td></tr></tbody>
                     </table>
                 </div>
@@ -4247,7 +4234,7 @@
             <div class="research-data-grid">
                 <div class="research-data-field"><label for="researchParticipantId">被験者ID</label><input id="researchParticipantId" type="text" maxlength="32" placeholder="例: P001"></div>
                 <div class="research-data-field"><label for="researchSessionId">セッションID</label><input id="researchSessionId" type="text" maxlength="32" placeholder="例: 2026-06-18-A"></div>
-                <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="小手">小手</option><option value="胴">胴</option><option value="突き">突き</option><option value="素振り">素振り</option></select></div>
+                <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="素振り">素振り</option></select></div>
                 <div class="research-data-field"><label for="researchExperienceYears">経験年数</label><input id="researchExperienceYears" type="number" min="0" max="80" step="0.5" placeholder="例: 8"></div>
                 <div class="research-data-field"><label for="researchGrade">段級位</label><input id="researchGrade" type="text" maxlength="20" placeholder="例: 二段"></div>
                 <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="正面">正面</option><option value="斜め前">斜め前</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
@@ -4622,17 +4609,6 @@ service cloud.firestore {
                     })();
                 </script>
                 <p id="videoUrlStatus" class="text-xs text-slate-500 mt-2">未選択</p>
-                <div class="legacy-url-loader hidden mt-3 border border-slate-200 rounded-lg p-3 bg-slate-50" aria-hidden="true">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">URL読込</label>
-                    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
-                        <input id="videoUrlInput" type="url" inputmode="url" placeholder="https://example.com/suburi.mp4" class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white">
-                        <button id="loadVideoUrlBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">URL読込</button>
-                    </div>
-                    <div id="youtubeImportGuide" class="hidden mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 leading-relaxed">
-                        <div class="font-black mb-1"><i class="fa-brands fa-youtube mr-1"></i>YouTube URLは直接解析不可</div>
-                        <p>mp4 / mov</p>
-                    </div>
-                </div>
                 <div id="videoDeviceCheckCard" class="video-quality-card warn mt-3 border rounded-lg p-3">
                     <div class="flex items-center justify-between gap-3">
                         <div>
@@ -4755,13 +4731,6 @@ service cloud.firestore {
                             <option value="high">高め（拾いやすい）</option>
                         </select>
                     </label>
-                    <label class="font-bold text-slate-700">ピーク検出基準
-                        <select id="videoOfficialSpeedSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
-                            <option value="wrist" selected="">右手首ピークで検出（推奨）</option>
-                            <option value="tip">推定剣先ピークで検出（参考）</option>
-                            <option value="tape">テープ剣先ピークで検出</option>
-                        </select>
-                    </label>
                     <label class="font-bold text-slate-700">角度基準
                         <select id="angleReferenceSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
                             <option value="torso" selected="">体幹基準で補正</option>
@@ -4807,7 +4776,7 @@ service cloud.firestore {
                     </div>
                     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
                         <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p class="mt-1">右手首が下方向へ動き、下降速度または変位が閾値を超えた最初の候補。</p></div>
-                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">最高速</span><p class="mt-1">開始後の採用信号で最も大きいピーク。現在は右手首/推定剣先から選択。</p></div>
+                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">最高速</span><p class="mt-1">開始後、内部検出信号が最大になったフレーム。研究値はピーク時刻として扱います。</p></div>
                         <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p class="mt-1">最高速後、速度低下・下降停止・急減速が続いた候補。</p></div>
                         <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-2"><span class="font-black text-emerald-700">正式値</span><p class="mt-1">開始/終了を1コマ単位で補正し、確定した範囲の時間と角度。</p></div>
                     </div>
@@ -5011,7 +4980,7 @@ service cloud.firestore {
                         <p class="mt-2 text-[11px] text-slate-600">ドラッグで調整</p>
                         <div class="video-editor-lane-labels">
                             <span>映像</span>
-                            <span>速度ピーク</span>
+                            <span>ピーク時刻</span>
                             <span>角度</span>
                             <span>打突範囲</span>
                         </div>
@@ -5029,11 +4998,6 @@ service cloud.firestore {
                     <div class="video-result-kpi-card"><span class="video-result-kpi-label">右肘角</span><div id="videoResultRightElbow" class="video-result-kpi-value text-purple-700 font-mono-num">---</div></div>
                     <div class="video-result-kpi-card"><span class="video-result-kpi-label">体幹軸</span><div id="videoResultTorso" class="video-result-kpi-value text-emerald-700 font-mono-num">---</div></div>
                     <div class="video-result-kpi-card"><span class="video-result-kpi-label">刃筋</span><div id="videoResultHasuji" class="video-result-kpi-value text-amber-700 font-mono-num">---</div></div>
-                    <div class="video-result-kpi-card secondary"><span class="video-result-kpi-label">最大減速時刻</span><div id="videoResultDecel" class="video-result-kpi-value text-red-700 font-mono-num">---</div></div>
-                    <div class="video-result-kpi-card secondary"><span class="video-result-kpi-label">手首ピーク時刻</span><div id="videoResultWristPeak" class="video-result-kpi-value text-slate-700 font-mono-num">---</div></div>
-                    <div class="video-result-kpi-card secondary"><span class="video-result-kpi-label">推定剣先ピーク時刻</span><div id="videoResultTipPeak" class="video-result-kpi-value text-amber-700 font-mono-num">---</div></div>
-                    <div class="video-result-kpi-card secondary"><span class="video-result-kpi-label">テープ剣先ピーク時刻</span><div id="videoResultTapePeak" class="video-result-kpi-value text-lime-700 font-mono-num">---</div></div>
-                    <div class="video-result-kpi-card secondary"><span class="video-result-kpi-label">採用基準</span><div id="videoResultBasis" class="mt-2 font-black text-slate-700 leading-tight">右手首ピーク / 体幹基準</div></div>
                 </div>
                 <details id="videoResultSupportDetails" class="video-result-support-details" data-video-result-section="preview result">
                     <summary><i class="fa-solid fa-circle-info mr-1"></i>補助情報・動画確認・グラフ</summary>
@@ -5050,7 +5014,7 @@ service cloud.firestore {
                             <div id="videoDetailTiming" class="font-black font-mono-num text-blue-900 mt-1">---</div>
                         </div>
                         <div class="rounded border border-cyan-100 bg-cyan-50 p-2">
-                            <span class="text-cyan-700 font-bold">ピーク時刻比較（ms）</span>
+                            <span class="text-cyan-700 font-bold">正式ピーク時刻</span>
                             <div id="videoDetailSpeedSet" class="font-black font-mono-num text-cyan-900 mt-1">---</div>
                         </div>
                         <div class="rounded border border-purple-100 bg-purple-50 p-2">
@@ -5092,8 +5056,8 @@ service cloud.firestore {
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">本数</span><div id="videoMultiCount" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均時間</span><div id="videoMultiAvgDuration" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最速時刻</span><div id="videoMultiTopSpeed" class="font-black font-mono-num text-amber-900">---</div></div>
-                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最良</span><div id="videoMultiBest" class="font-black font-mono-num text-emerald-700">---</div></div>
-                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">要確認</span><div id="videoMultiWorst" class="font-black font-mono-num text-red-700">---</div></div>
+                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均刃筋</span><div id="videoMultiBest" class="font-black font-mono-num text-amber-700">---</div></div>
+                        <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均信頼度</span><div id="videoMultiWorst" class="font-black font-mono-num text-emerald-700">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均軸</span><div id="videoMultiAvgTorso" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">除外</span><div id="videoMultiRejected" class="font-black font-mono-num text-slate-700">---</div></div>
                     </div>
@@ -5114,7 +5078,7 @@ service cloud.firestore {
                     <div class="bg-white rounded border border-amber-100 max-h-[420px] overflow-y-auto p-2">
                         <table class="video-strike-card-table w-full text-xs text-left">
                             <thead class="bg-amber-100 text-amber-900 sticky top-0">
-                                <tr><th class="p-2">#</th><th class="p-2">開始</th><th class="p-2">最高速</th><th class="p-2">終了</th><th class="p-2">時間</th><th class="p-2">最高速時刻</th><th class="p-2">右肘</th><th class="p-2">体幹</th><th class="p-2">刃筋</th><th class="p-2">評価</th><th class="p-2">移動/補正</th></tr>
+                                <tr><th class="p-2">#</th><th class="p-2">開始</th><th class="p-2">最高速</th><th class="p-2">終了</th><th class="p-2">時間</th><th class="p-2">最高速時刻</th><th class="p-2">右肘</th><th class="p-2">体幹</th><th class="p-2">刃筋</th><th class="p-2">信頼度</th><th class="p-2">移動/補正</th></tr>
                             </thead>
                             <tbody id="videoStrikeListBody"><tr><td colspan="11" class="p-4 text-amber-700">複数打突モードで解析すると表示されます</td></tr></tbody>
                         </table>
@@ -5384,6 +5348,7 @@ service cloud.firestore {
                             <div class="grid grid-cols-1 gap-2 text-xs">
                                 <label class="flex items-center gap-2"><input id="videoSkeletonToggle" type="checkbox" checked=""> 骨格表示</label>
                                 <label class="flex items-center gap-2"><input id="videoAngleOverlayToggle" type="checkbox" checked=""> 角度表示</label>
+                                <label class="flex items-center gap-2"><input id="videoHasujiOverlayToggle" type="checkbox" checked=""> 推定刃筋を表示</label>
                                 <select id="videoAngleOverlaySelect" class="border border-slate-200 rounded px-2 py-2 bg-white">
                                     <option value="rightElbow" selected="">右肘角のみ</option>
                                     <option value="torso">体幹軸のみ</option>
@@ -5547,20 +5512,16 @@ service cloud.firestore {
             </div>
         </div>
 
-        <div class="detail-kpi-grid grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="detail-kpi-grid grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式ピーク時刻</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">手首ピーク時刻</span><div id="detailLatestWristSpeed" class="text-2xl font-black text-cyan-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-amber-500"><span class="text-xs text-slate-500">推定剣先ピーク</span><div id="detailLatestTipSpeed" class="text-2xl font-black text-amber-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-lime-500"><span class="text-xs text-slate-500">テープピーク</span><div id="detailLatestTapeSpeed" class="text-2xl font-black text-lime-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-emerald-500"><span class="text-xs text-slate-500">姿勢信頼度</span><div id="detailLatestVisibility" class="text-2xl font-black text-emerald-700 font-mono-num">---</div></div>
         </div>
 
-        <div class="detail-angle-grid grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="detail-angle-grid grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">右肘角</span><div id="detailRightElbow" class="text-xl font-black text-purple-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">左肘角</span><div id="detailLeftElbow" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">体幹軸</span><div id="detailTorso" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">刃筋</span><div id="detailHasuji" class="text-xl font-black text-yellow-700 font-mono-num">---</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">肩ライン</span><div id="detailShoulderLine" class="text-xl font-black text-rose-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border"><span class="text-xs text-slate-500">推定刃筋</span><div id="detailHasuji" class="text-xl font-black text-yellow-700 font-mono-num">---</div></div>
         </div>
 
         <div class="detail-record-table-shell bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
@@ -5572,8 +5533,8 @@ service cloud.firestore {
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">本数カウント</span><div id="summaryCount" class="text-xl font-black text-slate-900 font-mono-num">0本</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均打突時間</span><div id="summaryAvgTime" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最短ピーク時刻</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
-                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も良かった1本</span><div id="summaryBest" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
-                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最も悪かった1本</span><div id="summaryWorst" class="text-xl font-black text-red-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均推定刃筋</span><div id="summaryBest" class="text-xl font-black text-amber-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均姿勢信頼度</span><div id="summaryWorst" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">軸ブレ平均</span><div id="summaryAvgAxis" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">右肘角度平均</span><div id="summaryAvgRightElbow" class="text-xl font-black text-purple-700 font-mono-num">---</div></div>
             </div>
@@ -5594,14 +5555,13 @@ service cloud.firestore {
                             <th class="px-2 py-2">時間</th>
                             <th class="px-2 py-2">ピーク</th>
                             <th class="px-2 py-2">右肘</th>
-                            <th class="px-2 py-2">左肘</th>
 	                            <th class="px-2 py-2">体幹</th>
-                            <th class="px-2 py-2">刃筋</th>
-                            <th class="px-2 py-2">肩ライン</th>
-                            <th class="px-2 py-2 text-left">評価/メモ</th>
+                            <th class="px-2 py-2">推定刃筋</th>
+                            <th class="px-2 py-2">信頼度</th>
+                            <th class="px-2 py-2 text-left">メモ</th>
                         </tr>
                     </thead>
-	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
+	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="10" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -5622,10 +5582,8 @@ service cloud.firestore {
 	                </select>
 		                <select id="modelAngleSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white">
 		                    <option value="rightElbow" selected="">右肘角</option>
-		                    <option value="leftElbow">左肘角</option>
 		                    <option value="torso">体幹軸</option>
 		                    <option value="hasuji">刃筋</option>
-		                    <option value="shoulders">肩ライン</option>
 		                </select>
 		                <select id="modelCameraDirectionSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="撮影方向を補正">
 		                    <option value="auto" selected="">撮影: 自動補正</option>
@@ -5727,7 +5685,7 @@ service cloud.firestore {
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="modelLatestTime" class="font-black text-blue-700 font-mono-num">---</div></div>
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">ピーク時刻</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">角度品質</span><div id="modelAngleQuality" class="font-black text-purple-700 font-mono-num">---</div></div>
+                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">姿勢信頼度</span><div id="modelAngleQuality" class="font-black text-purple-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">終了理由</span><div id="modelEndReason" class="font-bold text-slate-700">---</div></div>
 	                        <div class="bg-violet-50 border border-violet-100 rounded p-2 col-span-2"><span class="text-violet-700">選択角度の変化率</span><div id="modelAngleRate" class="font-black text-violet-800 font-mono-num">動画解析フレームで表示</div></div>
 	                    </div>
@@ -5735,7 +5693,7 @@ service cloud.firestore {
 
                 <div class="bg-violet-50 p-4 rounded-xl border border-violet-100">
                     <h3 class="text-sm font-bold text-violet-900 mb-2">見方</h3>
-	                    <p class="text-xs text-violet-800 leading-relaxed">紫=右肘、緑=体幹軸、黄=刃筋、赤=肩ラインです。3D上に同時表示し、右側の選択項目だけ太く強調します。動画解析でフレームを動かした場合は、そのフレームの姿勢を反映します。</p>
+	                    <p class="text-xs text-violet-800 leading-relaxed">紫=右肘、緑=体幹軸、黄=推定刃筋です。3D上に同時表示し、右側の選択項目だけ太く強調します。動画解析でフレームを動かした場合は、そのフレームの姿勢を反映します。</p>
                 </div>
             </div>
         </div>
@@ -5778,23 +5736,7 @@ service cloud.firestore {
                     <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>上級設定</span></summary>
                     <p class="text-xs text-slate-500 mt-2">通常は変更不要です。</p>
                     <div class="advanced-body mt-4 space-y-4">
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" id="paramSignalMode" class="w-5 h-5 text-blue-600 rounded border-gray-300">
-                                <span class="text-base font-bold text-blue-900">シグナル反応</span>
-                            </label>
-                            <p class="text-xs text-blue-700 mt-2 ml-8">構えて静止すると、1〜3秒後にランダムで「ピーッ」と鳴ります。音が鳴ってから打突が完了するまでの時間を計測します。</p>
-                        </div>
-
-	                    <div class="bg-red-50 p-4 rounded-lg border border-red-100">
-	                        <label class="flex items-center gap-3 cursor-pointer">
-	                            <input type="checkbox" id="paramTsukiMode" class="w-5 h-5 text-red-600 rounded border-gray-300">
-                                <span class="text-base font-bold text-red-900">突き（ツキ）モードを有効にする</span>
-                            </label>
-	                        <p class="text-xs text-red-700 mt-2 ml-8">突き動作を測る時だけ使います。</p>
-	                    </div>
-
-	                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
+		                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
 	                        <label class="flex items-center gap-3 cursor-pointer">
 	                            <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
 	                            <span class="text-base font-bold text-cyan-900">高精度解析を試す</span>
@@ -5853,14 +5795,16 @@ service cloud.firestore {
 	                        <input type="checkbox" id="paramAngleOverlay" checked="" class="w-5 h-5 text-violet-600 rounded border-gray-300">
 	                        <span class="text-sm font-bold text-violet-900">映像に角度を表示</span>
 	                    </label>
+	                    <label class="flex items-center gap-3 cursor-pointer mb-3">
+	                        <input type="checkbox" id="paramHasujiOverlay" checked="" class="w-5 h-5 text-amber-600 rounded border-gray-300">
+	                        <span class="text-sm font-bold text-violet-900">推定刃筋を表示</span>
+	                    </label>
 	                    <label class="block text-xs font-bold text-violet-900 mb-1">表示する角度</label>
 	                    <select id="paramAngleTarget" class="w-full border border-violet-200 rounded px-2 py-2 text-sm bg-white">
 	                        <option value="all" selected="">主要角度すべて</option>
 	                        <option value="rightElbow">右肘</option>
-	                        <option value="leftElbow">左肘</option>
 	                        <option value="torso">体幹軸</option>
 	                        <option value="hasuji">刃筋</option>
-	                        <option value="shoulders">肩ライン</option>
 	                    </select>
 	                    <p id="angleOverlayHint" class="text-xs text-violet-700 mt-2">黄色の点が基準点、色つき線が計算に使う線です。</p>
 	                </div>
@@ -5881,19 +5825,7 @@ service cloud.firestore {
                     </div>
                 </div>
 
-	                <div class="hidden">
-                    <div class="flex justify-between items-end mb-2">
-                        <label class="block text-sm font-bold text-slate-700">補助音量閾値</label>
-                        <button type="button" id="calibrateKiaiBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-bold transition">自動設定</button>
-                    </div>
-	                    <div class="flex items-center gap-4">
-	                        <input type="range" id="paramKiaiThreshold" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-	                        <span id="valKiaiThreshold" class="font-mono-num font-bold text-slate-700 w-12 text-right">0.10</span>
-	                    </div>
-	                    <div id="calibrateMsg" class="hidden mt-2 text-xs text-slate-500">音量を測定しています。</div>
-	                </div>
-
-                <div class="border-t border-slate-100 pt-4">
+	                <div class="border-t border-slate-100 pt-4">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" id="paramShowGuide" checked="" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                         <span class="text-sm font-bold text-slate-700">ガイド線を表示</span>
@@ -5989,6 +5921,7 @@ service cloud.firestore {
             swingSamples: [],
             tipSwingSamples: [],
             tapeSwingSamples: [],
+            swingAngleSamples: [],
             lastSwingMetrics: null,
             swingPeakSpeedMps: 0,
             swingPeakTimeMs: 0,
@@ -6007,6 +5940,7 @@ service cloud.firestore {
             timingEndStatus: '---',
             angleOverlay: true,
             angleTarget: 'all',
+            showHasujiOverlay: true,
             angleFilters: {},
             currentAngleQuality: 0,
             liveOverlayValues: null,
@@ -6688,6 +6622,7 @@ service cloud.firestore {
             Params.minAngleVisibility = 0.45;
             AppState.angleOverlay = true;
 	            AppState.angleTarget = 'all';
+            AppState.showHasujiOverlay = true;
             AppState.videoAngleOverlay = true;
             AppState.videoAngleOverlayTarget = 'rightElbow';
             AppState.videoStrikeMode = 'multi';
@@ -6699,17 +6634,14 @@ service cloud.firestore {
 
             const raised = document.getElementById('paramRaisedY');
             const swing = document.getElementById('paramSwingVel');
-            const kiai = document.getElementById('paramKiaiThreshold');
             const guide = document.getElementById('paramShowGuide');
-            const signal = document.getElementById('paramSignalMode');
-            const tsuki = document.getElementById('paramTsukiMode');
             const useLandmarker = document.getElementById('paramUsePoseLandmarker');
             const tipTracking = document.getElementById('paramTipTracking');
             const tapeColor = document.getElementById('paramTapeColor');
             const shinaiExtension = document.getElementById('paramShinaiExtension');
             const angleOverlay = document.getElementById('paramAngleOverlay');
+            const hasujiOverlay = document.getElementById('paramHasujiOverlay');
             const angleTarget = document.getElementById('paramAngleTarget');
-            const videoOfficialSpeed = document.getElementById('videoOfficialSpeedSelect');
             const angleReference = document.getElementById('angleReferenceSelect');
             const videoStrikeMode = document.getElementById('videoStrikeModeSelect');
             const videoStrikeSensitivity = document.getElementById('videoStrikeSensitivitySelect');
@@ -6730,8 +6662,6 @@ service cloud.firestore {
             if (swing) { swing.value = Params.swingVelThreshold; document.getElementById('valSwingVel').innerText = Params.swingVelThreshold.toFixed(3); }
             if (kiai) { kiai.value = Params.kiaiThreshold; document.getElementById('valKiaiThreshold').innerText = Params.kiaiThreshold.toFixed(2); }
             if (guide) guide.checked = true;
-            if (signal) signal.checked = false;
-            if (tsuki) tsuki.checked = false;
             if (useLandmarker) useLandmarker.checked = true;
             if (tipTracking) tipTracking.checked = false;
             if (tapeColor) tapeColor.value = 'yellow';
@@ -6740,7 +6670,8 @@ service cloud.firestore {
             if (videoCaptureFps) videoCaptureFps.value = String(Params.videoCaptureFps);
             if (videoPlaybackFps) videoPlaybackFps.value = String(Params.videoPlaybackFps);
             updateVideoSlowMotionUi();
-            if (angleOverlay) angleOverlay.checked = true;
+	            if (angleOverlay) angleOverlay.checked = true;
+            if (hasujiOverlay) hasujiOverlay.checked = true;
 	            if (angleTarget) angleTarget.value = 'all';
             if (videoOfficialSpeed) videoOfficialSpeed.value = 'wrist';
             if (angleReference) angleReference.value = 'torso';
@@ -6749,6 +6680,8 @@ service cloud.firestore {
             if (videoAnalysisFps) videoAnalysisFps.value = '60';
             if (videoAngleOverlay) videoAngleOverlay.checked = true;
             if (videoAngleOverlaySelect) videoAngleOverlaySelect.value = 'rightElbow';
+            const videoHasujiOverlayToggle = document.getElementById('videoHasujiOverlayToggle');
+            if (videoHasujiOverlayToggle) videoHasujiOverlayToggle.checked = true;
             if (videoTapeColor) videoTapeColor.value = 'yellow';
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
             if (videoTapeTolerance) { videoTapeTolerance.value = Params.tapeHueTolerance; safeText('videoTapeToleranceValue', `${Params.tapeHueTolerance}°`); }
@@ -6894,18 +6827,6 @@ service cloud.firestore {
             return null;
         }
 
-        function scoreRecord(record) {
-            const time = Number(record.timeMs || 0);
-            const axis = Math.abs(Number(record.torsoAng || 0));
-            const elbow = Number(record.rightAng || 0);
-            const hasuji = Math.abs(Number(record.hasujiAngle || 0));
-            const timeScore = clamp(100 - Math.abs(time - 180) * 0.28, 0, 100);
-            const axisScore = clamp(100 - axis * 6, 0, 100);
-            const elbowScore = elbow ? clamp(100 - Math.max(0, 152 - elbow) * 3, 0, 100) : 50;
-            const hasujiScore = clamp(100 - hasuji * 2.8, 0, 100);
-            return Math.round(timeScore * 0.35 + axisScore * 0.25 + elbowScore * 0.25 + hasujiScore * 0.15);
-        }
-
         function recordTypeOf(record) {
             if (!record) return 'realtime';
             if (record.recordType === 'formal' || record.recordType === 'realtime') return record.recordType;
@@ -6982,7 +6903,7 @@ service cloud.firestore {
             safeText('realtimeSessionAvgElbow', avgElbow !== null ? `${avgElbow.toFixed(1)}°` : '---');
             safeText('realtimeSessionAvgTorso', avgTorso !== null ? `${avgTorso.toFixed(1)}°` : '---');
             safeText('realtimeSessionLastSaved', formatRecordDate(latest));
-            safeText('realtimeSessionHint', `直近 #${latest.id} / ${latest.shortLabel || '記録済み'}。練習後は「記録」で確認できます。`);
+            safeText('realtimeSessionHint', `直近 #${latest.id} を保存しました。練習後は「打突詳細」で確認できます。`);
         }
 
         function analysisRecords() {
@@ -7087,16 +7008,6 @@ service cloud.firestore {
             safeText(`${prefix}Latest`, summary.latest ? formatRecordDate(summary.latest) : '---');
         }
 
-        function dataCenterRowMeta(record, kind) {
-            if (kind === 'formal') {
-                const frames = [record.startFrameIndex, record.peakFrameIndex, record.endFrameIndex]
-                    .filter(value => value !== undefined && value !== null && value !== '')
-                    .join(' / ');
-                return frames ? `f ${frames}` : (record.measurementMethod || '動画測定');
-            }
-            return record.shortLabel || record.measurementMethod || 'リアルタイム';
-        }
-
         function renderDataCenterTable(kind, records) {
             const body = document.getElementById(kind === 'formal' ? 'dataFormalBody' : 'dataRealtimeBody');
             if (!body) return;
@@ -7114,7 +7025,7 @@ service cloud.firestore {
                     <td class="font-black text-purple-700 font-mono-num">${record.rightAng || '---'}°</td>
                     <td class="font-black text-emerald-700 font-mono-num">${Number.isFinite(Number(record.torsoAng)) ? Number(record.torsoAng).toFixed(1) + '°' : '---'}</td>
                     <td class="font-black text-amber-700 font-mono-num">${record.hasujiAngle || '---'}°</td>
-                    <td class="text-left text-slate-700">${escapeHtml(dataCenterRowMeta(record, kind))}</td>
+                    <td class="font-black text-emerald-700 font-mono-num">${record.avgVisibility ? Math.round(Number(record.avgVisibility) * 100) + '%' : '---'}</td>
                 </tr>
             `).join('');
         }
@@ -7146,9 +7057,9 @@ service cloud.firestore {
             const records = recordsByDataKind(normalized);
             if (!records.length) return showToast(normalized === 'formal' ? '動画測定データがありません' : 'リアルタイム分析データがありません', 'yellow');
             const labels = [
-                'No.', '区分', '記録日時', '打突時間(ms)', '正式ピーク時刻(ms)', '手首ピーク時刻(ms)', '推定剣先ピーク時刻(ms)', 'テープ剣先ピーク時刻(ms)',
-                '右肘(deg)', '左肘(deg)', '体幹軸(deg)', '刃筋(deg)', '肩ライン(deg)', '姿勢信頼度', '角度品質',
-                '開始フレーム', '最高速フレーム', '終了フレーム', '開始時刻(ms)', '最高速時刻(ms)', '終了時刻(ms)', '測定方式', '評価', 'メモ', '打突時間定義'
+                'No.', '区分', '記録日時', '打突時間(ms)', '正式ピーク時刻(ms)',
+                '右肘(deg)', '体幹軸(deg)', '推定刃筋(deg)', '姿勢信頼度',
+                '開始フレーム', '最高速フレーム', '終了フレーム', '開始時刻(ms)', '最高速時刻(ms)', '終了時刻(ms)', '測定方式', 'メモ', '打突時間定義'
             ];
             const rows = records.map(record => [
                 record.id,
@@ -7156,16 +7067,10 @@ service cloud.firestore {
                 formatRecordDate(record),
                 record.timeMs ?? '',
                 recordPeakOffsetMs(record, 'official') ?? '',
-                recordPeakOffsetMs(record, 'wrist') ?? '',
-                recordPeakOffsetMs(record, 'tip') ?? '',
-                recordPeakOffsetMs(record, 'tape') ?? '',
                 record.rightAng ?? '',
-                record.leftAng ?? '',
                 record.torsoAng ?? '',
                 record.hasujiAngle ?? '',
-                record.shoulderLineAng ?? '',
                 record.avgVisibility ?? '',
-                record.angleQuality ?? '',
                 record.startFrameIndex ?? '',
                 record.peakFrameIndex ?? '',
                 record.endFrameIndex ?? '',
@@ -7173,7 +7078,6 @@ service cloud.firestore {
                 record.peakTimeMs ?? '',
                 record.endTimeMs ?? '',
                 record.measurementMethod ?? '',
-                record.shortLabel ?? '',
                 record.memo ?? '',
                 record.timingDefinition ?? ''
             ]);
@@ -7742,38 +7646,19 @@ service cloud.firestore {
             ['appVersion', 'アプリ版', 11],
             ['timeMs', '打突時間(ms)', 14],
             ['officialPeakOffsetMs', '正式ピーク時刻(ms)', 18],
-            ['wristPeakOffsetMs', '手首ピーク時刻(ms)', 18],
-            ['tipPeakOffsetMs', '推定剣先ピーク時刻(ms)', 20],
-            ['tapePeakOffsetMs', 'テープ剣先ピーク時刻(ms)', 21],
             ['rightAng', '終了右肘角(deg)', 16],
             ['torsoAng', '終了体幹軸(deg)', 16],
             ['hasujiAngle', '終了推定刃筋角(deg)', 20],
             ['rightStart', '開始右肘角(deg)', 16],
             ['rightPeak', '最高速右肘角(deg)', 18],
             ['rightEnd', '終了右肘角区間(deg)', 20],
-            ['rightMin', '右肘最小(deg)', 14],
-            ['rightMax', '右肘最大(deg)', 14],
-            ['rightChange', '右肘変化量(deg)', 16],
-            ['rightAvgVelocity', '右肘平均角速度(deg/s)', 22],
-            ['rightMaxVelocity', '右肘最大角速度(deg/s)', 22],
             ['torsoStart', '開始体幹軸(deg)', 16],
             ['torsoPeak', '最高速体幹軸(deg)', 18],
             ['torsoEnd', '終了体幹軸区間(deg)', 20],
-            ['torsoMin', '体幹最小(deg)', 14],
-            ['torsoMax', '体幹最大(deg)', 14],
-            ['torsoChange', '体幹変化量(deg)', 16],
-            ['torsoAvgVelocity', '体幹平均角速度(deg/s)', 22],
-            ['torsoMaxVelocity', '体幹最大角速度(deg/s)', 22],
             ['hasujiStart', '開始推定刃筋(deg)', 18],
             ['hasujiPeak', '最高速推定刃筋(deg)', 20],
             ['hasujiEnd', '終了推定刃筋区間(deg)', 21],
-            ['hasujiMin', '推定刃筋最小(deg)', 18],
-            ['hasujiMax', '推定刃筋最大(deg)', 18],
-            ['hasujiChange', '推定刃筋変化量(deg)', 20],
-            ['hasujiAvgVelocity', '推定刃筋平均角速度(deg/s)', 24],
-            ['hasujiMaxVelocity', '推定刃筋最大角速度(deg/s)', 24],
             ['avgVisibility', '姿勢信頼度', 13],
-            ['angleQuality', '角度品質', 12],
             ['analysisFps', '解析fps', 11],
             ['videoFpsEstimate', '動画fps推定', 13],
             ['startFrameIndex', '開始フレーム', 14],
@@ -7787,7 +7672,6 @@ service cloud.firestore {
             ['wasCorrected', '手動補正', 11],
             ['measurementMethod', '測定方式', 32],
             ['poseEngine', '姿勢推定エンジン', 22],
-            ['shortLabel', '評価', 14],
             ['memo', 'メモ', 28],
             ['timingDefinition', '打突時間定義', 55]
         ]);
@@ -7844,7 +7728,6 @@ service cloud.firestore {
                 appVersion: String(values.appVersion || '').trim(),
                 measurementMethod: String(values.measurementMethod || '').trim(),
                 poseEngine: String(values.poseEngine || '').trim(),
-                shortLabel: String(values.shortLabel || '').trim(),
                 memo: String(values.memo || '').trim(),
                 timingDefinition: String(values.timingDefinition || '').trim(),
                 researchImportedFromExcel: true,
@@ -7853,8 +7736,7 @@ service cloud.firestore {
             };
             [
                 'experienceYears', 'cameraDistanceMeters', 'timeMs', 'officialPeakOffsetMs',
-                'wristPeakOffsetMs', 'tipPeakOffsetMs', 'tapePeakOffsetMs', 'rightAng',
-                'torsoAng', 'hasujiAngle', 'avgVisibility', 'angleQuality', 'analysisFps',
+                'rightAng', 'torsoAng', 'hasujiAngle', 'avgVisibility', 'analysisFps',
                 'videoFpsEstimate', 'startFrameIndex', 'peakFrameIndex', 'endFrameIndex'
             ].forEach(key => { record[key] = researchNumber(values[key]); });
             const angles = {
@@ -7872,36 +7754,12 @@ service cloud.firestore {
                     rightElbow: researchNumber(values.rightEnd),
                     torso: researchNumber(values.torsoEnd),
                     hasuji: researchNumber(values.hasujiEnd)
-                },
-                stats: {
-                    rightElbow: {
-                        min: researchNumber(values.rightMin),
-                        max: researchNumber(values.rightMax),
-                        change: researchNumber(values.rightChange),
-                        averageAngularVelocity: researchNumber(values.rightAvgVelocity),
-                        maxAngularVelocity: researchNumber(values.rightMaxVelocity)
-                    },
-                    torso: {
-                        min: researchNumber(values.torsoMin),
-                        max: researchNumber(values.torsoMax),
-                        change: researchNumber(values.torsoChange),
-                        averageAngularVelocity: researchNumber(values.torsoAvgVelocity),
-                        maxAngularVelocity: researchNumber(values.torsoMaxVelocity)
-                    },
-                    hasuji: {
-                        min: researchNumber(values.hasujiMin),
-                        max: researchNumber(values.hasujiMax),
-                        change: researchNumber(values.hasujiChange),
-                        averageAngularVelocity: researchNumber(values.hasujiAvgVelocity),
-                        maxAngularVelocity: researchNumber(values.hasujiMaxVelocity)
-                    }
                 }
             };
             const angleValues = [
                 ...Object.values(angles.start),
                 ...Object.values(angles.peak),
-                ...Object.values(angles.end),
-                ...Object.values(angles.stats).flatMap(item => Object.values(item))
+                ...Object.values(angles.end)
             ];
             if (angleValues.some(Number.isFinite)) record.researchAngles = angles;
 
@@ -7935,16 +7793,21 @@ service cloud.firestore {
             const actualHeaders = Array.from({ length: Math.max(sheet.getRow(1).cellCount, expectedHeaders.length) }, (_, index) =>
                 String(researchExcelPlainValue(sheet.getCell(1, index + 1).value) || '').trim()
             );
-            const schemaMatches = actualHeaders.length === expectedHeaders.length
-                && expectedHeaders.every((header, index) => actualHeaders[index] === header);
-            if (!schemaMatches) {
-                throw new Error('列構成が現行64列スキーマと異なるため、安全のため更新を中止しました');
+            const headerIndexes = new Map();
+            actualHeaders.forEach((header, index) => {
+                if (header && !headerIndexes.has(header)) headerIndexes.set(header, index + 1);
+            });
+            const optionalHeaders = new Set();
+            const missingHeaders = expectedHeaders.filter(header => !headerIndexes.has(header) && !optionalHeaders.has(header));
+            if (missingHeaders.length) {
+                throw new Error(`列構成が現行スキーマと異なるため、安全のため更新を中止しました。不足: ${missingHeaders.slice(0, 4).join(' / ')}`);
             }
             const records = [];
             for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
                 const values = {};
-                RESEARCH_EXCEL_COLUMNS.forEach(([key], index) => {
-                    values[key] = researchExcelPlainValue(sheet.getCell(rowNumber, index + 1).value);
+                RESEARCH_EXCEL_COLUMNS.forEach(([key, header]) => {
+                    const columnIndex = headerIndexes.get(header);
+                    values[key] = columnIndex ? researchExcelPlainValue(sheet.getCell(rowNumber, columnIndex).value) : '';
                 });
                 if (values.recordId === '' && values.timeMs === '' && values.recordedAt === '') continue;
                 records.push(researchExcelRecordFromValues(values));
@@ -8012,7 +7875,6 @@ service cloud.firestore {
             const correction = record.researchCorrection || {};
             const recordedAtDate = researchExcelDateObject(record.recordedAt);
             const phase = (name, key) => researchNumber(angles?.[name]?.[key]);
-            const stat = (key, name) => researchNumber(angles?.stats?.[key]?.[name]);
             return {
                 recordId: record.id,
                 recordType: recordTypeOf(record) === 'formal' ? '動画解析' : 'リアルタイム',
@@ -8030,38 +7892,19 @@ service cloud.firestore {
                 appVersion: record.appVersion || '',
                 timeMs: researchNumber(record.timeMs),
                 officialPeakOffsetMs: recordPeakOffsetMs(record, 'official'),
-                wristPeakOffsetMs: recordPeakOffsetMs(record, 'wrist'),
-                tipPeakOffsetMs: recordPeakOffsetMs(record, 'tip'),
-                tapePeakOffsetMs: recordPeakOffsetMs(record, 'tape'),
                 rightAng: researchNumber(record.rightAng),
                 torsoAng: researchNumber(record.torsoAng),
                 hasujiAngle: researchNumber(record.hasujiAngle),
                 rightStart: phase('start', 'rightElbow'),
                 rightPeak: phase('peak', 'rightElbow'),
                 rightEnd: phase('end', 'rightElbow'),
-                rightMin: stat('rightElbow', 'min'),
-                rightMax: stat('rightElbow', 'max'),
-                rightChange: stat('rightElbow', 'change'),
-                rightAvgVelocity: stat('rightElbow', 'averageAngularVelocity'),
-                rightMaxVelocity: stat('rightElbow', 'maxAngularVelocity'),
                 torsoStart: phase('start', 'torso'),
                 torsoPeak: phase('peak', 'torso'),
                 torsoEnd: phase('end', 'torso'),
-                torsoMin: stat('torso', 'min'),
-                torsoMax: stat('torso', 'max'),
-                torsoChange: stat('torso', 'change'),
-                torsoAvgVelocity: stat('torso', 'averageAngularVelocity'),
-                torsoMaxVelocity: stat('torso', 'maxAngularVelocity'),
                 hasujiStart: phase('start', 'hasuji'),
                 hasujiPeak: phase('peak', 'hasuji'),
                 hasujiEnd: phase('end', 'hasuji'),
-                hasujiMin: stat('hasuji', 'min'),
-                hasujiMax: stat('hasuji', 'max'),
-                hasujiChange: stat('hasuji', 'change'),
-                hasujiAvgVelocity: stat('hasuji', 'averageAngularVelocity'),
-                hasujiMaxVelocity: stat('hasuji', 'maxAngularVelocity'),
                 avgVisibility: researchNumber(record.avgVisibility),
-                angleQuality: researchNumber(record.angleQuality),
                 analysisFps: researchNumber(record.analysisFps) ?? (researchNumber(record.frameDtMs) ? 1000 / researchNumber(record.frameDtMs) : null),
                 videoFpsEstimate: researchNumber(record.videoFpsEstimate),
                 startFrameIndex: researchNumber(record.startFrameIndex),
@@ -8075,7 +7918,6 @@ service cloud.firestore {
                 wasCorrected: correction.wasCorrected ? 'あり' : (recordTypeOf(record) === 'formal' ? 'なし' : ''),
                 measurementMethod: record.measurementMethod || '',
                 poseEngine: record.poseEngine || '',
-                shortLabel: record.shortLabel || '',
                 memo: record.memo || '',
                 timingDefinition: record.timingDefinition || ''
             };
@@ -8114,7 +7956,7 @@ service cloud.firestore {
                 });
             });
             const dateIndex = RESEARCH_EXCEL_COLUMNS.findIndex(([key]) => key === 'recordedAt') + 1;
-            const confidenceIndexes = ['avgVisibility', 'angleQuality'].map(key => RESEARCH_EXCEL_COLUMNS.findIndex(([columnKey]) => columnKey === key) + 1);
+            const confidenceIndexes = ['avgVisibility'].map(key => RESEARCH_EXCEL_COLUMNS.findIndex(([columnKey]) => columnKey === key) + 1);
             confidenceIndexes.forEach(index => {
                 if (index > 0 && rowCount) sheet.getColumn(index).numFmt = '0.0%';
             });
@@ -8190,20 +8032,25 @@ service cloud.firestore {
                 ['終了推定刃筋角 (deg)', record => Math.abs(Number(record.hasujiAngle))],
                 ['姿勢信頼度', record => record.avgVisibility]
             ];
+            const statsHeaderRow = 6;
+            const statsDataStartRow = statsHeaderRow + 1;
+            const statsEndRow = statsHeaderRow + metrics.length;
             metrics.forEach(([label, getter], index) => {
                 const stats = researchMetricStats(dataset.accepted, getter);
                 sheet.addRow([label, stats.count, stats.mean, stats.median, stats.stdDev, stats.min, stats.max]);
             });
-            forEachResearchExcelCell(sheet, 6, 12, 1, 7, (cell, rowNumber) => {
+            forEachResearchExcelCell(sheet, statsHeaderRow, statsEndRow, 1, 7, (cell, rowNumber) => {
                     cell.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
-                    if (rowNumber === 6) {
+                    if (rowNumber === statsHeaderRow) {
                         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
                     }
             });
-            forEachResearchExcelCell(sheet, 7, 12, 3, 7, cell => { cell.numFmt = '0.00'; });
-            setResearchSummaryHeader(sheet, 'A14:F14', 'リアルタイム分析と動画解析');
-            sheet.getRow(15).values = ['区分', '件数', '平均打突時間(ms)', '平均右肘(deg)', '平均体幹(deg)', '平均推定刃筋(deg)'];
+            forEachResearchExcelCell(sheet, statsDataStartRow, statsEndRow, 3, 7, cell => { cell.numFmt = '0.00'; });
+            const sourceHeaderRow = statsEndRow + 2;
+            const sourceColumnRow = sourceHeaderRow + 1;
+            setResearchSummaryHeader(sheet, `A${sourceHeaderRow}:F${sourceHeaderRow}`, 'リアルタイム分析と動画解析');
+            sheet.getRow(sourceColumnRow).values = ['区分', '件数', '平均打突時間(ms)', '平均右肘(deg)', '平均体幹(deg)', '平均推定刃筋(deg)'];
             ['realtime', 'formal'].forEach(type => {
                 const subset = dataset.accepted.filter(entry => recordTypeOf(entry.record) === type);
                 sheet.addRow([
@@ -8215,8 +8062,10 @@ service cloud.firestore {
                     researchMean(subset.map(entry => Math.abs(Number(entry.record.hasujiAngle))))
                 ]);
             });
-            setResearchSummaryHeader(sheet, 'A20:G20', '打突種別別集計');
-            sheet.getRow(21).values = ['打突種別', '件数', '平均時間(ms)', '中央値(ms)', '標準偏差(ms)', '最小(ms)', '最大(ms)'];
+            const strikeHeaderRow = sourceColumnRow + 5;
+            const strikeColumnRow = strikeHeaderRow + 1;
+            setResearchSummaryHeader(sheet, `A${strikeHeaderRow}:G${strikeHeaderRow}`, '打突種別別集計');
+            sheet.getRow(strikeColumnRow).values = ['打突種別', '件数', '平均時間(ms)', '中央値(ms)', '標準偏差(ms)', '最小(ms)', '最大(ms)'];
             const strikeMap = new Map();
             dataset.accepted.forEach(entry => {
                 const key = entry.record.strikeType || '未設定';
@@ -8235,7 +8084,7 @@ service cloud.firestore {
                     times.length ? Math.max(...times) : null
                 ]);
             });
-            const participantHeaderRow = 23 + strikeMap.size;
+            const participantHeaderRow = strikeColumnRow + 2 + strikeMap.size;
             setResearchSummaryHeader(sheet, `A${participantHeaderRow}:H${participantHeaderRow}`, '被験者・撮影日・セッション別集計');
             const participantColumnRow = participantHeaderRow + 1;
             sheet.getRow(participantColumnRow).values = ['被験者ID', '撮影日', 'セッションID', '件数', '平均時間(ms)', '中央値(ms)', '標準偏差(ms)', '最小-最大(ms)'];
@@ -8263,10 +8112,10 @@ service cloud.firestore {
                     times.length ? Math.min(...times) + '-' + Math.max(...times) : ''
                 ]);
             });
-            forEachResearchExcelCell(sheet, 16, 17, 3, 6, cell => { cell.numFmt = '0.00'; });
-            if (strikeMap.size) forEachResearchExcelCell(sheet, 22, 21 + strikeMap.size, 3, 7, cell => { cell.numFmt = '0.00'; });
+            forEachResearchExcelCell(sheet, sourceColumnRow + 1, sourceColumnRow + 2, 3, 6, cell => { cell.numFmt = '0.00'; });
+            if (strikeMap.size) forEachResearchExcelCell(sheet, strikeColumnRow + 1, strikeColumnRow + strikeMap.size, 3, 7, cell => { cell.numFmt = '0.00'; });
             if (groupMap.size) forEachResearchExcelCell(sheet, participantColumnRow + 1, participantColumnRow + groupMap.size, 5, 7, cell => { cell.numFmt = '0.00'; });
-            [[6, 1, 7], [15, 1, 6], [21, 1, 7], [participantColumnRow, 1, 8]].forEach(([row, startColumn, endColumn]) => {
+            [[statsHeaderRow, 1, 7], [sourceColumnRow, 1, 6], [strikeColumnRow, 1, 7], [participantColumnRow, 1, 8]].forEach(([row, startColumn, endColumn]) => {
                 forEachResearchExcelCell(sheet, row, row, startColumn, endColumn, cell => {
                     cell.font = { name: 'Yu Gothic', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
@@ -9194,16 +9043,10 @@ service cloud.firestore {
                 recordedAt: normalized.recordedAt || new Date().toISOString(),
                 timeMs: toFiniteOrNull(normalized.timeMs),
                 officialPeakOffsetMs: recordPeakOffsetMs(normalized, 'official'),
-                wristPeakOffsetMs: recordPeakOffsetMs(normalized, 'wrist'),
-                tipPeakOffsetMs: recordPeakOffsetMs(normalized, 'tip'),
-                tapePeakOffsetMs: recordPeakOffsetMs(normalized, 'tape'),
                 rightAng: toFiniteOrNull(normalized.rightAng),
-                leftAng: toFiniteOrNull(normalized.leftAng),
                 torsoAng: toFiniteOrNull(normalized.torsoAng),
                 hasujiAngle: toFiniteOrNull(normalized.hasujiAngle),
-                shoulderLineAng: toFiniteOrNull(normalized.shoulderLineAng),
                 avgVisibility: toFiniteOrNull(normalized.avgVisibility),
-                angleQuality: toFiniteOrNull(normalized.angleQuality),
                 analysisFps: toFiniteOrNull(normalized.analysisFps),
                 videoFpsEstimate: toFiniteOrNull(normalized.videoFpsEstimate),
                 slowMotionFactor: toFiniteOrNull(normalized.slowMotionFactor),
@@ -9216,7 +9059,6 @@ service cloud.firestore {
                 frameSyncMode: normalized.frameSyncMode || '',
                 poseEngine: normalized.poseEngine || '',
                 measurementMethod: normalized.measurementMethod || '',
-                shortLabel: normalized.shortLabel || '',
                 memo: normalized.memo || '',
                 timingDefinition: normalized.timingDefinition || '',
                 participantId: normalized.participantId || '',
@@ -9299,16 +9141,10 @@ service cloud.firestore {
                 recordedAt: payload.recordedAt || new Date().toISOString(),
                 timeMs: payload.timeMs ?? '',
                 officialPeakOffsetMs: payload.officialPeakOffsetMs,
-                wristPeakOffsetMs: payload.wristPeakOffsetMs,
-                tipPeakOffsetMs: payload.tipPeakOffsetMs,
-                tapePeakOffsetMs: payload.tapePeakOffsetMs,
                 rightAng: payload.rightAng ?? '',
-                leftAng: payload.leftAng ?? '',
                 torsoAng: payload.torsoAng ?? '',
                 hasujiAngle: payload.hasujiAngle ?? '',
-                shoulderLineAng: payload.shoulderLineAng ?? '',
                 avgVisibility: payload.avgVisibility ?? '',
-                angleQuality: payload.angleQuality ?? '',
                 analysisFps: payload.analysisFps ?? '',
                 videoFpsEstimate: payload.videoFpsEstimate ?? '',
                 slowMotionFactor: payload.slowMotionFactor ?? '',
@@ -9321,7 +9157,6 @@ service cloud.firestore {
                 frameSyncMode: payload.frameSyncMode || (type === 'formal' ? '動画解析' : 'リアルタイム'),
                 poseEngine: payload.poseEngine || '',
                 measurementMethod: payload.measurementMethod || '',
-                shortLabel: payload.shortLabel || 'クラウド取込',
                 memo: payload.memo || '',
                 timingDefinition: payload.timingDefinition || '',
                 participantId: payload.participantId || '',
@@ -9449,6 +9284,7 @@ service cloud.firestore {
             AppState.swingSamples = [];
             AppState.tipSwingSamples = [];
             AppState.tapeSwingSamples = [];
+            AppState.swingAngleSamples = [];
             AppState.swingPeakSpeedMps = 0;
             AppState.swingPeakTimeMs = 0;
             AppState.swingStartFrameTimeMs = AppState.swingStartTime || AppState.currentFrameTimeMs || 0;
@@ -9973,6 +9809,7 @@ service cloud.firestore {
             safeText('overlaySpeed3d', speedLabel(AppState.currentSpeed3d, AppState.currentSpeedUnit));
             safeText('overlayTipSpeed', speedLabel(AppState.currentEstimatedTipSpeed, AppState.currentEstimatedTipUnit));
             safeText('overlayTapeSpeed', Params.tipTracking ? speedLabel(AppState.currentTapeTipSpeed, AppState.currentTapeTipUnit) : 'OFF');
+            safeText('overlayVisibility', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '---');
             safeText('overlayFrameDt', AppState.frameDtMs ? `${AppState.frameDtMs.toFixed(1)}ms` : '---');
             updateRealtimeConditionPanel();
         }
@@ -10005,7 +9842,7 @@ service cloud.firestore {
             safeText('realtimeConditionResolution', width && height ? `${width}x${height}` : '---');
             safeText('realtimeConditionFps', fps ? `${fps.toFixed(1)}fps` : '---');
             safeText('realtimeConditionUpperBody', upper ? `${Math.round(upper * 100)}%` : '未検出');
-            safeText('realtimeConditionAngleQuality', angleQuality ? `${Math.round(angleQuality * 100)}%` : '未検出');
+            safeText('realtimeConditionAngleQuality', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '未検出');
             const advice = tone === 'good'
                 ? 'この条件ならリアルタイム確認に使いやすい状態です。正式値は動画解析で補正してください。'
                 : (tone === 'warn'
@@ -10180,18 +10017,17 @@ service cloud.firestore {
             if (!AppState.angleOverlay || !landmarks) return;
             const defs = {
                 rightElbow: { label: `右肘 ${values.rightAng.toFixed(1)}°`, points: [12, 14, 16], color: '#a78bfa' },
-                leftElbow: { label: `左肘 ${(values.leftAng || 0).toFixed(1)}°`, points: [11, 13, 15], color: '#60a5fa' },
                 torso: { label: `体幹 ${values.torsoAng.toFixed(1)}°`, points: ['shoulderMid', 'hipMid'], color: '#34d399' },
-                hasuji: { label: `刃筋 ${values.hasuji.toFixed(1)}°`, points: ['shinaiAxis'], color: '#facc15' },
-                shoulders: { label: `肩ライン ${(values.shoulderLineAng || 0).toFixed(1)}°`, points: [11, 12], color: '#fb7185' }
+                hasuji: { label: `推定刃筋 ${values.hasuji.toFixed(1)}°`, points: ['shinaiAxis'], color: '#facc15' }
             };
             const extra = {
                 shoulderMid: landmarks[11] && landmarks[12] ? { x: (landmarks[11].x + landmarks[12].x) / 2, y: (landmarks[11].y + landmarks[12].y) / 2 } : null,
                 hipMid: landmarks[23] && landmarks[24] ? { x: (landmarks[23].x + landmarks[24].x) / 2, y: (landmarks[23].y + landmarks[24].y) / 2 } : null
             };
             const targets = AppState.angleTarget === 'all'
-                ? [defs.rightElbow, defs.torso, defs.hasuji]
-                : [defs[AppState.angleTarget] || defs.rightElbow];
+                ? [defs.rightElbow, defs.torso, ...(AppState.showHasujiOverlay === false ? [] : [defs.hasuji])]
+                : (AppState.angleTarget === 'hasuji' && AppState.showHasujiOverlay === false ? [] : [defs[AppState.angleTarget] || defs.rightElbow]);
+            if (!targets.length) return;
 
             canvasCtx.save();
             canvasCtx.lineCap = 'round';
@@ -10267,14 +10103,6 @@ service cloud.firestore {
                 valueKey: 'rightAng',
                 definition: '右肩・右肘・右手首の3点で、右肘を中心に測ります。面打ちで腕が伸びているかを見る基本角度です。'
             },
-            leftElbow: {
-                title: '左肘角',
-                color: '#60a5fa',
-                points: [11, 13, 15],
-                labels: ['左肩', '左肘（中心）', '左手首'],
-                valueKey: 'leftAng',
-                definition: '左肩・左肘・左手首の3点で、左肘を中心に測ります。左手主導で竹刀を扱えているかの補助指標です。'
-            },
             torso: {
                 title: '体幹軸',
                 color: '#34d399',
@@ -10290,14 +10118,6 @@ service cloud.firestore {
                 labels: ['左手首', '右手首', '両手首→推定剣先の方向'],
                 valueKey: 'hasuji',
                 definition: '竹刀先端テープが取れる場合は右手首からテープ方向、取れない場合は左手首から右手首方向を優先します。両手首が重なって不安定な時だけ右肘から右手首方向に戻します。'
-            },
-            shoulders: {
-                title: '肩ライン',
-                color: '#fb7185',
-                points: [11, 12],
-                labels: ['左肩', '右肩', '水平基準線'],
-                valueKey: 'shoulderLineAng',
-                definition: '左肩と右肩を結ぶ線の傾きです。打突時に肩が大きく崩れていないかを確認します。'
             }
         };
 
@@ -11934,7 +11754,7 @@ service cloud.firestore {
             if (Math.abs(Number(torsoAng || 0)) > 15) { comment = "体幹軸が傾いています。上半身の軸を立てて振り下ろしましょう。"; shortLabel = "姿勢注意"; }
             else if (rightAng < 150) { comment = "肘が曲がっています。剣先に力を伝えるよう腕を伸ばしましょう。"; shortLabel = "肘曲がり"; }
             else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。両手首と竹刀方向を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
-            else if (timeMs > (Params.signalMode ? 800 : 350)) { comment = Params.signalMode ? "反応が遅いです。音に集中して！" : "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
+            else if (timeMs > 350) { comment = "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
             else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
 
             document.getElementById('aiComment').innerText = comment;
@@ -11969,22 +11789,15 @@ service cloud.firestore {
                 hasujiAngle: hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
                 rightAng: rightAng.toFixed(1), 
-                leftAng: Number(metrics.leftAng || 0).toFixed(1),
                 torsoAng: parseFloat(torsoAng), 
-                shoulderLineAng: Number(metrics.shoulderLineAng || 0).toFixed(1),
-                shortLabel: shortLabel,
                 avgVisibility: metrics.avgVisibility || AppState.currentWristVisibility || 0,
                 frameDtMs: metrics.frameDtMs || AppState.frameDtMs || 0,
                 frameSyncMode: AppState.frameSyncMode,
                 poseEngine: AppState.poseEngine,
                 roiStatus: AppState.roiStatus,
-                angleQuality: metrics.angleQuality || AppState.currentAngleQuality || 0,
                 officialSpeedSource: Params.officialSpeedSource,
                 actualOfficialSpeedSource: officialSpeed.key,
                 officialPeakOffsetMs,
-                wristPeakOffsetMs: peakOffsets.wrist,
-                tipPeakOffsetMs: peakOffsets.tip,
-                tapePeakOffsetMs: peakOffsets.tape,
                 startTimeMs,
                 peakTimeMs,
                 endTimeMs,
@@ -11992,12 +11805,13 @@ service cloud.firestore {
                 measurementMethod: metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
-                modelAngleValues: { rightAng, leftAng: Number(metrics.leftAng || 0), torsoAng, hasuji: hasujiAngle, shoulderLineAng: Number(metrics.shoulderLineAng || 0) },
+                modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
                 timingDefinition: '開始=右手首下方向の参考値が閾値を2フレーム継続して超えた最初のフレーム / 終了=右手首ピーク後の急減速またはピーク比38%未満'
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(24, Math.round((AppState.frameFps || Params.targetFps) * 1.5)));
             record.clipFrames = clipFrames;
-            record.researchAngles = buildResearchAngleSummary(clipFrames, startTimeMs, peakTimeMs, endTimeMs);
+            const angleFrames = AppState.swingAngleSamples?.length ? AppState.swingAngleSamples : clipFrames;
+            record.researchAngles = buildResearchAngleSummary(angleFrames, startTimeMs, peakTimeMs, endTimeMs);
             AppState.replayClip = clipFrames;
             AppState.replayClipMeta = buildReplayClipMeta(record, clipFrames);
             AppState.records.push(record);
@@ -12030,9 +11844,8 @@ service cloud.firestore {
             prepareReplay();
             
             AppState.zanshinBroken = false;
-            document.getElementById('zanshinIndicator').classList.remove('hidden');
             AppState.swingState = 'ZANSHIN';
-            updateStateUI('ZANSHIN');
+            updateStateUI('IDLE');
             
             AppState.zanshinTimer = setTimeout(() => {
                 document.getElementById('zanshinIndicator').classList.add('hidden');
@@ -12044,6 +11857,7 @@ service cloud.firestore {
                 AppState.swingSamples = [];
                 AppState.tipSwingSamples = [];
                 AppState.tapeSwingSamples = [];
+                AppState.swingAngleSamples = [];
                 AppState.previousWristY = 0;
                 AppState.idleTimer = 0;
                 setTimingStatus('待機', '---', '---');
@@ -12070,7 +11884,6 @@ service cloud.firestore {
 	                    <td class="px-1 py-2 text-purple-600 font-bold">${record.rightAng}°</td>
 	                    <td class="px-1 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
 	                    <td class="px-1 py-2 text-left font-bold text-slate-700">
-	                        <div>${record.shortLabel}</div>
                         <div class="text-[10px] text-slate-400 font-normal">${recordTypeLabel(record)} / ${formatRecordDate(record)}</div>
                         <div class="text-[10px] text-slate-400 font-normal">${record.memo ? record.memo : ''}</div>
                     </td>
@@ -12099,15 +11912,14 @@ service cloud.firestore {
             const times = records.map(r => Number(r.timeMs || 0)).filter(Number.isFinite);
             const axis = records.map(r => Math.abs(Number(r.torsoAng || 0))).filter(Number.isFinite);
             const elbows = records.map(r => Number(r.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
+            const hasuji = records.map(r => Math.abs(Number(r.hasujiAngle || 0))).filter(Number.isFinite);
+            const visibility = records.map(r => Number(r.avgVisibility || 0)).filter(value => Number.isFinite(value) && value > 0);
 	            const peaks = records.map(record => ({ record, value: recordPeakOffsetMs(record, 'official') })).filter(item => item.value !== null);
 	            const shortestPeak = peaks.reduce((best, item) => !best || item.value < best.value ? item : best, null);
-            const ranked = [...records].sort((a, b) => scoreRecord(b) - scoreRecord(a));
-            const best = ranked[0];
-            const worst = ranked[ranked.length - 1];
             safeText('summaryAvgTime', `${Math.round(avg(times))} ms`);
 	            safeText('summaryMaxSpeed', shortestPeak ? `#${shortestPeak.record.id} / ${shortestPeak.value} ms` : '---');
-            safeText('summaryBest', best ? `#${best.id} ${scoreRecord(best)}` : '---');
-            safeText('summaryWorst', worst ? `#${worst.id} ${scoreRecord(worst)}` : '---');
+            safeText('summaryBest', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
+            safeText('summaryWorst', visibility.length ? `${Math.round(avg(visibility) * 100)}%` : '---');
             safeText('summaryAvgAxis', `${avg(axis).toFixed(1)}°`);
             safeText('summaryAvgRightElbow', elbows.length ? `${avg(elbows).toFixed(1)}°` : '---');
         }
@@ -12117,21 +11929,17 @@ service cloud.firestore {
             const records = analysisRecords();
             const latest = records[records.length - 1];
             if (!latest) {
-                ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestWristSpeed', 'detailLatestTipSpeed', 'detailLatestTapeSpeed', 'detailRightElbow', 'detailLeftElbow', 'detailTorso', 'detailHasuji', 'detailShoulderLine'].forEach(id => safeText(id, '---'));
+                ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
-	                if (body) body.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
+	                if (body) body.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
 	                return;
 	            }
 	            safeText('detailLatestTime', `${latest.timeMs} ms`);
 	            safeText('detailLatestOfficialSpeed', recordPeakOffsetText(latest, 'official'));
-	            safeText('detailLatestWristSpeed', recordPeakOffsetText(latest, 'wrist'));
-	            safeText('detailLatestTipSpeed', recordPeakOffsetText(latest, 'tip'));
-	            safeText('detailLatestTapeSpeed', recordPeakOffsetText(latest, 'tape'));
+            safeText('detailLatestVisibility', latest.avgVisibility ? `${Math.round(Number(latest.avgVisibility) * 100)}%` : '---');
             safeText('detailRightElbow', `${latest.rightAng || '---'}°`);
-            safeText('detailLeftElbow', latest.leftAng && Number(latest.leftAng) ? `${latest.leftAng}°` : '---');
             safeText('detailTorso', `${Number(latest.torsoAng || 0).toFixed(1)}°`);
             safeText('detailHasuji', `${latest.hasujiAngle || '---'}°`);
-            safeText('detailShoulderLine', latest.shoulderLineAng && Number(latest.shoulderLineAng) ? `${latest.shoulderLineAng}°` : '---');
 
             const tbody = document.getElementById('detailRecordsBody');
             if (!tbody) return;
@@ -12146,11 +11954,10 @@ service cloud.firestore {
 	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
 	                    <td class="px-2 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
 	                    <td class="px-2 py-2 text-purple-700 font-bold">${record.rightAng || '---'}°</td>
-	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.leftAng && Number(record.leftAng) ? record.leftAng + '°' : '---'}</td>
                     <td class="px-2 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
                     <td class="px-2 py-2 text-yellow-700 font-bold">${record.hasujiAngle || '---'}°</td>
-                    <td class="px-2 py-2 text-rose-700 font-bold">${record.shoulderLineAng && Number(record.shoulderLineAng) ? record.shoulderLineAng + '°' : '---'}</td>
-                    <td class="px-2 py-2 text-left text-slate-700"><span class="font-bold">${record.shortLabel}</span><br><span class="text-[11px] text-slate-500">${record.memo || ''}</span></td>
+                    <td class="px-2 py-2 text-emerald-700 font-bold">${record.avgVisibility ? Math.round(Number(record.avgVisibility) * 100) + '%' : '---'}</td>
+                    <td class="px-2 py-2 text-left text-slate-700"><span class="text-[11px] text-slate-500">${record.memo || ''}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -12197,7 +12004,7 @@ service cloud.firestore {
                 return;
             }
             const images = frames.map((frame, index) => `<img src="${frame.image}" alt="frame ${index + 1}">`).join('\n');
-            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms / 評価: ${record.shortLabel}</p><p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
+            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms</p><p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -12455,6 +12262,16 @@ service cloud.firestore {
                     }
 
                     AppState.swingWristXHistory.push(rWrist.x);
+                    AppState.swingAngleSamples.push({
+                        timeMs: now,
+                        rightAng,
+                        leftAng,
+                        torsoAng,
+                        hasuji,
+                        shoulderLineAng,
+                        landmarks: clonePoseSnapshot(lm)
+                    });
+                    if (AppState.swingAngleSamples.length > 240) AppState.swingAngleSamples.shift();
                     if (AppState.currentWrist3d) {
                         AppState.swingSamples.push({
                             timeMs: now,
@@ -12545,23 +12362,14 @@ service cloud.firestore {
 	                            AppState.swingSamples = [];
 	                            AppState.tipSwingSamples = [];
 	                            AppState.tapeSwingSamples = [];
+	                            AppState.swingAngleSamples = [];
 	                            AppState.previousWristY = 0;
 	                            AppState.idleTimer = 0;
 	                            setTimingStatus('待機', '---', '---');
 	                        }
                     }
                 } else if(AppState.swingState === 'ZANSHIN') {
-                    if(!AppState.zanshinBroken) {
-                        const isZanshinBroken = Params.tsukiMode 
-                            ? (torsoAng > 20 || hasuji > 45 || rightAng < 100) 
-                            : ((rShoulder && wristY > rShoulder.y + 0.1) || torsoAng > 20 || hasuji > 45);
-
-                        if(isZanshinBroken) {
-                            AppState.zanshinBroken = true;
-                            document.getElementById('zanshinIndicator').classList.add('hidden');
-                            showToast('警告: 残心が崩れました', 'yellow');
-                        }
-                    }
+                    // 連続検出を防ぐための短い待機だけ行う。
                 }
                 AppState.previousWristY = wristY;
                 AppState.previousRightAngle = rightAng;
@@ -12608,7 +12416,7 @@ service cloud.firestore {
             else if(state === 'SIGNAL_WAIT') { icon.className='fa-solid fa-ear-listen text-purple-400'; text.innerText='シグナル待機...'; }
             else if(state === 'SIGNAL_GO') { icon.className='fa-solid fa-volume-high text-red-400'; text.innerText='打て！！'; }
             else if(state === 'SWINGING') { icon.className='fa-solid fa-bolt text-red-400'; text.innerText='打突中'; }
-            else if(state === 'ZANSHIN') { icon.className='fa-solid fa-eye text-green-400'; text.innerText='残心'; }
+            else if(state === 'ZANSHIN') { icon.className='fa-solid fa-user text-slate-300'; text.innerText='待機'; }
             else { icon.className='fa-solid fa-user text-slate-300'; text.innerText='待機'; }
         }
 
@@ -14289,7 +14097,10 @@ service cloud.firestore {
             if (!AppState.videoAngleOverlay || !frame?.landmarks) return;
             const lm = frame.landmarks;
             const target = AppState.videoAngleOverlayTarget || 'all';
-            const shouldDraw = name => target === 'all' || target === name;
+            const shouldDraw = name => {
+                if (name === 'hasuji' && AppState.showHasujiOverlay === false) return false;
+                return target === 'all' || target === name;
+            };
             const isFocused = name => target === name;
             const lineWidth = name => isFocused(name) ? 7 : 2.5;
             const label = (name, text) => isFocused(name) ? text : '';
@@ -15616,14 +15427,14 @@ service cloud.firestore {
 	                const bestValue = Math.round(Number(best.peakTimeMs || 0) - Number(best.startTimeMs || 0));
 	                return value < bestValue ? s : best;
 	            }, strikes[0]) : null;
-            const best = strikes.length ? strikes.reduce((current, s) => s.score > current.score ? s : current, strikes[0]) : null;
-            const worst = strikes.length ? strikes.reduce((current, s) => s.score < current.score ? s : current, strikes[0]) : null;
             const avgTorso = strikes.length ? strikes.reduce((sum, s) => sum + Math.abs(s.torsoAng || 0), 0) / strikes.length : null;
+            const avgHasuji = strikes.length ? strikes.reduce((sum, s) => sum + Math.abs(Number(s.hasuji || 0)), 0) / strikes.length : null;
+            const avgVisibility = strikes.length ? strikes.reduce((sum, s) => sum + Number(s.avgVisibility || 0), 0) / strikes.length : null;
             safeText('videoMultiCount', `${strikes.length}本 / 候補${candidateCount}`);
             safeText('videoMultiAvgDuration', avgDuration !== null ? `${Math.round(avgDuration)} ms` : '補正待ち');
             safeText('videoMultiTopSpeed', top ? `#${top.number} / ${Math.round(Number(top.peakTimeMs || 0) - Number(top.startTimeMs || 0))}ms` : '補正待ち');
-            safeText('videoMultiBest', best ? `#${best.number} / ${best.score}` : '補正待ち');
-            safeText('videoMultiWorst', worst ? `#${worst.number} / ${worst.score}` : '補正待ち');
+            safeText('videoMultiBest', avgHasuji !== null ? `${avgHasuji.toFixed(1)}°` : '補正待ち');
+            safeText('videoMultiWorst', avgVisibility !== null ? `${Math.round(avgVisibility * 100)}%` : '補正待ち');
             safeText('videoMultiAvgTorso', avgTorso !== null ? `${avgTorso.toFixed(1)}°` : '補正待ち');
             safeText('videoMultiRejected', `${rejected.length}本`);
             const jumpBox = document.getElementById('videoStrikeJumpButtons');
@@ -15661,6 +15472,7 @@ service cloud.firestore {
                                     <div class="strike-metric"><span>右肘</span><strong>${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</strong></div>
                                     <div class="strike-metric"><span>体幹</span><strong>${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</strong></div>
                                     <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>信頼度</span><strong>${s.avgVisibility ? Math.round(Number(s.avgVisibility) * 100) + '%' : '--'}</strong></div>
                                 </div>
                                 <div class="strike-actions">
                                     <button type="button" data-action="edit" data-kind="valid" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">この打突を補正</button>
@@ -15688,6 +15500,7 @@ service cloud.firestore {
                                     <div class="strike-metric"><span>右肘</span><strong>${s.rightAng ? s.rightAng.toFixed(1) : '--'}°</strong></div>
                                     <div class="strike-metric"><span>体幹</span><strong>${s.torsoAng ? s.torsoAng.toFixed(1) : '--'}°</strong></div>
                                     <div class="strike-metric"><span>刃筋</span><strong>${s.hasuji ? s.hasuji.toFixed(1) : '--'}°</strong></div>
+                                    <div class="strike-metric"><span>信頼度</span><strong>${s.avgVisibility ? Math.round(Number(s.avgVisibility) * 100) + '%' : '--'}</strong></div>
                                 </div>
                                 <div class="strike-actions">
                                     <button type="button" data-action="edit" data-kind="rejected" data-index="${index}" class="video-strike-action bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded font-bold">この候補を補正</button>
@@ -16458,8 +16271,6 @@ service cloud.firestore {
 
         function updateVideoAnalysisLabels() {
             const data = AppState.videoAnalysis;
-            const actualSource = data?.actualOfficialSpeedSource || Params.officialSpeedSource;
-            safeText('videoResultBasis', `${officialSpeedLabel(Params.officialSpeedSource)}${actualSource !== Params.officialSpeedSource ? `→${officialSpeedLabel(actualSource)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`);
             if (!data) {
                 safeText('videoCurrentElapsedLabel', '---');
                 safeText('videoCorrectedDurationLabel', '---');
@@ -16611,7 +16422,7 @@ service cloud.firestore {
             const confirmed = isVideoTimingConfirmed(data);
             safeText('videoDetailExclusion', confirmed ? (data.exclusionReason ? `要確認: ${data.exclusionReason}（補正後フレームで再計算）` : '正式保存可能') : '未確定: 開始/終了フレームを映像で確認してください');
             safeText('videoDetailTiming', `開始 ${data.startFrame ?? '---'} / 最高速 ${data.peakFrame ?? '---'} / 終了 ${data.endFrame ?? '---'} / ${duration !== null ? (confirmed ? duration + 'ms' : `自動候補 ${duration}ms`) : '---'}`);
-            safeText('videoDetailSpeedSet', `正式 ${videoPeakTimeLabel(data.metrics)} / 手首 ${videoPeakTimeLabel(metrics.wrist)} / 推定 ${videoPeakTimeLabel(metrics.tip)} / テープ ${videoPeakTimeLabel(metrics.tape)}`);
+            safeText('videoDetailSpeedSet', videoPeakTimeLabel(data.metrics));
             safeText('videoDetailRightElbowSet', videoFrameSummaryText(data, 'rightAng'));
             safeText('videoDetailTorsoSet', videoFrameSummaryText(data, 'torsoAng'));
             safeText('videoDetailHasujiSet', videoFrameSummaryText(data, 'hasuji'));
@@ -16656,15 +16467,10 @@ service cloud.firestore {
             const chosen = chooseOfficialMetrics(metricsBySource, officialSource);
             const officialMetrics = chosen.metrics;
             safeText('videoResultPeak', videoPeakTimeLabel(officialMetrics));
-            safeText('videoResultWristPeak', videoPeakTimeLabel(metricsBySource.wrist));
-            safeText('videoResultTipPeak', videoPeakTimeLabel(metricsBySource.tip));
-            safeText('videoResultTapePeak', videoPeakTimeLabel(metricsBySource.tape));
-            safeText('videoResultDecel', videoDecelTimeLabel(officialMetrics));
             data.metrics = officialMetrics;
             data.metricsBySource = metricsBySource;
             data.officialSpeedSource = officialSource;
             data.actualOfficialSpeedSource = chosen.key;
-            safeText('videoResultBasis', `${officialSpeedLabel(officialSource)}${chosen.key !== officialSource ? `→${officialSpeedLabel(chosen.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`);
             updateVideoDetailMetricsPanel(data);
         }
 
@@ -16872,7 +16678,7 @@ service cloud.firestore {
             ctx.font = '14px sans-serif';
             const slowFactor = Number(data.slowMotionFactor || 1);
             ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms${slowFactor > 1.001 ? ` 実時間（動画上${videoRawMsFromFrame(frame).toFixed(1)}ms）` : ''}`, 22, 34);
-            ctx.fillText(`ピーク検出基準: ${officialSpeedLabel(Params.officialSpeedSource)}（内部信号）`, 22, 56);
+            ctx.fillText('正式ピーク時刻: 内部信号から算出', 22, 56);
             if (frame.rightAng || frame.hasuji || frame.torsoAng) {
                 ctx.fillStyle = 'rgba(255,255,255,0.92)';
                 ctx.fillText(`肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}°`, 22, 76);
@@ -16933,90 +16739,6 @@ service cloud.firestore {
             };
             el.className = tones[tone] || tones.slate;
             el.textContent = message;
-        }
-
-        function setYouTubeImportGuide(visible) {
-            const guide = document.getElementById('youtubeImportGuide');
-            if (guide) guide.classList.toggle('hidden', !visible);
-        }
-
-        async function loadVideoUrlSource() {
-            const input = document.getElementById('videoUrlInput');
-            const raw = input?.value?.trim();
-            if (!raw) {
-                setYouTubeImportGuide(false);
-                setVideoUrlStatus('動画URLを入力してください。', 'red');
-                return false;
-            }
-            if (isYouTubeUrl(raw)) {
-                const message = 'YouTubeページURLは直接解析できません。権利のある動画をmp4/movファイルとして保存し、「動画ファイル」から読み込んでください。';
-                setYouTubeImportGuide(true);
-                setVideoUrlStatus(message, 'amber');
-                safeText('videoAnalysisStatus', 'YouTube URLは不可');
-                showToast('YouTubeは直接解析できません。動画ファイルで読み込んでください', 'yellow');
-                return false;
-            }
-            setYouTubeImportGuide(false);
-            let parsed;
-            try {
-                parsed = new URL(raw, location.href);
-            } catch (err) {
-                setVideoUrlStatus('URL形式を確認してください。', 'red');
-                return false;
-            }
-            if (!['http:', 'https:', 'blob:'].includes(parsed.protocol)) {
-                setVideoUrlStatus('http/https の直接動画URLだけ対応しています。', 'red');
-                return false;
-            }
-            const video = document.getElementById('analysisVideoElement');
-            if (!video) return false;
-            const fileInput = document.getElementById('videoFileInput');
-            if (fileInput) fileInput.value = '';
-            if (AppState.videoPreviewUrl) {
-                URL.revokeObjectURL(AppState.videoPreviewUrl);
-                AppState.videoPreviewUrl = null;
-            }
-            resetVideoManualMarkers();
-            AppState.videoUrlSource = {
-                url: parsed.href,
-                name: decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || 'URL動画'),
-                size: 0
-            };
-            video.crossOrigin = 'anonymous';
-            video.src = parsed.href;
-            video.muted = true;
-            video.playsInline = true;
-            safeText('videoAnalysisStatus', 'URL読込中');
-            setVideoUrlStatus('URL動画を読み込み中です。CORS非対応の場合はファイル読込を使ってください。', 'slate');
-            try {
-                await waitForVideoEvent(video, 'loadedmetadata');
-                const fps = clamp(Params.targetFps || 60, 30, 240);
-                const duration = Math.min(video.duration || 0, 12);
-                updateVideoDiagnostics({
-                    fileName: AppState.videoUrlSource.name,
-                    fileSize: 0,
-                    width: video.videoWidth || 0,
-                    height: video.videoHeight || 0,
-                    fps,
-                    frames: Math.max(1, Math.min(Math.floor(duration * fps), 1800)),
-                    confidence: 0,
-                    detectionRate: 0,
-                    actualFpsUnknown: true,
-                    sourceType: 'url'
-                });
-                setVideoUrlStatus('URL動画を読み込みました。解析開始を押してください。', 'green');
-                safeText('videoAnalysisStatus', 'URL読込完了');
-                updateVideoManualRangeUi();
-                switchVideoStep('mark');
-                updateVideoNativeFpsEstimate(parsed.href, { crossOrigin: 'anonymous' });
-                return true;
-            } catch (err) {
-                AppState.videoUrlSource = null;
-                setVideoUrlStatus('URL動画を読み込めませんでした。CORS対応の直接URLか、動画ファイルを使ってください。', 'red');
-                safeText('videoAnalysisStatus', 'URL読込エラー');
-                console.warn('動画URL読込エラー', err);
-                return false;
-            }
         }
 
         function getVideoAnalysisSource() {
@@ -17117,7 +16839,7 @@ service cloud.firestore {
                 slowMotionMode: slowSettings.mode,
                 actualFpsUnknown: true
             });
-            Params.officialSpeedSource = document.getElementById('videoOfficialSpeedSelect')?.value || Params.officialSpeedSource;
+            Params.officialSpeedSource = 'wrist';
             Params.angleReference = document.getElementById('angleReferenceSelect')?.value || Params.angleReference;
             const filter = new VisibilityAdaptiveFilter3D();
             const tipFilter = new VisibilityAdaptiveFilter3D();
@@ -17483,7 +17205,6 @@ service cloud.firestore {
                 updateVideoResultCards(AppState.videoAnalysis, metricsBySource, Params.officialSpeedSource);
                 updateCurrentVideoValidation(AppState.videoAnalysis);
                 safeText('videoResultPeak', peakTimeMs ? `${Math.round(peakTimeMs)} ms` : '---');
-                safeText('videoResultDecel', '---');
             }
             updateVideoValidityPanel(AppState.videoAnalysis);
             updateVideoAnalysisLabels();
@@ -17505,7 +17226,6 @@ service cloud.firestore {
             csv += `スロー補正倍率,${data.slowMotionFactor || 1}\n`;
             csv += `撮影fps,${data.captureFps || ''}\n`;
             csv += `再生fps,${data.playbackFps || ''}\n`;
-            csv += `ピーク検出基準,${officialSpeedLabel(data.officialSpeedSource || Params.officialSpeedSource)}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
             csv += `最高速フレーム,${data.peakFrame ?? ''}\n`;
@@ -17514,17 +17234,14 @@ service cloud.firestore {
                 csv += `打突時間(ms),${Math.round(data.frames[data.endFrame].timeMs - data.frames[data.startFrame].timeMs)}\n`;
             }
             csv += `正式ピーク時刻(ms),${data.metrics ? Math.round(Number(data.metrics.peakOffsetMs || 0)) : ''}\n`;
-            csv += `手首ピーク時刻(ms),${data.metricsBySource?.wrist ? Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0)) : ''}\n`;
-            csv += `推定剣先ピーク時刻(ms),${data.metricsBySource?.tip ? Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0)) : ''}\n`;
-            csv += `テープ剣先ピーク時刻(ms),${data.metricsBySource?.tape ? Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0)) : ''}\n`;
-	            csv += `最大減速時刻(ms),${data.metrics ? Math.round(Number(data.metrics.maxDecelOffsetMs || 0)) : ''}\n\n`;
+	            csv += '\n';
             csv += `測定除外数,${data.rejectedStrikes?.length || 0}\n`;
             csv += `除外理由,${(data.rejectedStrikes || []).map(item => `${item.peakFrame}:${item.reason}`).join(' / ')}\n\n`;
             if (data.strikes?.length) {
                 csv += '複数打突一覧\n';
-	                csv += 'no,startFrame,peakFrame,endFrame,durationMs,peakTimeMs,rightElbow,torso,hasuji,score\n';
+	                csv += 'no,startFrame,peakFrame,endFrame,durationMs,peakTimeMs,rightElbow,torso,hasuji,visibility\n';
 	                data.strikes.forEach(s => {
-	                    csv += `${s.number},${s.startFrame},${s.peakFrame},${s.endFrame},${s.durationMs},${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${s.score}\n`;
+	                    csv += `${s.number},${s.startFrame},${s.peakFrame},${s.endFrame},${s.durationMs},${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))},${s.rightAng.toFixed(2)},${s.torsoAng.toFixed(2)},${s.hasuji.toFixed(2)},${Number(s.avgVisibility || 0).toFixed(3)}\n`;
 	                });
 	                csv += '\n';
 	            }
@@ -17580,11 +17297,7 @@ service cloud.firestore {
                 ['最高速時刻', peak ? `${peak.timeMs.toFixed(1)} ms` : '---'],
                 ['終了時刻', end ? `${end.timeMs.toFixed(1)} ms` : '---'],
                 ['打突時間', duration !== null ? `${duration} ms` : '---'],
-                ['ピーク検出基準', `${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''}`],
                 ['正式ピーク時刻', official.metrics ? `${Math.round(Number(official.metrics.peakOffsetMs || 0))} ms` : '---'],
-                ['手首ピーク時刻', data.metricsBySource?.wrist ? `${Math.round(Number(data.metricsBySource.wrist.peakOffsetMs || 0))} ms` : '---'],
-                ['推定剣先ピーク時刻', data.metricsBySource?.tip ? `${Math.round(Number(data.metricsBySource.tip.peakOffsetMs || 0))} ms` : '---'],
-                ['テープ剣先ピーク時刻', data.metricsBySource?.tape ? `${Math.round(Number(data.metricsBySource.tape.peakOffsetMs || 0))} ms` : '---'],
                 ['右肘角', end?.rightAng ? `${end.rightAng.toFixed(1)}°` : '---'],
                 ['体幹軸', end?.torsoAng ? `${end.torsoAng.toFixed(1)}°` : '---'],
                 ['刃筋', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---'],
@@ -17594,7 +17307,7 @@ service cloud.firestore {
                 ['測定メモ', '開始/終了フレームは動画解析タブで手動補正可能。正式値は補正後フレームで再計算し、最高速フレームも補正範囲内で再検出。']
             ];
             const strikeRows = data.strikes?.length
-                ? `<h3 class="text-sm font-black mt-5 mb-2">複数打突一覧</h3><table><thead><tr><th>#</th><th>時間</th><th>最高速時刻</th><th>右肘</th><th>体幹</th><th>刃筋</th><th>評価</th></tr></thead><tbody>${data.strikes.map(s => `<tr><td>#${s.number}</td><td>${s.durationMs}ms</td><td>${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))}ms</td><td>${s.rightAng.toFixed(1)}°</td><td>${s.torsoAng.toFixed(1)}°</td><td>${s.hasuji.toFixed(1)}°</td><td>${s.score}</td></tr>`).join('')}</tbody></table>`
+                ? `<h3 class="text-sm font-black mt-5 mb-2">複数打突一覧</h3><table><thead><tr><th>#</th><th>時間</th><th>正式ピーク時刻</th><th>右肘</th><th>体幹</th><th>推定刃筋</th><th>姿勢信頼度</th></tr></thead><tbody>${data.strikes.map(s => `<tr><td>#${s.number}</td><td>${s.durationMs}ms</td><td>${Math.round(Number(s.peakTimeMs || 0) - Number(s.startTimeMs || 0))}ms</td><td>${s.rightAng.toFixed(1)}°</td><td>${s.torsoAng.toFixed(1)}°</td><td>${s.hasuji.toFixed(1)}°</td><td>${s.avgVisibility ? Math.round(Number(s.avgVisibility) * 100) + '%' : '---'}</td></tr>`).join('')}</tbody></table>`
                 : '';
             panel.innerHTML = `
                 <div class="flex items-start justify-between gap-4 mb-4">
@@ -17612,7 +17325,7 @@ service cloud.firestore {
                 </div>
                 <table><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join('')}</tbody></table>
                 ${strikeRows}
-	                <p class="text-xs text-slate-500 mt-4">* ピーク検出信号は内部計算用です。レポート・CSV・正式記録は打突時間、ピーク時刻、角度を中心に整理しています。</p>
+	                <p class="text-xs text-slate-500 mt-4">* ピーク検出信号は内部計算用です。レポート・CSV・正式記録は打突時間、正式ピーク時刻、右肘、体幹軸、推定刃筋、姿勢信頼度を中心に整理しています。</p>
             `;
             panel.classList.remove('hidden');
             showToast('レポートを作成しました', 'green');
@@ -17651,7 +17364,6 @@ service cloud.firestore {
 	            const rightAng = Number(endFrame.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || 0);
-            const shortLabel = official.metrics && durationMs <= 350 && rightAng >= 150 && torsoAng <= 15 ? '動画良好' : '動画確認';
             const record = {
 	                id: AppState.records.length + 1,
                     ...researchRecordMetadata(),
@@ -17661,25 +17373,18 @@ service cloud.firestore {
                     videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
                     slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
-	                hasujiAngle: hasuji.toFixed(1),
-	                trajectorySway,
-	                rightAng: rightAng.toFixed(1),
-                leftAng: Number(endFrame.leftAng || 0).toFixed(1),
-	                torsoAng,
-	                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
-	                shortLabel,
-	                officialSpeedSource: Params.officialSpeedSource,
-	                actualOfficialSpeedSource: official.key,
-	                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : null,
-	                wristPeakOffsetMs: wristMetrics ? normalizeMs(wristMetrics.peakOffsetMs) : null,
-	                tipPeakOffsetMs: tipMetrics ? normalizeMs(tipMetrics.peakOffsetMs) : null,
-	                tapePeakOffsetMs: tapeMetrics ? normalizeMs(tapeMetrics.peakOffsetMs) : null,
-	                avgVisibility,
+		                hasujiAngle: hasuji.toFixed(1),
+		                trajectorySway,
+		                rightAng: rightAng.toFixed(1),
+		                torsoAng,
+		                officialSpeedSource: Params.officialSpeedSource,
+		                actualOfficialSpeedSource: official.key,
+		                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : null,
+		                avgVisibility,
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
                 roiStatus: tapeMetrics ? '動画テープ検出' : '動画ROI未検出',
-                angleQuality: avgVisibility,
                 startFrameIndex: data.startFrame,
                 peakFrameIndex: data.peakFrame,
                 endFrameIndex: data.endFrame,
@@ -17693,13 +17398,11 @@ service cloud.firestore {
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelAngleValues: {
                     rightAng,
-                    leftAng: Number(endFrame.leftAng || 0),
                     torsoAng,
-                    hasuji,
-                    shoulderLineAng: Number(endFrame.shoulderLineAng || 0)
+                    hasuji
                 },
                 clipFrames: [],
-                timingDefinition: `動画解析: 開始frame ${data.startFrame} / 最高速frame ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレームを手動補正後、ピーク検出基準で再計算。`
+                timingDefinition: `動画解析: 開始frame ${data.startFrame} / 最高速frame ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレームを手動補正後、正式ピーク時刻を再計算。`
             };
             record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs);
             record.researchCorrection = buildResearchCorrection(data);
@@ -17753,7 +17456,6 @@ service cloud.firestore {
             const torsoAng = Number(endFrame.torsoAng || strike.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || strike.hasuji || 0);
 	            const validation = validateVideoStrikeSummary(strike, data);
-            const shortLabel = validation.ok && durationMs <= 350 && rightAng >= 130 && Math.abs(torsoAng) <= 18 ? '動画良好' : '動画確認';
             const numberLabel = strike.number ? ` #${strike.number}` : '';
             return {
 	                id: AppState.records.length + 1,
@@ -17764,25 +17466,18 @@ service cloud.firestore {
                     videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
                     slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
-	                hasujiAngle: hasuji.toFixed(1),
-	                trajectorySway,
-                rightAng: rightAng.toFixed(1),
-                leftAng: Number(endFrame.leftAng || 0).toFixed(1),
-	                torsoAng,
-	                shoulderLineAng: Number(endFrame.shoulderLineAng || 0).toFixed(1),
-	                shortLabel,
-	                officialSpeedSource: Params.officialSpeedSource,
-	                actualOfficialSpeedSource: official.key || strike.actualOfficialSpeedSource || Params.officialSpeedSource,
-	                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : normalizeMs(Number(strike.peakTimeMs || 0) - Number(strike.startTimeMs || 0)),
-	                wristPeakOffsetMs: wristMetrics ? normalizeMs(wristMetrics.peakOffsetMs) : null,
-	                tipPeakOffsetMs: tipMetrics ? normalizeMs(tipMetrics.peakOffsetMs) : null,
-	                tapePeakOffsetMs: tapeMetrics ? normalizeMs(tapeMetrics.peakOffsetMs) : null,
-                avgVisibility,
+		                hasujiAngle: hasuji.toFixed(1),
+		                trajectorySway,
+	                rightAng: rightAng.toFixed(1),
+		                torsoAng,
+		                officialSpeedSource: Params.officialSpeedSource,
+		                actualOfficialSpeedSource: official.key || strike.actualOfficialSpeedSource || Params.officialSpeedSource,
+		                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : normalizeMs(Number(strike.peakTimeMs || 0) - Number(strike.startTimeMs || 0)),
+	                avgVisibility,
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
                 roiStatus: tapeMetrics ? '動画テープ検出' : '動画ROI未検出',
-                angleQuality: avgVisibility,
                 startFrameIndex: strike.startFrame,
                 peakFrameIndex: strike.peakFrame,
                 endFrameIndex: strike.endFrame,
@@ -17796,10 +17491,8 @@ service cloud.firestore {
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelAngleValues: {
                     rightAng,
-                    leftAng: Number(endFrame.leftAng || 0),
                     torsoAng,
-                    hasuji,
-                    shoulderLineAng: Number(endFrame.shoulderLineAng || 0)
+                    hasuji
                 },
                 clipFrames: [],
                 timingDefinition: `動画解析${numberLabel}: 開始frame ${strike.startFrame} / 最高速frame ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
@@ -17910,9 +17603,9 @@ service cloud.firestore {
                 const records = analysisRecords();
 	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),手首ピーク時刻(ms),推定剣先ピーク時刻(ms),テープピーク時刻(ms),動画fps実測/推定,解析fps,スロー補正倍率,軌道ブレ(%),刃筋(deg),右肘(deg),左肘(deg),体幹(deg),肩ライン(deg),手首信頼度,角度品質,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),終了理由,測定方式,フレーム同期,AI方式,剣先ROI,AI評価,メモ,打突時間定義\n";
+		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
 		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${recordPeakOffsetMs(r, 'wrist') ?? ''},${recordPeakOffsetMs(r, 'tip') ?? ''},${recordPeakOffsetMs(r, 'tape') ?? ''},${r.videoFpsEstimate||''},${r.analysisFps||''},${r.slowMotionFactor||''},${r.trajectorySway||0},${r.hasujiAngle},${r.rightAng},${r.leftAng||''},${r.torsoAng||''},${r.shoulderLineAng||''},${r.avgVisibility||0},${r.angleQuality||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.endReason||'')},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${r.roiStatus||''},${r.shortLabel},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
@@ -18004,31 +17697,6 @@ service cloud.firestore {
                 this.className = "bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600";
                 this.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> マイクOFF';
             }
-        });
-
-        document.getElementById('calibrateKiaiBtn').addEventListener('click', async function() {
-            if (!AppState.enableMic) { showToast('先にマイクをONにしてください', 'red'); return; }
-            const btn = this; const msgEl = document.getElementById('calibrateMsg');
-            if(msgEl) msgEl.classList.remove('hidden');
-            btn.disabled = true; btn.innerText = '測定中...'; 
-
-            let maxVol = 0;
-            const measureInterval = setInterval(() => {
-                const vol = getCurrentVolume();
-                if (vol > maxVol) maxVol = vol;
-            }, 50);
-
-            setTimeout(() => {
-                clearInterval(measureInterval);
-                btn.disabled = false; btn.innerText = '自動設定(キャリブレーション)'; 
-                if(msgEl) msgEl.classList.add('hidden');
-                if (maxVol < 0.02) { showToast('声が小さすぎるかマイクが認識していません', 'red'); return; }
-                let newThreshold = maxVol * 0.6;
-                if (newThreshold > 0.5) newThreshold = 0.5;
-                const slider = document.getElementById('paramKiaiThreshold');
-                slider.value = newThreshold.toFixed(2); slider.dispatchEvent(new Event('input'));
-                showToast(`最大音量: ${maxVol.toFixed(2)}。閾値を ${newThreshold.toFixed(2)} に自動設定しました`, 'green');
-            }, 3000); 
         });
 
         document.getElementById('practiceModeBtn').addEventListener('click', function(){
@@ -18142,37 +17810,6 @@ service cloud.firestore {
             }
             handleVideoFileInputChange({ files: [file] });
         };
-        const loadVideoUrlBtn = document.getElementById('loadVideoUrlBtn');
-        if (loadVideoUrlBtn) loadVideoUrlBtn.addEventListener('click', () => {
-            loadVideoUrlSource().catch(err => {
-                console.warn('動画URLの読み込みに失敗しました', err);
-                setVideoUrlStatus('URL動画を読み込めませんでした。ファイル読込を使ってください。', 'red');
-            });
-        });
-        const videoUrlInput = document.getElementById('videoUrlInput');
-        if (videoUrlInput) videoUrlInput.addEventListener('input', event => {
-            const value = event.target.value.trim();
-            if (!value) {
-                setYouTubeImportGuide(false);
-                setVideoUrlStatus('YouTubeページURLは直接動画ファイルではないため解析できません。自分の動画をファイルとして保存し、上の「動画ファイル」から読み込んでください。', 'slate');
-            } else if (isYouTubeUrl(value)) {
-                setYouTubeImportGuide(true);
-                setVideoUrlStatus('YouTube URLを検出しました。ブラウザ単体では映像フレームを取得できないため、mp4/movファイルとして読み込んでください。', 'amber');
-                safeText('videoAnalysisStatus', 'YouTube URLは不可');
-            } else {
-                setYouTubeImportGuide(false);
-                setVideoUrlStatus('直接mp4/mov URLなら読込できます。CORS非対応の場合はファイル読込を使ってください。', 'slate');
-            }
-        });
-        if (videoUrlInput) videoUrlInput.addEventListener('keydown', event => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                loadVideoUrlSource().catch(err => {
-                    console.warn('動画URLの読み込みに失敗しました', err);
-                    setVideoUrlStatus('URL動画を読み込めませんでした。ファイル読込を使ってください。', 'red');
-                });
-            }
-        });
         const analysisVideoElement = document.getElementById('analysisVideoElement');
         if (analysisVideoElement) {
             ['loadedmetadata', 'timeupdate', 'seeked'].forEach(eventName => {
@@ -18588,23 +18225,17 @@ service cloud.firestore {
             AppState.videoAngleOverlay = e.target.checked;
             drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
         });
+        const videoHasujiOverlayToggle = document.getElementById('videoHasujiOverlayToggle');
+        if (videoHasujiOverlayToggle) videoHasujiOverlayToggle.addEventListener('change', e => {
+            AppState.showHasujiOverlay = e.target.checked;
+            const paramHasuji = document.getElementById('paramHasujiOverlay');
+            if (paramHasuji) paramHasuji.checked = e.target.checked;
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
         const videoAngleOverlaySelect = document.getElementById('videoAngleOverlaySelect');
         if (videoAngleOverlaySelect) videoAngleOverlaySelect.addEventListener('change', e => {
             AppState.videoAngleOverlayTarget = e.target.value;
             drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
-        });
-        const videoOfficialSpeedSelect = document.getElementById('videoOfficialSpeedSelect');
-        if (videoOfficialSpeedSelect) videoOfficialSpeedSelect.addEventListener('change', e => {
-            Params.officialSpeedSource = e.target.value;
-            AppState.videoOfficialSpeedSource = e.target.value;
-            if (AppState.videoAnalysis) {
-                AppState.videoAnalysis.officialSpeedSource = e.target.value;
-                AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
-                recomputeVideoAnalysisResult();
-                drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
-            } else {
-                updateVideoAnalysisLabels();
-            }
         });
         const angleReferenceSelect = document.getElementById('angleReferenceSelect');
         if (angleReferenceSelect) angleReferenceSelect.addEventListener('change', e => {
@@ -19005,23 +18636,9 @@ service cloud.firestore {
 
         document.getElementById('paramRaisedY').addEventListener('input', e=>{ Params.raisedYOffset=parseFloat(e.target.value); document.getElementById('valRaisedY').innerText=parseFloat(e.target.value).toFixed(2); });
         document.getElementById('paramSwingVel').addEventListener('input', e=>{ Params.swingVelThreshold=parseFloat(e.target.value); document.getElementById('valSwingVel').innerText=parseFloat(e.target.value).toFixed(3); });
-        document.getElementById('paramKiaiThreshold').addEventListener('input', e=>{ Params.kiaiThreshold=parseFloat(e.target.value); document.getElementById('valKiaiThreshold').innerText=parseFloat(e.target.value).toFixed(2); });
-        
         const elShowGuide = document.getElementById('paramShowGuide');
         if (elShowGuide) elShowGuide.addEventListener('change', e=>{ AppState.showGuide = e.target.checked; });
         
-        const elSignalMode = document.getElementById('paramSignalMode');
-        if (elSignalMode) elSignalMode.addEventListener('change', e=>{ 
-            Params.signalMode = e.target.checked; 
-            document.getElementById('thTime').innerText = Params.signalMode ? "反応時間" : "打突時間";
-            document.getElementById('timeLabel').innerText = Params.signalMode ? "シグナル反応時間" : "打突時間";
-        });
-        
-        const elTsukiMode = document.getElementById('paramTsukiMode');
-        if (elTsukiMode) elTsukiMode.addEventListener('change', e=>{ 
-            Params.tsukiMode = e.target.checked; 
-        });
-
         const elUsePoseLandmarker = document.getElementById('paramUsePoseLandmarker');
         if (elUsePoseLandmarker) elUsePoseLandmarker.addEventListener('change', e=>{
             if (isIOSLikeBrowser() && e.target.checked) {
@@ -19067,6 +18684,13 @@ service cloud.firestore {
         });
         const elAngleOverlay = document.getElementById('paramAngleOverlay');
         if (elAngleOverlay) elAngleOverlay.addEventListener('change', e=>{ AppState.angleOverlay = e.target.checked; });
+        const elHasujiOverlay = document.getElementById('paramHasujiOverlay');
+        if (elHasujiOverlay) elHasujiOverlay.addEventListener('change', e=>{
+            AppState.showHasujiOverlay = e.target.checked;
+            const videoToggle = document.getElementById('videoHasujiOverlayToggle');
+            if (videoToggle) videoToggle.checked = e.target.checked;
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        });
         const elAngleTarget = document.getElementById('paramAngleTarget');
         if (elAngleTarget) elAngleTarget.addEventListener('change', e=>{ AppState.angleTarget = e.target.value; });
         const modelAngleSelect = document.getElementById('modelAngleSelect');

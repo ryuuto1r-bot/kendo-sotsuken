@@ -19,6 +19,11 @@ sw 2.js
 .env
 .env.*
 
+# Generated analysis/video-production files kept on this Mac
+outputs/
+realtime-analysis-video/node_modules/
+realtime-analysis-video/*.mp4
+
 # Codex / thesis handoff notes kept on this Mac
 AGENTS.md
 卒研プロジェクト/
