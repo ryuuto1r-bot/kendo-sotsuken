@@ -5858,7 +5858,10 @@ service cloud.firestore {
             const promise = new Promise((resolve, reject) => {
                 const existing = document.querySelector(`script[data-optional-script="${name}"]`);
                 const script = existing || document.createElement('script');
-                const finish = () => asset.ready() ? resolve(true) : reject(new Error(`${name}を初期化できません`));
+                const finish = () => {
+                    script.dataset.optionalLoaded = asset.ready() ? 'true' : 'false';
+                    asset.ready() ? resolve(true) : reject(new Error(`${name}を初期化できません`));
+                };
                 script.addEventListener('load', finish, { once: true });
                 script.addEventListener('error', () => reject(new Error(`${name}を読み込めません`)), { once: true });
                 if (!existing) {
