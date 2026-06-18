@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v157';
+            var version = 'v159';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -3840,8 +3840,8 @@
             <div class="kvc-tab-strip flex space-x-1">
                 <button onclick="switchTab('measure')" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 練習</button>
                 <button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画測定</button>
-                <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 比較</button>
-                <button onclick="switchTab('data')" id="tabBtn-data" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-database"></i> データ</button>
+                <button onclick="switchTab('analysis')" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 分析</button>
+                <button onclick="switchTab('data')" id="tabBtn-data" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-database"></i> 研究データ</button>
                 <button onclick="switchTab('details')" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 記録</button>
                 <button onclick="switchTab('model')" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 3D角度</button>
                 <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-gear"></i> 設定</button>
@@ -4057,7 +4057,7 @@
     <div id="tab-analysis" class="tab-content">
         <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>記録・比較</h2>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>データ分析</h2>
                 <div class="mt-2 flex flex-wrap gap-2 text-xs">
                     <span id="recordVisibleCount" class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-full font-bold">表示 0本</span>
                     <span id="recordFormalCount" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 rounded-full font-bold">正式 0本</span>
@@ -4071,7 +4071,7 @@
                     <option value="realtime">リアルタイム目安のみ</option>
                     <option value="all">全記録</option>
                 </select>
-                <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded text-sm shadow flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV</button>
+                <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded text-sm shadow flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV出力</button>
                 <button onclick="clearHistory()" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-4 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i> 履歴クリア</button>
             </div>
         </div>
@@ -4086,11 +4086,11 @@
                 <div id="recordSummaryAvgTime" class="mt-1 text-2xl font-black text-blue-700 font-mono-num">---</div>
             </div>
             <div class="bg-white rounded-xl border border-emerald-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">最良</span>
+                <span class="text-[11px] font-bold text-slate-500">最高評価</span>
                 <div id="recordSummaryBest" class="mt-1 text-xl font-black text-emerald-700 font-mono-num">---</div>
             </div>
             <div class="bg-white rounded-xl border border-rose-100 p-4 shadow-sm">
-                <span class="text-[11px] font-bold text-slate-500">要改善</span>
+                <span class="text-[11px] font-bold text-slate-500">改善優先</span>
                 <div id="recordSummaryWorst" class="mt-1 text-xl font-black text-rose-700 font-mono-num">---</div>
             </div>
             <div class="bg-white rounded-xl border border-purple-100 p-4 shadow-sm">
@@ -4112,29 +4112,29 @@
         </div>
         
         <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border mb-6">
-            <h3 class="text-sm font-bold text-slate-700 mb-2">上半身指標の総合比較</h3>
+            <h3 class="text-sm font-bold text-slate-700 mb-2">平均指標の比較</h3>
             <div class="h-80 w-full flex justify-center"><canvas id="radarChart" height="640" style="display: block; box-sizing: border-box; height: 320px; width: 527px;" width="1054"></canvas></div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間の推移</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">ピーク時刻</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">ピーク時刻の推移</h3>
                 <div class="h-64"><canvas id="peakChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">右肘角</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">右肘角の推移</h3>
                 <div class="h-64"><canvas id="elbowChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">体幹軸</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">体幹軸の推移</h3>
                 <div class="h-64"><canvas id="torsoChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border xl:col-span-2">
-                <h3 class="text-sm font-bold text-slate-700 mb-2">刃筋</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">刃筋角の推移</h3>
                 <div class="h-64"><canvas id="hasujiChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
             </div>
         </div>
@@ -4144,14 +4144,21 @@
     <div id="tab-data" class="tab-content">
         <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-database text-sky-500 mr-2"></i>データセンター</h2>
-                <p class="text-xs text-slate-500 mt-1">分析した結果だけを蓄積します。リアルタイム分析と動画測定は別々に管理します。</p>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-database text-sky-500 mr-2"></i>研究データ</h2>
+                <p class="text-xs text-slate-500 mt-1">保存した測定結果を確認し、研究用に集計・出力します。</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button type="button" onclick="exportDataCenterCSV('realtime')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>リアルタイムCSV</button>
-                <button type="button" onclick="exportDataCenterCSV('formal')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>動画測定CSV</button>
-                <button type="button" onclick="switchTab('analysis')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">比較へ</button>
+                <button type="button" onclick="exportDataCenterCSV('realtime')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>練習CSV</button>
+                <button type="button" onclick="exportDataCenterCSV('formal')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>正式CSV</button>
+                <button type="button" onclick="switchTab('analysis')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">グラフ分析</button>
             </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-center mb-4">
+            <div class="bg-white border rounded-xl px-3 py-3 shadow-sm"><span class="text-slate-500 font-bold">全記録</span><div id="dataAllCount" class="font-black text-slate-900 font-mono-num">0本</div></div>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl px-3 py-3"><span class="text-blue-700 font-bold">練習</span><div id="dataAllRealtimeCount" class="font-black text-blue-800 font-mono-num">0本</div></div>
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-3"><span class="text-emerald-700 font-bold">正式</span><div id="dataAllFormalCount" class="font-black text-emerald-800 font-mono-num">0本</div></div>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-3"><span class="text-indigo-700 font-bold">最終保存</span><div id="dataAllLatest" class="font-black text-indigo-800">---</div></div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
@@ -4159,7 +4166,7 @@
                 <div class="data-center-panel-header">
                     <div>
                         <h3 class="font-black text-slate-900"><i class="fa-solid fa-video text-blue-500 mr-2"></i>リアルタイム分析データ</h3>
-                        <p class="text-xs text-slate-500 mt-1">練習中に自動保存された目安データ。日々の練習量と傾向確認に使います。</p>
+                        <p class="text-xs text-slate-500 mt-1">練習中に自動保存された記録です。</p>
                     </div>
                     <span id="dataRealtimeBadge" class="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-black">0本</span>
                 </div>
@@ -4183,7 +4190,7 @@
                 <div class="data-center-panel-header">
                     <div>
                         <h3 class="font-black text-slate-900"><i class="fa-solid fa-film text-emerald-500 mr-2"></i>動画測定データ</h3>
-                        <p class="text-xs text-slate-500 mt-1">開始/終了フレームを補正して保存した正式データ。卒研・検証の中心値にします。</p>
+                        <p class="text-xs text-slate-500 mt-1">開始・最高速・終了を確認して保存した正式記録です。</p>
                     </div>
                     <span id="dataFormalBadge" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full text-xs font-black">0本</span>
                 </div>
@@ -4208,7 +4215,7 @@
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-flask text-indigo-500 mr-2"></i>研究条件</h3>
-                    <p class="text-xs text-slate-500 mt-1">ここで指定した条件を、これから保存する測定データへ自動で付けます。個人名は入力せず匿名IDを使用してください。</p>
+                    <p class="text-xs text-slate-500 mt-1">以後の保存データに付与します。被験者は匿名IDで管理してください。</p>
                 </div>
                 <span id="researchProfileStatus" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black">未設定</span>
             </div>
@@ -4228,7 +4235,7 @@
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>研究用自動集計</h3>
-                    <p class="text-xs text-slate-500 mt-1">採用基準を通過したデータから分布を自動更新します。記録を保存するたびに再集計されます。</p>
+                    <p class="text-xs text-slate-500 mt-1">採用・除外判定と研究グラフを自動更新します。</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full font-black">採用 <b id="researchAcceptedCount">0</b>件</span>
@@ -4249,39 +4256,40 @@
         <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>学校OneDrive / 自分専用Excel</h3>
-                    <p class="text-xs text-slate-500 mt-1">学校OneDrive内の既存研究用Excelを選び、過去データを残したまま記録を追記します。共有設定は変更しません。</p>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>研究用Excel</h3>
+                    <p class="text-xs text-slate-500 mt-1">学校OneDrive内の自分専用Excelへ、測定データを蓄積します。</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button id="researchExcelBindBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-folder-open mr-1"></i>既存Excelを選ぶ</button>
-                    <button id="researchExcelUpdateBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>今すぐ更新</button>
-                    <button id="researchExcelDownloadBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>別名で出力</button>
-                    <button id="researchExcelDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>保存先を解除</button>
+                    <button id="researchExcelUpdateBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>Excelを更新</button>
+                    <button id="researchExcelDownloadBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>新規Excelを出力</button>
+                    <button id="researchExcelDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>接続解除</button>
                 </div>
             </div>
             <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
-                <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、<b>kendo_research_data_20260618.xlsx</b> を選択してください。</div>
+                <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、学校OneDrive内の <span id="researchExcelTargetName" class="font-black">kendo_research_data_20260618.xlsx</span> を選択してください。</div>
                 <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
                     <input id="researchExcelAutoToggle" type="checkbox" class="rounded border-slate-300">
                     記録保存時に同じExcelを自動更新
                 </label>
             </div>
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3"><b class="text-emerald-800">1. 既存Excel</b><p class="mt-1 text-emerald-900">学校OneDrive内の研究用Excelを選びます。</p></div>
-                <div class="rounded-lg border border-blue-100 bg-blue-50 p-3"><b class="text-blue-800">2. 安全に追記</b><p class="mt-1 text-blue-900">既存データを読み込み、バックアップ後に同じExcelを更新します。</p></div>
-                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><b class="text-slate-800">3. Excelで確認</b><p class="mt-1 text-slate-700">ExcelアプリのOneDriveから同じファイルを開きます。</p></div>
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] text-slate-500">
+                <p class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"><i class="fa-solid fa-folder-open mr-1 text-emerald-600"></i>初回だけ対象Excelを選択</p>
+                <p class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"><i class="fa-solid fa-shield-halved mr-1 text-blue-600"></i>更新前に内部バックアップ保存</p>
+                <p class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"><i class="fa-solid fa-lock mr-1 text-slate-600"></i>共有リンクなし。自分のExcelだけ更新</p>
             </div>
-            <p class="mt-3 text-[11px] text-slate-500">この方式はデスクトップ版Chrome/Edge向けです。共有リンクは作成せず、OneDriveの「自分のみ」の状態を維持します。測定中はExcelファイルを閉じておくと競合を防げます。</p>
+            <p class="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Excelアプリで同じファイルを開いたままだと更新できない場合があります。測定中は閉じておくのがおすすめです。</p>
         </section>
 
-        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <details class="bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
+            <summary class="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer">
                 <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-brands fa-microsoft text-blue-600 mr-2"></i>OneDrive Excel同期</h3>
-                    <p class="text-xs text-slate-500 mt-1">同じ研究用ExcelをOneDriveへ更新し、Excelアプリ・iPhone・共有リンクから開けるようにします。</p>
+                    <h3 class="font-black text-slate-900"><i class="fa-brands fa-microsoft text-blue-600 mr-2"></i>Microsoft OneDrive（詳細設定）</h3>
+                    <p class="text-xs text-slate-500 mt-1">学校アカウントへ直接同期する場合のみ設定します。</p>
                 </div>
                 <span id="microsoftStatusBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black">未接続</span>
-            </div>
+            </summary>
+            <div class="border-t border-slate-200 p-4">
             <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
                 <div>
                     <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px] gap-3">
@@ -4291,7 +4299,7 @@
                         </div>
                         <div class="research-data-field">
                             <label for="microsoftFileNameInput">OneDriveのファイル名</label>
-                            <input id="microsoftFileNameInput" type="text" maxlength="90" value="Kendo_Research_Data.xlsx">
+                            <input id="microsoftFileNameInput" type="text" maxlength="90" value="kendo_research_data_20260618.xlsx">
                         </div>
                     </div>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -4324,36 +4332,23 @@
                     </details>
                 </div>
             </div>
-            <p class="mt-3 text-[11px] text-slate-500">自動同期はMicrosoftに接続した状態で動作します。「閲覧リンクを作成」は読み取り専用リンクです。学校アカウントでは管理者設定により外部共有が制限される場合があります。</p>
-        </section>
-
-        <div class="bg-white rounded-xl shadow-sm border p-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-graduation-cap text-indigo-500 mr-2"></i>卒研での扱い</h3>
-                    <p class="text-sm text-slate-600 mt-1">リアルタイム分析は稽古中の目安、動画測定は正式測定として分けます。CSV出力も別々なので、発表用の表やグラフを作る時に混ざりません。</p>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-center">
-                    <div class="bg-slate-50 border rounded-lg px-3 py-2"><span class="text-slate-500 font-bold">全データ</span><div id="dataAllCount" class="font-black text-slate-900 font-mono-num">0本</div></div>
-                    <div class="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2"><span class="text-blue-700 font-bold">目安</span><div id="dataAllRealtimeCount" class="font-black text-blue-800 font-mono-num">0本</div></div>
-                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2"><span class="text-emerald-700 font-bold">正式</span><div id="dataAllFormalCount" class="font-black text-emerald-800 font-mono-num">0本</div></div>
-                    <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2"><span class="text-indigo-700 font-bold">最新</span><div id="dataAllLatest" class="font-black text-indigo-800">---</div></div>
-                </div>
+            <p class="mt-3 text-[11px] text-slate-500">閲覧リンクは読み取り専用です。学校の管理者設定により外部共有できない場合があります。</p>
             </div>
-        </div>
+        </details>
 
-        <div class="bg-white rounded-xl shadow-sm border p-4 mt-6">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <details class="bg-white rounded-xl shadow-sm border mt-6 overflow-hidden">
+            <summary class="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer">
                 <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-cloud-arrow-up text-sky-500 mr-2"></i>Firebaseクラウド同期</h3>
-                    <p class="text-sm text-slate-600 mt-1">分析結果の数値だけをFirestoreへ保存します。動画ファイル本体は送信しません。</p>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-cloud-arrow-up text-sky-500 mr-2"></i>Firebase連携（詳細設定）</h3>
+                    <p class="text-xs text-slate-500 mt-1">複数端末で数値データを共有する場合のみ設定します。</p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-xs">
                     <span id="firebaseStatusBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-black">未接続</span>
                     <span id="firebaseProjectBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-black">project: ---</span>
                 </div>
-            </div>
+            </summary>
 
+            <div class="border-t border-slate-200 p-4">
             <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
                 <div>
                     <label for="firebaseConfigInput" class="block text-xs font-black text-slate-500 mb-2">Firebase設定JSON</label>
@@ -4392,7 +4387,8 @@ service cloud.firestore {
                     </details>
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
     </div>
 
     <div id="tab-video" class="tab-content">
@@ -6088,7 +6084,7 @@ service cloud.firestore {
             microsoftDriveItemId: '',
             microsoftDriveWebUrl: '',
             microsoftShareUrl: '',
-            microsoftFileName: 'Kendo_Research_Data.xlsx',
+            microsoftFileName: 'kendo_research_data_20260618.xlsx',
             microsoftAutoSync: false,
             microsoftSyncing: false,
             microsoftSyncTimer: null,
@@ -7015,8 +7011,8 @@ service cloud.firestore {
             const worst = ranked[ranked.length - 1];
             const latest = [...records].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0] || records[records.length - 1];
             safeText('recordSummaryAvgTime', times.length ? `${Math.round(avg(times))} ms` : '---');
-            safeText('recordSummaryBest', best ? `#${best.id} / ${scoreRecord(best)}` : '---');
-            safeText('recordSummaryWorst', worst ? `#${worst.id} / ${scoreRecord(worst)}` : '---');
+            safeText('recordSummaryBest', best ? `#${best.id} / ${scoreRecord(best)}点` : '---');
+            safeText('recordSummaryWorst', worst ? `#${worst.id} / ${scoreRecord(worst)}点` : '---');
             safeText('recordSummaryAvgElbow', elbows.length ? `${avg(elbows).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgTorso', torso.length ? `${avg(torso).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
@@ -7282,7 +7278,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v157',
+                appVersion: 'v159',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -8392,6 +8388,10 @@ service cloud.firestore {
             return 'kendo_research_data_' + stamp + '.xlsx';
         }
 
+        function refreshResearchExcelTargetName() {
+            safeText('researchExcelTargetName', researchExcelFileName());
+        }
+
         function updateResearchExcelStatus(message, tone = 'blue') {
             const element = document.getElementById('researchExcelStatus');
             if (!element) return;
@@ -8490,7 +8490,7 @@ service cloud.firestore {
                 db.close();
                 AppState.researchExcelHandle = handle;
                 if (!handle) {
-                    updateResearchExcelStatus('測定データは自動蓄積中です。「既存Excelを選ぶ」から研究用Excelを接続してください。');
+                    updateResearchExcelStatus('測定データはアプリ内に蓄積中です。「既存Excelを選ぶ」から ' + researchExcelFileName() + ' を接続してください。');
                     return null;
                 }
                 const permission = await handle.queryPermission({ mode: 'readwrite' });
@@ -8686,7 +8686,7 @@ service cloud.firestore {
         }
 
         const MICROSOFT_GRAPH_SCOPES = Object.freeze(['User.Read', 'Files.ReadWrite']);
-        const MICROSOFT_DEFAULT_FILE_NAME = 'Kendo_Research_Data.xlsx';
+        const MICROSOFT_DEFAULT_FILE_NAME = researchExcelFileName();
 
         function microsoftRedirectUri() {
             return `${location.origin}${location.pathname}`;
@@ -9162,7 +9162,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v157',
+                appVersion: normalized.appVersion || 'v159',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -19121,6 +19121,7 @@ service cloud.firestore {
         
         AppState.researchProfile = loadResearchProfile();
         applyResearchProfileToUi();
+        refreshResearchExcelTargetName();
         AppState.researchExcelAutoUpdate = safeStorageGet('kendoResearchExcelAutoUpdate') === '1';
         if (researchExcelAutoToggle) researchExcelAutoToggle.checked = AppState.researchExcelAutoUpdate;
         restoreResearchExcelHandle();
