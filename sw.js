@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v155';
+const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v156';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icon.svg',
   './vendor/three/three.module.min.js',
-  './vendor/exceljs/exceljs.min.js'
+  './vendor/exceljs/exceljs.min.js',
+  './vendor/msal-browser/msal-browser.min.js'
 ];
 
 self.addEventListener('install', event => {
