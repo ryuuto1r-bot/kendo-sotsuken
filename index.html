@@ -5863,11 +5863,12 @@ service cloud.firestore {
                 script.addEventListener('error', () => reject(new Error(`${name}を読み込めません`)), { once: true });
                 if (!existing) {
                     script.src = asset.src;
-                    script.defer = true;
+                    script.async = true;
                     script.dataset.optionalScript = name;
                     document.head.appendChild(script);
                 }
             }).catch(error => {
+                document.querySelector(`script[data-optional-script="${name}"]`)?.remove();
                 optionalScriptPromises.delete(name);
                 throw error;
             });
