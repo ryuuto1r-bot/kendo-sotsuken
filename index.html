@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v156';
+            var version = 'v157';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -4249,23 +4249,29 @@
         <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>研究用Excel</h3>
-                    <p class="text-xs text-slate-500 mt-1">全測定・採用・除外・集計・補正比較・グラフの6シートを、現在までの全データから作成します。</p>
+                    <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>学校OneDrive / 自分専用Excel</h3>
+                    <p class="text-xs text-slate-500 mt-1">学校OneDrive内の既存研究用Excelを選び、過去データを残したまま記録を追記します。共有設定は変更しません。</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button id="researchExcelDownloadBtn" type="button" onclick="exportResearchExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>最新版Excelを出力</button>
-                    <button id="researchExcelBindBtn" type="button" onclick="connectResearchExcelFile()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-link mr-1"></i>同じExcelへ自動更新</button>
-                    <button id="researchExcelUpdateBtn" type="button" onclick="updateConnectedResearchExcel()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>今すぐ更新</button>
+                    <button id="researchExcelBindBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-folder-open mr-1"></i>既存Excelを選ぶ</button>
+                    <button id="researchExcelUpdateBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>今すぐ更新</button>
+                    <button id="researchExcelDownloadBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>別名で出力</button>
+                    <button id="researchExcelDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>保存先を解除</button>
                 </div>
             </div>
             <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
-                <div id="researchExcelStatus" class="research-excel-status">測定データはデータセンターへ自動蓄積されます。Excelを出力すると、その時点までの全件が入ります。</div>
+                <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、<b>kendo_research_data_20260618.xlsx</b> を選択してください。</div>
                 <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
                     <input id="researchExcelAutoToggle" type="checkbox" class="rounded border-slate-300">
-                    記録保存時に接続Excelを更新
+                    記録保存時に同じExcelを自動更新
                 </label>
             </div>
-            <p class="mt-3 text-[11px] text-slate-500">同じExcelへの自動更新は、HTTPSで開いたデスクトップChrome/Edgeのみ対応します。iPhone・Safariではデータを内部とFirebaseへ蓄積し、「最新版Excelを出力」で一括保存します。</p>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3"><b class="text-emerald-800">1. 既存Excel</b><p class="mt-1 text-emerald-900">学校OneDrive内の研究用Excelを選びます。</p></div>
+                <div class="rounded-lg border border-blue-100 bg-blue-50 p-3"><b class="text-blue-800">2. 安全に追記</b><p class="mt-1 text-blue-900">既存データを読み込み、バックアップ後に同じExcelを更新します。</p></div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><b class="text-slate-800">3. Excelで確認</b><p class="mt-1 text-slate-700">ExcelアプリのOneDriveから同じファイルを開きます。</p></div>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-500">この方式はデスクトップ版Chrome/Edge向けです。共有リンクは作成せず、OneDriveの「自分のみ」の状態を維持します。測定中はExcelファイルを閉じておくと競合を防げます。</p>
         </section>
 
         <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
@@ -7276,7 +7282,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v156',
+                appVersion: 'v157',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -7431,8 +7437,8 @@ service cloud.firestore {
             return { accepted: reasons.length === 0, reasons };
         }
 
-        function buildResearchDataset() {
-            const entries = (AppState.records || [])
+        function buildResearchDataset(records = AppState.records || []) {
+            const entries = records
                 .map(normalizeRecordMeta)
                 .map((record, index) => {
                     const validation = researchValidateRecord(record);
@@ -7765,11 +7771,225 @@ service cloud.firestore {
             ['timingDefinition', '打突時間定義', 55]
         ]);
 
+        const RESEARCH_EXCEL_MANAGED_SHEETS = Object.freeze([
+            '全測定データ',
+            '採用データ',
+            '除外データ',
+            '集計',
+            '補正比較',
+            'グラフ'
+        ]);
+
+        function researchExcelPlainValue(value) {
+            if (value === null || value === undefined) return '';
+            if (value instanceof Date) return value;
+            if (typeof value !== 'object') return value;
+            if (value.result !== undefined) return researchExcelPlainValue(value.result);
+            if (typeof value.text === 'string') return value.text;
+            if (Array.isArray(value.richText)) return value.richText.map(part => part.text || '').join('');
+            return String(value);
+        }
+
+        function researchExcelDateObject(value) {
+            if (value instanceof Date && Number.isFinite(value.getTime())) return value;
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                const date = new Date(Math.round((value - 25569) * 86400000));
+                return Number.isFinite(date.getTime()) ? date : null;
+            }
+            const text = String(value || '').trim();
+            if (!/^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/.test(text)) return null;
+            const date = new Date(text);
+            return Number.isFinite(date.getTime()) ? date : null;
+        }
+
+        function researchExcelRecordDate(value) {
+            const date = researchExcelDateObject(value);
+            return date ? date.toISOString() : String(value || '').trim();
+        }
+
+        function researchExcelRecordFromValues(values) {
+            const type = String(values.recordType || '').trim() === '動画解析' ? 'formal' : 'realtime';
+            const record = {
+                id: researchNumber(values.recordId) ?? String(values.recordId || '').trim(),
+                recordType: type,
+                source: type === 'formal' ? 'video-analysis' : 'realtime',
+                recordedAt: researchExcelRecordDate(values.recordedAt),
+                participantId: String(values.participantId || '').trim(),
+                sessionId: String(values.sessionId || '').trim(),
+                strikeType: String(values.strikeType || '').trim(),
+                grade: String(values.grade || '').trim(),
+                cameraDirection: String(values.cameraDirection || '').trim(),
+                deviceLabel: String(values.deviceLabel || '').trim(),
+                appVersion: String(values.appVersion || '').trim(),
+                measurementMethod: String(values.measurementMethod || '').trim(),
+                poseEngine: String(values.poseEngine || '').trim(),
+                shortLabel: String(values.shortLabel || '').trim(),
+                memo: String(values.memo || '').trim(),
+                timingDefinition: String(values.timingDefinition || '').trim(),
+                researchImportedFromExcel: true,
+                researchImportedStatus: String(values.researchStatus || '').trim(),
+                researchImportedExclusionReason: String(values.exclusionReason || '').trim()
+            };
+            [
+                'experienceYears', 'cameraDistanceMeters', 'timeMs', 'officialPeakOffsetMs',
+                'wristPeakOffsetMs', 'tipPeakOffsetMs', 'tapePeakOffsetMs', 'rightAng',
+                'torsoAng', 'hasujiAngle', 'avgVisibility', 'angleQuality', 'analysisFps',
+                'videoFpsEstimate', 'startFrameIndex', 'peakFrameIndex', 'endFrameIndex'
+            ].forEach(key => { record[key] = researchNumber(values[key]); });
+            const angles = {
+                start: {
+                    rightElbow: researchNumber(values.rightStart),
+                    torso: researchNumber(values.torsoStart),
+                    hasuji: researchNumber(values.hasujiStart)
+                },
+                peak: {
+                    rightElbow: researchNumber(values.rightPeak),
+                    torso: researchNumber(values.torsoPeak),
+                    hasuji: researchNumber(values.hasujiPeak)
+                },
+                end: {
+                    rightElbow: researchNumber(values.rightEnd),
+                    torso: researchNumber(values.torsoEnd),
+                    hasuji: researchNumber(values.hasujiEnd)
+                },
+                stats: {
+                    rightElbow: {
+                        min: researchNumber(values.rightMin),
+                        max: researchNumber(values.rightMax),
+                        change: researchNumber(values.rightChange),
+                        averageAngularVelocity: researchNumber(values.rightAvgVelocity),
+                        maxAngularVelocity: researchNumber(values.rightMaxVelocity)
+                    },
+                    torso: {
+                        min: researchNumber(values.torsoMin),
+                        max: researchNumber(values.torsoMax),
+                        change: researchNumber(values.torsoChange),
+                        averageAngularVelocity: researchNumber(values.torsoAvgVelocity),
+                        maxAngularVelocity: researchNumber(values.torsoMaxVelocity)
+                    },
+                    hasuji: {
+                        min: researchNumber(values.hasujiMin),
+                        max: researchNumber(values.hasujiMax),
+                        change: researchNumber(values.hasujiChange),
+                        averageAngularVelocity: researchNumber(values.hasujiAvgVelocity),
+                        maxAngularVelocity: researchNumber(values.hasujiMaxVelocity)
+                    }
+                }
+            };
+            const angleValues = [
+                ...Object.values(angles.start),
+                ...Object.values(angles.peak),
+                ...Object.values(angles.end),
+                ...Object.values(angles.stats).flatMap(item => Object.values(item))
+            ];
+            if (angleValues.some(Number.isFinite)) record.researchAngles = angles;
+
+            const startDiff = researchNumber(values.startDiffFrames);
+            const endDiff = researchNumber(values.endDiffFrames);
+            const correction = {
+                autoStartFrame: Number.isFinite(record.startFrameIndex) && Number.isFinite(startDiff) ? record.startFrameIndex - startDiff : null,
+                correctedStartFrame: record.startFrameIndex,
+                autoPeakFrame: record.peakFrameIndex,
+                correctedPeakFrame: record.peakFrameIndex,
+                autoEndFrame: Number.isFinite(record.endFrameIndex) && Number.isFinite(endDiff) ? record.endFrameIndex - endDiff : null,
+                correctedEndFrame: record.endFrameIndex,
+                autoDurationMs: researchNumber(values.autoDurationMs),
+                correctedDurationMs: researchNumber(values.correctedDurationMs),
+                durationDiffMs: researchNumber(values.durationDiffMs),
+                startDiffFrames: startDiff,
+                endDiffFrames: endDiff,
+                wasCorrected: String(values.wasCorrected || '').trim() === 'あり',
+                confirmed: true
+            };
+            if (Object.values(correction).some(value => Number.isFinite(value)) || correction.wasCorrected) {
+                record.researchCorrection = correction;
+            }
+            return normalizeRecordMeta(record);
+        }
+
+        function readResearchWorkbookRecords(workbook) {
+            const sheet = workbook.getWorksheet('全測定データ');
+            if (!sheet) throw new Error('「全測定データ」シートがありません');
+            const expectedHeaders = RESEARCH_EXCEL_COLUMNS.map(([, header]) => header);
+            const actualHeaders = Array.from({ length: Math.max(sheet.getRow(1).cellCount, expectedHeaders.length) }, (_, index) =>
+                String(researchExcelPlainValue(sheet.getCell(1, index + 1).value) || '').trim()
+            );
+            const schemaMatches = actualHeaders.length === expectedHeaders.length
+                && expectedHeaders.every((header, index) => actualHeaders[index] === header);
+            if (!schemaMatches) {
+                throw new Error('列構成が現行64列スキーマと異なるため、安全のため更新を中止しました');
+            }
+            const records = [];
+            for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+                const values = {};
+                RESEARCH_EXCEL_COLUMNS.forEach(([key], index) => {
+                    values[key] = researchExcelPlainValue(sheet.getCell(rowNumber, index + 1).value);
+                });
+                if (values.recordId === '' && values.timeMs === '' && values.recordedAt === '') continue;
+                records.push(researchExcelRecordFromValues(values));
+            }
+            return records;
+        }
+
+        function researchRecordFingerprint(record) {
+            const stableNumber = value => {
+                const number = researchNumber(value);
+                return Number.isFinite(number) ? number.toFixed(6) : '';
+            };
+            return [
+                recordTypeOf(record),
+                String(record.id ?? ''),
+                stableNumber(record.timeMs),
+                stableNumber(record.officialPeakOffsetMs),
+                stableNumber(record.rightAng),
+                stableNumber(record.torsoAng),
+                stableNumber(record.hasujiAngle),
+                String(record.participantId || ''),
+                String(record.sessionId || '')
+            ].join('|');
+        }
+
+        function mergeResearchWorkbookRecords(importedRecords) {
+            const localRecords = (AppState.records || []).map(normalizeRecordMeta);
+            const localFingerprints = new Set(localRecords.map(researchRecordFingerprint));
+            const merged = importedRecords.map(normalizeRecordMeta);
+            const fingerprintIndexes = new Map(merged.map((record, index) => [researchRecordFingerprint(record), index]));
+            localRecords.forEach(record => {
+                const fingerprint = researchRecordFingerprint(record);
+                const existingIndex = fingerprintIndexes.get(fingerprint);
+                if (existingIndex !== undefined) {
+                    const imported = merged[existingIndex];
+                    const combined = { ...imported, ...record, id: imported.id ?? record.id };
+                    if (!researchExcelDateObject(record.recordedAt)) {
+                        combined.recordedAt = imported.recordedAt;
+                    }
+                    merged[existingIndex] = combined;
+                    return;
+                }
+                fingerprintIndexes.set(fingerprint, merged.length);
+                merged.push(record);
+            });
+            let nextId = merged.reduce((max, record) => Math.max(max, researchNumber(record.id) || 0), 0);
+            const usedIds = new Set();
+            merged.forEach(record => {
+                let id = String(record.id ?? '').trim();
+                if (!id || usedIds.has(id)) id = String(++nextId);
+                record.id = /^\d+$/.test(id) ? Number(id) : id;
+                usedIds.add(String(record.id));
+            });
+            AppState.records = merged;
+            return {
+                importedCount: importedRecords.length,
+                importedNewCount: importedRecords.filter(record => !localFingerprints.has(researchRecordFingerprint(record))).length,
+                totalCount: merged.length
+            };
+        }
+
         function researchExcelRow(entry) {
             const record = entry.record;
             const angles = record.researchAngles || {};
             const correction = record.researchCorrection || {};
-            const recordedAtDate = record.recordedAt ? new Date(record.recordedAt) : null;
+            const recordedAtDate = researchExcelDateObject(record.recordedAt);
             const phase = (name, key) => researchNumber(angles?.[name]?.[key]);
             const stat = (key, name) => researchNumber(angles?.stats?.[key]?.[name]);
             return {
@@ -7777,7 +7997,7 @@ service cloud.firestore {
                 recordType: recordTypeOf(record) === 'formal' ? '動画解析' : 'リアルタイム',
                 researchStatus: entry.accepted ? '採用' : '除外',
                 exclusionReason: entry.reasons.join(' / '),
-                recordedAt: recordedAtDate && Number.isFinite(recordedAtDate.getTime()) ? recordedAtDate : '',
+                recordedAt: recordedAtDate || record.recordedAt || '',
                 participantId: record.participantId || '',
                 sessionId: record.sessionId || '',
                 strikeType: record.strikeType || '',
@@ -8120,13 +8340,17 @@ service cloud.firestore {
             return images;
         }
 
-        async function buildResearchWorkbookBlob() {
+        async function buildResearchWorkbookBlob(options = {}) {
             if (!window.ExcelJS) throw new Error('Excel生成ライブラリを読み込めません');
-            const dataset = buildResearchDataset();
-            const workbook = new ExcelJS.Workbook();
+            const dataset = options.dataset || buildResearchDataset();
+            const workbook = options.workbook || new ExcelJS.Workbook();
+            RESEARCH_EXCEL_MANAGED_SHEETS.forEach(name => {
+                const existingSheet = workbook.getWorksheet(name);
+                if (existingSheet) workbook.removeWorksheet(existingSheet.id);
+            });
             workbook.creator = 'Kendo Virtual Coach';
             workbook.lastModifiedBy = 'Kendo Virtual Coach';
-            workbook.created = new Date();
+            if (!workbook.created) workbook.created = new Date();
             workbook.modified = new Date();
             workbook.calcProperties.fullCalcOnLoad = true;
             workbook.title = '剣道打突動作 研究データ';
@@ -8195,10 +8419,11 @@ service cloud.firestore {
         function openResearchHandleDb() {
             return new Promise((resolve, reject) => {
                 if (!window.indexedDB) return reject(new Error('IndexedDBを利用できません'));
-                const request = indexedDB.open('kendoResearchFiles', 1);
+                const request = indexedDB.open('kendoResearchFiles', 2);
                 request.onupgradeneeded = () => {
                     const db = request.result;
                     if (!db.objectStoreNames.contains('handles')) db.createObjectStore('handles');
+                    if (!db.objectStoreNames.contains('backups')) db.createObjectStore('backups');
                 };
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error || new Error('ファイル接続情報を保存できません'));
@@ -8216,8 +8441,37 @@ service cloud.firestore {
             db.close();
         }
 
+        async function storeResearchWorkbookBackup(file, buffer) {
+            if (!file || !buffer) return;
+            const db = await openResearchHandleDb();
+            await new Promise((resolve, reject) => {
+                const transaction = db.transaction('backups', 'readwrite');
+                transaction.objectStore('backups').put({
+                    name: file.name,
+                    type: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    lastModified: file.lastModified,
+                    savedAt: new Date().toISOString(),
+                    blob: new Blob([buffer], { type: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+                }, 'researchWorkbookLatest');
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error);
+            });
+            db.close();
+        }
+
+        async function deleteResearchExcelHandle() {
+            const db = await openResearchHandleDb();
+            await new Promise((resolve, reject) => {
+                const transaction = db.transaction('handles', 'readwrite');
+                transaction.objectStore('handles').delete('researchWorkbook');
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error);
+            });
+            db.close();
+        }
+
         async function restoreResearchExcelHandle() {
-            if (!('showSaveFilePicker' in window)) {
+            if (!('showOpenFilePicker' in window) && !('showSaveFilePicker' in window)) {
                 updateResearchExcelStatus('このブラウザでは同一Excelへの自動更新に対応していません。最新版Excelの一括出力を利用できます。', 'amber');
                 const bindButton = document.getElementById('researchExcelBindBtn');
                 const updateButton = document.getElementById('researchExcelUpdateBtn');
@@ -8236,7 +8490,7 @@ service cloud.firestore {
                 db.close();
                 AppState.researchExcelHandle = handle;
                 if (!handle) {
-                    updateResearchExcelStatus('測定データは自動蓄積中です。同じExcelへ更新する場合は、最初にファイルを接続してください。');
+                    updateResearchExcelStatus('測定データは自動蓄積中です。「既存Excelを選ぶ」から研究用Excelを接続してください。');
                     return null;
                 }
                 const permission = await handle.queryPermission({ mode: 'readwrite' });
@@ -8265,44 +8519,96 @@ service cloud.firestore {
             const handle = AppState.researchExcelHandle;
             if (!handle) throw new Error('更新するExcelが接続されていません');
             if (!(await researchHandlePermission(handle, !!options.requestPermission))) throw new Error('Excelへの書き込みが許可されていません');
-            const blob = await buildResearchWorkbookBlob();
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
+            const currentFile = await handle.getFile();
+            let workbook = null;
+            let originalBuffer = null;
+            let mergeResult = { importedCount: 0, importedNewCount: 0, totalCount: AppState.records.length };
+            if (currentFile.size > 0) {
+                originalBuffer = await currentFile.arrayBuffer();
+                workbook = new ExcelJS.Workbook();
+                await workbook.xlsx.load(originalBuffer);
+                const importedRecords = readResearchWorkbookRecords(workbook);
+                mergeResult = mergeResearchWorkbookRecords(importedRecords);
+                persistRecords({ skipSync: true });
+                updateHistoryTable();
+                updateDetailsTab();
+                updateCharts();
+                updateRealtimePracticeSummary();
+                updateDataCenter();
+                updateResearchDashboard();
+                await storeResearchWorkbookBackup(currentFile, originalBuffer);
+            }
+            const dataset = buildResearchDataset();
+            const blob = await buildResearchWorkbookBlob({ workbook, dataset });
+            let writable = null;
+            try {
+                writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+            } catch (error) {
+                try { await writable?.abort?.(); } catch (_) {}
+                throw error;
+            }
             AppState.researchLastExcelUpdatedAt = new Date().toISOString();
             safeStorageSet('kendoResearchLastExcelUpdatedAt', AppState.researchLastExcelUpdatedAt);
-            updateResearchExcelStatus('更新済み: ' + handle.name + ' / ' + new Date().toLocaleString('ja-JP') + ' / ' + AppState.records.length + '件', 'green');
-            return true;
+            updateResearchExcelStatus(
+                '更新済み: ' + handle.name + ' / 全' + mergeResult.totalCount + '件（既存' + mergeResult.importedCount + '件、今回読込' + mergeResult.importedNewCount + '件） / 内部バックアップ保存済み',
+                'green'
+            );
+            return mergeResult;
         }
 
         async function connectResearchExcelFile() {
-            if (!('showSaveFilePicker' in window)) {
+            if (!('showOpenFilePicker' in window) && !('showSaveFilePicker' in window)) {
                 showToast('このブラウザでは同一Excelへの自動更新に対応していません', 'yellow');
                 return false;
             }
+            const previousHandle = AppState.researchExcelHandle;
             try {
-                const handle = await window.showSaveFilePicker({
+                const pickerOptions = {
                     id: 'kendoResearchWorkbook',
-                    suggestedName: researchExcelFileName(),
-                    types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
-                });
+                    types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }],
+                    excludeAcceptAllOption: true
+                };
+                let handle;
+                if ('showOpenFilePicker' in window) {
+                    [handle] = await window.showOpenFilePicker({ ...pickerOptions, multiple: false, mode: 'readwrite' });
+                } else {
+                    handle = await window.showSaveFilePicker({ ...pickerOptions, suggestedName: researchExcelFileName() });
+                }
                 AppState.researchExcelHandle = handle;
+                updateResearchExcelStatus('既存データと列構成を確認しています...', 'blue');
+                const result = await writeResearchWorkbookToHandle({ requestPermission: true });
                 await storeResearchExcelHandle(handle);
                 AppState.researchExcelAutoUpdate = true;
                 safeStorageSet('kendoResearchExcelAutoUpdate', '1');
                 const toggle = document.getElementById('researchExcelAutoToggle');
                 if (toggle) toggle.checked = true;
-                updateResearchExcelStatus('Excelを作成しています...', 'blue');
-                await writeResearchWorkbookToHandle({ requestPermission: true });
-                showToast('研究用Excelを接続しました', 'green');
+                showToast('研究用Excelを接続しました（全' + result.totalCount + '件）', 'green');
                 return true;
             } catch (error) {
+                AppState.researchExcelHandle = previousHandle;
                 if (error?.name === 'AbortError') return false;
                 console.error('Excel接続エラー', error);
                 updateResearchExcelStatus('Excel接続に失敗しました: ' + (error.message || error), 'red');
                 showToast('Excel接続に失敗しました', 'red');
                 return false;
             }
+        }
+
+        async function disconnectResearchExcelFile() {
+            try {
+                await deleteResearchExcelHandle();
+            } catch (error) {
+                console.warn('Excel接続情報を削除できません', error);
+            }
+            AppState.researchExcelHandle = null;
+            AppState.researchExcelAutoUpdate = false;
+            safeStorageSet('kendoResearchExcelAutoUpdate', '0');
+            const toggle = document.getElementById('researchExcelAutoToggle');
+            if (toggle) toggle.checked = false;
+            updateResearchExcelStatus('Excel接続を解除しました。測定データはアプリ内に残っています。', 'blue');
+            showToast('Excel接続を解除しました', 'blue');
         }
 
         async function exportResearchExcel() {
@@ -8330,7 +8636,7 @@ service cloud.firestore {
         async function updateConnectedResearchExcel() {
             if (AppState.researchExcelUpdating) return false;
             if (!AppState.researchExcelHandle) {
-                updateResearchExcelStatus('先に「同じExcelへ自動更新」でファイルを接続してください。', 'amber');
+                updateResearchExcelStatus('先に「既存Excelを選ぶ」から研究用Excelを接続してください。', 'amber');
                 return false;
             }
             AppState.researchExcelUpdating = true;
@@ -8856,7 +9162,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v156',
+                appVersion: normalized.appVersion || 'v157',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -9090,12 +9396,13 @@ service cloud.firestore {
             showToast('Firebase設定を削除しました', 'blue');
         }
 
-        function persistRecords() {
+        function persistRecords(options = {}) {
             const compact = AppState.records.map(record => {
                 const { clipFrames, ...rest } = normalizeRecordMeta(record);
                 return rest;
             });
             safeStorageSet('kendoRecords', JSON.stringify(compact));
+            if (options.skipSync) return;
             scheduleResearchExcelAutoUpdate();
             scheduleMicrosoftExcelAutoUpdate();
         }
@@ -9314,6 +9621,7 @@ service cloud.firestore {
         }
 
         function normalizeMs(value) {
+            if (value === '' || value === null || value === undefined) return null;
             const numeric = Number(value);
             return Number.isFinite(numeric) ? Math.max(0, Math.round(numeric)) : null;
         }
@@ -18572,6 +18880,8 @@ service cloud.firestore {
         if (researchExcelBindBtn) researchExcelBindBtn.addEventListener('click', connectResearchExcelFile);
         const researchExcelUpdateBtn = document.getElementById('researchExcelUpdateBtn');
         if (researchExcelUpdateBtn) researchExcelUpdateBtn.addEventListener('click', updateConnectedResearchExcel);
+        const researchExcelDisconnectBtn = document.getElementById('researchExcelDisconnectBtn');
+        if (researchExcelDisconnectBtn) researchExcelDisconnectBtn.addEventListener('click', disconnectResearchExcelFile);
         const researchExcelAutoToggle = document.getElementById('researchExcelAutoToggle');
         if (researchExcelAutoToggle) researchExcelAutoToggle.addEventListener('change', event => {
             setResearchExcelAutoUpdate(event.target.checked);
@@ -18886,6 +19196,7 @@ service cloud.firestore {
         window.exportResearchExcel = exportResearchExcel;
         window.connectResearchExcelFile = connectResearchExcelFile;
         window.updateConnectedResearchExcel = updateConnectedResearchExcel;
+        window.disconnectResearchExcelFile = disconnectResearchExcelFile;
         window.connectMicrosoftOneDrive = connectMicrosoftOneDrive;
         window.syncMicrosoftResearchWorkbook = syncMicrosoftResearchWorkbook;
         window.createMicrosoftShareLink = createMicrosoftShareLink;
