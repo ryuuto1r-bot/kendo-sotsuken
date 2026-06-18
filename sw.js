@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v161';
+const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v162';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const APP_SHELL = [
   './research/apple-research.css',
   './manifest.webmanifest',
   './icon.svg',
-  './assets/app-tailwind.css?v=161',
+  './assets/app-tailwind.css?v=162',
   './vendor/fontawesome/css/all.min.css'
 ];
 

@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v161';
+            var version = 'v162';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -31,7 +31,7 @@
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     
-    <link rel="stylesheet" href="./assets/app-tailwind.css?v=161">
+    <link rel="stylesheet" href="./assets/app-tailwind.css?v=162">
     <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css">
     <script async src="./vendor/mediapipe/camera_utils/camera_utils.js"></script>
     <script async src="./vendor/mediapipe/control_utils/control_utils.js"></script>
@@ -334,6 +334,38 @@
         .condition-good { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
         .condition-warn { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
         .condition-bad { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+        .compact-disclosure {
+            overflow: hidden;
+        }
+        .compact-disclosure > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            min-height: 54px;
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+        .compact-disclosure > summary::-webkit-details-marker { display: none; }
+        .compact-disclosure > summary::after {
+            content: "開く";
+            flex: 0 0 auto;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.72);
+            padding: 0.2rem 0.58rem;
+            color: #475569;
+            font-size: 0.68rem;
+            font-weight: 900;
+        }
+        .compact-disclosure[open] > summary::after { content: "閉じる"; }
+        .compact-disclosure[open] > summary { border-bottom: 1px solid rgba(148, 163, 184, 0.25); }
+        .compact-disclosure .disclosure-body { padding: 1rem; }
+        @media (max-width: 640px) {
+            .compact-disclosure > summary { align-items: flex-start; }
+        }
         .metric-card {
             min-height: 74px;
             display: flex;
@@ -4005,11 +4037,12 @@
 	                    <p id="realtimeSessionHint" class="mt-3 text-[11px] text-slate-500">1本打つと自動で更新されます。</p>
 	                </div>
 
-	                <div id="realtimeConditionCard" class="bg-white rounded-xl shadow-sm border p-4 condition-bad">
-	                    <div class="flex items-center justify-between gap-3 mb-2">
-	                        <div class="flex items-center gap-2"><i class="fa-solid fa-clipboard-check"></i><h3 class="font-bold text-sm">撮影チェック</h3></div>
-	                        <span id="realtimeConditionVerdict" class="text-xs font-black">条件不足</span>
-	                    </div>
+	                <details id="realtimeConditionCard" class="compact-disclosure bg-white rounded-xl shadow-sm border condition-bad">
+	                    <summary>
+	                        <span class="flex items-center gap-2"><i class="fa-solid fa-clipboard-check"></i><strong class="text-sm">撮影チェック</strong></span>
+	                        <span id="realtimeConditionVerdict" class="text-xs font-black mr-auto">条件不足</span>
+	                    </summary>
+	                    <div class="disclosure-body">
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">距離目安</span><div id="realtimeConditionDistance" class="font-black font-mono-num">2.5m / 推奨2.0〜3.0m</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">正面〜やや斜め前</div></div>
@@ -4019,7 +4052,8 @@
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">姿勢信頼度</span><div id="realtimeConditionAngleQuality" class="font-black font-mono-num">未検出</div></div>
 	                    </div>
 	                    <p id="realtimeConditionAdvice" class="text-[11px] mt-2 opacity-80">上半身が十分に取れていません。距離・明るさ・カメラ向きを調整してください。</p>
-	                </div>
+	                    </div>
+	                </details>
 
 	                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 	                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-gauge-high text-cyan-500"></i><h3 class="font-bold text-slate-700">精度モニター</h3></div>
@@ -4220,15 +4254,15 @@
             </section>
         </div>
 
-        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <details class="compact-disclosure bg-white rounded-xl shadow-sm border mb-6">
+            <summary>
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-flask text-indigo-500 mr-2"></i>研究条件</h3>
                     <p class="text-xs text-slate-500 mt-1">以後の保存データに付与します。被験者は匿名IDで管理してください。</p>
                 </div>
-                <span id="researchProfileStatus" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black">未設定</span>
-            </div>
-            <div class="research-data-grid">
+                <span id="researchProfileStatus" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black mr-auto">未設定</span>
+            </summary>
+            <div class="disclosure-body research-data-grid">
                 <div class="research-data-field"><label for="researchParticipantId">被験者ID</label><input id="researchParticipantId" type="text" maxlength="32" placeholder="例: P001"></div>
                 <div class="research-data-field"><label for="researchSessionId">セッションID</label><input id="researchSessionId" type="text" maxlength="32" placeholder="例: 2026-06-18-A"></div>
                 <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="素振り">素振り</option></select></div>
@@ -4238,7 +4272,7 @@
                 <div class="research-data-field"><label for="researchCameraDistance">カメラ距離 (m)</label><input id="researchCameraDistance" type="number" min="0.5" max="10" step="0.1" value="2.5"></div>
                 <div class="research-data-field"><label for="researchDeviceLabel">撮影端末</label><input id="researchDeviceLabel" type="text" maxlength="50" placeholder="例: iPhone 16 / MacBook"></div>
             </div>
-        </section>
+        </details>
 
         <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -4262,19 +4296,20 @@
             </div>
         </section>
 
-        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
-            <div class="flex flex-wrap items-start justify-between gap-3">
+        <details class="compact-disclosure bg-white rounded-xl shadow-sm border mb-6">
+            <summary>
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>研究用Excel</h3>
                     <p class="text-xs text-slate-500 mt-1">学校OneDrive内の自分専用Excelへ、測定データを蓄積します。</p>
                 </div>
+            </summary>
+            <div class="disclosure-body">
                 <div class="flex flex-wrap gap-2">
                     <button id="researchExcelBindBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-folder-open mr-1"></i>既存Excelを選ぶ</button>
                     <button id="researchExcelUpdateBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>Excelを更新</button>
                     <button id="researchExcelDownloadBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>新規Excelを出力</button>
                     <button id="researchExcelDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>接続解除</button>
                 </div>
-            </div>
             <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
                 <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、学校OneDrive内の <span id="researchExcelTargetName" class="font-black">kendo_research_data_20260618.xlsx</span> を選択してください。</div>
                 <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
@@ -4288,7 +4323,8 @@
                 <p class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"><i class="fa-solid fa-lock mr-1 text-slate-600"></i>共有リンクなし。自分のExcelだけ更新</p>
             </div>
             <p class="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Excelアプリで同じファイルを開いたままだと更新できない場合があります。測定中は閉じておくのがおすすめです。</p>
-        </section>
+            </div>
+        </details>
 
         <details class="bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
             <summary class="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer">
@@ -5411,17 +5447,17 @@ service cloud.firestore {
             </div>
 
             <div class="video-workflow-side space-y-4">
-            <div class="official-flow-card p-4 rounded-xl border">
-                <h3 class="text-sm font-bold text-indigo-900 mb-2"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</h3>
-                <div class="space-y-2 text-xs text-indigo-900 leading-relaxed">
+            <details class="compact-disclosure official-flow-card rounded-xl border">
+                <summary><span class="text-sm font-bold text-indigo-900"><i class="fa-solid fa-route mr-1"></i>測定モードの使い分け</span></summary>
+                <div class="disclosure-body space-y-2 text-xs text-indigo-900 leading-relaxed">
                     <p><span class="font-bold">リアルタイム:</span> 稽古中の即時確認用。打突時間・ピーク時刻・角度だけを見る。</p>
                     <p><span class="font-bold">動画解析:</span> 正式測定</p>
                 </div>
-            </div>
+            </details>
 
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fa-solid fa-sliders text-lime-600 mr-2"></i>竹刀先端テープ検出</h3>
-                <div class="space-y-3 text-xs">
+            <details class="compact-disclosure bg-white rounded-xl shadow-sm border">
+                <summary><span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-sliders text-lime-600 mr-2"></i>竹刀先端テープ検出</span></summary>
+                <div class="disclosure-body space-y-3 text-xs">
                     <label class="block font-bold text-slate-700">テープ色
                         <select id="videoTapeColorSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
                             <option value="yellow" selected="">黄色テープ</option>
@@ -5454,7 +5490,7 @@ service cloud.firestore {
                     </div>
                     <p class="text-slate-500 leading-relaxed">竹刀先端に明るい色テープを貼り、映像上のROIに入るように調整します。刃筋はテープ検出が取れた時だけ実剣先寄りに切り替わります。</p>
                 </div>
-            </div>
+            </details>
 
             <div class="hidden bg-white p-4 rounded-xl shadow-sm border">
                 <div class="flex items-center justify-between gap-3 mb-3">
@@ -5766,9 +5802,10 @@ service cloud.firestore {
                     </div>
                 </details>
 
-	                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-	                    <h4 class="text-sm font-bold text-emerald-900 mb-2"><i class="fa-solid fa-ruler-combined mr-1"></i>測定条件</h4>
-	                    <p class="text-xs text-emerald-700 mb-3">体格と撮影条件を入れます。</p>
+	                <details class="compact-disclosure bg-emerald-50 rounded-lg border border-emerald-100">
+	                    <summary><span class="text-sm font-bold text-emerald-900"><i class="fa-solid fa-ruler-combined mr-1"></i>測定条件</span></summary>
+	                    <div class="disclosure-body">
+	                    <p class="text-xs text-emerald-700 mb-3">体格と撮影条件を変更する場合だけ開きます。</p>
 	                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 	                        <label class="text-xs font-bold text-emerald-900">肩幅(cm)
 	                            <input id="paramShoulderWidthCm" type="number" min="30" max="60" step="0.5" value="42" class="mt-1 w-full border border-emerald-200 rounded px-2 py-2 bg-white font-mono-num">
@@ -5784,7 +5821,8 @@ service cloud.firestore {
 	                        </label>
 	                    </div>
 	                    <div id="calibrationStatus" class="mt-3 text-xs bg-white/80 border border-emerald-100 rounded p-2 text-emerald-900 font-bold">肩幅42.0cm / 竹刀120.0cm / 距離250cm / 60fps</div>
-	                </div>
+	                    </div>
+	                </details>
 
 	                <div class="bg-violet-50 p-4 rounded-lg border border-violet-100">
 	                    <h4 class="text-sm font-bold text-violet-900 mb-2"><i class="fa-solid fa-draw-polygon mr-1"></i>角度表示</h4>
@@ -7261,7 +7299,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v161',
+                appVersion: 'v162',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -9091,7 +9129,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v161',
+                appVersion: normalized.appVersion || 'v162',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
