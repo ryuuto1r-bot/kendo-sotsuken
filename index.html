@@ -3974,6 +3974,11 @@
                         <div class="flex items-center gap-2"><i id="stateIcon" class="fa-solid fa-user"></i><span id="stateText" class="font-bold text-lg">待機</span></div>
                     </div>
 
+                    <div id="standardViewBadge" class="absolute bottom-4 left-4 z-30 rounded-lg border border-amber-300/60 bg-black/65 px-3 py-2 text-xs text-white shadow-lg backdrop-blur-md">
+                        <div class="font-black"><i class="fa-solid fa-camera-rotate mr-1 text-amber-300"></i>右斜め前30〜45°</div>
+                        <div id="standardViewQuality" class="mt-0.5 text-[10px] text-amber-200">右肩・右肘・右手首を離して映す</div>
+                    </div>
+
                     <div id="canvasOverlayData" class="absolute top-4 right-4 bg-black/50 border border-slate-600 p-3 rounded-lg text-white hidden flex-col gap-2 backdrop-blur-md text-sm shadow-lg z-30">
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>右肘角:</span><span id="overlayRightAng" class="font-mono font-bold">---°</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>体幹傾斜:</span><span id="overlayTorsoAng" class="font-mono font-bold">---°</span></div>
@@ -4045,7 +4050,7 @@
 	                    <div class="disclosure-body">
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">距離目安</span><div id="realtimeConditionDistance" class="font-black font-mono-num">2.5m / 推奨2.0〜3.0m</div></div>
-	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">正面〜やや斜め前</div></div>
+	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">右斜め前30〜45°</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">映像</span><div id="realtimeConditionResolution" class="font-black font-mono-num">300x150</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">FPS</span><div id="realtimeConditionFps" class="font-black font-mono-num">---</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">上半身検出</span><div id="realtimeConditionUpperBody" class="font-black font-mono-num">未検出</div></div>
@@ -4268,7 +4273,7 @@
                 <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="素振り">素振り</option></select></div>
                 <div class="research-data-field"><label for="researchExperienceYears">経験年数</label><input id="researchExperienceYears" type="number" min="0" max="80" step="0.5" placeholder="例: 8"></div>
                 <div class="research-data-field"><label for="researchGrade">段級位</label><input id="researchGrade" type="text" maxlength="20" placeholder="例: 二段"></div>
-                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="正面">正面</option><option value="斜め前">斜め前</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
+                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="右斜め前30-45度">右斜め前30〜45°（標準）</option><option value="正面">正面</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
                 <div class="research-data-field"><label for="researchCameraDistance">カメラ距離 (m)</label><input id="researchCameraDistance" type="number" min="0.5" max="10" step="0.1" value="2.5"></div>
                 <div class="research-data-field"><label for="researchDeviceLabel">撮影端末</label><input id="researchDeviceLabel" type="text" maxlength="50" placeholder="例: iPhone 16 / MacBook"></div>
             </div>
@@ -5619,10 +5624,10 @@ service cloud.firestore {
 		                    <option value="hasuji">刃筋</option>
 		                </select>
 		                <select id="modelCameraDirectionSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="撮影方向を補正">
-		                    <option value="auto" selected="">撮影: 自動補正</option>
+		                    <option value="auto">撮影: 自動補正</option>
 		                    <option value="front">撮影: 正面</option>
 		                    <option value="left45">撮影: 左斜め45°</option>
-		                    <option value="right45">撮影: 右斜め45°</option>
+		                    <option value="right45" selected="">撮影: 右斜め45°（標準）</option>
 		                    <option value="leftSide">撮影: 左側面</option>
 		                    <option value="rightSide">撮影: 右側面</option>
 		                    <option value="back">撮影: 背面</option>
@@ -5753,15 +5758,15 @@ service cloud.firestore {
                             </div>
                             <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
                                 <select id="cameraPerformanceMode" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white font-bold">
-                                    <option value="stable" selected="">安定 30fps</option>
-                                    <option value="precision">高精度 60fps</option>
+                                    <option value="stable">安定 30fps</option>
+                                    <option value="precision" selected="">精度優先 60fps</option>
                                     <option value="iphone120">iPhone 120fps</option>
                                     <option value="iphone240">iPhone 240fps検証</option>
                                 </select>
                                 <div id="realtimeAnalysisFpsLabel" class="font-black text-slate-900 font-mono-num">24fps</div>
                             </div>
                         </div>
-                        <p class="mt-2 text-[11px] text-slate-500">迷ったら「安定」を使ってください。</p>
+                        <p class="mt-2 text-[11px] text-slate-500">標準は720p・60fps要求です。実測FPSが落ちる場合だけ「安定」へ切り替えます。</p>
                     </div>
                 </div>
 
@@ -6018,6 +6023,7 @@ service cloud.firestore {
             showHasujiOverlay: true,
             angleFilters: {},
             currentAngleQuality: 0,
+            currentViewQuality: 0,
             liveOverlayValues: null,
             lastPoseFrameTimeMs: 0,
             lastPoseAttemptAt: 0,
@@ -6037,7 +6043,7 @@ service cloud.firestore {
             modelAngleValues: null,
             angleModelTarget: 'rightElbow',
             modelSourceMode: 'auto',
-            modelCameraDirection: 'auto',
+            modelCameraDirection: 'right45',
             modelPivotMode: 'auto',
             modelViewYaw: 0,
             modelViewPitch: 0,
@@ -6084,7 +6090,7 @@ service cloud.firestore {
             currentBodyReferencedHasuji: 0,
             currentScreenHasuji: 0,
             selectedCameraId: '',
-            cameraPerformanceMode: 'stable',
+            cameraPerformanceMode: 'precision',
             cameraLabel: '自動選択',
             cameraSettings: null,
             landmarkerDiag: '未確認',
@@ -6167,6 +6173,7 @@ service cloud.firestore {
             timingMinDurationMs: 90,
             realtimeRecordCooldownMs: 650,
             minAngleVisibility: 0.45,
+            minViewQuality: 0.42,
             maxReasonableSpeedMps: 18
         };
 
@@ -6511,7 +6518,7 @@ service cloud.firestore {
 
         function checkLaunchEnvironment() {
             updateVideoElementMirror();
-            applyCameraPerformanceMode(AppState.cameraPerformanceMode || 'stable');
+            applyCameraPerformanceMode(AppState.cameraPerformanceMode || 'precision');
             const warning = document.getElementById('localFileWarning');
             const isFileOpen = location.protocol === 'file:';
             if (warning) warning.classList.toggle('hidden', !isFileOpen);
@@ -6558,13 +6565,13 @@ service cloud.firestore {
                 },
                 precision: {
                     key: 'precision',
-                    label: '高精度',
-                    width: 1920,
-                    height: 1080,
+                    label: '精度優先',
+                    width: 1280,
+                    height: 720,
                     cameraFps: 60,
                     maxFps: 60,
-                    aiFps: 30,
-                    hint: '高精度: 1080p / 解析30fps。重い場合は安定へ戻してください。'
+                    aiFps: 45,
+                    hint: '精度優先: 720p / カメラ60fps / 解析45fps。時間分解能と追従性を優先します。'
                 },
                 iphone120: {
                     key: 'iphone120',
@@ -6703,8 +6710,8 @@ service cloud.firestore {
             Params.videoSlowMotionFactor = 1;
             Params.videoCaptureFps = 240;
             Params.videoPlaybackFps = 30;
-            AppState.cameraPerformanceMode = 'stable';
-            applyCameraPerformanceMode('stable');
+            AppState.cameraPerformanceMode = 'precision';
+            applyCameraPerformanceMode('precision');
             Params.officialSpeedSource = 'wrist';
             Params.angleReference = 'torso';
             Params.timingStartDownVelocityMps = 0.55;
@@ -6712,6 +6719,8 @@ service cloud.firestore {
             Params.timingEndDecelMps2 = 28;
             Params.timingEndSpeedRatio = 0.38;
             Params.minAngleVisibility = 0.45;
+            Params.minViewQuality = 0.42;
+            AppState.modelCameraDirection = 'right45';
             AppState.angleOverlay = true;
 	            AppState.angleTarget = 'all';
             AppState.showHasujiOverlay = true;
@@ -6898,7 +6907,8 @@ service cloud.firestore {
             const downVelocityOk = AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps;
             const legacyFallbackOk = legacyVel > Params.swingVelThreshold && AppState.currentWristVisibility >= 0.55;
             const frameStable = !AppState.frameDtMs || AppState.frameDtMs <= 100;
-            const startOk = aboveShoulder && frameStable && (downVelocityOk || legacyFallbackOk);
+            const poseStable = AppState.currentWristVisibility >= 0.55 && AppState.currentViewQuality >= Params.minViewQuality;
+            const startOk = aboveShoulder && frameStable && poseStable && (downVelocityOk || legacyFallbackOk);
 
             if (!startOk) {
                 resetSwingStartCandidate();
@@ -7245,12 +7255,16 @@ service cloud.firestore {
                 strikeType: '面',
                 experienceYears: '',
                 grade: '',
-                cameraDirection: '正面',
+                cameraDirection: '右斜め前30-45度',
                 cameraDistanceMeters: '2.5',
                 deviceLabel: ''
             };
             try {
-                return { ...defaults, ...JSON.parse(safeStorageGet('kendoResearchProfile') || '{}') };
+                const profile = { ...defaults, ...JSON.parse(safeStorageGet('kendoResearchProfile') || '{}') };
+                if (!profile.cameraDirection || profile.cameraDirection === '正面' || profile.cameraDirection === '斜め前') {
+                    profile.cameraDirection = defaults.cameraDirection;
+                }
+                return profile;
             } catch (_) {
                 return defaults;
             }
@@ -9916,6 +9930,7 @@ service cloud.firestore {
             const fps = Number(AppState.frameFps || settings.frameRate || 0);
             const upper = upperBodyVisibility(AppState.currentPoseSnapshot);
             const angleQuality = Number(AppState.currentAngleQuality || 0);
+            const viewQuality = Number(AppState.currentViewQuality || 0);
             const distance = Number(Params.cameraDistanceMeters || 0);
             let score = 0;
             if (width >= 1280 && height >= 720) score += 22;
@@ -9925,22 +9940,30 @@ service cloud.firestore {
             else if (upper >= 0.45) score += 14;
             if (angleQuality >= 0.62) score += 22;
             else if (angleQuality >= 0.42) score += 12;
+            if (viewQuality >= 0.65) score += 10;
+            else if (viewQuality >= Params.minViewQuality) score += 5;
             if (distance >= 2.0 && distance <= 3.0) score += 8;
-            const tone = score >= 78 ? 'good' : (score >= 52 ? 'warn' : 'bad');
+            const tone = score >= 86 && viewQuality >= Params.minViewQuality ? 'good' : (score >= 57 ? 'warn' : 'bad');
             card.classList.remove('condition-good', 'condition-warn', 'condition-bad');
             card.classList.add(`condition-${tone}`);
             safeText('realtimeConditionVerdict', tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足'));
             safeText('realtimeConditionDistance', distance ? `${distance.toFixed(1)}m / 推奨2.0〜3.0m` : '推奨2.0〜3.0m');
-            safeText('realtimeConditionDirection', '正面〜やや斜め前');
+            safeText('realtimeConditionDirection', '右斜め前30〜45°');
             safeText('realtimeConditionResolution', width && height ? `${width}x${height}` : '---');
             safeText('realtimeConditionFps', fps ? `${fps.toFixed(1)}fps` : '---');
             safeText('realtimeConditionUpperBody', upper ? `${Math.round(upper * 100)}%` : '未検出');
-            safeText('realtimeConditionAngleQuality', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '未検出');
+            safeText('realtimeConditionAngleQuality', angleQuality ? `${Math.round(angleQuality * 100)}%` : '未検出');
+            const viewOk = viewQuality >= Params.minViewQuality;
+            const viewBadge = document.getElementById('standardViewBadge');
+            if (viewBadge) {
+                viewBadge.className = `absolute bottom-4 left-4 z-30 rounded-lg border px-3 py-2 text-xs text-white shadow-lg backdrop-blur-md ${viewOk ? 'border-emerald-300/70 bg-emerald-950/75' : 'border-amber-300/60 bg-black/65'}`;
+            }
+            safeText('standardViewQuality', viewOk ? `腕の分離 ${Math.round(viewQuality * 100)}% / 測定可` : '右肩・右肘・右手首が重ならない位置へ');
             const advice = tone === 'good'
                 ? 'この条件ならリアルタイム確認に使いやすい状態です。正式値は動画解析で補正してください。'
                 : (tone === 'warn'
-                    ? '上半身をもう少し大きく、明るく、正面寄りにすると安定します。正式測定は動画解析で確認してください。'
-                    : '上半身が十分に取れていません。距離・明るさ・カメラ向きを調整してください。');
+                    ? '右斜め前30〜45°から、右肩・右肘・右手首が離れて見える位置へ微調整してください。'
+                    : '右斜め前30〜45°、距離2〜3m、胸〜肩の高さに固定してください。');
             safeText('realtimeConditionAdvice', advice);
         }
 
@@ -10095,6 +10118,45 @@ service cloud.firestore {
             let angle = Math.abs((Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x)) * 180 / Math.PI);
             if (angle > 180) angle = 360 - angle;
             return angle;
+        }
+
+        function calculateJointAngle3d(a, b, c) {
+            if (![a, b, c].every(point => point && [point.x, point.y, point.z].every(Number.isFinite))) return 0;
+            const ab = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+            const cb = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z };
+            const abLength = Math.hypot(ab.x, ab.y, ab.z);
+            const cbLength = Math.hypot(cb.x, cb.y, cb.z);
+            if (abLength < 0.001 || cbLength < 0.001) return 0;
+            const cosine = clamp((ab.x * cb.x + ab.y * cb.y + ab.z * cb.z) / (abLength * cbLength), -1, 1);
+            return Math.acos(cosine) * 180 / Math.PI;
+        }
+
+        function calculateBestJointAngle(a, b, c, worldA, worldB, worldC) {
+            const angle3d = calculateJointAngle3d(worldA, worldB, worldC);
+            return angle3d > 0 && angle3d <= 180 ? angle3d : calculateJointAngle(a, b, c);
+        }
+
+        function calculateTorsoAxis3d(worldLandmarks) {
+            const ls = worldLandmarks?.[11], rs = worldLandmarks?.[12], lh = worldLandmarks?.[23], rh = worldLandmarks?.[24];
+            if (![ls, rs, lh, rh].every(point => point && [point.x, point.y, point.z].every(Number.isFinite))) return null;
+            const shoulderMid = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2, z: (ls.z + rs.z) / 2 };
+            const hipMid = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2, z: (lh.z + rh.z) / 2 };
+            const dx = shoulderMid.x - hipMid.x;
+            const dy = shoulderMid.y - hipMid.y;
+            const dz = shoulderMid.z - hipMid.z;
+            if (Math.hypot(dx, dy, dz) < 0.001) return null;
+            return Math.atan2(Math.hypot(dx, dz), Math.abs(dy)) * 180 / Math.PI;
+        }
+
+        function rightArmViewQuality(landmarks) {
+            const ls = landmarks?.[11], rs = landmarks?.[12], re = landmarks?.[14], rw = landmarks?.[16];
+            if (!ls || !rs || !re || !rw) return 0;
+            const shoulderWidth = distance2d(ls, rs);
+            if (shoulderWidth < 0.015) return 0;
+            const upperRatio = distance2d(rs, re) / shoulderWidth;
+            const lowerRatio = distance2d(re, rw) / shoulderWidth;
+            const projection = clamp((Math.min(upperRatio, lowerRatio) - 0.08) / 0.34, 0, 1);
+            return projection * landmarkQuality(rs, re, rw);
         }
 
         function calculateLineTilt(a, b) {
@@ -12143,7 +12205,12 @@ service cloud.firestore {
                 }
             }
             
-            if (!results.poseLandmarks) { updatePrecisionPanel(); canvasCtx.restore(); return; }
+            if (!results.poseLandmarks) {
+                AppState.currentViewQuality = 0;
+                updatePrecisionPanel();
+                canvasCtx.restore();
+                return;
+            }
             
             drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: 'rgba(255,255,255,0.4)', lineWidth: 2});
             drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#3b82f6', lineWidth: 1, radius: 3});
@@ -12185,7 +12252,7 @@ service cloud.firestore {
                 : null;
             
             if(rShoulder && rElbow && rWrist && visibilityOf(rShoulder) > 0.35 && visibilityOf(rElbow) > 0.35 && visibilityOf(rWrist) > 0.35) {
-                rightAng = calculateJointAngle(rShoulder, rElbow, rWrist);
+                rightAng = calculateBestJointAngle(rShoulder, rElbow, rWrist, worldLm[12], worldLm[14], worldLm[16]);
                 hasuji = calculateShinaiHasuji(lm, previousTapePoint);
                 
                 // 【★追加】リアルタイムの角度をオーバーレイに反映
@@ -12202,7 +12269,7 @@ service cloud.firestore {
             }
 
             if(lShoulder && lElbow && lWrist && visibilityOf(lShoulder) > 0.35 && visibilityOf(lElbow) > 0.35 && visibilityOf(lWrist) > 0.35) {
-                leftAng = calculateJointAngle(lShoulder, lElbow, lWrist);
+                leftAng = calculateBestJointAngle(lShoulder, lElbow, lWrist, worldLm[11], worldLm[13], worldLm[15]);
             }
             if(lShoulder && rShoulder) {
                 shoulderLineAng = calculateLineTilt(lShoulder, rShoulder);
@@ -12212,12 +12279,14 @@ service cloud.firestore {
             if(lShoulder && rShoulder && lHip && rHip && visibilityOf(lShoulder) > 0.35 && visibilityOf(rShoulder) > 0.35 && visibilityOf(lHip) > 0.35 && visibilityOf(rHip) > 0.35) {
                 const midS = {x: (lShoulder.x + rShoulder.x)/2, y: (lShoulder.y + rShoulder.y)/2};
                 const midH = {x: (lHip.x + rHip.x)/2, y: (lHip.y + rHip.y)/2};
-                torsoAng = Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
+                const torso3d = calculateTorsoAxis3d(worldLm);
+                torsoAng = Number.isFinite(torso3d) ? torso3d : Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
                 // 【★追加】リアルタイムの姿勢をオーバーレイに反映
                 document.getElementById('overlayTorsoAng').innerText = torsoAng.toFixed(1) + '°';
             }
 
-            const rightAngleQuality = landmarkQuality(rShoulder, rElbow, rWrist);
+            const viewQuality = rightArmViewQuality(lm);
+            const rightAngleQuality = landmarkQuality(rShoulder, rElbow, rWrist) * (0.4 + 0.6 * viewQuality);
             const leftAngleQuality = landmarkQuality(lShoulder, lElbow, lWrist);
             const torsoQuality = landmarkQuality(lShoulder, rShoulder, lHip, rHip);
             const shoulderQuality = landmarkQuality(lShoulder, rShoulder);
@@ -12234,6 +12303,7 @@ service cloud.firestore {
             shoulderLineAng = smoothMeasuredValue('shoulderLineAng', shoulderLineAng, shoulderQuality);
             const qualityValues = [rightAngleQuality, torsoQuality, shoulderQuality, hasujiQuality].filter(v => v > 0);
             AppState.currentAngleQuality = qualityValues.length ? qualityValues.reduce((sum, v) => sum + v, 0) / qualityValues.length : 0;
+            AppState.currentViewQuality = viewQuality;
             AppState.modelPoseSnapshot = clonePoseSnapshot(lm);
             AppState.modelAngleValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
             AppState.liveOverlayValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
@@ -14251,6 +14321,7 @@ service cloud.firestore {
             const frames = Number(diag.frames || 0);
             const confidence = Number(diag.confidence || 0);
             const detectionRate = Number(diag.detectionRate || 0);
+            const viewQuality = Number(diag.viewQuality || 0);
             let score = 0;
 	            const shortSide = Math.min(width, height);
 	            const longSide = Math.max(width, height);
@@ -14265,14 +14336,17 @@ service cloud.firestore {
             else if (confidence > 0) score += 6;
             if (detectionRate >= 0.75) score += 10;
             else if (detectionRate >= 0.45) score += 5;
-            const quality = videoDiagnosticClass(score);
+            if (viewQuality >= 0.65) score += 10;
+            else if (viewQuality >= Params.minViewQuality) score += 5;
+            let quality = videoDiagnosticClass(score);
+            if (viewQuality > 0 && viewQuality < Params.minViewQuality) quality = quality === 'bad' ? 'bad' : 'warn';
             card.classList.remove('good', 'warn', 'bad');
             card.classList.add(quality);
             const verdict = quality === 'good' ? '良好' : (quality === 'warn' ? '補正推奨' : '条件不足');
             const reason = quality === 'good'
                 ? '条件OK'
                 : (quality === 'warn'
-                    ? '補正確認'
+                    ? (viewQuality > 0 && viewQuality < Params.minViewQuality ? '右腕の重なりを確認' : '補正確認')
                     : '撮影条件を確認');
             safeText('videoDeviceCheckVerdict', diag.empty ? '動画未選択' : verdict);
             safeText('videoDeviceCheckReason', diag.empty ? '解像度 / fps / 信頼度' : reason);
@@ -14280,7 +14354,7 @@ service cloud.firestore {
             safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps${slowSettings.factor > 1.001 ? ` / 実時間${Math.round(effectiveFps)}fps相当` : ''}` : '---'));
             safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}${slowSettings.factor > 1.001 ? ` / 実時間÷${slowSettings.factor.toFixed(slowSettings.factor % 1 ? 2 : 0)}` : ''}` : '---');
             safeText('videoDiagFrames', frames ? `${frames}` : '---');
-            safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%` : '---');
+            safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%${viewQuality ? ` / 腕分離${Math.round(viewQuality * 100)}%` : ''}` : '---');
             safeText('videoDiagUsability', diag.empty ? '---' : verdict);
             const icon = document.getElementById('videoDeviceCheckIcon');
             if (icon) icon.className = quality === 'good' ? 'fa-solid fa-circle-check text-2xl' : (quality === 'warn' ? 'fa-solid fa-triangle-exclamation text-2xl' : 'fa-solid fa-circle-xmark text-2xl');
@@ -15088,6 +15162,7 @@ service cloud.firestore {
             const shoulderWidthRatio = videoShoulderWidthRatio(peak) || videoShoulderWidthRatio(start) || 0;
             const wristDropRatio = Number.isFinite(startWristY) && Number.isFinite(endWristY) ? endWristY - startWristY : NaN;
             const avgVisibility = segmentAverage(slice, 'poseConfidence') || segmentAverage(slice, 'visibility');
+            const avgViewQuality = segmentAverage(slice, 'viewQuality');
             const startSpeedMps = videoFrameSpeed(start, Params.officialSpeedSource).value || 0;
             const endSpeedMps = videoFrameSpeed(end, Params.officialSpeedSource).value || 0;
             const score = scoreVideoStrike(durationMs, official.metrics, end, avgVisibility);
@@ -15113,6 +15188,7 @@ service cloud.firestore {
                 torsoAng: Number(end.torsoAng || 0),
                 hasuji: Number(end.hasuji || 0),
                 avgVisibility,
+                avgViewQuality,
                 score
             };
         }
@@ -15143,6 +15219,7 @@ service cloud.firestore {
 	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: 'ピーク不足' };
 	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
             if (summary.avgVisibility && summary.avgVisibility < 0.32) return { ok: false, reason: '検出信頼度不足' };
+            if (summary.avgViewQuality && summary.avgViewQuality < Params.minViewQuality) return { ok: false, reason: '右腕の重なり' };
             if (!summary.rightAng || summary.rightAng < 55 || summary.rightAng > 185) return { ok: false, reason: '右肘角異常' };
             if (Math.abs(summary.torsoAng || 0) > 55) return { ok: false, reason: '体幹検出異常' };
             if (Number.isFinite(summary.wristDropRatio) && summary.wristDropRatio < Math.max(0.018, Number(summary.shoulderWidthRatio || 0) * 0.10)) return { ok: false, reason: '下降量不足' };
@@ -15206,6 +15283,7 @@ service cloud.firestore {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
             if (Number(frame.poseConfidence || 0) < 0.35) return false;
+            if (Number(frame.viewQuality || 0) < Params.minViewQuality) return false;
             const shoulder = Math.max(0.08, videoShoulderWidthRatio(frame));
             const descent = videoWristDescentRatio(frames, index, 2);
             const minDescent = Math.max(0.006, shoulder * 0.035);
@@ -16945,7 +17023,7 @@ service cloud.firestore {
             const sourceVideoHeight = video.videoHeight || 360;
             const poseInputCanvas = document.createElement('canvas');
             const poseInputCtx = poseInputCanvas.getContext('2d', { willReadFrequently: false });
-            const poseInputMaxSide = AppState.poseLandmarker ? 960 : 320;
+            const poseInputMaxSide = AppState.poseLandmarker ? 960 : 640;
             const poseInputScale = Math.min(1, poseInputMaxSide / Math.max(sourceVideoWidth, sourceVideoHeight));
             poseInputCanvas.width = Math.max(1, Math.round(sourceVideoWidth * poseInputScale));
             poseInputCanvas.height = Math.max(1, Math.round(sourceVideoHeight * poseInputScale));
@@ -17016,6 +17094,7 @@ service cloud.firestore {
                 let frameHasujiScreen = 0;
                 let frameHasujiBody = 0;
                 let frameHasujiSource = 'none';
+                let frameViewQuality = 0;
                 let poseConfidence = upperBodyVisibility(lm);
                 if (poseConfidence >= Params.minAngleVisibility) {
                     detectedFrames += 1;
@@ -17058,14 +17137,15 @@ service cloud.firestore {
                         }
                     }
                     if (lm[12] && lm[14] && lm[16]) {
-                        frameRightAng = calculateJointAngle(lm[12], lm[14], lm[16]);
+                        frameRightAng = calculateBestJointAngle(lm[12], lm[14], lm[16], worldLm[12], worldLm[14], worldLm[16]);
+                        frameViewQuality = rightArmViewQuality(lm);
                         frameHasujiSource = shinaiAxisFromLandmarks(lm, frameTapePoint)?.source || 'none';
                         frameHasujiScreen = calculateShinaiHasuji(lm, frameTapePoint);
                         frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm, frameTapePoint);
                         frameHasuji = Params.angleReference === 'torso' ? frameHasujiBody : frameHasujiScreen;
                     }
                     if (lm[11] && lm[13] && lm[15]) {
-                        frameLeftAng = calculateJointAngle(lm[11], lm[13], lm[15]);
+                        frameLeftAng = calculateBestJointAngle(lm[11], lm[13], lm[15], worldLm[11], worldLm[13], worldLm[15]);
                     }
                     if (lm[11] && lm[12]) {
                         frameShoulderLineAng = calculateLineTilt(lm[11], lm[12]);
@@ -17074,13 +17154,14 @@ service cloud.firestore {
                     if (lm[11] && lm[12] && lm[23] && lm[24]) {
                         const midS = {x: (lm[11].x + lm[12].x)/2, y: (lm[11].y + lm[12].y)/2};
                         const midH = {x: (lm[23].x + lm[24].x)/2, y: (lm[23].y + lm[24].y)/2};
-                        frameTorsoAng = Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
+                        const torso3d = calculateTorsoAxis3d(worldLm);
+                        frameTorsoAng = Number.isFinite(torso3d) ? torso3d : Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
                     }
                     const wristY = lm[16].y;
                     const dy = previousY === null ? 0 : wristY - previousY;
                     previousY = wristY;
                     frameDownVelocity = Math.max(0, -(filtered.velocity?.y || 0));
-                    if (!useManualTiming && startTimeMs === null && (frameDownVelocity >= Params.timingStartDownVelocityMps || dy > Params.swingVelThreshold)) {
+                    if (!useManualTiming && startTimeMs === null && poseConfidence >= 0.55 && frameViewQuality >= Params.minViewQuality && (frameDownVelocity >= Params.timingStartDownVelocityMps || dy > Params.swingVelThreshold)) {
                         if (!startCandidateFrames) {
                             startCandidateTimeMs = timeMs;
                             startCandidateFrame = frame;
@@ -17138,7 +17219,8 @@ service cloud.firestore {
                     hasujiSource: frameHasujiSource,
                     downVelocity: frameDownVelocity,
                     visibility: frameVisibility,
-                    poseConfidence
+                    poseConfidence,
+                    viewQuality: frameViewQuality
                 });
                 if (frame % 8 === 0) {
                     progress.value = Math.round((frame / totalFrames) * 100);
@@ -17168,6 +17250,7 @@ service cloud.firestore {
             AppState.videoAnalysisUrlRevocable = !!source.revocable;
             const avgConfidence = detectedFrames ? confidenceSum / detectedFrames : 0;
             const detectionRate = frames.length ? detectedFrames / frames.length : 0;
+            const avgViewQuality = segmentAverage(frames, 'viewQuality');
             const diagnostics = {
                 fileName: source.name,
                 fileSize: source.size,
@@ -17179,6 +17262,7 @@ service cloud.firestore {
                 frames: totalFrames,
                 confidence: avgConfidence,
                 detectionRate,
+                viewQuality: avgViewQuality,
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
                 actualFpsUnknown: !(AppState.videoDiagnostics?.nativeFpsEstimate),
                 nativeFpsEstimate: AppState.videoDiagnostics?.nativeFpsEstimate || null,
