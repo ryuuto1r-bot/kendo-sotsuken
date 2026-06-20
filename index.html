@@ -4066,6 +4066,9 @@
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">AI</span><div id="precisionEngineStatus" class="font-bold text-slate-800">Pose Landmarker</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">フレーム同期</span><div id="precisionFrameSync" class="font-bold text-slate-800">未開始</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Δt / FPS</span><div id="precisionFrameDt" class="font-bold text-slate-800 font-mono-num">---</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">実測 カメラ / AI</span><div id="precisionMeasuredFps" class="font-bold text-blue-700 font-mono-num">---</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">欠落 / 間引き</span><div id="precisionDroppedFrames" class="font-bold text-amber-700 font-mono-num">0 / 0</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">検証状態</span><div id="precisionValidationState" class="font-bold text-slate-800">待機</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">手首信頼度</span><div id="precisionVisibility" class="font-bold text-emerald-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Landmarker診断</span><div id="precisionLandmarkerDiag" class="font-bold text-slate-800">GPU / 安定サーバ</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">カメラ</span><div id="precisionCameraStatus" class="font-bold text-slate-800">自動選択（内蔵/既定カメラ）</div></div>
@@ -5550,10 +5553,11 @@ service cloud.firestore {
             </div>
         </div>
 
-        <div class="detail-kpi-grid grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+        <div class="detail-kpi-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式ピーク時刻</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-emerald-500"><span class="text-xs text-slate-500">姿勢信頼度</span><div id="detailLatestVisibility" class="text-2xl font-black text-emerald-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">リアルタイム検証</span><div id="detailLatestValidation" class="text-xl font-black text-cyan-700">---</div><div id="detailLatestValidationReason" class="mt-1 text-[10px] text-slate-500">---</div></div>
         </div>
 
         <div class="detail-angle-grid grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -5980,6 +5984,18 @@ service cloud.firestore {
             lastFrameTimeMs: 0,
             lastAnalysisFrameTimeMs: 0,
             skippedAnalysisFrames: 0,
+            cameraFrameCount: 0,
+            aiFrameCount: 0,
+            cameraFrameTimes: [],
+            aiFrameTimes: [],
+            currentPresentedFrame: 0,
+            lastPresentedFrame: 0,
+            droppedCameraFrames: 0,
+            swingStartPresentedFrame: 0,
+            swingPeakPresentedFrame: 0,
+            swingEndPresentedFrame: 0,
+            swingStartDroppedFrames: 0,
+            swingStartSkippedFrames: 0,
             frameDtMs: 0,
             frameFps: 0,
             frameSyncMode: '未開始',
@@ -6878,6 +6894,19 @@ service cloud.firestore {
             return selected;
         }
 
+        function trackRollingFrameTime(list, timeMs, windowMs = 2000) {
+            if (!Array.isArray(list) || !Number.isFinite(timeMs)) return;
+            list.push(timeMs);
+            const cutoff = timeMs - windowMs;
+            while (list.length > 2 && list[0] < cutoff) list.shift();
+        }
+
+        function rollingFrameRate(list) {
+            if (!Array.isArray(list) || list.length < 2) return 0;
+            const elapsed = Number(list[list.length - 1]) - Number(list[0]);
+            return elapsed > 0 ? (list.length - 1) * 1000 / elapsed : 0;
+        }
+
         function landmarkQuality(...points) {
             const valid = points.filter(Boolean).map(point => visibilityOf(point));
             if (!valid.length) return 0;
@@ -7161,6 +7190,7 @@ service cloud.firestore {
             const labels = [
                 'No.', '区分', '記録日時', '打突時間(ms)', '正式ピーク時刻(ms)',
                 '右肘(deg)', '体幹軸(deg)', '推定刃筋(deg)', '姿勢信頼度',
+                '右腕分離品質', '角度信頼度', '実測カメラfps', 'AI解析fps', '未処理フレーム', 'フレーム欠落', '未処理率', '検証状態', '検証理由',
                 '開始フレーム', '最高速フレーム', '終了フレーム', '開始時刻(ms)', '最高速時刻(ms)', '終了時刻(ms)', '測定方式', 'メモ', '打突時間定義'
             ];
             const rows = records.map(record => [
@@ -7173,6 +7203,15 @@ service cloud.firestore {
                 record.torsoAng ?? '',
                 record.hasujiAngle ?? '',
                 record.avgVisibility ?? '',
+                record.viewQuality ?? '',
+                record.angleQuality ?? '',
+                record.realtimeCameraFps ?? '',
+                record.analysisFps ?? '',
+                record.missedFrames ?? '',
+                record.droppedFrames ?? '',
+                record.unprocessedRatio ?? '',
+                record.realtimeValidationStatus ?? '',
+                Array.isArray(record.realtimeValidationReasons) ? record.realtimeValidationReasons.join(' / ') : (record.realtimeValidationReasons ?? ''),
                 record.startFrameIndex ?? '',
                 record.peakFrameIndex ?? '',
                 record.endFrameIndex ?? '',
@@ -7460,6 +7499,11 @@ service cloud.firestore {
             if (!Number.isFinite(rightElbow)) reasons.push('右肘角なし');
             else if (rightElbow <= RESEARCH_RULES.minRightElbowDeg || rightElbow >= RESEARCH_RULES.maxRightElbowDeg) reasons.push('右肘角が異常');
             if (Number.isFinite(confidence) && confidence > 0 && confidence < RESEARCH_RULES.minConfidence) reasons.push('姿勢信頼度が低い');
+            if (recordTypeOf(record) === 'realtime' && record.realtimeValidationAccepted === false) {
+                reasons.push(...(Array.isArray(record.realtimeValidationReasons) && record.realtimeValidationReasons.length
+                    ? record.realtimeValidationReasons
+                    : ['リアルタイム検証条件不足']));
+            }
             if (recordTypeOf(record) === 'formal') {
                 const start = researchNumber(record.startFrameIndex);
                 const end = researchNumber(record.endFrameIndex);
@@ -7765,7 +7809,15 @@ service cloud.firestore {
             ['hasujiPeak', '最高速推定刃筋(deg)', 20],
             ['hasujiEnd', '終了推定刃筋区間(deg)', 21],
             ['avgVisibility', '姿勢信頼度', 13],
+            ['viewQuality', '右腕分離品質', 14],
+            ['angleQuality', '角度信頼度', 13],
+            ['realtimeCameraFps', '実測カメラfps', 15],
             ['analysisFps', '解析fps', 11],
+            ['missedFrames', '未処理フレーム', 16],
+            ['droppedFrames', 'フレーム欠落', 14],
+            ['unprocessedRatio', '未処理率', 12],
+            ['realtimeValidationStatus', 'リアルタイム検証', 17],
+            ['realtimeValidationReasons', '検証理由', 32],
             ['videoFpsEstimate', '動画fps推定', 13],
             ['startFrameIndex', '開始フレーム', 14],
             ['peakFrameIndex', '最高速フレーム', 16],
@@ -7838,13 +7890,17 @@ service cloud.firestore {
                 timingDefinition: String(values.timingDefinition || '').trim(),
                 researchImportedFromExcel: true,
                 researchImportedStatus: String(values.researchStatus || '').trim(),
-                researchImportedExclusionReason: String(values.exclusionReason || '').trim()
+                researchImportedExclusionReason: String(values.exclusionReason || '').trim(),
+                realtimeValidationStatus: String(values.realtimeValidationStatus || '').trim(),
+                realtimeValidationReasons: String(values.realtimeValidationReasons || '').split(' / ').filter(Boolean)
             };
             [
                 'experienceYears', 'cameraDistanceMeters', 'timeMs', 'officialPeakOffsetMs',
-                'rightAng', 'torsoAng', 'hasujiAngle', 'avgVisibility', 'analysisFps',
+                'rightAng', 'torsoAng', 'hasujiAngle', 'avgVisibility', 'viewQuality', 'angleQuality',
+                'realtimeCameraFps', 'analysisFps', 'missedFrames', 'droppedFrames', 'unprocessedRatio',
                 'videoFpsEstimate', 'startFrameIndex', 'peakFrameIndex', 'endFrameIndex'
             ].forEach(key => { record[key] = researchNumber(values[key]); });
+            if (record.realtimeValidationStatus) record.realtimeValidationAccepted = record.realtimeValidationStatus === '採用候補';
             const angles = {
                 start: {
                     rightElbow: researchNumber(values.rightStart),
@@ -8011,7 +8067,15 @@ service cloud.firestore {
                 hasujiPeak: phase('peak', 'hasuji'),
                 hasujiEnd: phase('end', 'hasuji'),
                 avgVisibility: researchNumber(record.avgVisibility),
+                viewQuality: researchNumber(record.viewQuality),
+                angleQuality: researchNumber(record.angleQuality),
+                realtimeCameraFps: researchNumber(record.realtimeCameraFps),
                 analysisFps: researchNumber(record.analysisFps) ?? (researchNumber(record.frameDtMs) ? 1000 / researchNumber(record.frameDtMs) : null),
+                missedFrames: researchNumber(record.missedFrames),
+                droppedFrames: researchNumber(record.droppedFrames),
+                unprocessedRatio: researchNumber(record.unprocessedRatio),
+                realtimeValidationStatus: record.realtimeValidationStatus || '',
+                realtimeValidationReasons: Array.isArray(record.realtimeValidationReasons) ? record.realtimeValidationReasons.join(' / ') : String(record.realtimeValidationReasons || ''),
                 videoFpsEstimate: researchNumber(record.videoFpsEstimate),
                 startFrameIndex: researchNumber(record.startFrameIndex),
                 peakFrameIndex: researchNumber(record.peakFrameIndex),
@@ -9154,7 +9218,16 @@ service cloud.firestore {
                 torsoAng: toFiniteOrNull(normalized.torsoAng),
                 hasujiAngle: toFiniteOrNull(normalized.hasujiAngle),
                 avgVisibility: toFiniteOrNull(normalized.avgVisibility),
+                viewQuality: toFiniteOrNull(normalized.viewQuality),
+                angleQuality: toFiniteOrNull(normalized.angleQuality),
+                realtimeCameraFps: toFiniteOrNull(normalized.realtimeCameraFps),
                 analysisFps: toFiniteOrNull(normalized.analysisFps),
+                missedFrames: toFiniteOrNull(normalized.missedFrames),
+                droppedFrames: toFiniteOrNull(normalized.droppedFrames),
+                unprocessedRatio: toFiniteOrNull(normalized.unprocessedRatio),
+                realtimeValidationStatus: normalized.realtimeValidationStatus || '',
+                realtimeValidationAccepted: normalized.realtimeValidationAccepted === true,
+                realtimeValidationReasons: Array.isArray(normalized.realtimeValidationReasons) ? normalized.realtimeValidationReasons : [],
                 videoFpsEstimate: toFiniteOrNull(normalized.videoFpsEstimate),
                 slowMotionFactor: toFiniteOrNull(normalized.slowMotionFactor),
                 startFrameIndex: normalized.startFrameIndex ?? null,
@@ -9903,6 +9976,12 @@ service cloud.firestore {
             safeText('precisionTipSpeed', speedLabel(AppState.currentEstimatedTipSpeed, AppState.currentEstimatedTipUnit));
             safeText('precisionTapeSpeed', Params.tipTracking ? speedLabel(AppState.currentTapeTipSpeed, AppState.currentTapeTipUnit) : 'OFF');
             safeText('precisionFrameDt', AppState.frameDtMs ? `${AppState.frameDtMs.toFixed(2)}ms / ${AppState.frameFps.toFixed(1)}fps` : '---');
+            const measuredCameraFps = rollingFrameRate(AppState.cameraFrameTimes);
+            const measuredAiFps = rollingFrameRate(AppState.aiFrameTimes);
+            safeText('precisionMeasuredFps', measuredCameraFps ? `${measuredCameraFps.toFixed(1)} / ${measuredAiFps.toFixed(1)}fps` : '---');
+            safeText('precisionDroppedFrames', `${AppState.droppedCameraFrames || 0} / ${AppState.skippedAnalysisFrames || 0}`);
+            const validationReady = measuredCameraFps >= 50 && measuredAiFps >= 30 && AppState.currentViewQuality >= Params.minViewQuality && AppState.currentAngleQuality >= Params.minAngleVisibility;
+            safeText('precisionValidationState', validationReady ? '検証可能' : (AppState.isCameraRunning ? '条件調整中' : '待機'));
             safeText('precisionVisibility', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '---');
             safeText('precisionAngleQuality', AppState.currentAngleQuality ? `${Math.round(AppState.currentAngleQuality * 100)}%` : '---');
             safeText('precisionDownVelocity', speedLabel(AppState.currentDownVelocityMps, AppState.currentSpeedUnit));
@@ -11637,6 +11716,11 @@ service cloud.firestore {
             resetSwingTracking();
             AppState.swingStartY = wristY;
             AppState.swingStartFrameTimeMs = startTime;
+            AppState.swingStartPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
+            AppState.swingPeakPresentedFrame = 0;
+            AppState.swingEndPresentedFrame = 0;
+            AppState.swingStartDroppedFrames = AppState.droppedCameraFrames || 0;
+            AppState.swingStartSkippedFrames = AppState.skippedAnalysisFrames || 0;
             setTimingStatus('開始OK', 'ピーク探索中', '---');
             updateStateUI('SWINGING');
         }
@@ -11647,6 +11731,7 @@ service cloud.firestore {
                 AppState.swingPeakSpeedMps = speed;
                 AppState.swingPeakTimeMs = now;
                 AppState.swingPeakFrameTimeMs = now;
+                AppState.swingPeakPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
                 setTimingStatus('開始OK', msLabel(now - AppState.swingStartTime), '探索中');
             }
             const dt = AppState.swingPreviousFrameTimeMs ? Math.max((now - AppState.swingPreviousFrameTimeMs) / 1000, 1 / 240) : 1 / Math.max(Params.targetFps, 30);
@@ -11666,6 +11751,7 @@ service cloud.firestore {
             if (isImpact) {
                 const reason = endByDecel ? `急減速 ${decel.toFixed(1)}` : (endByRatio ? '最高速比38%未満' : (timedOut ? '上限到達' : '停止検出'));
                 AppState.swingEndFrameTimeMs = now;
+                AppState.swingEndPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
                 AppState.swingEndReason = reason;
                 setTimingStatus('開始OK', msLabel(AppState.swingPeakTimeMs - AppState.swingStartTime), reason);
             }
@@ -11899,6 +11985,41 @@ service cloud.firestore {
             AppState.feedbackFadeUntil = now + 2300;
         }
 
+        function buildRealtimeValidationSnapshot(durationMs, metrics = {}) {
+            const cameraFps = rollingFrameRate(AppState.cameraFrameTimes);
+            const analysisFps = rollingFrameRate(AppState.aiFrameTimes);
+            const visibility = Number(metrics.avgVisibility || AppState.currentWristVisibility || 0);
+            const viewQuality = Number(metrics.viewQuality || AppState.currentViewQuality || 0);
+            const angleQuality = Number(metrics.angleQuality || AppState.currentAngleQuality || 0);
+            const frameSpan = Math.max(1, Number(AppState.swingEndPresentedFrame || AppState.currentPresentedFrame || 0) - Number(AppState.swingStartPresentedFrame || 0));
+            const missedFrames = Math.max(0, Number(AppState.skippedAnalysisFrames || 0) - Number(AppState.swingStartSkippedFrames || 0));
+            const droppedFrames = Math.max(0, Number(AppState.droppedCameraFrames || 0) - Number(AppState.swingStartDroppedFrames || 0));
+            const unprocessedRatio = missedFrames / frameSpan;
+            const reasons = [];
+            if (AppState.frameSyncMode !== 'rVFC') reasons.push('カメラ同期がrVFCではない');
+            if (cameraFps < 50) reasons.push(`実測カメラ${cameraFps.toFixed(1)}fps`);
+            if (analysisFps < 30) reasons.push(`AI解析${analysisFps.toFixed(1)}fps`);
+            if (visibility < 0.55) reasons.push('手首信頼度不足');
+            if (viewQuality < Params.minViewQuality) reasons.push('右腕の重なり');
+            if (angleQuality < Params.minAngleVisibility) reasons.push('角度信頼度不足');
+            if (unprocessedRatio > 0.45) reasons.push(`未処理フレーム${Math.round(unprocessedRatio * 100)}%`);
+            if (durationMs < Params.timingMinDurationMs || durationMs > Params.timingMaxDurationMs) reasons.push('打突時間範囲外');
+            return {
+                accepted: reasons.length === 0,
+                status: reasons.length ? '参考' : '採用候補',
+                reasons,
+                cameraFps,
+                analysisFps,
+                visibility,
+                viewQuality,
+                angleQuality,
+                missedFrames,
+                droppedFrames,
+                unprocessedRatio,
+                frameSyncMode: AppState.frameSyncMode
+            };
+        }
+
         function saveRecord(timeMs, rawSyncDiffMs, _impactSignal, hasujiAngle, rightAng, torsoAng, _unusedAudioVolume, trajectorySway, _unusedFootRatio, metrics = {}) {
             const recordNow = performance.now();
             if (recordNow - (AppState.lastRealtimeRecordAt || 0) < Params.realtimeRecordCooldownMs) return;
@@ -11933,6 +12054,7 @@ service cloud.firestore {
                 tape: normalizeMs(metrics.peakTapeOffsetMs)
             };
             const officialPeakOffsetMs = peakOffsets[officialSpeed.key] ?? peakOffsets.wrist;
+            const realtimeValidation = buildRealtimeValidationSnapshot(timeMs, metrics);
 
             const record = {
                 id: AppState.records.length + 1,
@@ -11946,6 +12068,16 @@ service cloud.firestore {
                 rightAng: rightAng.toFixed(1), 
                 torsoAng: parseFloat(torsoAng), 
                 avgVisibility: metrics.avgVisibility || AppState.currentWristVisibility || 0,
+                viewQuality: realtimeValidation.viewQuality,
+                angleQuality: realtimeValidation.angleQuality,
+                realtimeCameraFps: realtimeValidation.cameraFps,
+                analysisFps: realtimeValidation.analysisFps,
+                missedFrames: realtimeValidation.missedFrames,
+                droppedFrames: realtimeValidation.droppedFrames,
+                unprocessedRatio: realtimeValidation.unprocessedRatio,
+                realtimeValidationStatus: realtimeValidation.status,
+                realtimeValidationAccepted: realtimeValidation.accepted,
+                realtimeValidationReasons: realtimeValidation.reasons,
                 frameDtMs: metrics.frameDtMs || AppState.frameDtMs || 0,
                 frameSyncMode: AppState.frameSyncMode,
                 poseEngine: AppState.poseEngine,
@@ -11956,8 +12088,11 @@ service cloud.firestore {
                 startTimeMs,
                 peakTimeMs,
                 endTimeMs,
+                startFrameIndex: AppState.swingStartPresentedFrame || null,
+                peakFrameIndex: AppState.swingPeakPresentedFrame || null,
+                endFrameIndex: AppState.swingEndPresentedFrame || null,
                 endReason: metrics.endReason || AppState.swingEndReason || '',
-                measurementMethod: metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
+                measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 検証:${realtimeValidation.status}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
@@ -12084,7 +12219,7 @@ service cloud.firestore {
             const records = analysisRecords();
             const latest = records[records.length - 1];
             if (!latest) {
-                ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
+                ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailLatestValidation', 'detailLatestValidationReason', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
 	                if (body) body.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
 	                return;
@@ -12092,6 +12227,10 @@ service cloud.firestore {
 	            safeText('detailLatestTime', `${latest.timeMs} ms`);
 	            safeText('detailLatestOfficialSpeed', recordPeakOffsetText(latest, 'official'));
             safeText('detailLatestVisibility', latest.avgVisibility ? `${Math.round(Number(latest.avgVisibility) * 100)}%` : '---');
+            safeText('detailLatestValidation', recordTypeOf(latest) === 'realtime' ? (latest.realtimeValidationStatus || '旧記録') : '正式動画');
+            safeText('detailLatestValidationReason', recordTypeOf(latest) === 'realtime'
+                ? (Array.isArray(latest.realtimeValidationReasons) && latest.realtimeValidationReasons.length ? latest.realtimeValidationReasons.join(' / ') : '検証条件を満たしています')
+                : '開始・終了を手動補正');
             safeText('detailRightElbow', `${latest.rightAng || '---'}°`);
             safeText('detailTorso', `${Number(latest.torsoAng || 0).toFixed(1)}°`);
             safeText('detailHasuji', `${latest.hasujiAngle || '---'}°`);
@@ -12211,6 +12350,8 @@ service cloud.firestore {
                 canvasCtx.restore();
                 return;
             }
+            AppState.aiFrameCount += 1;
+            trackRollingFrameTime(AppState.aiFrameTimes, frameTimeMs);
             
             drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: 'rgba(255,255,255,0.4)', lineWidth: 2});
             drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#3b82f6', lineWidth: 1, radius: 3});
@@ -13063,15 +13204,23 @@ service cloud.firestore {
             canvasElement.width = videoElement.videoWidth || 1280;
             canvasElement.height = videoElement.videoHeight || 720;
             drawCameraFrameOnly('カメラ起動中 / 解析準備中');
-            AppState.frameSyncMode = isIOSLikeBrowser() ? 'RAF/iPhone' : (videoElement.requestVideoFrameCallback ? 'rVFC' : 'RAF');
+            AppState.frameSyncMode = videoElement.requestVideoFrameCallback ? 'rVFC' : (isIOSLikeBrowser() ? 'RAF/iPhone' : 'RAF');
             AppState.frameLoopRunning = true;
             AppState.lastFrameTimeMs = 0;
             AppState.lastAnalysisFrameTimeMs = 0;
             AppState.lastPoseAttemptAt = 0;
             AppState.lastPoseResultAt = 0;
             AppState.skippedAnalysisFrames = 0;
+            AppState.cameraFrameCount = 0;
+            AppState.aiFrameCount = 0;
+            AppState.cameraFrameTimes = [];
+            AppState.aiFrameTimes = [];
+            AppState.currentPresentedFrame = 0;
+            AppState.lastPresentedFrame = 0;
+            AppState.droppedCameraFrames = 0;
             AppState.angleFilters = {};
             AppState.currentAngleQuality = 0;
+            AppState.currentViewQuality = 0;
             AppState.currentWristVelocity3d = { x: 0, y: 0, z: 0 };
             AppState.currentDownVelocityMps = 0;
             resetSwingStartCandidate();
@@ -13089,7 +13238,7 @@ service cloud.firestore {
 
         function scheduleVideoFrame() {
             if (!AppState.frameLoopRunning) return;
-            if (!isIOSLikeBrowser() && videoElement.requestVideoFrameCallback) {
+            if (videoElement.requestVideoFrameCallback) {
                 videoElement.requestVideoFrameCallback(processVideoFrame);
             } else {
                 requestAnimationFrame((now) => processVideoFrame(now, { expectedDisplayTime: now }));
@@ -13099,8 +13248,21 @@ service cloud.firestore {
         async function processVideoFrame(now, metadata) {
             if (!AppState.frameLoopRunning) return;
             const frameTimeMs = getFrameTimestampMs(now, metadata);
+            AppState.cameraFrameCount += 1;
+            trackRollingFrameTime(AppState.cameraFrameTimes, frameTimeMs);
+            const presentedFrame = Number(metadata?.presentedFrames || 0);
+            if (presentedFrame > 0) {
+                if (AppState.lastPresentedFrame > 0 && presentedFrame > AppState.lastPresentedFrame + 1) {
+                    AppState.droppedCameraFrames += presentedFrame - AppState.lastPresentedFrame - 1;
+                }
+                AppState.currentPresentedFrame = presentedFrame;
+                AppState.lastPresentedFrame = presentedFrame;
+            } else {
+                AppState.currentPresentedFrame = AppState.cameraFrameCount;
+            }
+            scheduleVideoFrame();
             if (AppState.processingFrame) {
-                scheduleVideoFrame();
+                AppState.skippedAnalysisFrames += 1;
                 return;
             }
             AppState.processingFrame = true;
@@ -13108,7 +13270,6 @@ service cloud.firestore {
                 await runPoseFrame(frameTimeMs);
             } finally {
                 AppState.processingFrame = false;
-                scheduleVideoFrame();
             }
         }
 
@@ -17783,9 +17944,9 @@ service cloud.firestore {
                 const records = analysisRecords();
 	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
+		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
 		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
