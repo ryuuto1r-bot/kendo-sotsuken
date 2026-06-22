@@ -3959,6 +3959,7 @@
                 <div class="relative bg-black rounded-xl overflow-hidden shadow-xl border border-slate-700 aspect-video" id="videoContainer">
                     <video id="videoElement" class="absolute inset-0 w-full h-full object-contain bg-black z-0" autoplay="" playsinline="" muted="" style="transform-origin: center center;"></video>
                     <canvas id="outputCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></canvas>
+                    <span id="measurementReadyLamp" class="absolute left-2 top-2 z-40 rounded-full pointer-events-none" style="width:8px;height:8px;background:#64748b;box-shadow:none" aria-label="測定準備状態"></span>
 
                     <div id="flashOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
 
@@ -6182,7 +6183,8 @@ service cloud.firestore {
             timingStartConsecutiveFrames: 2,
             timingMaxDurationMs: 650,
             timingMinDurationMs: 90,
-            realtimeRecordCooldownMs: 650,
+            realtimeRecordCooldownMs: 350,
+            realtimeRearmDelayMs: 350,
             minAngleVisibility: 0.45,
             minViewQuality: 0.42,
             maxReasonableSpeedMps: 18
@@ -10019,6 +10021,12 @@ service cloud.firestore {
             else if (viewQuality >= Params.minViewQuality) score += 5;
             if (distance >= 2.0 && distance <= 3.0) score += 8;
             const tone = score >= 86 && viewQuality >= Params.minViewQuality ? 'good' : (score >= 57 ? 'warn' : 'bad');
+            const readyLamp = document.getElementById('measurementReadyLamp');
+            if (readyLamp) {
+                const ready = AppState.isCameraRunning && tone === 'good';
+                readyLamp.style.background = ready ? '#22c55e' : '#64748b';
+                readyLamp.style.boxShadow = ready ? '0 0 7px rgba(34,197,94,.95)' : 'none';
+            }
             card.classList.remove('condition-good', 'condition-warn', 'condition-bad');
             card.classList.add(`condition-${tone}`);
             safeText('realtimeConditionVerdict', tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足'));
@@ -12012,7 +12020,10 @@ service cloud.firestore {
 
         function saveRecord(timeMs, rawSyncDiffMs, _impactSignal, hasujiAngle, rightAng, torsoAng, _unusedAudioVolume, trajectorySway, _unusedFootRatio, metrics = {}) {
             const recordNow = performance.now();
-            if (recordNow - (AppState.lastRealtimeRecordAt || 0) < Params.realtimeRecordCooldownMs) return;
+            if (recordNow - (AppState.lastRealtimeRecordAt || 0) < Params.realtimeRecordCooldownMs) {
+                scheduleRealtimeRearm(120);
+                return false;
+            }
             AppState.lastRealtimeRecordAt = recordNow;
             let comment = "", shortLabel = "";
             const hasujiAbs = Math.abs(Number(hasujiAngle || 0));
@@ -12123,10 +12134,15 @@ service cloud.firestore {
             updateDataCenter();
             prepareReplay();
             
+            scheduleRealtimeRearm();
+            return true;
+        }
+
+        function scheduleRealtimeRearm(delayMs = Params.realtimeRearmDelayMs) {
+            if (AppState.zanshinTimer) clearTimeout(AppState.zanshinTimer);
             AppState.zanshinBroken = false;
             AppState.swingState = 'ZANSHIN';
             updateStateUI('IDLE');
-            
             AppState.zanshinTimer = setTimeout(() => {
                 document.getElementById('zanshinIndicator').classList.add('hidden');
                 AppState.swingState = 'IDLE';
@@ -12140,8 +12156,10 @@ service cloud.firestore {
                 AppState.swingAngleSamples = [];
                 AppState.previousWristY = 0;
                 AppState.idleTimer = 0;
+                resetSwingStartCandidate();
                 setTimingStatus('待機', '---', '---');
-            }, 2000); 
+                AppState.zanshinTimer = null;
+            }, Math.max(100, Number(delayMs) || 350));
         }
 
         function updateHistoryTable() {
@@ -13059,6 +13077,11 @@ service cloud.firestore {
 
         function stopCameraStream() {
             AppState.frameLoopRunning = false;
+            const readyLamp = document.getElementById('measurementReadyLamp');
+            if (readyLamp) {
+                readyLamp.style.background = '#64748b';
+                readyLamp.style.boxShadow = 'none';
+            }
             if (AppState.videoStream) {
                 AppState.videoStream.getTracks().forEach(track => track.stop());
                 AppState.videoStream = null;
