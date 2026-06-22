@@ -3964,6 +3964,18 @@
 
                     <div id="startOverlay" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
                         <i class="fa-solid fa-camera text-5xl text-slate-400 mb-6"></i>
+                        <div class="w-[min(92%,28rem)] mb-4 rounded-lg border border-slate-600 bg-black/35 p-3 text-white shadow-lg">
+                            <div class="mb-2 flex items-center justify-between gap-3">
+                                <label for="cameraQuickSelect" class="text-sm font-black">使用カメラ</label>
+                                <button id="detectIPhoneCameraBtn" type="button" class="rounded bg-white/10 px-3 py-1.5 text-xs font-bold hover:bg-white/20">
+                                    <i class="fa-solid fa-mobile-screen-button mr-1"></i>iPhoneを探す
+                                </button>
+                            </div>
+                            <select id="cameraQuickSelect" class="w-full rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white">
+                                <option value="">自動選択（内蔵/既定カメラ）</option>
+                            </select>
+                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
+                        </div>
                         <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] transition transform hover:scale-105">
                             <i class="fa-solid fa-play mr-2"></i> 稽古開始
                         </button>
@@ -3975,7 +3987,7 @@
                     </div>
 
                     <div id="standardViewBadge" class="absolute bottom-4 left-4 z-30 rounded-lg border border-amber-300/60 bg-black/65 px-3 py-2 text-xs text-white shadow-lg backdrop-blur-md">
-                        <div class="font-black"><i class="fa-solid fa-camera-rotate mr-1 text-amber-300"></i>右斜め前30〜45°</div>
+                        <div class="font-black"><i class="fa-solid fa-camera-rotate mr-1 text-amber-300"></i>腕が重ならない向き</div>
                         <div id="standardViewQuality" class="mt-0.5 text-[10px] text-amber-200">右肩・右肘・右手首を離して映す</div>
                     </div>
 
@@ -4050,7 +4062,7 @@
 	                    <div class="disclosure-body">
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">距離目安</span><div id="realtimeConditionDistance" class="font-black font-mono-num">2.5m / 推奨2.0〜3.0m</div></div>
-	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">右斜め前30〜45°</div></div>
+	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">腕が重ならない向き</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">映像</span><div id="realtimeConditionResolution" class="font-black font-mono-num">300x150</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">FPS</span><div id="realtimeConditionFps" class="font-black font-mono-num">---</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">上半身検出</span><div id="realtimeConditionUpperBody" class="font-black font-mono-num">未検出</div></div>
@@ -4070,7 +4082,6 @@
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">欠落 / 間引き</span><div id="precisionDroppedFrames" class="font-bold text-amber-700 font-mono-num">0 / 0</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">検証状態</span><div id="precisionValidationState" class="font-bold text-slate-800">待機</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">手首信頼度</span><div id="precisionVisibility" class="font-bold text-emerald-700 font-mono-num">---</div></div>
-	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Landmarker診断</span><div id="precisionLandmarkerDiag" class="font-bold text-slate-800">GPU / 安定サーバ</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">カメラ</span><div id="precisionCameraStatus" class="font-bold text-slate-800">自動選択（内蔵/既定カメラ）</div></div>
 	                    </div>
 	                </div>
@@ -4276,7 +4287,7 @@
                 <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="素振り">素振り</option></select></div>
                 <div class="research-data-field"><label for="researchExperienceYears">経験年数</label><input id="researchExperienceYears" type="number" min="0" max="80" step="0.5" placeholder="例: 8"></div>
                 <div class="research-data-field"><label for="researchGrade">段級位</label><input id="researchGrade" type="text" maxlength="20" placeholder="例: 二段"></div>
-                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="右斜め前30-45度">右斜め前30〜45°（標準）</option><option value="正面">正面</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
+                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="腕が重ならない向き">腕が重ならない向き（標準）</option><option value="正面">正面</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
                 <div class="research-data-field"><label for="researchCameraDistance">カメラ距離 (m)</label><input id="researchCameraDistance" type="number" min="0.5" max="10" step="0.1" value="2.5"></div>
                 <div class="research-data-field"><label for="researchDeviceLabel">撮影端末</label><input id="researchDeviceLabel" type="text" maxlength="50" placeholder="例: iPhone 16 / MacBook"></div>
             </div>
@@ -5748,10 +5759,10 @@ service cloud.firestore {
 
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <h4 class="text-sm font-bold text-slate-800 mb-2"><i class="fa-solid fa-camera mr-1"></i>カメラ</h4>
-                    <p class="text-xs text-slate-600 mb-3">使うカメラを選びます。</p>
+                    <p class="text-xs text-slate-600 mb-3">カメラ許可後に、Macの内蔵カメラや連係カメラを選べます。</p>
                     <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-                        <select id="cameraDeviceSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white"><option value="">自動選択（内蔵/既定カメラ）</option><option value="">カメラ 1</option></select>
-                        <button id="refreshCameraBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">再読込</button>
+                        <select id="cameraDeviceSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white"><option value="">自動選択（内蔵/既定カメラ）</option></select>
+                        <button id="refreshCameraBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">接続を確認</button>
                     </div>
                     <div id="cameraDeviceStatus" class="mt-2 text-xs bg-white border border-slate-200 rounded p-2 text-slate-700">1台検出 / 現在: 自動選択（内蔵/既定カメラ）</div>
                     <div class="mt-3 bg-white border border-slate-200 rounded p-3">
@@ -5764,8 +5775,6 @@ service cloud.firestore {
                                 <select id="cameraPerformanceMode" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white font-bold">
                                     <option value="stable">安定 30fps</option>
                                     <option value="precision" selected="">精度優先 60fps</option>
-                                    <option value="iphone120">iPhone 120fps</option>
-                                    <option value="iphone240">iPhone 240fps検証</option>
                                 </select>
                                 <div id="realtimeAnalysisFpsLabel" class="font-black text-slate-900 font-mono-num">24fps</div>
                             </div>
@@ -5778,14 +5787,6 @@ service cloud.firestore {
                     <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>上級設定</span></summary>
                     <p class="text-xs text-slate-500 mt-2">通常は変更不要です。</p>
                     <div class="advanced-body mt-4 space-y-4">
-		                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100">
-	                        <label class="flex items-center gap-3 cursor-pointer">
-	                            <input type="checkbox" id="paramUsePoseLandmarker" class="w-5 h-5 text-cyan-600 rounded border-gray-300">
-	                            <span class="text-base font-bold text-cyan-900">高精度解析を試す</span>
-	                        </label>
-	                        <p class="text-xs text-cyan-700 mt-2 ml-8">重い場合は自動で安定モードに戻ります。</p>
-	                    </div>
-
 	                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
 	                        <label class="flex items-center gap-3 cursor-pointer">
 	                            <input type="checkbox" id="paramTipTracking" class="w-5 h-5 text-amber-600 rounded border-gray-300">
@@ -6533,6 +6534,7 @@ service cloud.firestore {
         }
 
         function checkLaunchEnvironment() {
+            if (!AppState.selectedCameraId) AppState.selectedCameraId = safeStorageGet('kvcSelectedCameraId') || '';
             updateVideoElementMirror();
             applyCameraPerformanceMode(AppState.cameraPerformanceMode || 'precision');
             const warning = document.getElementById('localFileWarning');
@@ -7294,7 +7296,7 @@ service cloud.firestore {
                 strikeType: '面',
                 experienceYears: '',
                 grade: '',
-                cameraDirection: '右斜め前30-45度',
+                cameraDirection: '腕が重ならない向き',
                 cameraDistanceMeters: '2.5',
                 deviceLabel: ''
             };
@@ -10027,7 +10029,7 @@ service cloud.firestore {
             card.classList.add(`condition-${tone}`);
             safeText('realtimeConditionVerdict', tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足'));
             safeText('realtimeConditionDistance', distance ? `${distance.toFixed(1)}m / 推奨2.0〜3.0m` : '推奨2.0〜3.0m');
-            safeText('realtimeConditionDirection', '右斜め前30〜45°');
+            safeText('realtimeConditionDirection', '腕が重ならない向き');
             safeText('realtimeConditionResolution', width && height ? `${width}x${height}` : '---');
             safeText('realtimeConditionFps', fps ? `${fps.toFixed(1)}fps` : '---');
             safeText('realtimeConditionUpperBody', upper ? `${Math.round(upper * 100)}%` : '未検出');
@@ -10041,8 +10043,8 @@ service cloud.firestore {
             const advice = tone === 'good'
                 ? 'この条件ならリアルタイム確認に使いやすい状態です。正式値は動画解析で補正してください。'
                 : (tone === 'warn'
-                    ? '右斜め前30〜45°から、右肩・右肘・右手首が離れて見える位置へ微調整してください。'
-                    : '右斜め前30〜45°、距離2〜3m、胸〜肩の高さに固定してください。');
+                    ? '右肩・右肘・右手首が離れて見える位置へ微調整してください。'
+                    : '距離2〜3m、胸〜肩の高さに固定してください。');
             safeText('realtimeConditionAdvice', advice);
         }
 
@@ -13077,24 +13079,113 @@ service cloud.firestore {
             camera = null;
         }
 
-        async function refreshCameraDevices() {
-            const select = document.getElementById('cameraDeviceSelect');
-            if (!navigator.mediaDevices?.enumerateDevices || !select) return;
+        function cameraSelectElements() {
+            return ['cameraQuickSelect', 'cameraDeviceSelect']
+                .map(id => document.getElementById(id))
+                .filter(Boolean);
+        }
+
+        function isLikelyIPhoneCamera(device) {
+            const label = String(device?.label || '');
+            return /iphone|continuity|連係|連携|desk view|デスクビュー/i.test(label);
+        }
+
+        function isLikelyRearCamera(device) {
+            const label = String(device?.label || '');
+            return /back|rear|environment|背面|後面|外向き/i.test(label);
+        }
+
+        function cameraDefaultFacingMode() {
+            return isIOSLikeBrowser() ? 'environment' : 'user';
+        }
+
+        function setSelectedCamera(deviceId = '', options = {}) {
+            AppState.selectedCameraId = deviceId || '';
+            cameraSelectElements().forEach(select => {
+                if ([...select.options].some(option => option.value === AppState.selectedCameraId)) {
+                    select.value = AppState.selectedCameraId;
+                } else {
+                    select.value = '';
+                }
+            });
+            if (options.persist !== false) safeStorageSet('kvcSelectedCameraId', AppState.selectedCameraId);
+        }
+
+        function cameraConnectionSummary(cameras, selectedLabel = '') {
+            const iphone = cameras.find(isLikelyIPhoneCamera);
+            if (isIOSLikeBrowser()) return `${cameras.length}台検出 / iPhone本体のカメラを使用できます`;
+            if (iphone) return `${cameras.length}台検出 / iPhone接続済み: ${iphone.label}`;
+            if (selectedLabel) return `${cameras.length}台検出 / 現在: ${selectedLabel}`;
+            return `${cameras.length}台検出 / iPhoneは未検出`;
+        }
+
+        async function refreshCameraDevices(options = {}) {
+            const selects = cameraSelectElements();
+            if (!navigator.mediaDevices?.enumerateDevices || !selects.length) return [];
             const devices = await navigator.mediaDevices.enumerateDevices();
             const cameras = devices.filter(device => device.kind === 'videoinput');
-            const current = AppState.selectedCameraId || select.value || '';
-            select.innerHTML = '<option value="">自動選択（内蔵/既定カメラ）</option>';
-            cameras.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = device.deviceId;
-                option.textContent = device.label || `カメラ ${index + 1}`;
-                select.appendChild(option);
+            const stored = safeStorageGet('kvcSelectedCameraId') || '';
+            const current = AppState.selectedCameraId || stored || selects[0].value || '';
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">自動選択（内蔵/既定カメラ）</option>';
+                cameras.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `カメラ ${index + 1}（許可後に名称表示）`;
+                    select.appendChild(option);
+                });
             });
-            if ([...select.options].some(option => option.value === current)) select.value = current;
-            AppState.selectedCameraId = select.value;
-            const label = select.selectedOptions[0]?.textContent || '自動選択';
-            safeText('cameraDeviceStatus', `${cameras.length}台検出 / 現在: ${label}`);
+            const currentAvailable = !!current && cameras.some(device => device.deviceId === current);
+            setSelectedCamera(currentAvailable ? current : '', { persist: currentAvailable || !current });
+            const activeSelect = document.getElementById('cameraDeviceSelect') || selects[0];
+            const label = activeSelect?.selectedOptions?.[0]?.textContent || '自動選択';
+            const summary = cameraConnectionSummary(cameras, label);
+            safeText('cameraDeviceStatus', summary);
+            safeText('cameraQuickStatus', cameras.some(device => device.label)
+                ? summary
+                : `${cameras.length}台検出 / カメラ許可後に名称を表示します`);
             safeText('precisionCameraStatus', AppState.cameraSettings ? `${label} / ${AppState.cameraSettings.width || '-'}x${AppState.cameraSettings.height || '-'} / ${Math.round(AppState.frameFps || AppState.cameraSettings.frameRate || 0)}fps` : label);
+            if (options.preferIPhone) {
+                const preferred = isIOSLikeBrowser()
+                    ? (cameras.find(isLikelyRearCamera) || cameras[cameras.length - 1])
+                    : cameras.find(isLikelyIPhoneCamera);
+                if (preferred) {
+                    setSelectedCamera(preferred.deviceId);
+                    safeText('cameraQuickStatus', `選択済み: ${preferred.label || 'iPhoneカメラ'}`);
+                    safeText('cameraDeviceStatus', `選択済み: ${preferred.label || 'iPhoneカメラ'}`);
+                }
+            }
+            return cameras;
+        }
+
+        async function detectIPhoneCamera() {
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                throw new Error('HTTPSまたはlocalhostで開いてください');
+            }
+            safeText('cameraQuickStatus', 'カメラ許可とiPhone接続を確認中...');
+            let permissionStream = null;
+            if (!AppState.videoStream) {
+                permissionStream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: { ideal: cameraDefaultFacingMode() },
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                permissionStream.getTracks().forEach(track => track.stop());
+            }
+            const cameras = await refreshCameraDevices({ preferIPhone: true });
+            const selected = cameras.find(device => device.deviceId === AppState.selectedCameraId);
+            const found = isIOSLikeBrowser() ? !!selected : !!selected && isLikelyIPhoneCamera(selected);
+            if (!found) {
+                safeText('cameraQuickStatus', 'iPhone未検出: iPhoneをロックし、Macの近くでWi-Fi/BluetoothをONにしてください');
+                showToast('iPhoneカメラが一覧にありません。連係カメラの設定を確認してください', 'yellow');
+                return false;
+            }
+            if (AppState.isCameraRunning) await startCameraStream();
+            showToast(`${selected.label || 'iPhoneカメラ'}を選択しました`, 'green');
+            return true;
         }
 
         function updateCameraRuntimeStatus() {
@@ -13126,7 +13217,7 @@ service cloud.firestore {
                 {
                     audio: false,
                     video: {
-                        facingMode: 'user',
+                        facingMode: { ideal: cameraDefaultFacingMode() },
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
                         frameRate: { ideal: Math.min(60, Params.cameraStableFps || 30), max: Math.min(60, Params.cameraMaxFps || 60) }
@@ -13170,7 +13261,7 @@ service cloud.firestore {
                 height: { ideal: Params.cameraStableHeight },
                 frameRate: { ideal: Params.cameraStableFps, max: Params.cameraMaxFps || Params.cameraStableFps || 60 }
             } : {
-                facingMode: 'user',
+                facingMode: { ideal: cameraDefaultFacingMode() },
                 width: { ideal: Params.cameraStableWidth },
                 height: { ideal: Params.cameraStableHeight },
                 frameRate: { ideal: Params.cameraStableFps, max: Params.cameraMaxFps || Params.cameraStableFps || 60 }
@@ -13232,7 +13323,7 @@ service cloud.firestore {
             AppState.replayClip = [];
             setTimingStatus('待機', '---', '---');
             updateCameraRuntimeStatus();
-            refreshCameraDevices().catch(() => {});
+            refreshCameraDevices().then(updateCameraRuntimeStatus).catch(() => {});
             scheduleVideoFrame();
         }
 
@@ -18902,21 +18993,36 @@ service cloud.firestore {
             if (input) input.addEventListener('change', saveMicrosoftSettingsFromUi);
         });
 
-        const cameraDeviceSelect = document.getElementById('cameraDeviceSelect');
-        if (cameraDeviceSelect) cameraDeviceSelect.addEventListener('change', async e => {
-            AppState.selectedCameraId = e.target.value;
+        async function handleCameraSelectionChange(e) {
+            setSelectedCamera(e.target.value);
             safeText('cameraDeviceStatus', `選択: ${e.target.selectedOptions[0]?.textContent || '自動選択'}`);
+            safeText('cameraQuickStatus', `選択: ${e.target.selectedOptions[0]?.textContent || '自動選択'}`);
             if (AppState.isCameraRunning) {
                 await startCameraStream();
                 showToast('カメラを切り替えました', 'green');
             }
-        });
+        }
+        cameraSelectElements().forEach(select => select.addEventListener('change', e => {
+            handleCameraSelectionChange(e).catch(err => showToast(cameraErrorText(err), 'red'));
+        }));
         const cameraPerformanceMode = document.getElementById('cameraPerformanceMode');
         if (cameraPerformanceMode) cameraPerformanceMode.addEventListener('change', e => {
             applyCameraPerformanceMode(e.target.value, { restart: true });
         });
         const refreshCameraBtn = document.getElementById('refreshCameraBtn');
-        if (refreshCameraBtn) refreshCameraBtn.addEventListener('click', () => refreshCameraDevices().catch(() => showToast('カメラ一覧を取得できませんでした', 'red')));
+        if (refreshCameraBtn) refreshCameraBtn.addEventListener('click', () => detectIPhoneCamera().catch(err => showToast(cameraErrorText(err), 'red')));
+        const detectIPhoneCameraBtn = document.getElementById('detectIPhoneCameraBtn');
+        if (detectIPhoneCameraBtn) detectIPhoneCameraBtn.addEventListener('click', () => detectIPhoneCamera().catch(err => {
+            safeText('cameraQuickStatus', cameraErrorText(err));
+            showToast(cameraErrorText(err), 'red');
+        }));
+        if (navigator.mediaDevices?.addEventListener) {
+            navigator.mediaDevices.addEventListener('devicechange', () => {
+                refreshCameraDevices().then(cameras => {
+                    if (cameras.some(isLikelyIPhoneCamera)) safeText('cameraQuickStatus', cameraConnectionSummary(cameras));
+                }).catch(() => {});
+            });
+        }
 
         function stopReplayPlayback() {
             if (AppState.replayTimer) {
