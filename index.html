@@ -3986,11 +3986,6 @@
                         <div class="flex items-center gap-2"><i id="stateIcon" class="fa-solid fa-user"></i><span id="stateText" class="font-bold text-lg">待機</span></div>
                     </div>
 
-                    <div id="standardViewBadge" class="absolute bottom-4 left-4 z-30 rounded-lg border border-amber-300/60 bg-black/65 px-3 py-2 text-xs text-white shadow-lg backdrop-blur-md">
-                        <div class="font-black"><i class="fa-solid fa-camera-rotate mr-1 text-amber-300"></i>腕が重ならない向き</div>
-                        <div id="standardViewQuality" class="mt-0.5 text-[10px] text-amber-200">右肩・右肘・右手首を離して映す</div>
-                    </div>
-
                     <div id="canvasOverlayData" class="absolute top-4 right-4 bg-black/50 border border-slate-600 p-3 rounded-lg text-white hidden flex-col gap-2 backdrop-blur-md text-sm shadow-lg z-30">
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>右肘角:</span><span id="overlayRightAng" class="font-mono font-bold">---°</span></div>
                         <div class="flex justify-between gap-4 border-b border-slate-600 pb-1"><span>体幹傾斜:</span><span id="overlayTorsoAng" class="font-mono font-bold">---°</span></div>
@@ -4062,7 +4057,6 @@
 	                    <div class="disclosure-body">
 	                    <div class="grid grid-cols-2 gap-2 text-xs">
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">距離目安</span><div id="realtimeConditionDistance" class="font-black font-mono-num">2.5m / 推奨2.0〜3.0m</div></div>
-	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">向き</span><div id="realtimeConditionDirection" class="font-black">腕が重ならない向き</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">映像</span><div id="realtimeConditionResolution" class="font-black font-mono-num">300x150</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">FPS</span><div id="realtimeConditionFps" class="font-black font-mono-num">---</div></div>
 	                        <div class="bg-white/70 rounded border border-current/10 p-2"><span class="opacity-70">上半身検出</span><div id="realtimeConditionUpperBody" class="font-black font-mono-num">未検出</div></div>
@@ -4287,7 +4281,7 @@
                 <div class="research-data-field"><label for="researchStrikeType">打突種別</label><select id="researchStrikeType"><option value="面">面</option><option value="素振り">素振り</option></select></div>
                 <div class="research-data-field"><label for="researchExperienceYears">経験年数</label><input id="researchExperienceYears" type="number" min="0" max="80" step="0.5" placeholder="例: 8"></div>
                 <div class="research-data-field"><label for="researchGrade">段級位</label><input id="researchGrade" type="text" maxlength="20" placeholder="例: 二段"></div>
-                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="腕が重ならない向き">腕が重ならない向き（標準）</option><option value="正面">正面</option><option value="側面">側面</option><option value="その他">その他</option></select></div>
+                <div class="research-data-field"><label for="researchCameraDirection">撮影方向</label><select id="researchCameraDirection"><option value="その他">その他</option><option value="正面">正面</option><option value="側面">側面</option></select></div>
                 <div class="research-data-field"><label for="researchCameraDistance">カメラ距離 (m)</label><input id="researchCameraDistance" type="number" min="0.5" max="10" step="0.1" value="2.5"></div>
                 <div class="research-data-field"><label for="researchDeviceLabel">撮影端末</label><input id="researchDeviceLabel" type="text" maxlength="50" placeholder="例: iPhone 16 / MacBook"></div>
             </div>
@@ -7296,7 +7290,7 @@ service cloud.firestore {
                 strikeType: '面',
                 experienceYears: '',
                 grade: '',
-                cameraDirection: '腕が重ならない向き',
+                cameraDirection: 'その他',
                 cameraDistanceMeters: '2.5',
                 deviceLabel: ''
             };
@@ -10029,17 +10023,11 @@ service cloud.firestore {
             card.classList.add(`condition-${tone}`);
             safeText('realtimeConditionVerdict', tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足'));
             safeText('realtimeConditionDistance', distance ? `${distance.toFixed(1)}m / 推奨2.0〜3.0m` : '推奨2.0〜3.0m');
-            safeText('realtimeConditionDirection', '腕が重ならない向き');
             safeText('realtimeConditionResolution', width && height ? `${width}x${height}` : '---');
             safeText('realtimeConditionFps', fps ? `${fps.toFixed(1)}fps` : '---');
             safeText('realtimeConditionUpperBody', upper ? `${Math.round(upper * 100)}%` : '未検出');
             safeText('realtimeConditionAngleQuality', angleQuality ? `${Math.round(angleQuality * 100)}%` : '未検出');
             const viewOk = viewQuality >= Params.minViewQuality;
-            const viewBadge = document.getElementById('standardViewBadge');
-            if (viewBadge) {
-                viewBadge.className = `absolute bottom-4 left-4 z-30 rounded-lg border px-3 py-2 text-xs text-white shadow-lg backdrop-blur-md ${viewOk ? 'border-emerald-300/70 bg-emerald-950/75' : 'border-amber-300/60 bg-black/65'}`;
-            }
-            safeText('standardViewQuality', viewOk ? `腕の分離 ${Math.round(viewQuality * 100)}% / 測定可` : '右肩・右肘・右手首が重ならない位置へ');
             const advice = tone === 'good'
                 ? 'この条件ならリアルタイム確認に使いやすい状態です。正式値は動画解析で補正してください。'
                 : (tone === 'warn'
