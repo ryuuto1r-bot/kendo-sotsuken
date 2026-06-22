@@ -12110,12 +12110,12 @@ service cloud.firestore {
             persistRecords();
             if (AppState.firebaseAutoSync) syncRecordToFirebase(record, { silent: true });
             
-            document.getElementById('latestTime').innerText = timeMs + ' ms';
-            document.getElementById('latestSync').innerText = '---';
-            document.getElementById('latestSae').innerText = '---';
-            document.getElementById('latestStride').innerText = '---';
-            document.getElementById('latestHasuji').innerText = hasujiAngle.toFixed(1) + '°';
-            document.getElementById('latestRightAng').innerText = rightAng.toFixed(1) + '°';
+            safeText('latestTime', `${timeMs} ms`);
+            safeText('latestSync', '---');
+            safeText('latestSae', '---');
+            safeText('latestStride', '---');
+            safeText('latestHasuji', `${hasujiAngle.toFixed(1)}°`);
+            safeText('latestRightAng', `${rightAng.toFixed(1)}°`);
             safeText('latestTorso', `${Number(torsoAng || 0).toFixed(1)}°`);
             safeText('latestPeakSpeed', recordPeakOffsetText(record, 'official'));
             safeText('latestTipSpeed', recordPeakOffsetText(record, 'tip'));
@@ -12123,10 +12123,9 @@ service cloud.firestore {
             safeText('latestVisibility', record.avgVisibility ? `${Math.round(record.avgVisibility * 100)}%` : '---');
             safeText('latestFrameMode', record.frameSyncMode === 'rVFC' ? 'rVFC' : record.frameSyncMode);
 
-            // 【★追加】右上のオーバーレイUIにも打突結果を反映
-            document.getElementById('overlaySae').innerText = '---';
-            document.getElementById('overlaySway').innerText = trajectorySway + '%';
-            document.getElementById('overlayStride').innerText = '---';
+            safeText('overlaySae', '---');
+            safeText('overlaySway', `${trajectorySway}%`);
+            safeText('overlayStride', '---');
             
             updateHistoryTable();
             updateDetailsTab();
@@ -12144,7 +12143,7 @@ service cloud.firestore {
             AppState.swingState = 'ZANSHIN';
             updateStateUI('IDLE');
             AppState.zanshinTimer = setTimeout(() => {
-                document.getElementById('zanshinIndicator').classList.add('hidden');
+                document.getElementById('zanshinIndicator')?.classList.add('hidden');
                 AppState.swingState = 'IDLE';
                 updateStateUI('IDLE');
                 
