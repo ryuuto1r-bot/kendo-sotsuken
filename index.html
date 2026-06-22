@@ -4084,8 +4084,8 @@
 	                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 	                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 	                    <div class="space-y-2 text-xs text-slate-700">
-	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下降が確認でき、ピーク検出信号が立ち上がる最初のフレーム</p>
-	                        <p><span class="font-bold text-slate-900">終了:</span> 最高速後に速度低下または下降停止が続いたフレーム</p>
+	                        <p><span class="font-bold text-slate-900">開始:</span> 右手首の下降を2フレーム確認し、閾値を跨いだ補間時刻を採用</p>
+	                        <p><span class="font-bold text-slate-900">終了:</span> 最高速後の速度低下を2フレーム確認し、最初の候補時刻を採用</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
@@ -5999,6 +5999,8 @@ service cloud.firestore {
             currentWrist3d: null,
             currentWristVelocity3d: { x: 0, y: 0, z: 0 },
             currentDownVelocityMps: 0,
+            previousDownVelocityMps: 0,
+            previousSignalFrameTimeMs: 0,
             currentSpeed3d: 0,
             currentSpeedUnit: 'm/s',
             currentWristVisibility: 0,
@@ -6027,6 +6029,10 @@ service cloud.firestore {
             startCandidateFrames: 0,
             startCandidateTimeMs: 0,
             startCandidateWristY: 0,
+            endCandidateFrames: 0,
+            endCandidateTimeMs: 0,
+            endCandidateReason: '',
+            endCandidatePresentedFrame: 0,
             timingStartStatus: '待機',
             timingPeakStatus: '---',
             timingEndStatus: '---',
@@ -6181,6 +6187,7 @@ service cloud.firestore {
             timingEndSpeedRatio: 0.38,
             timingStartDownVelocityMps: 0.55,
             timingStartConsecutiveFrames: 2,
+            timingEndConsecutiveFrames: 2,
             timingMaxDurationMs: 650,
             timingMinDurationMs: 90,
             realtimeRecordCooldownMs: 350,
@@ -6929,6 +6936,21 @@ service cloud.firestore {
             AppState.startCandidateWristY = 0;
         }
 
+        function resetSwingEndCandidate() {
+            AppState.endCandidateFrames = 0;
+            AppState.endCandidateTimeMs = 0;
+            AppState.endCandidateReason = '';
+            AppState.endCandidatePresentedFrame = 0;
+        }
+
+        function interpolateThresholdTime(previousTimeMs, currentTimeMs, previousValue, currentValue, threshold) {
+            if (![previousTimeMs, currentTimeMs, previousValue, currentValue, threshold].every(Number.isFinite)) return currentTimeMs;
+            const span = currentValue - previousValue;
+            if (Math.abs(span) < 1e-9 || currentTimeMs <= previousTimeMs) return currentTimeMs;
+            const ratio = clamp((threshold - previousValue) / span, 0, 1);
+            return previousTimeMs + (currentTimeMs - previousTimeMs) * ratio;
+        }
+
         function updateSwingStartCandidate(frameTimeMs, legacyVel, wristY, rShoulder) {
             const aboveShoulder = !rShoulder || wristY < rShoulder.y + 0.04;
             const downVelocityOk = AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps;
@@ -6942,7 +6964,18 @@ service cloud.firestore {
                 return null;
             }
             if (!AppState.startCandidateFrames) {
-                AppState.startCandidateTimeMs = frameTimeMs;
+                const canInterpolate = downVelocityOk
+                    && AppState.previousDownVelocityMps < Params.timingStartDownVelocityMps
+                    && AppState.previousSignalFrameTimeMs > 0;
+                AppState.startCandidateTimeMs = canInterpolate
+                    ? interpolateThresholdTime(
+                        AppState.previousSignalFrameTimeMs,
+                        frameTimeMs,
+                        AppState.previousDownVelocityMps,
+                        AppState.currentDownVelocityMps,
+                        Params.timingStartDownVelocityMps
+                    )
+                    : frameTimeMs;
                 AppState.startCandidateWristY = wristY;
             }
             AppState.startCandidateFrames += 1;
@@ -9473,6 +9506,7 @@ service cloud.firestore {
             AppState.swingPreviousFrameTimeMs = 0;
             AppState.swingStartedByDefinition = true;
             resetSwingStartCandidate();
+            resetSwingEndCandidate();
             setTimingStatus('開始OK', '探索中', '---');
         }
 
@@ -11730,30 +11764,66 @@ service cloud.firestore {
                 AppState.swingPeakTimeMs = now;
                 AppState.swingPeakFrameTimeMs = now;
                 AppState.swingPeakPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
+                resetSwingEndCandidate();
                 setTimingStatus('開始OK', msLabel(now - AppState.swingStartTime), '探索中');
             }
-            const dt = AppState.swingPreviousFrameTimeMs ? Math.max((now - AppState.swingPreviousFrameTimeMs) / 1000, 1 / 240) : 1 / Math.max(Params.targetFps, 30);
-            const decel = (AppState.swingPreviousSpeedMps - speed) / dt;
+            const previousSpeed = AppState.swingPreviousSpeedMps;
+            const previousTimeMs = AppState.swingPreviousFrameTimeMs;
+            const dt = previousTimeMs ? Math.max((now - previousTimeMs) / 1000, 1 / 240) : 1 / Math.max(Params.targetFps, 30);
+            const decel = (previousSpeed - speed) / dt;
             AppState.swingPreviousSpeedMps = speed;
             AppState.swingPreviousFrameTimeMs = now;
 
             const oneFrameMs = AppState.frameFps ? 1000 / AppState.frameFps : 1000 / Math.max(Params.targetFps, 30);
             const afterPeak = AppState.swingPeakTimeMs && now - AppState.swingPeakTimeMs >= Math.max(oneFrameMs * 0.8, 4);
             const endByDecel = afterPeak && decel >= Params.timingEndDecelMps2;
-            const endByRatio = afterPeak && AppState.swingPeakSpeedMps > 0 && speed <= AppState.swingPeakSpeedMps * Params.timingEndSpeedRatio;
+            const ratioThreshold = AppState.swingPeakSpeedMps * Params.timingEndSpeedRatio;
+            const endByRatio = afterPeak && AppState.swingPeakSpeedMps > 0 && speed <= ratioThreshold;
             const fallbackEnd = Params.tsukiMode
                 ? (rightAng > 140 && Math.abs(elbowVel) < 2)
                 : (fallbackVel < 0.002 || (rShoulder && wristY > rShoulder.y + 0.2));
             const timedOut = now - AppState.swingStartTime > Params.timingMaxDurationMs;
-            const isImpact = endByDecel || endByRatio || (!speed && fallbackEnd) || timedOut;
+            const endSignal = endByDecel || endByRatio || (!speed && fallbackEnd);
+
+            if (endSignal) {
+                if (!AppState.endCandidateFrames) {
+                    const ratioCrossed = endByRatio && previousTimeMs > 0 && previousSpeed > ratioThreshold;
+                    AppState.endCandidateTimeMs = ratioCrossed
+                        ? interpolateThresholdTime(previousTimeMs, now, previousSpeed, speed, ratioThreshold)
+                        : now;
+                    AppState.endCandidateReason = endByDecel
+                        ? `急減速 ${decel.toFixed(1)}`
+                        : (endByRatio ? '最高速比38%未満' : '停止検出');
+                    AppState.endCandidatePresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
+                }
+                AppState.endCandidateFrames += 1;
+                setTimingStatus(
+                    '開始OK',
+                    msLabel(AppState.swingPeakTimeMs - AppState.swingStartTime),
+                    `終了候補 ${AppState.endCandidateFrames}/${Params.timingEndConsecutiveFrames}`
+                );
+            } else if (!timedOut) {
+                resetSwingEndCandidate();
+            }
+
+            const endConfirmed = AppState.endCandidateFrames >= Params.timingEndConsecutiveFrames;
+            const isImpact = endConfirmed || timedOut;
             if (isImpact) {
-                const reason = endByDecel ? `急減速 ${decel.toFixed(1)}` : (endByRatio ? '最高速比38%未満' : (timedOut ? '上限到達' : '停止検出'));
-                AppState.swingEndFrameTimeMs = now;
-                AppState.swingEndPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
+                const reason = timedOut ? '上限到達' : (AppState.endCandidateReason || '停止検出');
+                AppState.swingEndFrameTimeMs = timedOut ? now : (AppState.endCandidateTimeMs || now);
+                AppState.swingEndPresentedFrame = timedOut
+                    ? (AppState.currentPresentedFrame || AppState.cameraFrameCount || 0)
+                    : (AppState.endCandidatePresentedFrame || AppState.currentPresentedFrame || AppState.cameraFrameCount || 0);
                 AppState.swingEndReason = reason;
                 setTimingStatus('開始OK', msLabel(AppState.swingPeakTimeMs - AppState.swingStartTime), reason);
             }
-            return { isImpact, decel, endTimeMs: now, reason: AppState.swingEndReason };
+            return {
+                isImpact,
+                decel,
+                endTimeMs: isImpact ? AppState.swingEndFrameTimeMs : now,
+                reason: AppState.swingEndReason,
+                endConfirmationFrames: AppState.endCandidateFrames
+            };
         }
 
         function captureReplayFrame() {
@@ -12080,6 +12150,9 @@ service cloud.firestore {
                 realtimeValidationAccepted: realtimeValidation.accepted,
                 realtimeValidationReasons: realtimeValidation.reasons,
                 frameDtMs: metrics.frameDtMs || AppState.frameDtMs || 0,
+                timingResolutionMs: metrics.frameDtMs || AppState.frameDtMs || 0,
+                startConfirmationFrames: Params.timingStartConsecutiveFrames,
+                endConfirmationFrames: metrics.endConfirmationFrames || Params.timingEndConsecutiveFrames,
                 frameSyncMode: AppState.frameSyncMode,
                 poseEngine: AppState.poseEngine,
                 roiStatus: AppState.roiStatus,
@@ -12097,7 +12170,7 @@ service cloud.firestore {
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
-                timingDefinition: '開始=右手首下方向の参考値が閾値を2フレーム継続して超えた最初のフレーム / 終了=右手首ピーク後の急減速またはピーク比38%未満'
+                timingDefinition: '開始=右手首下方向速度が閾値を2フレーム継続して超えた補間時刻 / 終了=最高速後の急減速またはピーク比38%未満を2フレーム確認した最初の補間時刻'
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(24, Math.round((AppState.frameFps || Params.targetFps) * 1.5)));
             record.clipFrames = clipFrames;
@@ -12141,6 +12214,7 @@ service cloud.firestore {
             if (AppState.zanshinTimer) clearTimeout(AppState.zanshinTimer);
             AppState.zanshinBroken = false;
             AppState.swingState = 'ZANSHIN';
+            resetSwingEndCandidate();
             updateStateUI('IDLE');
             AppState.zanshinTimer = setTimeout(() => {
                 document.getElementById('zanshinIndicator')?.classList.add('hidden');
@@ -12663,6 +12737,7 @@ service cloud.firestore {
 	                                endTimeMs,
 	                                peakTimeMs: AppState.swingPeakFrameTimeMs || AppState.swingPeakTimeMs,
 	                                endReason: swingEnd.reason || AppState.swingEndReason,
+	                                endConfirmationFrames: swingEnd.endConfirmationFrames,
 	                                measurementMethod: `${AppState.frameSyncMode} / ${AppState.currentSpeedUnit} / angleQ:${Math.round((AppState.currentAngleQuality || 0) * 100)}%`
 	                            });
 	                        } else {
@@ -12685,6 +12760,9 @@ service cloud.firestore {
                 AppState.previousWristY = wristY;
                 AppState.previousRightAngle = rightAng;
             }
+
+            AppState.previousDownVelocityMps = AppState.currentDownVelocityMps || 0;
+            AppState.previousSignalFrameTimeMs = frameTimeMs;
 
             captureReplayFrame();
 
@@ -13324,7 +13402,10 @@ service cloud.firestore {
             AppState.currentViewQuality = 0;
             AppState.currentWristVelocity3d = { x: 0, y: 0, z: 0 };
             AppState.currentDownVelocityMps = 0;
+            AppState.previousDownVelocityMps = 0;
+            AppState.previousSignalFrameTimeMs = 0;
             resetSwingStartCandidate();
+            resetSwingEndCandidate();
             if (AppState.wristFilter3d) AppState.wristFilter3d.reset();
             AppState.wristFilter3d = new VisibilityAdaptiveFilter3D();
             AppState.tipFilter3d = new VisibilityAdaptiveFilter3D();
