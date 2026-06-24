@@ -4314,7 +4314,7 @@
             <summary>
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i>研究用Excel</h3>
-                    <p class="text-xs text-slate-500 mt-1">学校OneDrive内の自分専用Excelへ、測定データを蓄積します。</p>
+                    <p class="text-xs text-slate-500 mt-1">選択したExcelへ、測定データを蓄積します。</p>
                 </div>
             </summary>
             <div class="disclosure-body">
@@ -4323,9 +4323,9 @@
                     <button id="researchExcelUpdateBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-rotate mr-1"></i>Excelを更新</button>
                     <button id="researchExcelDownloadBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>新規Excelを出力</button>
                     <button id="researchExcelDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>接続解除</button>
-                </div>
+            </div>
             <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
-                <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、学校OneDrive内の <span id="researchExcelTargetName" class="font-black">kendo_research_data_20260618.xlsx</span> を選択してください。</div>
+                <div id="researchExcelStatus" class="research-excel-status">「既存Excelを選ぶ」を押し、更新する <span id="researchExcelTargetName" class="font-black">kendo_research_data_20260618.xlsx</span> を選択してください。</div>
                 <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
                     <input id="researchExcelAutoToggle" type="checkbox" class="rounded border-slate-300">
                     記録保存時に同じExcelを自動更新
@@ -4337,61 +4337,6 @@
                 <p class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2"><i class="fa-solid fa-lock mr-1 text-slate-600"></i>共有リンクなし。自分のExcelだけ更新</p>
             </div>
             <p class="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Excelアプリで同じファイルを開いたままだと更新できない場合があります。測定中は閉じておくのがおすすめです。</p>
-            </div>
-        </details>
-
-        <details class="bg-white rounded-xl shadow-sm border mb-6 overflow-hidden">
-            <summary class="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer">
-                <div>
-                    <h3 class="font-black text-slate-900"><i class="fa-brands fa-microsoft text-blue-600 mr-2"></i>Microsoft OneDrive（詳細設定）</h3>
-                    <p class="text-xs text-slate-500 mt-1">学校アカウントへ直接同期する場合のみ設定します。</p>
-                </div>
-                <span id="microsoftStatusBadge" class="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-black">未接続</span>
-            </summary>
-            <div class="border-t border-slate-200 p-4">
-            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
-                <div>
-                    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px] gap-3">
-                        <div class="research-data-field">
-                            <label for="microsoftClientIdInput">MicrosoftアプリのクライアントID</label>
-                            <input id="microsoftClientIdInput" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-                        </div>
-                        <div class="research-data-field">
-                            <label for="microsoftFileNameInput">OneDriveのファイル名</label>
-                            <input id="microsoftFileNameInput" type="text" maxlength="90" value="kendo_research_data_20260618.xlsx">
-                        </div>
-                    </div>
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <button id="microsoftConnectBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-brands fa-microsoft mr-1"></i>Microsoftに接続</button>
-                        <button id="microsoftSyncBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Excelを作成・更新</button>
-                        <button id="microsoftOpenAppBtn" type="button" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-file-excel mr-1"></i>Excelアプリで開く</button>
-                        <button id="microsoftOpenWebBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>OneDriveで開く</button>
-                        <button id="microsoftShareBtn" type="button" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-link mr-1"></i>閲覧リンクを作成</button>
-                        <button id="microsoftDisconnectBtn" type="button" class="bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-plug-circle-xmark mr-1"></i>接続解除</button>
-                    </div>
-                    <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-700">
-                        <input id="microsoftAutoSyncToggle" type="checkbox" class="rounded border-slate-300">
-                        記録保存時にOneDriveのExcelを自動更新
-                    </label>
-                    <div id="microsoftStatusText" class="research-excel-status mt-3">クライアントIDを設定し、Microsoftに接続してください。パスワードはこのアプリに保存しません。</div>
-                </div>
-                <div class="grid grid-cols-1 gap-2 text-xs">
-                    <div class="bg-slate-50 border rounded-lg p-3"><span class="text-slate-500 font-bold">Microsoftアカウント</span><div id="microsoftAccountLabel" class="mt-1 font-black text-slate-900 break-all">---</div></div>
-                    <div class="bg-slate-50 border rounded-lg p-3"><span class="text-slate-500 font-bold">OneDriveファイル</span><div id="microsoftFileLabel" class="mt-1 font-black text-slate-900 break-all">---</div></div>
-                    <div class="bg-slate-50 border rounded-lg p-3"><span class="text-slate-500 font-bold">最終同期</span><div id="microsoftLastSyncLabel" class="mt-1 font-black text-slate-900">---</div></div>
-                    <details class="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                        <summary class="cursor-pointer font-black text-blue-800">初回設定</summary>
-                        <ol class="mt-3 list-decimal pl-5 space-y-1 text-blue-900">
-                            <li>Microsoft EntraでSPAアプリを登録</li>
-                            <li>委任権限 <code>Files.ReadWrite</code> と <code>User.Read</code> を追加</li>
-                            <li>下のURLをSPAリダイレクトURIへ登録</li>
-                            <li>クライアントIDを入力して接続</li>
-                        </ol>
-                        <div id="microsoftRedirectUriLabel" class="mt-3 rounded bg-white border border-blue-100 p-2 font-mono text-[10px] break-all">---</div>
-                    </details>
-                </div>
-            </div>
-            <p class="mt-3 text-[11px] text-slate-500">閲覧リンクは読み取り専用です。学校の管理者設定により外部共有できない場合があります。</p>
             </div>
         </details>
 
@@ -9475,7 +9420,6 @@ service cloud.firestore {
             safeStorageSet('kendoRecords', JSON.stringify(compact));
             if (options.skipSync) return;
             scheduleResearchExcelAutoUpdate();
-            scheduleMicrosoftExcelAutoUpdate();
         }
 
         function setTimingStatus(start = AppState.timingStartStatus, peak = AppState.timingPeakStatus, end = AppState.timingEndStatus) {
@@ -19321,11 +19265,6 @@ service cloud.firestore {
                 console.warn('保存履歴を読み込めませんでした', err);
                 AppState.records = [];
             }
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', restoreMicrosoftOneDrive, { once: true });
-        } else {
-            restoreMicrosoftOneDrive();
         }
         AppState.firebaseAutoSync = safeStorageGet('kendoFirebaseAutoSync') === '1';
         updateFirebaseConfigUi();
