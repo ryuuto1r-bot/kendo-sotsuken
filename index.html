@@ -4075,6 +4075,8 @@
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">Δt / FPS</span><div id="precisionFrameDt" class="font-bold text-slate-800 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">実測 カメラ / AI</span><div id="precisionMeasuredFps" class="font-bold text-blue-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">欠落 / 間引き</span><div id="precisionDroppedFrames" class="font-bold text-amber-700 font-mono-num">0 / 0</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">フレーム由来誤差</span><div id="precisionTimingUncertainty" class="font-bold text-indigo-700 font-mono-num">---</div></div>
+	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">AI処理時間</span><div id="precisionInferenceLatency" class="font-bold text-violet-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">検証状態</span><div id="precisionValidationState" class="font-bold text-slate-800">待機</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">手首信頼度</span><div id="precisionVisibility" class="font-bold text-emerald-700 font-mono-num">---</div></div>
 	                        <div class="bg-slate-50 rounded border border-slate-100 p-2"><span class="text-slate-500">カメラ</span><div id="precisionCameraStatus" class="font-bold text-slate-800">自動選択（内蔵/既定カメラ）</div></div>
@@ -5924,11 +5926,17 @@ service cloud.firestore {
             currentFrameTimeMs: 0,
             lastFrameTimeMs: 0,
             lastAnalysisFrameTimeMs: 0,
+            analysisScheduleNextMs: 0,
+            analysisScheduleTargetFps: 0,
             skippedAnalysisFrames: 0,
             cameraFrameCount: 0,
             aiFrameCount: 0,
             cameraFrameTimes: [],
             aiFrameTimes: [],
+            poseInferenceDurations: [],
+            frameTimestampSource: '',
+            lastCameraTimestampMs: NaN,
+            frameTimestampFallbacks: 0,
             currentPresentedFrame: 0,
             lastPresentedFrame: 0,
             droppedCameraFrames: 0,
@@ -6829,18 +6837,32 @@ service cloud.firestore {
             return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
         }
 
-        function getFrameTimestampMs(now, metadata) {
-            const candidates = [
-                metadata && Number.isFinite(metadata.mediaTime) ? metadata.mediaTime * 1000 : NaN,
-                metadata && Number.isFinite(metadata.presentationTime) ? metadata.presentationTime : NaN,
-                metadata && Number.isFinite(metadata.expectedDisplayTime) ? metadata.expectedDisplayTime : NaN,
-                now
-            ];
-            const selected = candidates.find(value => Number.isFinite(value));
-            if (!Number.isFinite(selected)) return performance.now();
-            if (AppState.lastFrameTimeMs && selected <= AppState.lastFrameTimeMs) {
-                return AppState.lastFrameTimeMs + Math.max(1000 / Math.max(Params.targetFps, 30), 1);
+        function getFrameTimestampMs(now, metadata = {}) {
+            const sources = {
+                captureTime: Number(metadata.captureTime),
+                mediaTime: Number.isFinite(metadata.mediaTime) ? metadata.mediaTime * 1000 : NaN,
+                presentationTime: Number(metadata.presentationTime),
+                expectedDisplayTime: Number(metadata.expectedDisplayTime),
+                callbackTime: Number(now)
+            };
+            if (!AppState.frameTimestampSource) {
+                AppState.frameTimestampSource = ['captureTime', 'mediaTime', 'presentationTime', 'expectedDisplayTime', 'callbackTime']
+                    .find(key => Number.isFinite(sources[key])) || 'callbackTime';
             }
+
+            const previous = Number(AppState.lastCameraTimestampMs);
+            let selected = sources[AppState.frameTimestampSource];
+            if (!Number.isFinite(selected) || (Number.isFinite(previous) && selected <= previous)) {
+                const frameRate = Number(AppState.cameraSettings?.frameRate || Params.cameraStableFps || Params.targetFps || 60);
+                const presentedAdvance = Number.isFinite(metadata.presentedFrames) && AppState.lastPresentedFrame > 0
+                    ? Math.max(1, metadata.presentedFrames - AppState.lastPresentedFrame)
+                    : 1;
+                selected = Number.isFinite(previous)
+                    ? previous + (1000 / Math.max(1, frameRate)) * presentedAdvance
+                    : (Number.isFinite(sources.callbackTime) ? sources.callbackTime : performance.now());
+                AppState.frameTimestampFallbacks += 1;
+            }
+            AppState.lastCameraTimestampMs = selected;
             return selected;
         }
 
@@ -6855,6 +6877,67 @@ service cloud.firestore {
             if (!Array.isArray(list) || list.length < 2) return 0;
             const elapsed = Number(list[list.length - 1]) - Number(list[0]);
             return elapsed > 0 ? (list.length - 1) * 1000 / elapsed : 0;
+        }
+
+        function trackRollingMetric(list, value, maxLength = 90) {
+            if (!Array.isArray(list) || !Number.isFinite(value)) return;
+            list.push(value);
+            while (list.length > maxLength) list.shift();
+        }
+
+        function percentile(values, ratio) {
+            const sorted = (values || []).filter(Number.isFinite).sort((a, b) => a - b);
+            if (!sorted.length) return 0;
+            const index = clamp((sorted.length - 1) * ratio, 0, sorted.length - 1);
+            const lower = Math.floor(index);
+            const upper = Math.ceil(index);
+            if (lower === upper) return sorted[lower];
+            return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+        }
+
+        function realtimeTimingQuality() {
+            const times = AppState.aiFrameTimes || [];
+            const intervals = [];
+            for (let i = 1; i < times.length; i++) {
+                const delta = Number(times[i]) - Number(times[i - 1]);
+                if (Number.isFinite(delta) && delta > 0 && delta < 250) intervals.push(delta);
+            }
+            if (!intervals.length) {
+                return { medianMs: 0, p90Ms: 0, jitterMs: 0, uncertaintyMs: 0 };
+            }
+            const medianMs = percentile(intervals, 0.5);
+            const deviations = intervals.map(value => Math.abs(value - medianMs));
+            const jitterMs = percentile(deviations, 0.5) * 1.4826;
+            const p90Ms = percentile(intervals, 0.9);
+            return {
+                medianMs,
+                p90Ms,
+                jitterMs,
+                // 開始・終了とも解析フレーム間を補間するため、最大フレーム間隔を保守的な誤差幅とする。
+                uncertaintyMs: Math.ceil(p90Ms + jitterMs)
+            };
+        }
+
+        function shouldAnalyzePoseFrame(frameTimeMs) {
+            const targetFps = clamp(Params.realtimeAnalysisFps || 24, 8, 60);
+            const intervalMs = 1000 / targetFps;
+            const targetChanged = AppState.analysisScheduleTargetFps !== targetFps;
+            const scheduleInvalid = !Number.isFinite(AppState.analysisScheduleNextMs)
+                || AppState.analysisScheduleNextMs <= 0
+                || frameTimeMs < AppState.lastAnalysisFrameTimeMs
+                || frameTimeMs - AppState.analysisScheduleNextMs > intervalMs * 4;
+            if (targetChanged || scheduleInvalid) {
+                AppState.analysisScheduleTargetFps = targetFps;
+                AppState.analysisScheduleNextMs = frameTimeMs;
+            }
+            const toleranceMs = Math.min(1.5, intervalMs * 0.08);
+            if (frameTimeMs + toleranceMs < AppState.analysisScheduleNextMs) return false;
+
+            AppState.lastAnalysisFrameTimeMs = frameTimeMs;
+            do {
+                AppState.analysisScheduleNextMs += intervalMs;
+            } while (AppState.analysisScheduleNextMs <= frameTimeMs + toleranceMs);
+            return true;
         }
 
         function landmarkQuality(...points) {
@@ -9947,15 +10030,22 @@ service cloud.firestore {
 
         function updatePrecisionPanel() {
             safeText('precisionEngineStatus', AppState.poseEngine);
-            safeText('precisionFrameSync', AppState.frameLoopRunning ? `${AppState.frameSyncMode} / AI ${Params.realtimeAnalysisFps}fps` : AppState.frameSyncMode);
+            const timestampSource = AppState.frameTimestampSource
+                ? AppState.frameTimestampSource.replace('Time', '')
+                : '';
+            safeText('precisionFrameSync', AppState.frameLoopRunning ? `${AppState.frameSyncMode}${timestampSource ? ` / ${timestampSource}` : ''}` : AppState.frameSyncMode);
             safeText('precisionSpeed3d', speedLabel(AppState.currentSpeed3d, AppState.currentSpeedUnit));
             safeText('precisionTipSpeed', speedLabel(AppState.currentEstimatedTipSpeed, AppState.currentEstimatedTipUnit));
             safeText('precisionTapeSpeed', Params.tipTracking ? speedLabel(AppState.currentTapeTipSpeed, AppState.currentTapeTipUnit) : 'OFF');
             safeText('precisionFrameDt', AppState.frameDtMs ? `${AppState.frameDtMs.toFixed(2)}ms / ${AppState.frameFps.toFixed(1)}fps` : '---');
             const measuredCameraFps = rollingFrameRate(AppState.cameraFrameTimes);
             const measuredAiFps = rollingFrameRate(AppState.aiFrameTimes);
+            const timingQuality = realtimeTimingQuality();
+            const inferenceP90 = percentile(AppState.poseInferenceDurations || [], 0.9);
             safeText('precisionMeasuredFps', measuredCameraFps ? `${measuredCameraFps.toFixed(1)} / ${measuredAiFps.toFixed(1)}fps` : '---');
             safeText('precisionDroppedFrames', `${AppState.droppedCameraFrames || 0} / ${AppState.skippedAnalysisFrames || 0}`);
+            safeText('precisionTimingUncertainty', timingQuality.uncertaintyMs ? `±${timingQuality.uncertaintyMs} ms` : '---');
+            safeText('precisionInferenceLatency', inferenceP90 ? `${inferenceP90.toFixed(1)} ms` : '---');
             const validationReady = measuredCameraFps >= 50 && measuredAiFps >= 30 && AppState.currentViewQuality >= Params.minViewQuality && AppState.currentAngleQuality >= Params.minAngleVisibility;
             safeText('precisionValidationState', validationReady ? '検証可能' : (AppState.isCameraRunning ? '条件調整中' : '待機'));
             safeText('precisionVisibility', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '---');
@@ -12000,6 +12090,8 @@ service cloud.firestore {
         function buildRealtimeValidationSnapshot(durationMs, metrics = {}) {
             const cameraFps = rollingFrameRate(AppState.cameraFrameTimes);
             const analysisFps = rollingFrameRate(AppState.aiFrameTimes);
+            const timingQuality = realtimeTimingQuality();
+            const inferenceLatencyMs = percentile(AppState.poseInferenceDurations || [], 0.9);
             const visibility = Number(metrics.avgVisibility || AppState.currentWristVisibility || 0);
             const viewQuality = Number(metrics.viewQuality || AppState.currentViewQuality || 0);
             const angleQuality = Number(metrics.angleQuality || AppState.currentAngleQuality || 0);
@@ -12014,6 +12106,7 @@ service cloud.firestore {
             if (visibility < 0.55) reasons.push('手首信頼度不足');
             if (viewQuality < Params.minViewQuality) reasons.push('右腕の重なり');
             if (angleQuality < Params.minAngleVisibility) reasons.push('角度信頼度不足');
+            if (timingQuality.uncertaintyMs > 45) reasons.push(`時間分解能±${timingQuality.uncertaintyMs}ms`);
             if (unprocessedRatio > 0.45) reasons.push(`未処理フレーム${Math.round(unprocessedRatio * 100)}%`);
             if (durationMs < Params.timingMinDurationMs || durationMs > Params.timingMaxDurationMs) reasons.push('打突時間範囲外');
             return {
@@ -12028,6 +12121,12 @@ service cloud.firestore {
                 missedFrames,
                 droppedFrames,
                 unprocessedRatio,
+                timingUncertaintyMs: timingQuality.uncertaintyMs,
+                timingMedianIntervalMs: timingQuality.medianMs,
+                timingJitterMs: timingQuality.jitterMs,
+                inferenceLatencyMs,
+                timestampSource: AppState.frameTimestampSource || '',
+                timestampFallbacks: AppState.frameTimestampFallbacks || 0,
                 frameSyncMode: AppState.frameSyncMode
             };
         }
@@ -12095,6 +12194,12 @@ service cloud.firestore {
                 realtimeValidationReasons: realtimeValidation.reasons,
                 frameDtMs: metrics.frameDtMs || AppState.frameDtMs || 0,
                 timingResolutionMs: metrics.frameDtMs || AppState.frameDtMs || 0,
+                timingUncertaintyMs: realtimeValidation.timingUncertaintyMs,
+                timingMedianIntervalMs: realtimeValidation.timingMedianIntervalMs,
+                timingJitterMs: realtimeValidation.timingJitterMs,
+                inferenceLatencyMs: realtimeValidation.inferenceLatencyMs,
+                timestampSource: realtimeValidation.timestampSource,
+                timestampFallbacks: realtimeValidation.timestampFallbacks,
                 startConfirmationFrames: Params.timingStartConsecutiveFrames,
                 endConfirmationFrames: metrics.endConfirmationFrames || Params.timingEndConsecutiveFrames,
                 frameSyncMode: AppState.frameSyncMode,
@@ -13331,6 +13436,8 @@ service cloud.firestore {
             AppState.frameLoopRunning = true;
             AppState.lastFrameTimeMs = 0;
             AppState.lastAnalysisFrameTimeMs = 0;
+            AppState.analysisScheduleNextMs = 0;
+            AppState.analysisScheduleTargetFps = 0;
             AppState.lastPoseAttemptAt = 0;
             AppState.lastPoseResultAt = 0;
             AppState.skippedAnalysisFrames = 0;
@@ -13338,6 +13445,10 @@ service cloud.firestore {
             AppState.aiFrameCount = 0;
             AppState.cameraFrameTimes = [];
             AppState.aiFrameTimes = [];
+            AppState.poseInferenceDurations = [];
+            AppState.frameTimestampSource = '';
+            AppState.lastCameraTimestampMs = NaN;
+            AppState.frameTimestampFallbacks = 0;
             AppState.currentPresentedFrame = 0;
             AppState.lastPresentedFrame = 0;
             AppState.droppedCameraFrames = 0;
@@ -13409,18 +13520,19 @@ service cloud.firestore {
             const aiReady = AppState.poseLandmarker || pose;
                     drawCameraFrameOnly(aiReady ? '' : '解析準備中 / カメラ映像のみ表示');
             if (aiReady) AppState.lastPoseAttemptAt = performance.now();
-            const minAnalysisInterval = 1000 / clamp(Params.realtimeAnalysisFps || 24, 8, 60);
-            if (aiReady && AppState.lastAnalysisFrameTimeMs && frameTimeMs - AppState.lastAnalysisFrameTimeMs < minAnalysisInterval) {
+            if (aiReady && !shouldAnalyzePoseFrame(frameTimeMs)) {
                 AppState.skippedAnalysisFrames += 1;
                 updatePrecisionPanel();
                 return;
             }
-            AppState.lastAnalysisFrameTimeMs = frameTimeMs;
+            let inferenceStartedAt = 0;
             try {
                 if (AppState.poseLandmarker) {
+                    inferenceStartedAt = performance.now();
                     const taskResult = AppState.poseLandmarker.detectForVideo(videoElement, nextPoseInferenceTimestamp(frameTimeMs));
                     onResults(convertTaskPoseResult(taskResult, frameTimeMs));
                 } else if (pose) {
+                    inferenceStartedAt = performance.now();
                     const legacyAgeMs = performance.now() - (AppState.legacyPoseCreatedAt || 0);
                     const legacyTimeoutMs = legacyAgeMs < 20000 ? 16000 : (isIOSLikeBrowser() || !window.crossOriginIsolated ? 7000 : 5000);
                     await withTimeout(pose.send({ image: videoElement }), legacyTimeoutMs, 'Legacy Pose frame');
@@ -13445,6 +13557,10 @@ service cloud.firestore {
                 }
                 drawCameraFrameOnly('解析準備中 / カメラ映像のみ表示');
                 updatePrecisionPanel();
+            } finally {
+                if (inferenceStartedAt) {
+                    trackRollingMetric(AppState.poseInferenceDurations, performance.now() - inferenceStartedAt);
+                }
             }
         }
 
