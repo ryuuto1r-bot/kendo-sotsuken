@@ -6072,6 +6072,9 @@ service cloud.firestore {
             videoStream: null,
             scanCanvas: null,
             scanCtx: null,
+            mp4BoxModulePromise: null,
+            webCodecsContext: null,
+            webCodecsStatus: '未使用',
             firebaseModules: null,
             firebaseApp: null,
             firebaseAuth: null,
@@ -14747,7 +14750,7 @@ service cloud.firestore {
             card.classList.add(quality);
             const verdict = quality === 'good' ? '良好' : (quality === 'warn' ? '補正推奨' : '条件不足');
             const reason = quality === 'good'
-                ? '条件OK'
+                ? (diag.webCodecs ? `全フレーム時刻取得 / ${diag.webCodecsCodec || 'WebCodecs'}` : '条件OK')
                 : (quality === 'warn'
                     ? (viewQuality > 0 && viewQuality < Params.minViewQuality ? '右腕の重なりを確認' : '補正確認')
                     : '撮影条件を確認');
@@ -14756,7 +14759,9 @@ service cloud.firestore {
             safeText('videoDiagResolution', width && height ? `${width}x${height}` : '---');
             safeText('videoDiagNativeFps', diag.nativeFpsStatus === 'measuring' ? '推定中' : (nativeFps ? `${nativeFps} fps${slowSettings.factor > 1.001 ? ` / 実時間${Math.round(effectiveFps)}fps相当` : ''}` : '---'));
             safeText('videoDiagFps', fps ? `${fps} fps${diag.actualFpsUnknown ? '*' : ''}${slowSettings.factor > 1.001 ? ` / 実時間÷${slowSettings.factor.toFixed(slowSettings.factor % 1 ? 2 : 0)}` : ''}` : '---');
-            safeText('videoDiagFrames', frames ? `${frames}` : '---');
+            safeText('videoDiagFrames', frames
+                ? (diag.webCodecsTotalFrames ? `${frames} / 全${diag.webCodecsTotalFrames}` : `${frames}`)
+                : '---');
             safeText('videoDiagConfidence', confidence ? `${Math.round(confidence * 100)}%${viewQuality ? ` / 腕分離${Math.round(viewQuality * 100)}%` : ''}` : '---');
             safeText('videoDiagUsability', diag.empty ? '---' : verdict);
             const icon = document.getElementById('videoDeviceCheckIcon');
@@ -17200,6 +17205,8 @@ service cloud.firestore {
                 ctx.lineWidth = 4;
                 ctx.lineCap = 'round';
                 for (let i = trailStart + 1; i <= frameIndex; i++) {
+                    if (Number.isFinite(data.frames[i - 1]?.decodeWindowIndex)
+                        && data.frames[i - 1].decodeWindowIndex !== data.frames[i]?.decodeWindowIndex) continue;
                     const prev = data.frames[i - 1]?.landmarks?.[16];
                     const curr = data.frames[i]?.landmarks?.[16];
                     if (!prev || !curr) continue;
@@ -17325,6 +17332,7 @@ service cloud.firestore {
             if (file) {
                 return {
                     type: 'file',
+                    file,
                     url: URL.createObjectURL(file),
                     revocable: true,
                     name: file.name,
@@ -17341,6 +17349,456 @@ service cloud.firestore {
                 };
             }
             return null;
+        }
+
+        async function ensureMp4BoxModule() {
+            if (!window.VideoDecoder || !window.EncodedVideoChunk) {
+                throw new Error('WebCodecs非対応');
+            }
+            if (!AppState.mp4BoxModulePromise) {
+                AppState.mp4BoxModulePromise = import('./vendor/mp4box/mp4box.all.mjs')
+                    .catch(error => {
+                        AppState.mp4BoxModulePromise = null;
+                        throw error;
+                    });
+            }
+            return AppState.mp4BoxModulePromise;
+        }
+
+        function mp4BoxDecoderDescription(MP4Box, mp4File, trackId) {
+            const trackBox = mp4File.getTrackById?.(trackId);
+            const entry = trackBox?.mdia?.minf?.stbl?.stsd?.entries?.[0];
+            const configBox = entry?.avcC || entry?.hvcC || entry?.vpcC || entry?.av1C;
+            if (!configBox || !MP4Box.DataStream) return undefined;
+            const stream = new MP4Box.DataStream(undefined, 0, MP4Box.DataStream.BIG_ENDIAN);
+            configBox.write(stream);
+            const bytes = new Uint8Array(stream.buffer);
+            return bytes.byteLength > 8 ? bytes.slice(8) : undefined;
+        }
+
+        function webCodecsFrameTime(sample) {
+            const timescale = Math.max(1, Number(sample?.timescale || 1));
+            return {
+                timestampUs: Math.round(Number(sample?.cts || 0) * 1e6 / timescale),
+                durationUs: Math.max(1, Math.round(Number(sample?.duration || 0) * 1e6 / timescale))
+            };
+        }
+
+        async function prepareWebCodecsVideo(file, slowSettings) {
+            if (!file) throw new Error('ローカル動画ファイルがありません');
+            const MP4Box = await ensureMp4BoxModule();
+            const fileBuffer = await file.arrayBuffer();
+            fileBuffer.fileStart = 0;
+            return new Promise((resolve, reject) => {
+                const mp4File = MP4Box.createFile();
+                let track = null;
+                let samples = [];
+                let settled = false;
+                const timer = setTimeout(() => fail(new Error('MP4フレーム解析 timeout')), 45000);
+                const fail = error => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    try { mp4File.stop(); } catch (err) {}
+                    reject(error instanceof Error ? error : new Error(String(error || 'MP4解析エラー')));
+                };
+                const finish = async () => {
+                    if (settled || !track || !samples.length) return;
+                    if (track.nb_samples && samples.length < track.nb_samples) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    try { mp4File.stop(); } catch (err) {}
+                    try {
+                        const description = mp4BoxDecoderDescription(MP4Box, mp4File, track.id);
+                        const decoderConfig = {
+                            codec: track.codec,
+                            codedWidth: Number(track.video?.width || track.track_width || 0),
+                            codedHeight: Number(track.video?.height || track.track_height || 0),
+                            hardwareAcceleration: 'prefer-hardware'
+                        };
+                        if (description?.byteLength) decoderConfig.description = description;
+                        const support = await VideoDecoder.isConfigSupported(decoderConfig);
+                        if (!support?.supported) throw new Error(`WebCodecs codec非対応: ${track.codec}`);
+                        samples = samples.map((sample, decodeIndex) => {
+                            const timing = webCodecsFrameTime(sample);
+                            return {
+                                sample,
+                                decodeIndex,
+                                timestampUs: timing.timestampUs,
+                                durationUs: timing.durationUs,
+                                isRap: !!(sample.is_rap ?? sample.is_sync)
+                            };
+                        });
+                        const presentation = [...samples].sort((a, b) => a.timestampUs - b.timestampUs || a.decodeIndex - b.decodeIndex);
+                        const firstTimestampUs = presentation[0].timestampUs;
+                        const lastTimestampUs = presentation[presentation.length - 1].timestampUs;
+                        const playbackDurationSec = Math.max(
+                            0.001,
+                            (lastTimestampUs - firstTimestampUs + presentation[presentation.length - 1].durationUs) / 1e6
+                        );
+                        const nativeFps = presentation.length / playbackDurationSec;
+                        const factor = clamp(Number(slowSettings?.factor || 1), 1, 16);
+                        const frameTable = presentation.map((item, frameIndex) => ({
+                            frameIndex,
+                            decodeIndex: item.decodeIndex,
+                            timestampUs: item.timestampUs,
+                            rawTimeMs: (item.timestampUs - firstTimestampUs) / 1000,
+                            timeMs: ((item.timestampUs - firstTimestampUs) / 1000) / factor,
+                            durationUs: item.durationUs,
+                            keyFrame: item.isRap
+                        }));
+                        resolve({
+                            MP4Box,
+                            track,
+                            samples,
+                            frameTable,
+                            decoderConfig: support.config || decoderConfig,
+                            firstTimestampUs,
+                            nativeFps,
+                            effectiveFps: nativeFps * factor,
+                            slowMotionFactor: factor,
+                            codec: track.codec,
+                            width: decoderConfig.codedWidth,
+                            height: decoderConfig.codedHeight
+                        });
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                mp4File.onError = error => fail(error);
+                mp4File.onReady = info => {
+                    track = info.videoTracks?.[0] || info.tracks?.find(item => item.video);
+                    if (!track) return fail(new Error('動画トラックがありません'));
+                    mp4File.onSamples = (trackId, user, batch) => {
+                        if (trackId !== track.id || !batch?.length) return;
+                        samples.push(...batch);
+                        finish();
+                    };
+                    mp4File.setExtractionOptions(track.id, null, {
+                        nbSamples: Math.min(1000, Math.max(1, Number(track.nb_samples || 1000))),
+                        rapAlignement: false
+                    });
+                    mp4File.start();
+                };
+                try {
+                    mp4File.appendBuffer(fileBuffer);
+                    mp4File.flush();
+                    setTimeout(() => {
+                        if (!settled && track && samples.length) {
+                            if (!track.nb_samples || samples.length >= track.nb_samples) finish();
+                        }
+                    }, 0);
+                } catch (error) {
+                    fail(error);
+                }
+            });
+        }
+
+        function mergeWebCodecsWindows(windows) {
+            const sorted = (windows || [])
+                .filter(window => Number.isFinite(window.startMs) && Number.isFinite(window.endMs) && window.endMs > window.startMs)
+                .sort((a, b) => a.startMs - b.startMs);
+            const merged = [];
+            sorted.forEach(window => {
+                const previous = merged[merged.length - 1];
+                if (previous && window.startMs <= previous.endMs + 1) {
+                    previous.endMs = Math.max(previous.endMs, window.endMs);
+                    previous.labels.push(...(window.labels || []));
+                } else {
+                    merged.push({ ...window, labels: [...(window.labels || [])] });
+                }
+            });
+            return merged;
+        }
+
+        function buildWebCodecsStrikeWindows(data, context) {
+            const factor = videoSlowMotionFactorForData(data);
+            const sourceStartMs = Number(data.sourceStartSec || 0) * 1000;
+            const sourceEndMs = Number(data.sourceEndSec || context.frameTable.at(-1)?.rawTimeMs / 1000 || 0) * 1000;
+            const paddingRawMs = 1000 * factor;
+            const candidates = [
+                ...(data.strikes || []).map((strike, index) => ({ strike, label: `#${index + 1}`, rejected: false })),
+                ...(data.rejectedStrikes || []).map((strike, index) => ({ strike, label: `除外#${index + 1}`, rejected: true }))
+            ];
+            if (!candidates.length && Number.isFinite(data.startFrame) && Number.isFinite(data.endFrame)) {
+                candidates.push({
+                    strike: { startFrame: data.startFrame, peakFrame: data.peakFrame, endFrame: data.endFrame },
+                    label: '#1',
+                    rejected: false
+                });
+            }
+            return mergeWebCodecsWindows(candidates.map(candidate => {
+                const startFrame = data.frames[candidate.strike.startFrame];
+                const endFrame = data.frames[candidate.strike.endFrame];
+                const startRawMs = sourceStartMs + videoRawMsFromFrame(startFrame);
+                const endRawMs = sourceStartMs + videoRawMsFromFrame(endFrame);
+                return {
+                    startMs: Math.max(sourceStartMs, startRawMs - paddingRawMs),
+                    endMs: Math.min(sourceEndMs, endRawMs + paddingRawMs),
+                    labels: [candidate.label]
+                };
+            }));
+        }
+
+        function nearestCoarseVideoFrame(frames, rawTimeMs) {
+            if (!frames?.length) return null;
+            let low = 0;
+            let high = frames.length - 1;
+            while (low < high) {
+                const mid = Math.floor((low + high) / 2);
+                if (videoRawMsFromFrame(frames[mid]) < rawTimeMs) low = mid + 1;
+                else high = mid;
+            }
+            const current = frames[low];
+            const previous = frames[Math.max(0, low - 1)];
+            return Math.abs(videoRawMsFromFrame(previous) - rawTimeMs) <= Math.abs(videoRawMsFromFrame(current) - rawTimeMs)
+                ? previous
+                : current;
+        }
+
+        function nearestFineFrameIndex(frames, rawTimeMs) {
+            if (!frames?.length) return null;
+            let low = 0;
+            let high = frames.length - 1;
+            while (low < high) {
+                const mid = Math.floor((low + high) / 2);
+                if (videoRawMsFromFrame(frames[mid]) < rawTimeMs) low = mid + 1;
+                else high = mid;
+            }
+            const previous = Math.max(0, low - 1);
+            return Math.abs(videoRawMsFromFrame(frames[previous]) - rawTimeMs) <= Math.abs(videoRawMsFromFrame(frames[low]) - rawTimeMs)
+                ? previous
+                : low;
+        }
+
+        function webCodecsDecodeRanges(context, windows, onFrame, onProgress) {
+            const normalizedWindows = mergeWebCodecsWindows(windows);
+            const samples = context.samples;
+            const firstTimestampUs = context.firstTimestampUs;
+            const timestampMeta = new Map();
+            samples.forEach(item => {
+                const list = timestampMeta.get(item.timestampUs) || [];
+                list.push(item);
+                timestampMeta.set(item.timestampUs, list);
+            });
+            const totalTargetFrames = context.frameTable.filter(frame => normalizedWindows.some(window => frame.rawTimeMs >= window.startMs && frame.rawTimeMs <= window.endMs)).length;
+            let completedFrames = 0;
+            const decodedTimestamps = new Set();
+            return (async () => {
+                for (let windowIndex = 0; windowIndex < normalizedWindows.length; windowIndex++) {
+                    const window = normalizedWindows[windowIndex];
+                    const startUs = firstTimestampUs + Math.round(window.startMs * 1000);
+                    const endUs = firstTimestampUs + Math.round(window.endMs * 1000);
+                    const targetSampleIndexes = samples
+                        .map((item, index) => ({ item, index }))
+                        .filter(({ item }) => item.timestampUs >= startUs && item.timestampUs <= endUs)
+                        .map(({ index }) => index);
+                    if (!targetSampleIndexes.length) continue;
+                    let firstSample = Math.min(...targetSampleIndexes);
+                    let lastSample = Math.max(...targetSampleIndexes);
+                    while (firstSample > 0 && !samples[firstSample].isRap) firstSample -= 1;
+                    while (lastSample + 1 < samples.length && !samples[lastSample + 1].isRap) lastSample += 1;
+                    let decodeError = null;
+                    const decoder = new VideoDecoder({
+                        output: frame => {
+                            try {
+                                const rawTimeMs = (Number(frame.timestamp || 0) - firstTimestampUs) / 1000;
+                                if (rawTimeMs + 0.001 < window.startMs || rawTimeMs - 0.001 > window.endMs || decodedTimestamps.has(frame.timestamp)) return;
+                                decodedTimestamps.add(frame.timestamp);
+                                const queue = timestampMeta.get(frame.timestamp) || [];
+                                const meta = queue.shift() || {};
+                                onFrame(frame, {
+                                    ...meta,
+                                    rawTimeMs,
+                                    windowIndex,
+                                    window
+                                });
+                                completedFrames += 1;
+                                if (onProgress) onProgress(completedFrames, Math.max(1, totalTargetFrames));
+                            } catch (error) {
+                                decodeError = error;
+                            } finally {
+                                frame.close();
+                            }
+                        },
+                        error: error => { decodeError = error; }
+                    });
+                    decoder.configure(context.decoderConfig);
+                    for (let sampleIndex = firstSample; sampleIndex <= lastSample; sampleIndex++) {
+                        if (decodeError) break;
+                        const item = samples[sampleIndex];
+                        decoder.decode(new EncodedVideoChunk({
+                            type: item.isRap ? 'key' : 'delta',
+                            timestamp: item.timestampUs,
+                            duration: item.durationUs,
+                            data: item.sample.data
+                        }));
+                        if (decoder.decodeQueueSize > 24) {
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+                    await decoder.flush();
+                    decoder.close();
+                    if (decodeError) throw decodeError;
+                }
+                return completedFrames;
+            })();
+        }
+
+        function mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, number, rejected = false) {
+            const startRawMs = videoRawMsFromFrame(coarseFrames[strike.startFrame]);
+            const peakRawMs = videoRawMsFromFrame(coarseFrames[strike.peakFrame]);
+            const endRawMs = videoRawMsFromFrame(coarseFrames[strike.endFrame]);
+            let startFrame = nearestFineFrameIndex(fineFrames, startRawMs);
+            let peakFrame = nearestFineFrameIndex(fineFrames, peakRawMs);
+            let endFrame = nearestFineFrameIndex(fineFrames, endRawMs);
+            if (![startFrame, peakFrame, endFrame].every(Number.isFinite)) return null;
+            if (endFrame <= startFrame) endFrame = Math.min(fineFrames.length - 1, startFrame + 1);
+            peakFrame = clamp(peakFrame, startFrame, endFrame);
+
+            const tapeCandidates = [];
+            for (let i = startFrame; i <= endFrame; i++) {
+                if (Number(fineFrames[i]?.tapeSpeed || 0) > 0 && Number(fineFrames[i]?.tapeConfidence || 0) > 0) tapeCandidates.push(i);
+            }
+            if (tapeCandidates.length >= 3) {
+                peakFrame = tapeCandidates.reduce((best, index) => (
+                    Number(fineFrames[index].tapeSpeed || 0) > Number(fineFrames[best].tapeSpeed || 0) ? index : best
+                ), tapeCandidates[0]);
+            }
+            const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, number);
+            return {
+                ...summary,
+                manualAdjusted: !!strike.manualAdjusted,
+                savedRecordId: strike.savedRecordId || null,
+                rejected,
+                validationReason: rejected ? (strike.validationReason || strike.reason || '要補正') : 'OK',
+                reason: rejected ? (strike.validationReason || strike.reason || '要補正') : 'OK'
+            };
+        }
+
+        async function refineVideoAnalysisWithWebCodecs(context, data, slowSettings, progress, progressText) {
+            const windows = buildWebCodecsStrikeWindows(data, context);
+            if (!windows.length) return false;
+            const coarseFrames = data.frames;
+            const coarseStrikes = [...(data.strikes || [])];
+            const coarseRejected = [...(data.rejectedStrikes || [])];
+            const fineFrames = [];
+            const canvas = document.createElement('canvas');
+            const maxSide = 960;
+            const scale = Math.min(1, maxSide / Math.max(context.width, context.height));
+            canvas.width = Math.max(1, Math.round(context.width * scale));
+            canvas.height = Math.max(1, Math.round(context.height * scale));
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const tapeFilters = new Map();
+            safeText('videoAnalysisStatus', `高fps二次解析 0/${context.frameTable.length}`);
+            AppState.webCodecsStatus = '二次解析中';
+
+            await webCodecsDecodeRanges(context, windows, (videoFrame, meta) => {
+                const sourceRelativeRawMs = meta.rawTimeMs - Number(data.sourceStartSec || 0) * 1000;
+                if (sourceRelativeRawMs < -0.01) return;
+                const base = nearestCoarseVideoFrame(coarseFrames, sourceRelativeRawMs);
+                if (!base) return;
+                const fine = {
+                    ...base,
+                    index: fineFrames.length,
+                    rawTimeMs: sourceRelativeRawMs,
+                    timeMs: videoCorrectedMs(sourceRelativeRawMs, slowSettings.factor),
+                    decodedFrameIndex: Number(meta.decodeIndex ?? fineFrames.length),
+                    ptsUs: Number(videoFrame.timestamp || meta.timestampUs || 0),
+                    durationUs: Number(videoFrame.duration || meta.durationUs || 0),
+                    decodeWindowIndex: Number(meta.windowIndex || 0),
+                    keyFrame: !!meta.isRap,
+                    tapePoint: null,
+                    tapePosition: null,
+                    tapeSpeed: 0,
+                    tapeConfidence: 0,
+                    tapeRoi: null
+                };
+                ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
+                if (fine.landmarks?.[11] && fine.landmarks?.[12] && fine.landmarks?.[14] && fine.landmarks?.[16]) {
+                    const roi = shinaiRoiCenter(fine.landmarks, canvas.width, canvas.height);
+                    if (roi) {
+                        const shoulderPx = Math.max(40, distance2d(fine.landmarks[11], fine.landmarks[12]) * canvas.width);
+                        const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
+                        fine.tapeRoi = {
+                            x: roi.x / canvas.width,
+                            y: roi.y / canvas.height,
+                            radius: radius / Math.max(canvas.width, canvas.height),
+                            source: roi.source
+                        };
+                        const tapeHit = detectTapeInCanvas(ctx, canvas.width, canvas.height, roi.x, roi.y, radius, Params.tapeColor);
+                        if (tapeHit) {
+                            fine.tapePoint = { x: tapeHit.x / canvas.width, y: tapeHit.y / canvas.height, visibility: 0.85 };
+                            fine.tapeConfidence = Number(tapeHit.quality || 0);
+                            const metric = metricFromFramePoint(tapeHit, fine.landmarks, canvas.width, canvas.height);
+                            if (metric) {
+                                if (!tapeFilters.has(meta.windowIndex)) tapeFilters.set(meta.windowIndex, new VisibilityAdaptiveFilter3D());
+                                const filtered = tapeFilters.get(meta.windowIndex).update(metric, fine.timeMs, 0.85);
+                                fine.tapePosition = filtered.position ? { ...filtered.position } : null;
+                                fine.tapeSpeed = filtered.speed || 0;
+                            }
+                        }
+                    }
+                }
+                fineFrames.push(fine);
+            }, (completed, total) => {
+                const percent = clamp(Math.round((completed / Math.max(1, total)) * 100), 0, 100);
+                if (progress) progress.value = percent;
+                if (progressText) progressText.textContent = `${percent}%`;
+                safeText('videoAnalysisStatus', `高fps二次解析 ${completed}/${total}`);
+            });
+
+            fineFrames.sort((a, b) => a.rawTimeMs - b.rawTimeMs || a.ptsUs - b.ptsUs);
+            fineFrames.forEach((frame, index) => { frame.index = index; });
+            if (fineFrames.length < 2) throw new Error('高fps区間の復号フレームが不足しています');
+
+            data.frames = fineFrames;
+            data.fps = context.effectiveFps;
+            data.webCodecs = {
+                enabled: true,
+                codec: context.codec,
+                nativeFps: context.nativeFps,
+                effectiveFps: context.effectiveFps,
+                totalFrameCount: context.frameTable.length,
+                decodedFrameCount: fineFrames.length,
+                frameTable: context.frameTable,
+                windows
+            };
+            data.timingSource = 'webcodecs-two-pass';
+            data.diagnostics = {
+                ...(data.diagnostics || {}),
+                fps: context.effectiveFps,
+                frames: fineFrames.length,
+                nativeFpsEstimate: context.nativeFps,
+                nativeFpsStatus: 'webcodecs',
+                actualFpsUnknown: false,
+                webCodecs: true,
+                webCodecsMode: 'two-pass',
+                webCodecsCodec: context.codec,
+                webCodecsTotalFrames: context.frameTable.length,
+                webCodecsFullFrameCount: context.frameTable.length,
+                webCodecsDecodedFrames: fineFrames.length,
+                webCodecsDecodedFrameCount: fineFrames.length
+            };
+            data.strikes = coarseStrikes
+                .map((strike, index) => mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, index + 1, false))
+                .filter(Boolean);
+            data.rejectedStrikes = coarseRejected
+                .map((strike, index) => mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, index + 1, true))
+                .filter(Boolean);
+            const mappedStart = Number.isFinite(data.startFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.startFrame])) : null;
+            const mappedPeak = Number.isFinite(data.peakFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.peakFrame])) : null;
+            const mappedEnd = Number.isFinite(data.endFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.endFrame])) : null;
+            data.startFrame = data.manualRange ? 0 : mappedStart;
+            data.peakFrame = mappedPeak;
+            data.endFrame = data.manualRange ? fineFrames.length - 1 : mappedEnd;
+            data.autoStartFrame = data.startFrame;
+            data.autoPeakFrame = mappedPeak;
+            data.autoEndFrame = data.endFrame;
+            normalizeVideoStrikeBuckets(data);
+            updateVideoDiagnostics(data.diagnostics);
+            AppState.webCodecsStatus = 'WebCodecs二段階解析';
+            return true;
         }
 
         async function analyzeUploadedVideo() {
@@ -17397,9 +17855,29 @@ service cloud.firestore {
                 showToast(source.type === 'url' ? 'URL動画を読み込めません。CORS対応URLかファイル読込を使ってください' : '動画を読み込めませんでした', 'red');
                 throw err;
             }
-            const fps = !AppState.poseLandmarker
-                ? Math.min(12, clamp(Params.targetFps || 60, 12, 240))
-                : clamp(Params.targetFps || 60, 30, 240);
+            let webCodecsContext = null;
+            if (source.file && window.VideoDecoder && window.EncodedVideoChunk) {
+                try {
+                    safeText('videoAnalysisStatus', '全フレーム時刻を取得中');
+                    webCodecsContext = await prepareWebCodecsVideo(source.file, slowSettings);
+                    AppState.webCodecsContext = webCodecsContext;
+                    AppState.webCodecsStatus = `準備OK / ${webCodecsContext.codec}`;
+                } catch (webCodecsError) {
+                    AppState.webCodecsContext = null;
+                    AppState.webCodecsStatus = `従来解析へ切替: ${String(webCodecsError?.message || webCodecsError).slice(0, 60)}`;
+                    console.warn('WebCodecsを使用できないため従来解析へ切り替えます', webCodecsError);
+                }
+            } else {
+                AppState.webCodecsContext = null;
+                AppState.webCodecsStatus = source.file ? 'WebCodecs非対応 / 従来解析' : 'URL動画 / 従来解析';
+            }
+            const coarsePhysicalFps = 30;
+            const coarsePlaybackFps = webCodecsContext
+                ? Math.max(1, Math.min(webCodecsContext.nativeFps, coarsePhysicalFps / Math.max(1, slowSettings.factor)))
+                : null;
+            let fps = !AppState.poseLandmarker
+                ? Math.min(12, coarsePlaybackFps || clamp(Params.targetFps || 60, 12, 240))
+                : (coarsePlaybackFps || clamp(Params.targetFps || 60, 30, 240));
             const manualRange = getVideoManualAnalysisRange(video, fps);
             const sourceStartSec = manualRange ? manualRange.startSec : 0;
             const sourceEndSec = manualRange ? manualRange.endSec : Math.min(video.duration || 0, 12);
@@ -17414,14 +17892,19 @@ service cloud.firestore {
                 detectionRate: 0,
                 slowMotionFactor: slowSettings.factor,
                 slowMotionMode: slowSettings.mode,
-                actualFpsUnknown: true
+                actualFpsUnknown: !webCodecsContext,
+                nativeFpsEstimate: webCodecsContext?.nativeFps || null,
+                nativeFpsStatus: webCodecsContext ? 'webcodecs' : 'unknown',
+                webCodecs: !!webCodecsContext,
+                webCodecsCodec: webCodecsContext?.codec || '',
+                webCodecsTotalFrames: webCodecsContext?.frameTable?.length || 0
             });
             Params.officialSpeedSource = 'wrist';
             Params.angleReference = document.getElementById('angleReferenceSelect')?.value || Params.angleReference;
             const filter = new VisibilityAdaptiveFilter3D();
             const tipFilter = new VisibilityAdaptiveFilter3D();
             const tapeFilter = new VisibilityAdaptiveFilter3D();
-            const frames = [];
+            let frames = [];
             const sourceVideoWidth = video.videoWidth || 640;
             const sourceVideoHeight = video.videoHeight || 360;
             const poseInputCanvas = document.createElement('canvas');
@@ -17667,9 +18150,12 @@ service cloud.firestore {
                 detectionRate,
                 viewQuality: avgViewQuality,
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
-                actualFpsUnknown: !(AppState.videoDiagnostics?.nativeFpsEstimate),
-                nativeFpsEstimate: AppState.videoDiagnostics?.nativeFpsEstimate || null,
-                nativeFpsStatus: AppState.videoDiagnostics?.nativeFpsStatus || 'unknown',
+                actualFpsUnknown: !webCodecsContext && !(AppState.videoDiagnostics?.nativeFpsEstimate),
+                nativeFpsEstimate: webCodecsContext?.nativeFps || AppState.videoDiagnostics?.nativeFpsEstimate || null,
+                nativeFpsStatus: webCodecsContext ? 'webcodecs' : (AppState.videoDiagnostics?.nativeFpsStatus || 'unknown'),
+                webCodecs: !!webCodecsContext,
+                webCodecsCodec: webCodecsContext?.codec || '',
+                webCodecsTotalFrames: webCodecsContext?.frameTable?.length || 0,
                 slowMotionFactor: slowSettings.factor,
                 slowMotionMode: slowSettings.mode,
                 captureFps: slowSettings.captureFps,
@@ -17705,6 +18191,36 @@ service cloud.firestore {
             AppState.videoEditUndoStack = [];
             AppState.videoEditRedoStack = [];
             AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
+            if (webCodecsContext && (AppState.videoAnalysis.strikes.length || AppState.videoAnalysis.rejectedStrikes?.length || manualRange)) {
+                try {
+                    const refined = await refineVideoAnalysisWithWebCodecs(
+                        webCodecsContext,
+                        AppState.videoAnalysis,
+                        slowSettings,
+                        progress,
+                        progressText
+                    );
+                    if (refined) {
+                        frames = AppState.videoAnalysis.frames;
+                        fps = AppState.videoAnalysis.fps;
+                        startFrame = AppState.videoAnalysis.startFrame;
+                        peakFrame = AppState.videoAnalysis.peakFrame;
+                        endFrame = AppState.videoAnalysis.endFrame;
+                        startTimeMs = Number.isFinite(startFrame) ? frames[startFrame]?.timeMs ?? null : null;
+                        peakTimeMs = Number.isFinite(peakFrame) ? frames[peakFrame]?.timeMs ?? 0 : 0;
+                        endTimeMs = Number.isFinite(endFrame) ? frames[endFrame]?.timeMs ?? null : null;
+                    }
+                } catch (refinementError) {
+                    AppState.webCodecsStatus = `二次解析失敗 / 一次解析を使用: ${String(refinementError?.message || refinementError).slice(0, 60)}`;
+                    AppState.videoAnalysis.webCodecs = {
+                        enabled: false,
+                        fallbackReason: String(refinementError?.message || refinementError)
+                    };
+                    console.warn('WebCodecs二次解析に失敗したため一次解析結果を使用します', refinementError);
+                }
+            }
+            if (progress) progress.value = 100;
+            if (progressText) progressText.textContent = '100%';
             const shouldUseDetectedStrike = !manualRange && AppState.videoAnalysis.strikes.length && (
                 AppState.videoStrikeMode === 'multi' ||
                 AppState.videoAnalysis.strikes.length > 1 ||
@@ -17809,6 +18325,10 @@ service cloud.firestore {
             csv += `スロー補正倍率,${data.slowMotionFactor || 1}\n`;
             csv += `撮影fps,${data.captureFps || ''}\n`;
             csv += `再生fps,${data.playbackFps || ''}\n`;
+            csv += `解析方式,${data.webCodecs?.enabled ? 'WebCodecs二段階解析' : '従来解析'}\n`;
+            csv += `動画codec,${data.webCodecs?.codec || ''}\n`;
+            csv += `動画全フレーム数,${data.webCodecs?.totalFrameCount || ''}\n`;
+            csv += `高fps解析フレーム数,${data.webCodecs?.decodedFrameCount || ''}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
             csv += `最高速フレーム,${data.peakFrame ?? ''}\n`;
@@ -17828,10 +18348,10 @@ service cloud.firestore {
 	                });
 	                csv += '\n';
 	            }
-	            csv += 'frame,timeMs,rawVideoTimeMs,rightElbow,hasuji,torso,visibility,mark\n';
+	            csv += 'frame,timeMs,rawVideoTimeMs,decodedFrame,ptsUs,durationUs,keyFrame,rightElbow,hasuji,torso,visibility,mark\n';
 	            data.frames.forEach(frame => {
 	                const mark = frame.index === data.startFrame ? 'START' : (frame.index === data.peakFrame ? 'PEAK' : (frame.index === data.endFrame ? 'END' : ''));
-	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${videoRawMsFromFrame(frame).toFixed(3)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${frame.visibility.toFixed(3)},${mark}\n`;
+	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${videoRawMsFromFrame(frame).toFixed(3)},${frame.decodedFrameIndex ?? ''},${frame.ptsUs ?? ''},${frame.durationUs ?? ''},${frame.keyFrame ? 1 : 0},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${Number(frame.visibility || 0).toFixed(3)},${mark}\n`;
 	            });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const link = document.createElement('a');
@@ -17871,6 +18391,9 @@ service cloud.firestore {
                 ['動画fps目安', diag.nativeFpsEstimate ? `${diag.nativeFpsEstimate} fps` : '---'],
                 ['解析fps', `${data.fps} fps${diag.actualFpsUnknown ? ' *ブラウザ上の解析設定値' : ''}`],
                 ['解析フレーム数', data.frames.length],
+                ['解析方式', data.webCodecs?.enabled ? 'WebCodecs二段階解析' : '従来解析'],
+                ['動画codec', data.webCodecs?.codec || '---'],
+                ['動画全フレーム数', data.webCodecs?.totalFrameCount || '---'],
                 ['姿勢検出信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---'],
                 ['検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---'],
                 ['開始フレーム', data.startFrame ?? '---'],
