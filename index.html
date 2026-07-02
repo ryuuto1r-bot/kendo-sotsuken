@@ -3866,6 +3866,182 @@
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
+        /* v169: 動画解析後の表示を、正式測定ダッシュボードとして再構成 */
+        body[data-active-tab="video"][data-video-step="result"] #videoStep-result {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-guide {
+            border-radius: 16px;
+            background: linear-gradient(135deg, #eff6ff, #ffffff 70%);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultSectionNav {
+            position: sticky;
+            top: 76px;
+            z-index: 28;
+            border-radius: 18px;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.10);
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-section-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 38px;
+            border-radius: 12px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-section-btn span {
+            display: inline-grid;
+            place-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.10);
+            font-size: 11px;
+            line-height: 1;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-section-btn.text-white span {
+            background: rgba(255, 255, 255, 0.20);
+        }
+        .video-result-main-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoFormalCandidatePanel {
+            order: 1;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at 0 0, rgba(16, 185, 129, 0.18), transparent 30%),
+                linear-gradient(135deg, #ffffff, #f8fafc 68%);
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.10);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel {
+            order: 2;
+            padding: 16px;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.12), transparent 28%),
+                linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoMultiStrikePanel {
+            order: 3;
+            margin-top: 0 !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoAnalysisResult {
+            order: 4;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoDetailMetricsPanel {
+            order: 5;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoSyncGraphPanel {
+            order: 6;
+            margin-top: 0 !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultSupportDetails {
+            order: 7;
+            margin-top: 0;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoStrikeDefinitionCard,
+        body[data-active-tab="video"][data-video-step="result"] #videoResultAuxPanel,
+        body[data-active-tab="video"][data-video-step="result"] #videoValidityPanel {
+            margin: 0;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-preview-grid {
+            grid-template-columns: minmax(0, 1.85fr) minmax(270px, 330px) !important;
+            align-items: stretch !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-preview-grid > .video-correction-preview {
+            min-height: clamp(420px, 62vh, 780px) !important;
+            height: clamp(420px, 62vh, 780px) !important;
+            max-height: none !important;
+            border-radius: 20px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-controls {
+            display: flex;
+            flex-direction: column;
+            max-height: clamp(420px, 62vh, 780px);
+            overflow: auto;
+            border-radius: 20px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultStrikeNav {
+            order: -2;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-frame-controls {
+            order: -1;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultEditorTimeline {
+            border-radius: 18px;
+            background: #0f172a;
+            color: #e2e8f0;
+            box-shadow: 0 20px 54px rgba(15, 23, 42, 0.16);
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoResultEditorTimeline .video-editor-timebar,
+        body[data-active-tab="video"][data-video-step="result"] #videoResultEditorTimeline .video-editor-lane-labels,
+        body[data-active-tab="video"][data-video-step="result"] #videoResultEditorTimeline .video-editor-status-strip {
+            color: #e2e8f0;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-kpi-grid {
+            grid-template-columns: minmax(220px, 1.35fr) repeat(4, minmax(140px, 1fr)) !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-kpi-card {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            box-shadow: 0 14px 38px rgba(15, 23, 42, 0.06);
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-result-kpi-card.primary {
+            grid-column: auto !important;
+            background: linear-gradient(135deg, #eff6ff, #ffffff 72%);
+            border-color: #bfdbfe;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoDetailMetricsPanel,
+        body[data-active-tab="video"][data-video-step="result"] #videoSyncGraphPanel {
+            border-radius: 22px;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-graph-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-analysis-graph {
+            min-height: 250px;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-analysis-graph canvas {
+            height: 210px !important;
+        }
+        body[data-active-tab="video"][data-video-step="result"] .video-strike-card {
+            grid-template-columns: minmax(74px, 0.18fr) minmax(0, 1fr) minmax(180px, 0.26fr);
+            gap: 14px;
+        }
+        body[data-active-tab="video"][data-video-step="result"] #videoMultiStrikePanel .max-h-\[420px\] {
+            max-height: min(56vh, 620px) !important;
+        }
+        @media (max-width: 1180px) {
+            body[data-active-tab="video"][data-video-step="result"] .video-result-preview-grid,
+            body[data-active-tab="video"][data-video-step="result"] .video-result-kpi-grid,
+            body[data-active-tab="video"][data-video-step="result"] .video-graph-grid {
+                grid-template-columns: 1fr !important;
+            }
+            body[data-active-tab="video"][data-video-step="result"] .video-result-controls {
+                max-height: none;
+            }
+        }
+        @media (max-width: 760px) {
+            body[data-active-tab="video"][data-video-step="result"] #videoResultSectionNav {
+                top: 62px;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            body[data-active-tab="video"][data-video-step="result"] #videoResultSectionNav .ml-auto {
+                margin-left: 0 !important;
+            }
+            body[data-active-tab="video"][data-video-step="result"] .video-result-preview-grid > .video-correction-preview {
+                min-height: 360px !important;
+                height: 56vh !important;
+            }
+            body[data-active-tab="video"][data-video-step="result"] .video-strike-card {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui">
@@ -4751,13 +4927,14 @@ service cloud.firestore {
                 </div>
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
-                <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">次にやること:</span> 動画で選んだ打突を確認し、必要なら補正してから結果を保存します。
+                <div class="video-result-guide rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+                    <span class="font-black">動画解析後の流れ:</span> 1.動画で確認 → 2.打突を選ぶ → 3.開始/終了を補正 → 4.正式結果を保存。
                 </div>
                 <div id="videoResultSectionNav" class="mb-3 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
-                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black">動画確認・打突選択</button>
-                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black">補正</button>
-                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black">結果</button>
+                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black"><span>1</span>動画確認</button>
+                    <button type="button" data-video-section="strikes" class="video-result-section-btn bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black"><span>2</span>打突一覧</button>
+                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black"><span>3</span>補正</button>
+                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><span>4</span>結果</button>
                     <button type="button" data-video-section="report" class="video-result-section-btn bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black">保存</button>
                     <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
@@ -4783,8 +4960,9 @@ service cloud.firestore {
                         </div>
                         <button id="videoSideDrawerCloseBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded text-xs font-black">閉じる</button>
                     </div>
-                    <div id="videoSideDrawerBody" class="space-y-3 mt-3"></div>
-                </aside>
+	                    <div id="videoSideDrawerBody" class="space-y-3 mt-3"></div>
+	                </aside>
+                <div id="videoResultMainStack" class="video-result-main-stack"></div>
                 <div id="videoFormalCandidatePanel" class="video-formal-hero p-4" data-video-result-section="result">
                     <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
                         <div>
@@ -4994,7 +5172,7 @@ service cloud.firestore {
                     <div class="video-result-kpi-card"><span class="video-result-kpi-label">刃筋</span><div id="videoResultHasuji" class="video-result-kpi-value text-amber-700 font-mono-num">---</div></div>
                 </div>
                 <details id="videoResultSupportDetails" class="video-result-support-details" data-video-result-section="preview result">
-                    <summary><i class="fa-solid fa-circle-info mr-1"></i>補助情報・動画確認・グラフ</summary>
+                    <summary><i class="fa-solid fa-circle-info mr-1"></i>測定定義を見る</summary>
                     <div id="videoResultSupportBody" class="video-result-support-body"></div>
                 </details>
                 <div id="videoDetailMetricsPanel" class="rounded-xl border border-slate-200 bg-white p-3" data-video-result-section="result">
@@ -5041,7 +5219,7 @@ service cloud.firestore {
                 <div id="videoMultiStrikePanel" class="hidden mt-4 border border-amber-200 bg-amber-50 rounded-xl p-3" data-video-result-section="preview">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <div>
-                            <h3 class="text-sm font-black text-amber-900"><i class="fa-solid fa-list-ol mr-1"></i>複数打突 自動分割</h3>
+                            <h3 class="text-sm font-black text-amber-900"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</h3>
                             <span class="text-xs text-amber-800">選択 / 補正 / 保存</span>
                         </div>
                         <button id="saveAllVideoStrikesBtn" type="button" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-xs font-black"><i class="fa-solid fa-floppy-disk mr-1"></i>全打突を保存</button>
@@ -6258,14 +6436,24 @@ service cloud.firestore {
             const graph = document.getElementById('videoSyncGraphPanel');
             const formal = document.getElementById('videoFormalCandidatePanel');
             const resultCards = document.getElementById('videoAnalysisResult');
+            const stack = document.getElementById('videoResultMainStack');
             if (!preview || !detail || !graph) return;
             ensureVideoSideDrawer();
             const support = document.getElementById('videoResultSupportDetails');
             const supportBody = document.getElementById('videoResultSupportBody');
-            if (formal && resultCards) formal.after(resultCards);
-            if (support && resultCards) resultCards.after(support);
-            const auxiliaryPanels = [definition, preview, strikes, detail, graph].filter(Boolean);
-            if (supportBody) auxiliaryPanels.forEach(panel => supportBody.appendChild(panel));
+            if (stack) {
+                [formal, preview, strikes, resultCards, detail, graph, support]
+                    .filter(Boolean)
+                    .forEach(panel => stack.appendChild(panel));
+            } else {
+                if (formal && resultCards) formal.after(resultCards);
+                if (support && resultCards) resultCards.after(support);
+            }
+            if (supportBody) {
+                [definition]
+                    .filter(Boolean)
+                    .forEach(panel => supportBody.appendChild(panel));
+            }
         }
 
         function ensureVideoSideDrawer() {
@@ -6302,25 +6490,26 @@ service cloud.firestore {
         }
 
         function setVideoResultView(section = 'preview') {
-            const normalized = section === 'strikes' ? 'preview' : section;
-            const key = ['preview', 'result'].includes(normalized) ? normalized : 'preview';
+            const key = ['preview', 'strikes', 'result'].includes(section) ? section : 'preview';
             AppState.videoResultView = key;
             document.querySelectorAll('[data-video-result-section]').forEach(panel => {
-                const values = (panel.getAttribute('data-video-result-section') || '').split(/\s+/).filter(Boolean);
-                panel.classList.toggle('video-result-section-hidden', !values.includes(key));
+                panel.classList.remove('video-result-section-hidden');
             });
             const supportDetails = document.getElementById('videoResultSupportDetails');
             if (supportDetails) supportDetails.open = false;
             document.querySelectorAll('.video-result-section-btn').forEach(btn => {
-                const target = btn.dataset.videoSection === 'strikes' ? 'preview' : btn.dataset.videoSection;
+                const target = btn.dataset.videoSection;
                 const active = target === key;
                 btn.classList.toggle('bg-slate-800', active);
                 btn.classList.toggle('text-white', active);
                 btn.classList.toggle('bg-white', !active && btn.dataset.videoSection !== 'strikes' && btn.dataset.videoSection !== 'correct' && btn.dataset.videoSection !== 'result');
             });
-            const target = key === 'preview'
-                ? document.getElementById('videoResultSupportDetails') || document.getElementById('videoResultPreviewPanel')
-                : document.getElementById('videoFormalCandidatePanel') || document.querySelector(`[data-video-result-section="${key}"]`);
+            const targetMap = {
+                preview: document.getElementById('videoResultPreviewPanel'),
+                strikes: document.getElementById('videoMultiStrikePanel') || document.getElementById('videoResultStrikeNav'),
+                result: document.getElementById('videoFormalCandidatePanel')
+            };
+            const target = targetMap[key] || document.getElementById('videoResultPreviewPanel');
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -16050,7 +16239,7 @@ service cloud.firestore {
         function updateVideoMultiStrikePanel(data) {
             const panel = document.getElementById('videoMultiStrikePanel');
             if (data?.frames?.length) normalizeVideoStrikeBuckets(data);
-            const shouldShow = AppState.videoStrikeMode === 'multi' || (data?.strikes?.length || 0) > 1 || (data?.rejectedStrikes?.length || 0) > 0;
+	            const shouldShow = !!data?.frames?.length;
             if (panel) panel.classList.toggle('hidden', !shouldShow);
             renderVideoQuickStrikeNav(data);
             if (!data || !shouldShow) {
