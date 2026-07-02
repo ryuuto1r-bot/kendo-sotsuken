@@ -13346,17 +13346,19 @@ service cloud.firestore {
             safeText('precisionCameraStatus', text);
         }
 
-        function cameraFrameRateConstraint(fps, maxFps) {
+        function cameraFrameRateConstraint(fps, maxFps, options = {}) {
             const ideal = Math.max(1, Number(fps || 30));
             const max = Math.max(ideal, Number(maxFps || ideal));
-            return { ideal, max };
+            const constraint = { ideal, max };
+            if (options.requireMin) constraint.min = Math.max(1, Math.min(ideal, max));
+            return constraint;
         }
 
-        function buildCameraVideoConstraints({ deviceId = '', facingMode = '', width = 1280, height = 720, fps = 60, maxFps = fps } = {}) {
+        function buildCameraVideoConstraints({ deviceId = '', facingMode = '', width = 1280, height = 720, fps = 60, maxFps = fps, requireMinFps = false } = {}) {
             const video = {
                 width: { ideal: Math.max(1, Number(width || 1280)) },
                 height: { ideal: Math.max(1, Number(height || 720)) },
-                frameRate: cameraFrameRateConstraint(fps, maxFps)
+                frameRate: cameraFrameRateConstraint(fps, maxFps, { requireMin: requireMinFps })
             };
             if (deviceId) video.deviceId = { exact: deviceId };
             else if (facingMode) video.facingMode = { ideal: facingMode };
@@ -13375,7 +13377,7 @@ service cloud.firestore {
             if (capabilityMax && capabilityMax < desired - 1) return;
             try {
                 await track.applyConstraints({
-                    frameRate: cameraFrameRateConstraint(desired, maxFps)
+                    frameRate: cameraFrameRateConstraint(desired, maxFps, { requireMin: desired > 60 })
                 });
             } catch (err) {
                 console.info('高fps制約の追加適用をスキップしました', err);
@@ -13383,9 +13385,10 @@ service cloud.firestore {
         }
 
         async function requestCameraStreamWithFallback(primaryConstraints) {
-            const candidates = [primaryConstraints];
             const desiredFps = Math.max(1, Number(Params.cameraStableFps || 30));
             const desiredMaxFps = Math.max(desiredFps, Number(Params.cameraMaxFps || desiredFps));
+            const strictHighFps = desiredFps > 60;
+            const candidates = strictHighFps ? [] : [primaryConstraints];
             const facingMode = cameraDefaultFacingMode();
             const highFpsSizes = [
                 [Params.cameraStableWidth || 1280, Params.cameraStableHeight || 720],
@@ -13400,7 +13403,8 @@ service cloud.firestore {
                         width,
                         height,
                         fps: desiredFps,
-                        maxFps: desiredMaxFps
+                        maxFps: desiredMaxFps,
+                        requireMinFps: strictHighFps
                     }));
                 });
                 if (desiredFps > 60) {
@@ -13419,7 +13423,8 @@ service cloud.firestore {
                     width,
                     height,
                     fps: desiredFps,
-                    maxFps: desiredMaxFps
+                    maxFps: desiredMaxFps,
+                    requireMinFps: strictHighFps
                 }));
             });
             if (desiredFps > 60) {
