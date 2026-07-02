@@ -5717,11 +5717,13 @@ service cloud.firestore {
                                 <select id="cameraPerformanceMode" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white font-bold">
                                     <option value="stable">安定 30fps</option>
                                     <option value="precision" selected="">精度優先 60fps</option>
+                                    <option value="iphone120">iPhone 120fps</option>
+                                    <option value="iphone240">iPhone 240fps検証</option>
                                 </select>
                                 <div id="realtimeAnalysisFpsLabel" class="font-black text-slate-900 font-mono-num">24fps</div>
                             </div>
                         </div>
-                        <p class="mt-2 text-[11px] text-slate-500">標準は720p・60fps要求です。実測FPSが落ちる場合だけ「安定」へ切り替えます。</p>
+                        <p class="mt-2 text-[11px] text-slate-500">実測FPSはカメラ・ブラウザ・接続方式で決まります。正式測定は高fps動画解析を使います。</p>
                     </div>
                 </div>
 
@@ -6064,6 +6066,7 @@ service cloud.firestore {
             cameraPerformanceMode: 'precision',
             cameraLabel: '自動選択',
             cameraSettings: null,
+            cameraCapabilities: null,
             landmarkerDiag: '未確認',
             roiStatus: 'OFF',
             lastTapeRoi: null,
@@ -13332,39 +13335,103 @@ service cloud.firestore {
             const track = AppState.videoStream?.getVideoTracks?.()[0];
             const settings = track?.getSettings ? track.getSettings() : {};
             AppState.cameraSettings = settings || null;
+            AppState.cameraCapabilities = track?.getCapabilities?.() || null;
             AppState.cameraLabel = track?.label || document.getElementById('cameraDeviceSelect')?.selectedOptions?.[0]?.textContent || '自動選択';
             const fps = AppState.frameFps || settings.frameRate || 0;
+            const capabilityMaxFps = Number(AppState.cameraCapabilities?.frameRate?.max || 0);
+            const capabilityText = capabilityMaxFps && capabilityMaxFps > fps + 1 ? ` / 上限${capabilityMaxFps.toFixed(0)}fps` : '';
             const modeLabel = cameraPerformanceProfile(AppState.cameraPerformanceMode).label;
-            const text = `${modeLabel} / ${AppState.cameraLabel || 'カメラ'} / ${settings.width || canvasElement.width || '-'}x${settings.height || canvasElement.height || '-'} / ${fps ? fps.toFixed(1) : '-'}fps`;
+            const text = `${modeLabel} / ${AppState.cameraLabel || 'カメラ'} / ${settings.width || canvasElement.width || '-'}x${settings.height || canvasElement.height || '-'} / ${fps ? fps.toFixed(1) : '-'}fps${capabilityText}`;
             safeText('cameraDeviceStatus', text);
             safeText('precisionCameraStatus', text);
         }
 
+        function cameraFrameRateConstraint(fps, maxFps) {
+            const ideal = Math.max(1, Number(fps || 30));
+            const max = Math.max(ideal, Number(maxFps || ideal));
+            return { ideal, max };
+        }
+
+        function buildCameraVideoConstraints({ deviceId = '', facingMode = '', width = 1280, height = 720, fps = 60, maxFps = fps } = {}) {
+            const video = {
+                width: { ideal: Math.max(1, Number(width || 1280)) },
+                height: { ideal: Math.max(1, Number(height || 720)) },
+                frameRate: cameraFrameRateConstraint(fps, maxFps)
+            };
+            if (deviceId) video.deviceId = { exact: deviceId };
+            else if (facingMode) video.facingMode = { ideal: facingMode };
+            return { audio: false, video };
+        }
+
+        async function tryRaiseCameraFrameRate(track) {
+            if (!track?.applyConstraints) return;
+            const desired = Math.max(1, Number(Params.cameraStableFps || 0));
+            const maxFps = Math.max(desired, Number(Params.cameraMaxFps || desired));
+            if (!desired) return;
+            const settings = track.getSettings?.() || {};
+            if (Number(settings.frameRate || 0) >= desired - 1) return;
+            const capabilities = track.getCapabilities?.() || {};
+            const capabilityMax = Number(capabilities.frameRate?.max || 0);
+            if (capabilityMax && capabilityMax < desired - 1) return;
+            try {
+                await track.applyConstraints({
+                    frameRate: cameraFrameRateConstraint(desired, maxFps)
+                });
+            } catch (err) {
+                console.info('高fps制約の追加適用をスキップしました', err);
+            }
+        }
+
         async function requestCameraStreamWithFallback(primaryConstraints) {
             const candidates = [primaryConstraints];
+            const desiredFps = Math.max(1, Number(Params.cameraStableFps || 30));
+            const desiredMaxFps = Math.max(desiredFps, Number(Params.cameraMaxFps || desiredFps));
+            const facingMode = cameraDefaultFacingMode();
+            const highFpsSizes = [
+                [Params.cameraStableWidth || 1280, Params.cameraStableHeight || 720],
+                [1280, 720],
+                [960, 540],
+                [640, 480]
+            ];
             if (AppState.selectedCameraId) {
-                candidates.push({
-                    audio: false,
-                    video: {
-                        deviceId: { exact: AppState.selectedCameraId },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: Math.min(60, Params.cameraStableFps || 30), max: Math.min(60, Params.cameraMaxFps || 60) }
-                    }
+                highFpsSizes.forEach(([width, height]) => {
+                    candidates.push(buildCameraVideoConstraints({
+                        deviceId: AppState.selectedCameraId,
+                        width,
+                        height,
+                        fps: desiredFps,
+                        maxFps: desiredMaxFps
+                    }));
                 });
+                if (desiredFps > 60) {
+                    candidates.push(buildCameraVideoConstraints({
+                        deviceId: AppState.selectedCameraId,
+                        width: 1280,
+                        height: 720,
+                        fps: 60,
+                        maxFps: 60
+                    }));
+                }
             }
-            candidates.push(
-                {
-                    audio: false,
-                    video: {
-                        facingMode: { ideal: cameraDefaultFacingMode() },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: Math.min(60, Params.cameraStableFps || 30), max: Math.min(60, Params.cameraMaxFps || 60) }
-                    }
-                },
-                { audio: false, video: true }
-            );
+            highFpsSizes.forEach(([width, height]) => {
+                candidates.push(buildCameraVideoConstraints({
+                    facingMode,
+                    width,
+                    height,
+                    fps: desiredFps,
+                    maxFps: desiredMaxFps
+                }));
+            });
+            if (desiredFps > 60) {
+                candidates.push(buildCameraVideoConstraints({
+                    facingMode,
+                    width: 1280,
+                    height: 720,
+                    fps: 60,
+                    maxFps: 60
+                }));
+            }
+            candidates.push({ audio: false, video: true });
             let lastError = null;
             for (const constraints of candidates) {
                 try {
@@ -13411,6 +13478,8 @@ service cloud.firestore {
                 video: videoConstraints
             };
             AppState.videoStream = await requestCameraStreamWithFallback(constraints);
+            const activeTrack = AppState.videoStream.getVideoTracks?.()[0];
+            await tryRaiseCameraFrameRate(activeTrack);
             videoElement.srcObject = AppState.videoStream;
             videoElement.muted = true;
             videoElement.playsInline = true;
