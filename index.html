@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja"><head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>剣道 非接触打突分析 ver.9</title>
     <meta name="description" content="MediaPipe Poseを使った剣道の非接触打突分析ツール">
     <meta name="theme-color" content="#0f172a">
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v162';
+            var version = 'v172';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -4042,7 +4042,7 @@
                 grid-template-columns: 1fr;
             }
         }
-        /* v170: 通常利用モード。複雑な研究・編集・3D機能は一旦画面から外し、測定に集中する。 */
+        /* v170: 通常利用モード。研究用の補助画面は隠すが、動画確認に必要な編集・3D・グラフは維持する。 */
         body.measurement-simple #tabBtn-analysis,
         body.measurement-simple #tabBtn-data,
         body.measurement-simple #tabBtn-model,
@@ -4055,41 +4055,8 @@
         body.measurement-simple #videoResultAuxPanel,
         body.measurement-simple #videoResultSupportDetails,
         body.measurement-simple #videoValidityPanel,
-        body.measurement-simple #videoDetailMetricsPanel,
-        body.measurement-simple #videoSyncGraphPanel,
-        body.measurement-simple #videoResultOpen3DBtn,
-        body.measurement-simple #videoOpen3DFrameBtn,
-        body.measurement-simple #videoResultFullscreenBtn,
-        body.measurement-simple #videoCorrectionFullscreenBtn,
-        body.measurement-simple #videoCorrectionFullscreenTopBtn,
-        body.measurement-simple #videoExitFullscreenBtn,
-        body.measurement-simple #videoResultSplitStrikeBtn,
-        body.measurement-simple #videoResultMergePrevStrikeBtn,
-        body.measurement-simple #videoResultMergeNextStrikeBtn,
-        body.measurement-simple #videoResultUndoEditBtn,
-        body.measurement-simple #videoResultRedoEditBtn,
-        body.measurement-simple #videoEditorSplitBtn,
-        body.measurement-simple #videoEditorUndoBtn,
-        body.measurement-simple #videoEditorRedoBtn,
-        body.measurement-simple #videoSplitStrikeBtn,
-        body.measurement-simple #videoMergePrevStrikeBtn,
-        body.measurement-simple #videoMergeNextStrikeBtn,
-        body.measurement-simple #videoUndoEditBtn,
-        body.measurement-simple #videoRedoEditBtn,
-        body.measurement-simple #videoDetailSplitStrikeBtn,
-        body.measurement-simple #videoDetailMergePrevStrikeBtn,
-        body.measurement-simple #videoDetailMergeNextStrikeBtn,
-        body.measurement-simple #videoDetailUndoEditBtn,
-        body.measurement-simple #videoDetailRedoEditBtn,
-        body.measurement-simple #videoGraphZoomBtn,
-        body.measurement-simple #videoGraphFullscreenBtn,
         body.measurement-simple .video-editor-shortcuts,
         body.measurement-simple .video-editor-tool-strip,
-        body.measurement-simple .video-manual-edit-bar,
-        body.measurement-simple .video-fullscreen-entry-card,
-        body.measurement-simple .video-fullscreen-mode-tabs,
-        body.measurement-simple #videoFullscreenActiveStrip,
-        body.measurement-simple #videoFullscreenStrikePanel,
         body.measurement-simple .settings-advanced,
         body.measurement-simple .settings-tuning {
             display: none !important;
@@ -4109,30 +4076,11 @@
         body.measurement-simple #videoResultSectionNav {
             justify-content: flex-start;
         }
-        body.measurement-simple #videoResultSectionNav .video-result-section-btn[data-video-section="preview"]::after {
-            content: "・補正";
-        }
-        body.measurement-simple #videoResultSectionNav .video-result-section-btn[data-video-section="correct"],
-        body.measurement-simple #videoResultSectionNav .video-result-section-btn[data-video-section="report"] {
-            display: none !important;
-        }
         body.measurement-simple #videoResultPreviewPanel {
             box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
         }
         body.measurement-simple .video-result-preview-grid {
             grid-template-columns: minmax(0, 1fr) minmax(250px, 300px) !important;
-        }
-        body.measurement-simple .video-result-controls .grid > button:not(#videoResultSlowPlayBtn):not(#videoResultPlayRangeBtn):not(#videoResultMarkStartBtn):not(#videoResultMarkEndBtn):not(#videoResultPrevFrameBtn):not(#videoResultNextFrameBtn):not(#videoResultJumpStartBtn):not(#videoResultJumpPeakBtn):not(#videoResultJumpEndBtn),
-        body.measurement-simple .video-result-controls .grid > select:not(#videoResultSlowRateSelect),
-        body.measurement-simple .video-result-controls .grid > .video-result-help {
-            display: none !important;
-        }
-        body.measurement-simple #videoResultPlaybackScopeSelect {
-            display: none !important;
-        }
-        body.measurement-simple #videoResultEditorTimeline .video-editor-lane-labels,
-        body.measurement-simple #videoResultEditorTimeline .video-editor-status-strip {
-            display: none !important;
         }
         body.measurement-simple .video-result-kpi-grid {
             grid-template-columns: repeat(5, minmax(120px, 1fr)) !important;
@@ -4143,10 +4091,6 @@
         body.measurement-simple #videoMultiStrikePanel {
             background: #ffffff !important;
             border-color: #e2e8f0 !important;
-        }
-        body.measurement-simple #videoMultiStrikePanel .grid.grid-cols-2.md\:grid-cols-7,
-        body.measurement-simple #videoMultiStrikePanel .bg-white.rounded.border {
-            display: none !important;
         }
         body.measurement-simple #videoStrikeJumpButtons {
             margin-bottom: 0 !important;
@@ -4161,6 +4105,388 @@
         @media (max-width: 980px) {
             body.measurement-simple .video-result-preview-grid,
             body.measurement-simple .video-result-kpi-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        /* v171: iPhone利用を優先。狭い画面では動画選択・補正・保存だけに集中する。 */
+        @supports (padding: max(0px)) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+        button,
+        input,
+        select,
+        label {
+            touch-action: manipulation;
+        }
+        @media (max-width: 820px) {
+            body.measurement-simple {
+                background: #f8fafc;
+            }
+            body.measurement-simple nav {
+                position: sticky;
+                top: 0;
+                z-index: 60;
+            }
+            body.measurement-simple .kvc-nav-inner {
+                height: auto !important;
+                min-height: 0;
+                align-items: stretch;
+                flex-direction: column;
+                gap: 8px;
+                padding: 9px 0 8px;
+            }
+            body.measurement-simple .kvc-nav-inner > .flex.items-center {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            body.measurement-simple .kvc-nav-inner .fa-helmet-battle,
+            body.measurement-simple #audioToggleBtn,
+            body.measurement-simple #micRequestBtn {
+                display: none !important;
+            }
+            body.measurement-simple #flipCameraBtn {
+                margin-left: 0 !important;
+                min-height: 34px;
+                padding: 0 10px;
+                font-size: 11px;
+            }
+            body.measurement-simple .kvc-tab-strip {
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 5px;
+                overflow: visible;
+            }
+            body.measurement-simple .kvc-tab-strip .tab-btn,
+            body.measurement-simple .kvc-tab-strip .research-nav-link {
+                min-height: 44px;
+                padding: 6px 4px !important;
+                border-radius: 12px !important;
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                font-size: 10px !important;
+                line-height: 1.15;
+            }
+            body.measurement-simple main {
+                padding: 10px 10px calc(22px + env(safe-area-inset-bottom));
+            }
+            body.measurement-simple .app-section-header,
+            body.measurement-simple .video-page-header {
+                padding: 12px !important;
+                border-radius: 18px !important;
+                margin-bottom: 10px !important;
+            }
+            body.measurement-simple .video-page-header p,
+            body.measurement-simple .video-page-header .flex.flex-wrap.items-center {
+                display: none !important;
+            }
+            body.measurement-simple .video-workflow-tabs {
+                position: sticky;
+                top: 104px;
+                z-index: 45;
+                margin: 0 -4px 10px;
+                padding: 7px;
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.94) !important;
+                backdrop-filter: blur(14px);
+                box-shadow: 0 12px 34px rgba(15, 23, 42, 0.10);
+            }
+            body.measurement-simple .video-workflow-tabs > div {
+                display: grid !important;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 5px;
+            }
+            body.measurement-simple .video-step-btn {
+                min-height: 48px;
+                padding: 6px 4px !important;
+                border-radius: 12px !important;
+                font-size: 10px !important;
+                line-height: 1.2;
+            }
+            body.measurement-simple .video-workflow-layout {
+                display: block !important;
+            }
+            body.measurement-simple .video-workflow-main {
+                padding: 10px !important;
+                border-radius: 18px !important;
+            }
+            body.measurement-simple .video-workflow-main-head,
+            body.measurement-simple #videoDeviceCheckCard,
+            body.measurement-simple .video-file-steps,
+            body.measurement-simple .video-file-drop-note {
+                display: none !important;
+            }
+            body.measurement-simple .video-next-action {
+                min-height: 44px;
+                padding: 11px 12px;
+                border-radius: 16px;
+                font-size: 12px;
+            }
+            body.measurement-simple #videoStepHint {
+                padding: 10px 12px;
+                font-size: 12px;
+                border-radius: 14px;
+            }
+            body.measurement-simple .video-file-pick-card {
+                grid-template-columns: 52px 1fr;
+                min-height: 176px;
+                padding: 18px;
+                border-width: 2px;
+                border-radius: 24px;
+            }
+            body.measurement-simple .video-file-pick-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: 18px;
+            }
+            body.measurement-simple .video-file-pick-action {
+                grid-column: 1 / -1;
+                width: 100%;
+                min-height: 48px;
+                border-radius: 16px;
+                font-size: 14px;
+            }
+            body.measurement-simple .video-file-pick-input {
+                min-height: 54px;
+                border-width: 2px;
+                border-radius: 16px;
+                font-size: 16px;
+                padding: 10px;
+            }
+            body.measurement-simple .video-file-pick-input::file-selector-button,
+            body.measurement-simple .video-file-pick-input::-webkit-file-upload-button {
+                min-height: 38px;
+                padding: 9px 12px;
+                border-radius: 12px;
+                font-size: 14px;
+            }
+            body.measurement-simple #videoStep-mark #analysisVideoElement,
+            body.measurement-simple #videoStep-result .video-result-preview-grid > .video-correction-preview,
+            body.measurement-simple #videoStep-correct .video-correction-preview {
+                min-height: 330px !important;
+                height: min(62svh, 540px) !important;
+                border-radius: 18px !important;
+            }
+            body.measurement-simple .video-editor-command-bar {
+                position: sticky;
+                bottom: calc(8px + env(safe-area-inset-bottom));
+                z-index: 42;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 7px;
+                padding: 8px;
+                border-radius: 18px;
+            }
+            body.measurement-simple .video-editor-command-bar button {
+                min-height: 46px;
+                padding: 8px 6px;
+                font-size: 12px;
+                border-radius: 13px;
+            }
+            body.measurement-simple .video-editor-command-bar .video-speed-chip-group {
+                grid-column: 1 / -1;
+                justify-content: center;
+                overflow-x: auto;
+            }
+            body.measurement-simple .video-editor-command-bar .video-timeline-zoom-control {
+                display: none !important;
+            }
+            body.measurement-simple .video-result-preview-grid {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+            }
+            body.measurement-simple .video-result-controls {
+                position: sticky;
+                bottom: calc(8px + env(safe-area-inset-bottom));
+                z-index: 40;
+                border-radius: 18px !important;
+                max-height: none !important;
+                overflow: visible;
+                background: rgba(248, 250, 252, 0.98) !important;
+                backdrop-filter: blur(12px);
+            }
+            body.measurement-simple .video-result-controls button,
+            body.measurement-simple .video-result-controls select {
+                min-height: 46px;
+                border-radius: 13px !important;
+                font-size: 12px;
+            }
+            body.measurement-simple .video-frame-master-slider {
+                height: 34px;
+            }
+            body.measurement-simple .video-frame-master-slider::-webkit-slider-thumb {
+                width: 30px;
+                height: 30px;
+                margin-top: -13px;
+            }
+            body.measurement-simple .video-result-kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+            }
+            body.measurement-simple .video-result-kpi-card.primary {
+                grid-column: 1 / -1 !important;
+            }
+            body.measurement-simple .video-result-kpi-card {
+                min-height: 86px;
+                border-radius: 18px !important;
+                padding: 12px !important;
+            }
+            body.measurement-simple #videoMultiStrikePanel {
+                border-radius: 18px !important;
+                padding: 12px !important;
+            }
+            body.measurement-simple #videoStrikeJumpButtons {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+            body.measurement-simple #videoStrikeJumpButtons button,
+            body.measurement-simple .video-quick-strike-btn {
+                min-height: 44px;
+                border-radius: 13px;
+            }
+            body.measurement-simple #videoCorrectionEditDock {
+                position: sticky;
+                bottom: calc(8px + env(safe-area-inset-bottom));
+                z-index: 42;
+                border-radius: 18px;
+                padding: 10px;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(14px);
+                box-shadow: 0 18px 46px rgba(15, 23, 42, 0.14);
+            }
+            body.measurement-simple .video-correction-dock-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 7px;
+            }
+            body.measurement-simple .video-correction-dock-card {
+                min-height: 70px;
+                border-radius: 15px;
+            }
+            body.measurement-simple .video-correction-dock-card.duration {
+                grid-column: 1 / -1;
+            }
+            body.measurement-simple .video-correction-dock-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 7px;
+            }
+            body.measurement-simple .video-correction-dock-actions .dock-btn {
+                min-height: 48px;
+                border-radius: 14px !important;
+                font-size: 12px;
+            }
+        }
+        /* v172: 解析後は各打突時間を主役にし、補正は必要な時だけ開く。 */
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoMultiStrikePanel {
+            order: 1 !important;
+            margin-top: 0 !important;
+            border: 1px solid #bfdbfe !important;
+            background: linear-gradient(180deg, #eff6ff 0%, #ffffff 42%) !important;
+            box-shadow: 0 20px 52px rgba(37, 99, 235, 0.10);
+        }
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel {
+            order: 2 !important;
+        }
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoAnalysisResult,
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoFormalCandidatePanel {
+            order: 3 !important;
+        }
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoDetailMetricsPanel {
+            order: 4 !important;
+        }
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoSyncGraphPanel {
+            order: 5 !important;
+        }
+        .video-strike-duration-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .video-strike-duration-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            min-height: 88px;
+            padding: 13px 14px;
+            border: 1px solid #bfdbfe;
+            border-radius: 16px;
+            background: #ffffff;
+            color: #1e3a8a;
+            text-align: left;
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
+            transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+        }
+        .video-strike-duration-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 14px 32px rgba(37, 99, 235, 0.15);
+            transform: translateY(-1px);
+        }
+        .video-strike-duration-card.active {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 34px rgba(37, 99, 235, 0.14);
+        }
+        .video-strike-duration-card.rejected {
+            border-color: #fecaca;
+            background: #fff7f7;
+            color: #991b1b;
+        }
+        .video-strike-duration-card .strike-card-number {
+            display: block;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        .video-strike-duration-card .strike-card-status {
+            display: block;
+            margin-top: 4px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .video-strike-duration-card .strike-card-duration {
+            white-space: nowrap;
+            font-size: clamp(24px, 2.4vw, 34px);
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: 0;
+        }
+        body.measurement-simple #videoMultiStrikePanel .strike-metrics .strike-metric:first-child {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+        body.measurement-simple #videoMultiStrikePanel .strike-metrics .strike-metric:first-child strong {
+            color: #1d4ed8;
+            font-size: 18px;
+        }
+        body.measurement-simple #videoResultSectionNav .video-result-section-btn[data-video-section="correct"] {
+            margin-left: auto;
+        }
+        @media (max-width: 820px) {
+            .video-strike-duration-overview {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 2px 2px 8px;
+            }
+            .video-strike-duration-card {
+                flex: 0 0 min(72vw, 230px);
+                min-height: 84px;
+                scroll-snap-align: start;
+            }
+            body.measurement-simple #videoResultSectionNav .video-result-section-btn[data-video-section="correct"] {
+                margin-left: 0;
+            }
+            body.measurement-simple #videoResultSectionNav {
+                position: static !important;
+            }
+            body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoSyncGraphPanel .video-graph-grid {
                 grid-template-columns: 1fr !important;
             }
         }
@@ -4731,9 +5057,9 @@ service cloud.firestore {
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画を選ぶ</span>
-                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">mp4 / mov に対応しています。</span>
+                        <span class="mt-1 block text-xs text-slate-600 leading-relaxed">iPhoneは写真またはファイルから選べます。</span>
                     </span>
-                    <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>ファイルを選択</span>
+                    <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>写真/ファイルを選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ" onchange="window.handleVideoFileInputChange && window.handleVideoFileInputChange(this)">
                     <div class="video-file-steps" aria-hidden="true">
                         <div class="video-file-step">1. 動画を選ぶ</div>
@@ -5050,13 +5376,13 @@ service cloud.firestore {
                 </div>
                 <div id="videoStep-result" class="video-step-panel space-y-4">
                 <div class="video-result-guide rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
-                    <span class="font-black">動画測定:</span> 動画を確認し、開始/終了を直して、正式結果を保存します。
+                    <span class="font-black">解析完了:</span> まず各打突の時間を確認してください。気になる1本だけ動画で確認・補正できます。
                 </div>
                 <div id="videoResultSectionNav" class="mb-3 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-sm backdrop-blur">
-                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black"><span>1</span>動画確認</button>
-                    <button type="button" data-video-section="strikes" class="video-result-section-btn bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black"><span>2</span>打突を選ぶ</button>
-                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black"><span>3</span>補正</button>
-                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><span>4</span>結果</button>
+                    <button type="button" data-video-section="strikes" class="video-result-section-btn bg-slate-800 text-white px-3 py-2 rounded font-black"><span>1</span>各打突時間</button>
+                    <button type="button" data-video-section="preview" class="video-result-section-btn bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black"><span>2</span>動画・全画面</button>
+                    <button type="button" data-video-section="result" class="video-result-section-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-black"><span>3</span>角度・グラフ</button>
+                    <button type="button" data-video-section="correct" class="video-result-section-btn bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-3 py-2 rounded font-black"><i class="fa-solid fa-sliders"></i>必要なら補正</button>
                     <button type="button" data-video-section="report" class="video-result-section-btn bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded font-black">保存</button>
                     <button id="videoSideDrawerToggle" type="button" class="ml-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded font-black"><i class="fa-solid fa-circle-info mr-1"></i>補助情報</button>
                 </div>
@@ -5341,12 +5667,15 @@ service cloud.firestore {
                 <div id="videoMultiStrikePanel" class="hidden mt-4 border border-amber-200 bg-amber-50 rounded-xl p-3" data-video-result-section="preview">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <div>
-                            <h3 class="text-sm font-black text-amber-900"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</h3>
-                            <span class="text-xs text-amber-800">選択 / 補正 / 保存</span>
+                            <h3 class="text-sm font-black text-blue-950"><i class="fa-solid fa-stopwatch mr-1"></i>各打突の時間</h3>
+                            <span class="text-xs text-blue-800">カードを押すと、その打突の動画へ移動します</span>
                         </div>
                         <button id="saveAllVideoStrikesBtn" type="button" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-xs font-black"><i class="fa-solid fa-floppy-disk mr-1"></i>全打突を保存</button>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-7 gap-2 text-center text-xs mb-3">
+                    <div id="videoStrikeDurationOverview" class="video-strike-duration-overview" aria-label="各打突時間"></div>
+                    <details class="rounded-xl border border-slate-200 bg-white/80 p-2 mb-3">
+                    <summary class="cursor-pointer text-xs font-black text-slate-600">全体の集計を見る</summary>
+                    <div class="grid grid-cols-2 md:grid-cols-7 gap-2 text-center text-xs mt-2">
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">本数</span><div id="videoMultiCount" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均時間</span><div id="videoMultiAvgDuration" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">最速時刻</span><div id="videoMultiTopSpeed" class="font-black font-mono-num text-amber-900">---</div></div>
@@ -5355,6 +5684,7 @@ service cloud.firestore {
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">平均軸</span><div id="videoMultiAvgTorso" class="font-black font-mono-num text-amber-900">---</div></div>
                         <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-700">除外</span><div id="videoMultiRejected" class="font-black font-mono-num text-slate-700">---</div></div>
                     </div>
+                    </details>
                     <div id="videoStrikeJumpButtons" class="flex flex-wrap gap-2 mb-3 text-xs"></div>
                     <div class="video-manual-edit-bar mb-3 text-xs">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -6538,7 +6868,7 @@ service cloud.firestore {
             reorderVideoResultPanels();
             updateVideoStepHint(activeStep);
             if (activeStep === 'result') {
-                setVideoResultView(AppState.videoAnalysis?.frames?.length ? 'preview' : 'result');
+                setVideoResultView(AppState.videoAnalysis?.frames?.length ? 'strikes' : 'result');
                 drawVideoResultGraphs(Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis?.startFrame || 0));
             }
             if (activeStep === 'correct') {
@@ -6564,7 +6894,7 @@ service cloud.firestore {
             const support = document.getElementById('videoResultSupportDetails');
             const supportBody = document.getElementById('videoResultSupportBody');
             if (stack) {
-                [formal, preview, strikes, resultCards, detail, graph, support]
+                [strikes, preview, formal, resultCards, detail, graph, support]
                     .filter(Boolean)
                     .forEach(panel => stack.appendChild(panel));
             } else {
@@ -6611,8 +6941,8 @@ service cloud.firestore {
             setVideoResultView(key);
         }
 
-        function setVideoResultView(section = 'preview') {
-            const key = ['preview', 'strikes', 'result'].includes(section) ? section : 'preview';
+        function setVideoResultView(section = 'strikes') {
+            const key = ['preview', 'strikes', 'result'].includes(section) ? section : 'strikes';
             AppState.videoResultView = key;
             document.querySelectorAll('[data-video-result-section]').forEach(panel => {
                 panel.classList.remove('video-result-section-hidden');
@@ -6631,7 +6961,7 @@ service cloud.firestore {
                 strikes: document.getElementById('videoMultiStrikePanel') || document.getElementById('videoResultStrikeNav'),
                 result: document.getElementById('videoFormalCandidatePanel')
             };
-            const target = targetMap[key] || document.getElementById('videoResultPreviewPanel');
+            const target = targetMap[key] || document.getElementById('videoMultiStrikePanel') || document.getElementById('videoResultPreviewPanel');
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -6646,7 +6976,7 @@ service cloud.firestore {
                 load: hasAnalysis ? '別の動画を選ぶ' : 'PCは動画ファイルを選択、iPhoneは写真アプリから動画を共有して読み込みます。',
                 mark: hasVideo ? (hasManualRange ? '指定した範囲だけを解析できます。' : '動画を動かして、打突開始のコマで開始、打突終了のコマで終了を押します。') : '先に動画を選んでください。',
                 analyze: hasVideo ? (hasManualRange ? '指定範囲を解析します。' : '動画から打突候補を自動分割します。') : '動画未選択',
-                result: hasAnalysis ? '最初に見る数字は、打突時間・ピーク時刻・右肘・体幹・刃筋だけです。補助情報は必要な時だけ開きます。' : 'まだ解析されていません。',
+                result: hasAnalysis ? '各打突時間を比較し、気になる1本を選ぶと動画・角度・グラフを確認できます。補正は必要な時だけ使います。' : 'まだ解析されていません。',
                 correct: hasAnalysis ? '大きい映像を見ながら、開始/終了を1コマ単位で補正します。' : '解析後に補正できます。',
                 report: hasAnalysis ? '保存 / 出力' : '未解析'
             };
@@ -6657,7 +6987,7 @@ service cloud.firestore {
                     load: hasVideo ? '次: 打突を選ぶ' : '動画を選んでください',
                     mark: hasManualRange ? '解析できます' : '次: 打突が始まる位置まで動画を動かして、開始を押してください',
                     analyze: hasManualRange ? '範囲を解析' : '打突を自動分割',
-                    result: hasAnalysis ? '結果を見る' : '未解析',
+                    result: hasAnalysis ? '各打突時間を確認' : '未解析',
                     correct: hasAnalysis ? '確定できます' : '未解析',
                     report: hasAnalysis ? '保存できます' : '未解析'
                 };
@@ -16372,6 +16702,21 @@ service cloud.firestore {
             const strikes = data.strikes || [];
             const rejected = data.rejectedStrikes || [];
             const candidateCount = strikes.length + rejected.length;
+            const durationOverview = document.getElementById('videoStrikeDurationOverview');
+            if (durationOverview) {
+                const overviewSource = strikes.length ? strikes.map((strike, index) => ({ strike, index, rejected: false })) : rejected.map((strike, index) => ({ strike, index, rejected: true }));
+                durationOverview.innerHTML = overviewSource.length ? overviewSource.map(({ strike, index, rejected: isRejected }) => {
+                    const active = index === AppState.videoSelectedStrikeIndex && isRejected === !!AppState.videoSelectedStrikeRejected;
+                    const duration = Number.isFinite(Number(strike.durationMs)) ? `${Math.round(Number(strike.durationMs))} ms` : '---';
+                    const status = isRejected
+                        ? (strike.validationReason || strike.reason || '除外候補')
+                        : (strike.savedRecordId ? '保存済み' : (strike.manualAdjusted ? '補正済み' : '自動測定'));
+                    return `<button type="button" class="video-strike-duration-card ${active ? 'active' : ''} ${isRejected ? 'rejected' : ''}" data-action="select" data-kind="${isRejected ? 'rejected' : 'valid'}" data-index="${index}">
+                        <span><span class="strike-card-number">${isRejected ? '除外候補' : '打突'} #${strike.number || index + 1}</span><span class="strike-card-status">${escapeHtml(status)}</span></span>
+                        <strong class="strike-card-duration font-mono-num">${duration}</strong>
+                    </button>`;
+                }).join('') : '<div class="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm font-bold text-slate-500">打突を検出できませんでした</div>';
+            }
             if (!strikes.length && !rejected.length) {
                 safeText('videoMultiCount', '0本');
                 safeText('videoMultiAvgDuration', '---');
@@ -19848,6 +20193,15 @@ service cloud.firestore {
             const btn = e.target.closest('.video-strike-action');
             if (!btn) return;
             applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'start', { result: true, rejected: btn.dataset.kind === 'rejected' });
+        });
+        const videoStrikeDurationOverview = document.getElementById('videoStrikeDurationOverview');
+        if (videoStrikeDurationOverview) videoStrikeDurationOverview.addEventListener('click', e => {
+            const btn = e.target.closest('.video-strike-duration-card');
+            if (!btn) return;
+            applyVideoStrikeSelection(Number(btn.dataset.index || 0), 'start', {
+                result: true,
+                rejected: btn.dataset.kind === 'rejected'
+            });
         });
         document.querySelectorAll('[data-strike-nav-mode]').forEach(nav => {
             nav.addEventListener('click', e => {
