@@ -4045,10 +4045,8 @@
         /* v170: 通常利用モード。研究用の補助画面は隠すが、動画確認に必要な編集・3D・グラフは維持する。 */
         body.measurement-simple #tabBtn-analysis,
         body.measurement-simple #tabBtn-data,
-        body.measurement-simple #tabBtn-model,
         body.measurement-simple #tab-analysis,
         body.measurement-simple #tab-data,
-        body.measurement-simple #tab-model,
         body.measurement-simple #videoSideDrawerToggle,
         body.measurement-simple #videoSideDrawer,
         body.measurement-simple #videoStrikeDefinitionCard,
@@ -4101,6 +4099,156 @@
         body.measurement-simple #videoStep-correct .video-correction-key-hints,
         body.measurement-simple #videoStep-correct .video-speed-chip-group.light {
             display: none !important;
+        }
+        /* v173: 動画編集は「動画・再生・補正・移動」に絞って、色を操作の意味で統一する。 */
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel .video-editor-command-bar {
+            display: none !important;
+        }
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel:fullscreen .video-editor-command-bar,
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel:-webkit-full-screen .video-editor-command-bar,
+        body.measurement-simple[data-active-tab="video"][data-video-step="result"] #videoResultPreviewPanel.fullscreen-fallback .video-editor-command-bar {
+            display: flex !important;
+        }
+        body.measurement-simple .video-fullscreen-top-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        body.measurement-simple .video-fullscreen-top-actions button {
+            min-height: 38px;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 900;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        body.measurement-simple .video-fullscreen-top-actions .primary {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+        }
+        body.measurement-simple .video-fullscreen-top-actions .model {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            color: #3730a3;
+        }
+        body.measurement-simple .video-control-group-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 1000;
+            letter-spacing: 0;
+        }
+        body.measurement-simple .video-control-group-label::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #2563eb;
+        }
+        body.measurement-simple #videoResultPlaybackScopeSelect {
+            display: none !important;
+        }
+        body.measurement-simple .video-result-controls {
+            background: #ffffff !important;
+            border-color: #dbeafe !important;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08) !important;
+        }
+        body.measurement-simple .video-result-controls .grid.grid-cols-2 {
+            gap: 10px !important;
+        }
+        body.measurement-simple #videoResultSlowPlayBtn,
+        body.measurement-simple #videoResultPlayRangeBtn {
+            min-height: 44px;
+            border-radius: 14px !important;
+        }
+        body.measurement-simple #videoResultSlowPlayBtn {
+            background: #2563eb !important;
+            color: #ffffff !important;
+        }
+        body.measurement-simple #videoResultPlayRangeBtn {
+            background: #ecfdf5 !important;
+            border: 1px solid #bbf7d0 !important;
+            color: #047857 !important;
+        }
+        body.measurement-simple #videoResultMarkStartBtn,
+        body.measurement-simple #videoResultJumpStartBtn {
+            background: #eff6ff !important;
+            border: 1px solid #bfdbfe !important;
+            color: #1d4ed8 !important;
+        }
+        body.measurement-simple #videoResultMarkEndBtn,
+        body.measurement-simple #videoResultJumpEndBtn {
+            background: #fef2f2 !important;
+            border: 1px solid #fecaca !important;
+            color: #b91c1c !important;
+        }
+        body.measurement-simple #videoResultJumpPeakBtn {
+            background: #fffbeb !important;
+            border: 1px solid #fde68a !important;
+            color: #92400e !important;
+        }
+        body.measurement-simple #videoResultPrevFrameBtn,
+        body.measurement-simple #videoResultNextFrameBtn {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #334155 !important;
+        }
+        body.measurement-simple #videoResultOpen3DBtn {
+            background: #eef2ff !important;
+            border: 1px solid #c7d2fe !important;
+            color: #3730a3 !important;
+        }
+        body.measurement-simple #videoResultFullscreenBtn {
+            min-height: 46px;
+            border-radius: 14px !important;
+            background: #0f172a !important;
+            color: #ffffff !important;
+        }
+        body.measurement-simple .video-result-edit-panel {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            padding: 0 !important;
+            overflow: hidden;
+        }
+        body.measurement-simple .video-result-edit-panel > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 12px;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        body.measurement-simple .video-result-edit-panel > summary::-webkit-details-marker {
+            display: none;
+        }
+        body.measurement-simple .video-result-edit-panel > summary::after {
+            content: "開く";
+            color: #64748b;
+            font-size: 10px;
+        }
+        body.measurement-simple .video-result-edit-panel[open] > summary::after {
+            content: "閉じる";
+        }
+        body.measurement-simple .video-result-edit-panel .video-result-edit-body {
+            padding: 0 12px 12px;
+        }
+        body.measurement-simple .video-result-frame-controls {
+            border-radius: 16px !important;
+            border-color: #bfdbfe !important;
+            background: #f8fbff !important;
         }
         @media (max-width: 980px) {
             body.measurement-simple .video-result-preview-grid,
@@ -4156,7 +4304,7 @@
             body.measurement-simple .kvc-tab-strip {
                 width: 100%;
                 display: grid !important;
-                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 5px;
                 overflow: visible;
             }
@@ -4602,7 +4750,7 @@
                             <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
                         </div>
                         <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] transition transform hover:scale-105">
-                            <i class="fa-solid fa-play mr-2"></i> 稽古開始
+                            <i class="fa-solid fa-play mr-2"></i> 開始
                         </button>
                     </div>
 
@@ -5473,7 +5621,10 @@ service cloud.firestore {
                 <div id="videoResultPreviewPanel" class="video-analysis-fullscreen rounded-xl border border-slate-200 bg-white p-3" data-video-result-section="preview">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-circle-play text-indigo-500 mr-1"></i>動画確認</h3>
-                        <span class="text-[11px] text-slate-500">開始/終了をここで確認</span>
+                        <div class="video-fullscreen-top-actions">
+                            <button id="videoResultOpen3DTopBtn" type="button" class="model"><i class="fa-solid fa-person-rays mr-1"></i>3D角度</button>
+                            <button id="videoResultFullscreenTopBtn" type="button" class="primary"><i class="fa-solid fa-expand mr-1"></i>全画面で編集</button>
+                        </div>
                     </div>
                     <div class="video-editor-command-bar mb-3">
                         <button id="videoEditorPlayToggleBtn" type="button"><i class="fa-solid fa-play mr-1"></i>再生</button>
@@ -5523,8 +5674,9 @@ service cloud.firestore {
                         </div>
                         <div class="video-result-controls control-color-soft rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs">
                             <div class="grid grid-cols-2 gap-2">
-                                <button id="videoResultSlowPlayBtn" type="button" class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i> 解析再生</button>
-                                <button id="videoResultPlayRangeBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i>開始〜終了だけ再生</button>
+                                <div class="video-control-group-label col-span-2"><i class="fa-solid fa-play"></i>再生</div>
+                                <button id="videoResultSlowPlayBtn" type="button" class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i> 再生 / 停止</button>
+                                <button id="videoResultPlayRangeBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-repeat mr-1"></i>開始〜終了だけ再生</button>
                                 <select id="videoResultSlowRateSelect" class="col-span-2 border border-slate-200 rounded px-2 py-2 bg-white font-bold">
                                     <option value="0.1">0.1x</option>
                                     <option value="0.125">0.125x</option>
@@ -5543,6 +5695,7 @@ service cloud.firestore {
                                     </div>
                                     <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
                                 </div>
+                                <div class="video-control-group-label col-span-2"><i class="fa-solid fa-pen-to-square"></i>1コマ補正</div>
                                 <div class="video-result-frame-controls col-span-2 rounded-lg border border-blue-100 bg-white p-2">
                                     <div class="flex items-center justify-between gap-2 mb-1">
                                         <span class="font-black text-blue-700"><i class="fa-solid fa-clapperboard mr-1"></i>全フレーム確認</span>
@@ -5551,10 +5704,11 @@ service cloud.firestore {
                                     <input id="videoResultFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
                                     <div id="videoResultFrameDetail" class="mt-1 text-[11px] text-slate-500 font-mono-num">1コマ確認</div>
                                     <div class="grid grid-cols-2 gap-2 mt-2">
-                                        <button id="videoResultMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag mr-1"></i>現在を開始</button>
-                                        <button id="videoResultMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>現在を終了</button>
+                                        <button id="videoResultMarkStartBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag mr-1"></i>開始にする</button>
+                                        <button id="videoResultMarkEndBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>終了にする</button>
                                     </div>
                                 </div>
+                                <div class="video-control-group-label col-span-2"><i class="fa-solid fa-forward-step"></i>移動</div>
                                 <button id="videoResultPrevFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 戻る</button>
                                 <button id="videoResultNextFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold">進む <i class="fa-solid fa-forward-step"></i></button>
                                 <button id="videoResultJumpStartBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded font-bold">開始へ</button>
@@ -5563,19 +5717,16 @@ service cloud.firestore {
                                 <button id="videoResultOpen3DBtn" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-person-rays mr-1"></i>3D</button>
                                 <button id="videoResultFullscreenBtn" type="button" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>全画面分析</button>
                             </div>
-                            <div class="video-result-edit-panel">
-                                <div class="flex items-center justify-between gap-2 mb-2">
-                                    <span class="font-black text-indigo-700"><i class="fa-solid fa-scissors mr-1"></i>プレビュー編集</span>
-                                    <span class="text-[10px] text-slate-500">全画面中も操作可</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
+                            <details class="video-result-edit-panel">
+                                <summary><span><i class="fa-solid fa-scissors mr-1"></i>分割・統合・戻す</span><span>必要な時だけ</span></summary>
+                                <div class="video-result-edit-body grid grid-cols-2 gap-2">
                                     <button id="videoResultSplitStrikeBtn" type="button" class="video-detail-edit-btn peak"><i class="fa-solid fa-scissors mr-1"></i>ここで分割</button>
                                     <button id="videoResultMergePrevStrikeBtn" type="button" class="video-detail-edit-btn">前と統合</button>
                                     <button id="videoResultMergeNextStrikeBtn" type="button" class="video-detail-edit-btn">次と統合</button>
                                     <button id="videoResultUndoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
                                     <button id="videoResultRedoEditBtn" type="button" class="video-detail-edit-btn col-span-2"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
                                 </div>
-                            </div>
+                            </details>
                             <div class="video-result-help text-[11px] text-slate-600 bg-white border border-slate-100 rounded p-2">
                                 開始 / 終了 / 分割 / 統合
                             </div>
@@ -19975,8 +20126,10 @@ service cloud.firestore {
         if (videoResultUndoEditBtn) videoResultUndoEditBtn.addEventListener('click', undoVideoEdit);
         const videoResultRedoEditBtn = document.getElementById('videoResultRedoEditBtn');
         if (videoResultRedoEditBtn) videoResultRedoEditBtn.addEventListener('click', redoVideoEdit);
-        const videoResultOpen3DBtn = document.getElementById('videoResultOpen3DBtn');
-        if (videoResultOpen3DBtn) videoResultOpen3DBtn.addEventListener('click', openCurrentVideoFrameInModel);
+        ['videoResultOpen3DBtn', 'videoResultOpen3DTopBtn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', openCurrentVideoFrameInModel);
+        });
         const videoFormalEditBtn = document.getElementById('videoFormalEditBtn');
         if (videoFormalEditBtn) videoFormalEditBtn.addEventListener('click', () => {
             if (!AppState.videoAnalysis?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
@@ -19986,9 +20139,11 @@ service cloud.firestore {
                 tool: 'select'
             });
         });
-        const videoResultFullscreenBtn = document.getElementById('videoResultFullscreenBtn');
-        if (videoResultFullscreenBtn) videoResultFullscreenBtn.addEventListener('click', () => {
-            requestElementFullscreen(document.getElementById('videoResultPreviewPanel'));
+        ['videoResultFullscreenBtn', 'videoResultFullscreenTopBtn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', () => {
+                requestElementFullscreen(document.getElementById('videoResultPreviewPanel'));
+            });
         });
         const videoCorrectionFullscreenBtn = document.getElementById('videoCorrectionFullscreenBtn');
         if (videoCorrectionFullscreenBtn) videoCorrectionFullscreenBtn.addEventListener('click', () => {
