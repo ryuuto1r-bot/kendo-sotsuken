@@ -1,4 +1,5 @@
-const CACHE_NAME = 'kendo-virtual-coach-mediapipe-precision-v168';
+const BUILD_ID = new URL(self.location.href).searchParams.get('build') || 'development';
+const CACHE_NAME = `kendo-virtual-coach-${BUILD_ID}`;
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,6 +10,7 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icon.svg',
   './assets/app-tailwind.css?v=162',
+  './video-editor-runtime.js?v=20260717r1',
   './vendor/fontawesome/css/all.min.css',
   './vendor/mp4box/mp4box.all.mjs',
   './vendor/mp4box/rolldown-runtime-w6R9maHv.mjs',
