@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v179';
+            var version = 'v180';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -17780,6 +17780,90 @@ service cloud.firestore {
             return NaN;
         }
 
+        function refineTapeStrikeStartByTipHeight(data, window, speeds = []) {
+            const frames = data?.frames || [];
+            if (!frames.length || !window || !Number.isInteger(window.peakFrame)) return null;
+            const fps = videoEffectiveTimingFps(data, data.fps || Params.targetFps || 60);
+            const peakFrame = clamp(window.peakFrame, 0, frames.length - 1);
+            const yValues = frames.map((_, index) => videoTapeYNear(frames, index, 2));
+            const smoothY = yValues.map((value, index) => {
+                let sum = 0;
+                let count = 0;
+                for (let offset = -2; offset <= 2; offset++) {
+                    const sample = Number(yValues[index + offset]);
+                    if (!Number.isFinite(sample)) continue;
+                    sum += sample;
+                    count += 1;
+                }
+                return count ? sum / count : Number(value);
+            });
+
+            // 振り下ろしピークの直前で、竹刀先端が最も高いコマを探す。
+            const topSearchStart = Math.max(0, peakFrame - Math.max(18, Math.round(fps * 0.78)));
+            const topSearchEnd = Math.max(topSearchStart, peakFrame - Math.max(2, Math.round(fps * 0.035)));
+            let topFrame = -1;
+            let topY = Infinity;
+            for (let i = topSearchStart; i <= topSearchEnd; i++) {
+                const y = Number(smoothY[i]);
+                if (!Number.isFinite(y)) continue;
+                if (y < topY) {
+                    topY = y;
+                    topFrame = i;
+                }
+            }
+            if (topFrame < 0) return null;
+
+            // その頂点より前で、竹刀先端が最も低いコマを下の構え候補とする。
+            const bottomSearchStart = Math.max(0, topFrame - Math.max(24, Math.round(fps * 1.25)));
+            const bottomSearchEnd = Math.max(bottomSearchStart, topFrame - Math.max(3, Math.round(fps * 0.07)));
+            let bottomFrame = -1;
+            let bottomY = -Infinity;
+            for (let i = bottomSearchStart; i <= bottomSearchEnd; i++) {
+                const y = Number(smoothY[i]);
+                if (!Number.isFinite(y)) continue;
+                if (y >= bottomY) {
+                    bottomY = y;
+                    bottomFrame = i;
+                }
+            }
+            const verticalTravel = bottomY - topY;
+            if (bottomFrame < 0 || !Number.isFinite(verticalTravel) || verticalTravel < 0.065) return null;
+
+            const motionSpeeds = speeds.length === frames.length
+                ? speeds.map(value => Math.max(0, Number(value) || 0))
+                : frames.map(frame => Math.max(0, Number(frame?.officialSpeed ?? frame?.tapeSpeed) || 0));
+            const localPeakSpeed = Math.max(0.001, ...motionSpeeds.slice(bottomSearchStart, peakFrame + 1));
+            const motionThreshold = Math.max(
+                0.12,
+                Number(Params.timingMotionStartTapeSpeedMps || 0.55) * 0.45,
+                localPeakSpeed * 0.045
+            );
+            const activeSpan = Math.max(2, Math.round(fps * 0.025));
+            const onsetSearchStart = Math.max(bottomSearchStart, bottomFrame - Math.round(fps * 0.08));
+            const onsetSearchEnd = Math.min(topFrame - activeSpan, bottomFrame + Math.round(fps * 0.24));
+            const minUpwardTravel = Math.max(0.004, verticalTravel * 0.025);
+            let startFrame = bottomFrame;
+            for (let i = onsetSearchStart; i <= onsetSearchEnd; i++) {
+                const y0 = Number(smoothY[i]);
+                const y1 = Number(smoothY[i + activeSpan]);
+                if (!Number.isFinite(y0) || !Number.isFinite(y1) || y0 - y1 < minUpwardTravel) continue;
+                let activeCount = 0;
+                for (let j = i; j <= i + activeSpan; j++) {
+                    if (Number(motionSpeeds[j] || 0) >= motionThreshold) activeCount += 1;
+                }
+                if (activeCount >= Math.max(2, Math.ceil(activeSpan * 0.5))) {
+                    startFrame = i;
+                    break;
+                }
+            }
+
+            startFrame = clamp(startFrame, 0, Math.max(0, peakFrame - 1));
+            const endFrame = clamp(Number(window.endFrame), peakFrame + 1, frames.length - 1);
+            const durationMs = Number(frames[endFrame]?.timeMs || 0) - Number(frames[startFrame]?.timeMs || 0);
+            if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > videoFormalMaxDurationMs()) return null;
+            return { startFrame, topFrame, bottomFrame, verticalTravel };
+        }
+
         function videoPeakProminence(speeds, index, window) {
             const start = Math.max(0, index - window);
             const end = Math.min(speeds.length - 1, index + window);
@@ -17890,6 +17974,18 @@ service cloud.firestore {
                         }
                     }
                 }
+            }
+
+            // 竹刀角が腕の重なりで不安定な場合も、先端の上下移動から
+            // 下の構えを復元する。現在値より前へ広げる時だけ採用する。
+            const tipHeightStart = refineTapeStrikeStartByTipHeight(
+                data,
+                { startFrame, peakFrame, endFrame: window.endFrame },
+                motionSpeeds
+            );
+            if (tipHeightStart && tipHeightStart.startFrame < startFrame) {
+                startFrame = tipHeightStart.startFrame;
+                if (!Number.isInteger(topFrame)) topFrame = tipHeightStart.topFrame;
             }
 
             // 打ち切りは竹刀角が前方最大角の近傍へ初めて到達したコマとする。
