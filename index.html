@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v181';
+            var version = 'v182';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -18265,7 +18265,13 @@ service cloud.firestore {
             };
             const ordered = [...incomingValid].sort((a, b) => Number(a.startFrame || 0) - Number(b.startFrame || 0));
             ordered.forEach(strike => {
-                const validation = validateVideoStrikeSummary(strike, data);
+                // 下の構えまで開始点を延長した打突は、竹刀検出品質だけを
+                // 既に妥当性確認済みの振り下ろし区間で判定する。
+                // 構えの静止中にテープが数コマ欠けても、正式時間を誤って除外しない。
+                const validationTarget = strike.timingCoreSummary
+                    ? { ...strike.timingCoreSummary, durationMs: strike.durationMs }
+                    : strike;
+                const validation = validateVideoStrikeSummary(validationTarget, data);
                 const overlaps = valid.some(item => strike.startFrame <= item.endFrame && strike.endFrame >= item.startFrame);
                 if (!validation.ok) {
                     pushRejected(strike, validation.reason);
@@ -18436,7 +18442,9 @@ service cloud.firestore {
                                     peakFrame: summary.peakFrame,
                                     peakTimeMs: summary.peakTimeMs,
                                     downwardStartFrame: summary.startFrame,
-                                    startDetection: 'lower-guard-tip-height'
+                                    startDetection: 'lower-guard-tip-height',
+                                    // 全動作の時間と、振り下ろし区間の検出品質を分離して保持する。
+                                    timingCoreSummary: summary
                                 };
                             }
                         }
