@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v182';
+            var version = 'v183';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -18222,6 +18222,15 @@ service cloud.firestore {
             return { startFrame, peakFrame, endFrame };
         }
 
+        function videoStrikeValidationTarget(strike) {
+            if (!strike?.timingCoreSummary) return strike;
+            return {
+                ...strike.timingCoreSummary,
+                // 正式時間の上下限だけは、下の構えからの補正後区間で確認する。
+                durationMs: strike.durationMs
+            };
+        }
+
         function normalizeVideoStrikeBuckets(data) {
             if (!data?.frames?.length) return;
             const incomingValid = Array.isArray(data.strikes) ? data.strikes : [];
@@ -18268,10 +18277,7 @@ service cloud.firestore {
                 // 下の構えまで開始点を延長した打突は、竹刀検出品質だけを
                 // 既に妥当性確認済みの振り下ろし区間で判定する。
                 // 構えの静止中にテープが数コマ欠けても、正式時間を誤って除外しない。
-                const validationTarget = strike.timingCoreSummary
-                    ? { ...strike.timingCoreSummary, durationMs: strike.durationMs }
-                    : strike;
-                const validation = validateVideoStrikeSummary(validationTarget, data);
+                const validation = validateVideoStrikeSummary(videoStrikeValidationTarget(strike), data);
                 const overlaps = valid.some(item => strike.startFrame <= item.endFrame && strike.endFrame >= item.startFrame);
                 if (!validation.ok) {
                     pushRejected(strike, validation.reason);
@@ -18770,17 +18776,19 @@ service cloud.firestore {
             const targetList = AppState.videoSelectedStrikeRejected ? data?.rejectedStrikes : data?.strikes;
             if (!targetList?.length || index === null || index === undefined || !targetList[index]) return;
             if (data.startFrame === null || data.endFrame === null || data.endFrame <= data.startFrame) return;
-            const summary = summarizeVideoStrike(data, data.startFrame, data.peakFrame ?? data.startFrame, data.endFrame, targetList[index].number || index + 1);
+            const previous = targetList[index];
+            const summary = summarizeVideoStrike(data, data.startFrame, data.peakFrame ?? data.startFrame, data.endFrame, previous.number || index + 1);
             if (!summary) return;
-            const validation = validateVideoStrikeSummary(summary, data);
             const updated = {
-                ...targetList[index],
+                ...previous,
                 ...summary,
-                number: targetList[index].number || index + 1,
+                number: previous.number || index + 1,
                 manualAdjusted: true,
-                validationReason: validation.reason,
-                rejected: !validation.ok
             };
+            const validation = validateVideoStrikeSummary(videoStrikeValidationTarget(updated), data);
+            updated.validationReason = validation.reason;
+            updated.validationWarning = validation.warning || '';
+            updated.rejected = !validation.ok;
             if (AppState.videoSelectedStrikeRejected && validation.ok) {
                 data.strikes = data.strikes || [];
                 data.strikes.push({ ...updated, rejected: false, validationReason: 'OK', number: data.strikes.length + 1 });
