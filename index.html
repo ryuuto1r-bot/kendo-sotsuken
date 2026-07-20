@@ -17677,6 +17677,90 @@ service cloud.firestore {
             return Math.max(0, Number(speeds[index] || 0) - (Number.isFinite(valley) ? valley : 0));
         }
 
+        function videoShinaiProgressAngle(frame) {
+            const raw = Number(frame?.hasujiBody ?? frame?.hasuji);
+            if (!Number.isFinite(raw)) return NaN;
+            let angle = Math.abs(raw) % 180;
+            if (angle > 90) angle = 180 - angle;
+            return clamp(angle, 0, 90);
+        }
+
+        function refineTapeStrikeWindowByAngle(data, window) {
+            const frames = data?.frames || [];
+            if (!frames.length || !window) return window;
+            const fps = videoEffectiveTimingFps(data, data.fps || Params.targetFps || 60);
+            const peakFrame = clamp(Number(window.peakFrame || 0), 0, frames.length - 1);
+            const searchBack = Math.max(12, Math.round(fps * 0.34));
+            const searchForward = Math.max(12, Math.round(fps * 0.30));
+            const startLimit = Math.max(0, peakFrame - searchBack);
+            const endLimit = Math.min(frames.length - 1, peakFrame + searchForward);
+            const angles = frames.map(videoShinaiProgressAngle);
+
+            // 振り上げ頂点では竹刀角が小さくなる。直前の低角度区間のうち
+            // ピークに最も近いものを使い、前の打突まで巻き込まない。
+            const lowRuns = [];
+            let run = null;
+            for (let i = startLimit; i < peakFrame; i++) {
+                const angle = angles[i];
+                const usable = Number.isFinite(angle)
+                    && angle <= 35
+                    && Number(frames[i]?.poseConfidence || frames[i]?.visibility || 0) >= 0.28;
+                if (usable) {
+                    if (!run) run = { start: i, end: i, minFrame: i, minAngle: angle };
+                    run.end = i;
+                    if (angle <= run.minAngle + 0.35) {
+                        run.minAngle = Math.min(run.minAngle, angle);
+                        run.minFrame = i;
+                    }
+                } else if (run) {
+                    lowRuns.push(run);
+                    run = null;
+                }
+            }
+            if (run) lowRuns.push(run);
+
+            const peakAngle = Number.isFinite(angles[peakFrame]) ? angles[peakFrame] : 0;
+            const startRun = [...lowRuns].reverse().find(item => {
+                const leadMs = Number(frames[peakFrame]?.timeMs || 0) - Number(frames[item.minFrame]?.timeMs || 0);
+                return leadMs >= 20 && leadMs <= 320 && peakAngle - item.minAngle >= 18;
+            });
+            // 速度系列で既に早い開始を取れている打突は縮めず、テープ欠落で
+            // 遅れた場合だけ竹刀角の頂点まで開始を広げる。
+            let startFrame = Number(window.startFrame);
+            if (startRun) startFrame = Math.min(startFrame, startRun.minFrame);
+
+            // 打ち切りは竹刀角が前方最大角の近傍へ初めて到達したコマとする。
+            // テープ速度が一瞬欠けても、54msなどの不自然な途中終了を防げる。
+            let maxAngle = -Infinity;
+            for (let i = peakFrame; i <= endLimit; i++) {
+                if (Number.isFinite(angles[i])) maxAngle = Math.max(maxAngle, angles[i]);
+            }
+            let endFrame = Number(window.endFrame);
+            const startAngle = Number.isFinite(angles[startFrame]) ? angles[startFrame] : NaN;
+            if (Number.isFinite(maxAngle) && Number.isFinite(startAngle) && maxAngle - startAngle >= 32) {
+                const targetAngle = Math.max(startAngle + 32, maxAngle - 3.0);
+                const minEndFrame = Math.min(endLimit, peakFrame + Math.max(2, Math.round(fps * 0.035)));
+                for (let i = minEndFrame; i <= endLimit; i++) {
+                    if (Number.isFinite(angles[i]) && angles[i] >= targetAngle) {
+                        // 同様に、速度系列の終了を短くせず、途中終了時だけ広げる。
+                        endFrame = Math.max(endFrame, i);
+                        break;
+                    }
+                }
+            }
+
+            startFrame = clamp(startFrame, 0, Math.max(0, peakFrame - 1));
+            endFrame = clamp(endFrame, Math.min(frames.length - 1, peakFrame + 1), frames.length - 1);
+            const durationMs = Number(frames[endFrame]?.timeMs || 0) - Number(frames[startFrame]?.timeMs || 0);
+            if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > videoFormalMaxDurationMs()) return window;
+            return {
+                startFrame,
+                peakFrame,
+                endFrame,
+                angleRefined: startFrame !== Number(window.startFrame) || endFrame !== Number(window.endFrame)
+            };
+        }
+
         function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, globalPeak) {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
@@ -17756,7 +17840,7 @@ service cloud.firestore {
             }
 
             if (endFrame <= startFrame) endFrame = Math.min(frames.length - 1, startFrame + 1);
-            return { startFrame, peakFrame, endFrame };
+            return refineTapeStrikeWindowByAngle(data, { startFrame, peakFrame, endFrame });
         }
 
         function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
