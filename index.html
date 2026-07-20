@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v180';
+            var version = 'v181';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -17814,7 +17814,7 @@ service cloud.firestore {
             if (topFrame < 0) return null;
 
             // その頂点より前で、竹刀先端が最も低いコマを下の構え候補とする。
-            const bottomSearchStart = Math.max(0, topFrame - Math.max(24, Math.round(fps * 1.25)));
+            const bottomSearchStart = Math.max(0, topFrame - Math.max(24, Math.round(fps * 0.75)));
             const bottomSearchEnd = Math.max(bottomSearchStart, topFrame - Math.max(3, Math.round(fps * 0.07)));
             let bottomFrame = -1;
             let bottomY = -Infinity;
@@ -17974,18 +17974,6 @@ service cloud.firestore {
                         }
                     }
                 }
-            }
-
-            // 竹刀角が腕の重なりで不安定な場合も、先端の上下移動から
-            // 下の構えを復元する。現在値より前へ広げる時だけ採用する。
-            const tipHeightStart = refineTapeStrikeStartByTipHeight(
-                data,
-                { startFrame, peakFrame, endFrame: window.endFrame },
-                motionSpeeds
-            );
-            if (tipHeightStart && tipHeightStart.startFrame < startFrame) {
-                startFrame = tipHeightStart.startFrame;
-                if (!Number.isInteger(topFrame)) topFrame = tipHeightStart.topFrame;
             }
 
             // 打ち切りは竹刀角が前方最大角の近傍へ初めて到達したコマとする。
@@ -18428,7 +18416,32 @@ service cloud.firestore {
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
                 const validation = validateVideoStrikeSummary(summary, data);
                 if (validation.ok) {
-                    segments.push(summary);
+                    let acceptedSummary = summary;
+                    if (Params.officialSpeedSource === 'tape') {
+                        const lowerGuard = refineTapeStrikeStartByTipHeight(
+                            data,
+                            { startFrame: summary.startFrame, peakFrame: summary.peakFrame, endFrame: summary.endFrame },
+                            speeds
+                        );
+                        const previousEnd = segments.length ? Number(segments[segments.length - 1].endFrame || -1) : -1;
+                        const refinedStart = lowerGuard
+                            ? Math.max(previousEnd + 1, Number(lowerGuard.startFrame))
+                            : Number(summary.startFrame);
+                        if (refinedStart >= 0 && refinedStart < summary.startFrame) {
+                            const refined = summarizeVideoStrike(data, refinedStart, summary.peakFrame, summary.endFrame, idx + 1);
+                            if (refined && refined.durationMs <= videoFormalMaxDurationMs()) {
+                                acceptedSummary = {
+                                    ...refined,
+                                    // 候補判定済みの振り下ろしピークは維持する。
+                                    peakFrame: summary.peakFrame,
+                                    peakTimeMs: summary.peakTimeMs,
+                                    downwardStartFrame: summary.startFrame,
+                                    startDetection: 'lower-guard-tip-height'
+                                };
+                            }
+                        }
+                    }
+                    segments.push(acceptedSummary);
                 } else {
                     pushRejection(startFrame, peakFrame, endFrame, validation.reason);
                 }
