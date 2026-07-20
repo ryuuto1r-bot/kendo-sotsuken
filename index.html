@@ -19532,11 +19532,9 @@ service cloud.firestore {
             }
             const nativeFps = Number(context.nativeFps || 0);
             const selectedCaptureFps = Number(document.getElementById('videoAnalysisFpsSelect')?.value || 0);
-            const captureFps = clamp(
-                Number(selectedCaptureFps >= 120 ? selectedCaptureFps : (document.getElementById('videoCaptureFpsInput')?.value || 0)),
-                30,
-                960
-            );
+            // 120/240fpsの明示選択がある場合だけ自動補正する。
+            // 非表示入力の初期値だけで倍率を決めると、120fps素材を240fpsとして扱う危険がある。
+            const captureFps = selectedCaptureFps >= 120 ? clamp(selectedCaptureFps, 120, 960) : NaN;
             if (!Number.isFinite(nativeFps) || nativeFps <= 0 || captureFps < 120 || captureFps <= nativeFps * 1.5) {
                 return { settings: current, autoDetected: false, needsCaptureFps: true };
             }
