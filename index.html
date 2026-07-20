@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v178';
+            var version = 'v179';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -418,6 +418,13 @@
             font-size: 12px;
         }
         .video-correction-empty.hidden { display: none; }
+        @media (max-width: 760px) {
+            body.measurement-simple .video-analysis-fullscreen:not(:fullscreen):not(.fullscreen-fallback) .video-result-controls {
+                position: static !important;
+                bottom: auto !important;
+                z-index: auto !important;
+            }
+        }
         #videoStep-correct .video-correction-preview {
             min-height: min(62vh, 680px);
         }
