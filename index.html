@@ -5105,7 +5105,7 @@
                                 <option value="">自動選択（内蔵/既定カメラ）</option>
                             </select>
 	                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
-	                            <p class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀先端に黄色テープを貼り、画面内にはっきり映してください。</p>
+	                            <p class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
 	                        </div>
                         <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] transition transform hover:scale-105">
                             <i class="fa-solid fa-play mr-2"></i> 開始
@@ -5216,14 +5216,14 @@
 		                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 		                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 		                    <div class="space-y-2 text-xs text-slate-700">
-		                        <p><span class="font-bold text-slate-900">開始:</span> 竹刀先端テープの移動速度が閾値を2フレーム続けて超えた時刻</p>
+		                        <p><span class="font-bold text-slate-900">開始:</span> 検出した竹刀先端の移動速度が閾値を2フレーム続けて超えた時刻</p>
 		                        <p><span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">終了</span><div id="timingEndStatus" class="font-bold">---</div></div>
 	                        </div>
-		                        <p class="text-[11px] text-slate-500">竹刀先端に明るい色テープを貼って測定します。テープを十分に検出できない場合は、手首へ置き換えず測定不可にします。</p>
+		                        <p class="text-[11px] text-slate-500">自動モードは色テープを優先し、ない場合は竹刀本体の連続した直線から剣先を追跡します。どちらも信頼度が不足した場合は、手首へ置き換えず測定不可にします。</p>
 		                    </div>
 		                </div>
 
@@ -5561,7 +5561,7 @@ service cloud.firestore {
 	                <div id="videoStep-load" class="video-step-panel active space-y-3">
 	                <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
 	                    <div class="font-black"><i class="fa-solid fa-crosshairs mr-1"></i>測定基準: 竹刀先端</div>
-	                    <p class="mt-1 leading-relaxed">竹刀先端に選択色のテープを貼り、動画内にはっきり映してください。正式な打突時間はテープの動きから求めます。</p>
+	                    <p class="mt-1 leading-relaxed">竹刀全体を動画内にはっきり映してください。自動モードは先端テープを優先し、ない場合は竹刀本体の直線から剣先を追跡します。</p>
 	                </div>
 	                <div id="videoFilePickCard" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
@@ -5908,7 +5908,7 @@ service cloud.firestore {
                         </div>
                     </div>
                     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
-	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p class="mt-1">竹刀先端テープの移動速度が基準を超えた最初のフレーム。</p></div>
+	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p class="mt-1">検出した竹刀先端の移動速度が基準を超えた最初のフレーム。</p></div>
 	                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">ピーク</span><p class="mt-1">竹刀先端の移動速度が最大になったフレーム。</p></div>
 	                        <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p class="mt-1">竹刀先端のピーク後、速度が十分に低下した最初のフレーム。</p></div>
                         <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-2"><span class="font-black text-emerald-700">正式値</span><p class="mt-1">開始/終了を1コマ単位で補正し、確定した範囲の時間と角度。</p></div>
@@ -6579,8 +6579,15 @@ service cloud.firestore {
             </details>
 
             <details class="compact-disclosure bg-white rounded-xl shadow-sm border" open>
-                <summary><span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-sliders text-lime-600 mr-2"></i>竹刀先端テープ検出</span></summary>
+                <summary><span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-crosshairs text-lime-600 mr-2"></i>竹刀先端検出</span></summary>
                 <div class="disclosure-body space-y-3 text-xs">
+                    <label class="block font-bold text-slate-700">検出方式
+                        <select id="videoShinaiTrackingMode" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
+                            <option value="auto" selected>自動（テープ優先・竹刀本体へ切替）</option>
+                            <option value="tape">先端テープのみ</option>
+                            <option value="shaft">竹刀本体（テープなし）</option>
+                        </select>
+                    </label>
                     <label class="block font-bold text-slate-700">テープ色
                         <select id="videoTapeColorSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
                             <option value="yellow" selected="">黄色テープ</option>
@@ -6609,9 +6616,9 @@ service cloud.firestore {
                         ROIを映像上に表示
                     </label>
                     <div id="videoTapeQualityStatus" class="rounded-lg border border-lime-100 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900">
-                        テープ検出: 未解析
+                        竹刀検出: 未解析
                     </div>
-                    <p class="text-slate-500 leading-relaxed">正式な打突時間は竹刀先端テープから測定します。検出率が不足した場合は測定不可になるため、ROIと色を調整してください。</p>
+                    <p class="text-slate-500 leading-relaxed">自動ではテープを優先し、未検出時だけ竹刀本体の直線と時間的な連続性から剣先を求めます。信頼度が不足した場合は手首へ置き換えず測定不可にします。</p>
                 </div>
             </details>
 
@@ -6896,10 +6903,18 @@ service cloud.firestore {
 	                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
 	                        <label class="flex items-center gap-3 cursor-pointer">
 	                            <input type="checkbox" id="paramTipTracking" checked class="w-5 h-5 text-amber-600 rounded border-gray-300">
-	                            <span class="text-base font-bold text-amber-900">竹刀先端テープ検出</span>
+	                            <span class="text-base font-bold text-amber-900">竹刀先端検出</span>
 	                        </label>
-	                        <p class="text-xs text-amber-700 mt-2 ml-8">竹刀先端に色テープを貼る時だけ使います。</p>
+	                        <p class="text-xs text-amber-700 mt-2 ml-8">テープあり・なしの両方に対応します。自動モードではテープを優先します。</p>
 	                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+	                            <div>
+	                                <label class="block text-xs font-bold text-amber-900 mb-1">検出方式</label>
+	                                <select id="paramShinaiTrackingMode" class="w-full border border-amber-200 rounded px-2 py-2 text-sm bg-white">
+	                                    <option value="auto" selected>自動（推奨）</option>
+	                                    <option value="tape">テープのみ</option>
+	                                    <option value="shaft">竹刀本体のみ</option>
+	                                </select>
+	                            </div>
 	                            <div>
 	                                <label class="block text-xs font-bold text-amber-900 mb-1">テープ色</label>
 	                                <select id="paramTapeColor" class="w-full border border-amber-200 rounded px-2 py-2 text-sm bg-white">
@@ -7085,6 +7100,7 @@ service cloud.firestore {
             poseEngine: '未初期化',
             poseLandmarker: null,
             poseReady: false,
+            poseFileset: null,
             poseInferenceTimeMs: 0,
             tasksVisionLoadPromise: null,
             videoLegacyPose: null,
@@ -7129,19 +7145,28 @@ service cloud.firestore {
             currentWristVisibility: 0,
             tipFilter3d: null,
             tapeFilter3d: null,
+            tapeFilterSource: 'none',
             currentEstimatedTip3d: null,
             currentEstimatedTipSpeed: 0,
             currentEstimatedTipUnit: 'm/s',
             currentTapeTipSpeed: 0,
             currentTapeTipUnit: 'm/s*',
             currentTapeDetected: false,
+            currentShinaiDetected: false,
+            currentShinaiSource: 'none',
             liveTapeMissingFrames: 0,
             previousTapeTipSpeed: 0,
             previousTapeSignalTimeMs: 0,
             swingTapeDetectedFrames: 0,
             swingTapeTotalFrames: 0,
             swingTapeMissingFrames: 0,
+            swingShinaiSourceCounts: { tape: 0, shaft: 0 },
             lastTapePoint: null,
+            lastShinaiPoint: null,
+            lastShinaiQuality: 0,
+            lastShinaiSource: 'none',
+            lastShinaiDetection: null,
+            lastShaftDetection: null,
             swingSamples: [],
             tipSwingSamples: [],
             tapeSwingSamples: [],
@@ -7308,6 +7333,7 @@ service cloud.firestore {
             useNativeVideoLayer: true,
             overlayHoldMs: 1200,
             tipTracking: true,
+            shinaiTrackingMode: 'auto',
             tapeColor: 'yellow',
             shinaiExtension: 2.4,
             tipRoiRatio: 0.12,
@@ -7316,6 +7342,9 @@ service cloud.firestore {
             tapeValueMin: 0.25,
             tapeMinPixels: 8,
             tapeRoiVisible: true,
+            shaftAngleSearchDeg: 40,
+            shaftMinQuality: 0.34,
+            shaftSampleCount: 54,
             officialSpeedSource: 'tape',
             minTapeConfidence: 0.18,
             minTapeHitRate: 0.08,
@@ -7884,6 +7913,7 @@ service cloud.firestore {
             Params.tsukiMode = false;
             Params.usePoseLandmarker = false;
             Params.tipTracking = true;
+            Params.shinaiTrackingMode = 'auto';
             Params.tapeColor = 'yellow';
             Params.shinaiExtension = 2.4;
             Params.tipRoiRatio = 0.12;
@@ -7928,6 +7958,7 @@ service cloud.firestore {
             const guide = document.getElementById('paramShowGuide');
             const useLandmarker = document.getElementById('paramUsePoseLandmarker');
             const tipTracking = document.getElementById('paramTipTracking');
+            const shinaiTrackingMode = document.getElementById('paramShinaiTrackingMode');
             const tapeColor = document.getElementById('paramTapeColor');
             const shinaiExtension = document.getElementById('paramShinaiExtension');
             const angleOverlay = document.getElementById('paramAngleOverlay');
@@ -7943,6 +7974,7 @@ service cloud.firestore {
             const videoAngleOverlay = document.getElementById('videoAngleOverlayToggle');
             const videoAngleOverlaySelect = document.getElementById('videoAngleOverlaySelect');
             const videoTapeColor = document.getElementById('videoTapeColorSelect');
+            const videoShinaiTrackingMode = document.getElementById('videoShinaiTrackingMode');
             const videoTapeRoi = document.getElementById('videoTapeRoiSlider');
             const videoTapeTolerance = document.getElementById('videoTapeToleranceSlider');
             const videoTapeSaturation = document.getElementById('videoTapeSaturationSlider');
@@ -7955,6 +7987,7 @@ service cloud.firestore {
             if (guide) guide.checked = true;
             if (useLandmarker) useLandmarker.checked = true;
             if (tipTracking) tipTracking.checked = true;
+            if (shinaiTrackingMode) shinaiTrackingMode.value = Params.shinaiTrackingMode;
             if (tapeColor) tapeColor.value = 'yellow';
             if (shinaiExtension) { shinaiExtension.value = Params.shinaiExtension; document.getElementById('valShinaiExtension').innerText = Params.shinaiExtension.toFixed(2); }
             if (videoSlowMotion) videoSlowMotion.value = Params.videoSlowMotionMode;
@@ -7974,6 +8007,7 @@ service cloud.firestore {
             const videoHasujiOverlayToggle = document.getElementById('videoHasujiOverlayToggle');
             if (videoHasujiOverlayToggle) videoHasujiOverlayToggle.checked = true;
             if (videoTapeColor) videoTapeColor.value = 'yellow';
+            if (videoShinaiTrackingMode) videoShinaiTrackingMode.value = Params.shinaiTrackingMode;
             if (videoTapeRoi) { videoTapeRoi.value = Params.tipRoiRatio; safeText('videoTapeRoiValue', `${Math.round(Params.tipRoiRatio * 100)}%`); }
             if (videoTapeTolerance) { videoTapeTolerance.value = Params.tapeHueTolerance; safeText('videoTapeToleranceValue', `${Params.tapeHueTolerance}°`); }
             if (videoTapeSaturation) { videoTapeSaturation.value = Params.tapeSaturationMin; safeText('videoTapeSaturationValue', `${Math.round(Params.tapeSaturationMin * 100)}%`); }
@@ -8200,8 +8234,8 @@ service cloud.firestore {
             const tapeSpeed = Number(AppState.currentTapeTipSpeed || 0);
             const tapeThreshold = Number(Params.timingStartTapeSpeedMps || 1.2);
             const tapeReady = Params.tipTracking
-                && AppState.currentTapeDetected
-                && Number(AppState.lastTapeQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
+                && AppState.currentShinaiDetected
+                && Number(AppState.lastShinaiQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
             const tapeSpeedOk = tapeReady && tapeSpeed >= tapeThreshold;
             const frameStable = !AppState.frameDtMs || AppState.frameDtMs <= 100;
             const poseStable = AppState.currentWristVisibility >= 0.55 && AppState.currentViewQuality >= Params.minViewQuality;
@@ -10754,6 +10788,7 @@ service cloud.firestore {
             AppState.swingTapeDetectedFrames = 0;
             AppState.swingTapeTotalFrames = 0;
             AppState.swingTapeMissingFrames = 0;
+            AppState.swingShinaiSourceCounts = { tape: 0, shaft: 0 };
             AppState.swingStartedByDefinition = true;
             resetSwingStartCandidate();
             resetSwingEndCandidate();
@@ -11197,12 +11232,303 @@ service cloud.firestore {
             return detectTapeInCanvas(scanCtx, canvasElement.width, canvasElement.height, centerX, centerY, radius, color);
         }
 
+        function normalizeShinaiTrackingMode(mode = Params.shinaiTrackingMode) {
+            return ['auto', 'tape', 'shaft'].includes(mode) ? mode : 'auto';
+        }
+
+        function trackingModeUsesTape(mode = Params.shinaiTrackingMode) {
+            return normalizeShinaiTrackingMode(mode) !== 'shaft';
+        }
+
+        function trackingModeUsesShaft(mode = Params.shinaiTrackingMode) {
+            return normalizeShinaiTrackingMode(mode) !== 'tape';
+        }
+
+        function dominantShinaiDetectionSource(frames = []) {
+            const counts = frames.reduce((result, frame) => {
+                const source = frame?.shinaiSource || frame?.tapePoint?.source;
+                if (source === 'tape' || source === 'shaft') result[source] += 1;
+                return result;
+            }, { tape: 0, shaft: 0 });
+            if (!counts.tape && !counts.shaft) return 'none';
+            return counts.tape >= counts.shaft ? 'tape' : 'shaft';
+        }
+
+        function shinaiDetectionSourceLabel(source) {
+            if (source === 'tape') return '竹刀先端テープ';
+            if (source === 'shaft') return '竹刀本体（テープなし）';
+            return '竹刀未検出';
+        }
+
+        function normalizeAngleRadians(value) {
+            let angle = value;
+            while (angle > Math.PI) angle -= Math.PI * 2;
+            while (angle < -Math.PI) angle += Math.PI * 2;
+            return angle;
+        }
+
+        function detectShinaiShaftInCanvas(scanCtx, w, h, landmarks, previousDetection = null, frameTimeMs = 0) {
+            if (!scanCtx || !landmarks?.[14] || !landmarks?.[16]) return null;
+            const axis = shinaiAxisFromLandmarks(landmarks);
+            if (!axis) return null;
+
+            const origin = { x: axis.end.x * w, y: axis.end.y * h };
+            const guideStart = { x: axis.start.x * w, y: axis.start.y * h };
+            const guideDx = origin.x - guideStart.x;
+            const guideDy = origin.y - guideStart.y;
+            const guideLength = Math.hypot(guideDx, guideDy);
+            if (guideLength < 4) return null;
+
+            const shoulderPx = landmarks[11] && landmarks[12]
+                ? Math.max(36, distance2d(landmarks[11], landmarks[12]) * w)
+                : 80;
+            const calibratedRatio = clamp(
+                (Number(Params.shinaiLengthMeters || 1.2) / Math.max(0.3, Number(Params.referenceShoulderMeters || 0.42))) * 0.82,
+                1.65,
+                3.0
+            );
+            const expectedLength = clamp(shoulderPx * calibratedRatio, shoulderPx * 1.25, Math.min(Math.max(w, h) * 0.62, shoulderPx * 3.2));
+            const margin = Math.max(12, shoulderPx * 0.12);
+            const radius = expectedLength + margin;
+            const x0 = clamp(Math.floor(origin.x - radius), 0, w - 1);
+            const y0 = clamp(Math.floor(origin.y - radius), 0, h - 1);
+            const x1 = clamp(Math.ceil(origin.x + radius), 1, w);
+            const y1 = clamp(Math.ceil(origin.y + radius), 1, h);
+            const roiWidth = x1 - x0;
+            const roiHeight = y1 - y0;
+            if (roiWidth < 12 || roiHeight < 12) return null;
+
+            let imageData;
+            try {
+                imageData = scanCtx.getImageData(x0, y0, roiWidth, roiHeight);
+            } catch (_) {
+                return null;
+            }
+            const pixels = imageData.data;
+            const grayAt = (x, y) => {
+                const px = Math.round(x) - x0;
+                const py = Math.round(y) - y0;
+                if (px < 0 || py < 0 || px >= roiWidth || py >= roiHeight) return NaN;
+                const idx = (py * roiWidth + px) * 4;
+                return pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114;
+            };
+
+            const baseAngle = Math.atan2(guideDy, guideDx);
+            const searchRadians = clamp(Number(Params.shaftAngleSearchDeg || 40), 20, 60) * Math.PI / 180;
+            const stepRadians = 3 * Math.PI / 180;
+            const sampleCount = clamp(Math.round(Number(Params.shaftSampleCount || 54)), 32, 80);
+            const lineWidth = clamp(shoulderPx * 0.018, 1.7, 4.5);
+            const previousFresh = previousDetection
+                && Number.isFinite(previousDetection.angle)
+                && (!frameTimeMs || !previousDetection.timeMs || frameTimeMs - previousDetection.timeMs <= 280);
+            let best = null;
+
+            for (let offsetAngle = -searchRadians; offsetAngle <= searchRadians + 1e-6; offsetAngle += stepRadians) {
+                const candidateAngle = baseAngle + offsetAngle;
+                const dx = Math.cos(candidateAngle);
+                const dy = Math.sin(candidateAngle);
+                const nx = -dy;
+                const ny = dx;
+                for (const lateral of [-lineWidth, 0, lineWidth]) {
+                    const responses = [];
+                    let supported = 0;
+                    let longestRun = 0;
+                    let currentRun = 0;
+                    for (let i = 0; i < sampleCount; i++) {
+                        const ratio = 0.08 + (1.12 * i) / Math.max(1, sampleCount - 1);
+                        const distance = expectedLength * ratio;
+                        const x = origin.x + dx * distance + nx * lateral;
+                        const y = origin.y + dy * distance + ny * lateral;
+                        const center = grayAt(x, y);
+                        const p2 = grayAt(x + nx * lineWidth, y + ny * lineWidth);
+                        const m2 = grayAt(x - nx * lineWidth, y - ny * lineWidth);
+                        const p4 = grayAt(x + nx * lineWidth * 2.2, y + ny * lineWidth * 2.2);
+                        const m4 = grayAt(x - nx * lineWidth * 2.2, y - ny * lineWidth * 2.2);
+                        if (![center, p2, m2, p4, m4].every(Number.isFinite)) {
+                            responses.push(0);
+                            currentRun = 0;
+                            continue;
+                        }
+                        const nearContrast = (Math.abs(center - p2) + Math.abs(center - m2)) / 2;
+                        const edgeContrast = Math.max(Math.abs(p2 - p4), Math.abs(m2 - m4));
+                        const response = clamp((nearContrast * 0.72 + edgeContrast * 0.28) / 255, 0, 1);
+                        responses.push(response);
+                        if (response >= 0.045) {
+                            supported += 1;
+                            currentRun += 1;
+                            longestRun = Math.max(longestRun, currentRun);
+                        } else {
+                            currentRun = 0;
+                        }
+                    }
+                    let bestRunStart = -1;
+                    let bestRunEnd = -1;
+                    let runStart = -1;
+                    let gapCount = 0;
+                    const finishRun = endIndex => {
+                        if (runStart < 0 || endIndex < runStart) return;
+                        if (bestRunStart < 0 || endIndex - runStart > bestRunEnd - bestRunStart) {
+                            bestRunStart = runStart;
+                            bestRunEnd = endIndex;
+                        }
+                    };
+                    responses.forEach((response, index) => {
+                        if (response >= 0.040) {
+                            if (runStart < 0) runStart = index;
+                            gapCount = 0;
+                        } else if (runStart >= 0) {
+                            gapCount += 1;
+                            if (gapCount > 2) {
+                                finishRun(index - gapCount);
+                                runStart = -1;
+                                gapCount = 0;
+                            }
+                        }
+                    });
+                    if (runStart >= 0) finishRun(responses.length - 1 - gapCount);
+                    const sorted = [...responses].sort((a, b) => b - a);
+                    const keep = Math.max(8, Math.round(sorted.length * 0.72));
+                    const responseMean = sorted.slice(0, keep).reduce((sum, value) => sum + value, 0) / keep;
+                    const supportRatio = supported / sampleCount;
+                    const continuity = longestRun / sampleCount;
+                    const endpointContinuity = bestRunStart >= 0 ? (bestRunEnd - bestRunStart + 1) / sampleCount : 0;
+                    const runStartsNearHand = bestRunStart >= 0 && bestRunStart <= sampleCount * 0.46;
+                    const tipRatio = bestRunEnd >= 0
+                        ? 0.08 + (1.12 * bestRunEnd) / Math.max(1, sampleCount - 1)
+                        : 0.82;
+                    const guidePrior = 1 - Math.min(1, Math.abs(offsetAngle) / Math.max(searchRadians, 1e-6));
+                    let temporalPrior = 0;
+                    if (previousFresh) {
+                        const angleDelta = Math.abs(normalizeAngleRadians(candidateAngle - previousDetection.angle));
+                        temporalPrior = 1 - Math.min(1, angleDelta / (65 * Math.PI / 180));
+                    }
+                    const score = responseMean * 3.1
+                        + supportRatio * 0.24
+                        + continuity * 0.16
+                        + endpointContinuity * 0.24
+                        + (runStartsNearHand ? 0.12 : -0.10)
+                        + guidePrior * 0.10
+                        + temporalPrior * 0.16;
+                    const candidate = {
+                        angle: candidateAngle,
+                        score,
+                        responseMean,
+                        supportRatio,
+                        continuity,
+                        endpointContinuity,
+                        runStartsNearHand,
+                        tipRatio,
+                        supported
+                    };
+                    if (!best || candidate.score > best.score) best = candidate;
+                }
+            }
+
+            if (!best || best.responseMean < 0.032 || best.supportRatio < 0.18 || !best.runStartsNearHand || best.endpointContinuity < 0.14) return null;
+            const quality = clamp(
+                ((best.responseMean - 0.025) / 0.12) * 0.54
+                + best.supportRatio * 0.24
+                + best.continuity * 0.08
+                + best.endpointContinuity * 0.12
+                + Math.min(0.08, best.score * 0.04),
+                0,
+                1
+            );
+            if (quality < Number(Params.shaftMinQuality || 0.34)) return null;
+
+            let resolvedAngle = best.angle;
+            if (previousFresh) {
+                const delta = normalizeAngleRadians(best.angle - previousDetection.angle);
+                if (Math.abs(delta) > 58 * Math.PI / 180 && quality < 0.68) return null;
+                const alpha = clamp(0.48 + quality * 0.42, 0.58, 0.88);
+                resolvedAngle = previousDetection.angle + delta * alpha;
+            }
+            let visibleLength = expectedLength * clamp(best.tipRatio, 0.52, 1.20);
+            if (previousFresh && Number.isFinite(previousDetection.visibleLengthPx)) {
+                const lengthJumpRatio = Math.abs(visibleLength - previousDetection.visibleLengthPx) / Math.max(1, previousDetection.visibleLengthPx);
+                if (lengthJumpRatio > 0.48 && quality < 0.72) return null;
+                const lengthAlpha = clamp(0.42 + quality * 0.38, 0.54, 0.82);
+                visibleLength = previousDetection.visibleLengthPx + (visibleLength - previousDetection.visibleLengthPx) * lengthAlpha;
+            }
+            const tip = {
+                x: clamp(origin.x + Math.cos(resolvedAngle) * visibleLength, 0, w - 1),
+                y: clamp(origin.y + Math.sin(resolvedAngle) * visibleLength, 0, h - 1),
+            };
+            if (previousFresh) {
+                const jump = Math.hypot(tip.x - previousDetection.x, tip.y - previousDetection.y);
+                if (jump > shoulderPx * 1.75 && quality < 0.72) return null;
+            }
+            return {
+                ...tip,
+                source: 'shaft',
+                quality,
+                count: best.supported,
+                angle: resolvedAngle,
+                timeMs: frameTimeMs,
+                lineStart: origin,
+                lineEnd: tip,
+                expectedLengthPx: expectedLength,
+                visibleLengthPx: visibleLength,
+                roi: { x: origin.x, y: origin.y, radius: expectedLength },
+            };
+        }
+
+        function detectShinaiPointInCanvas(scanCtx, w, h, landmarks, options = {}) {
+            const mode = normalizeShinaiTrackingMode(options.mode || Params.shinaiTrackingMode);
+            const roi = shinaiRoiCenter(landmarks, w, h);
+            if (!roi) return { hit: null, roi: null, radius: 0 };
+            const shoulderPx = Math.max(36, Number(roi.shoulderPx || 80));
+            const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
+            const frameTimeMs = Number(options.frameTimeMs || 0);
+            const previous = options.previousDetection || null;
+            const previousFresh = previous
+                && (!frameTimeMs || !previous.timeMs || frameTimeMs - Number(previous.timeMs || 0) <= 65);
+            if (trackingModeUsesTape(mode)) {
+                const tapeHit = detectTapeInCanvas(scanCtx, w, h, roi.x, roi.y, radius, Params.tapeColor);
+                if (tapeHit && Number(tapeHit.quality || 0) >= Number(Params.minTapeConfidence || 0.18)) {
+                    const jump = previousFresh ? Math.hypot(tapeHit.x - previous.x, tapeHit.y - previous.y) : 0;
+                    if (!(previous?.source === 'shaft' && previousFresh && jump > shoulderPx * 1.2 && Number(tapeHit.quality || 0) < 0.70)) {
+                    return {
+                            hit: { ...tapeHit, source: 'tape', timeMs: frameTimeMs },
+                        roi,
+                        radius,
+                    };
+                    }
+                }
+                // 短い色欠落で本体推定へ切り替えると速度が跳ぶため、65msだけ同じ方式を保持する。
+                if (mode === 'auto' && previous?.source === 'tape' && previousFresh) return { hit: null, roi, radius };
+            }
+            if (trackingModeUsesShaft(mode)) {
+                const shaftHit = detectShinaiShaftInCanvas(
+                    scanCtx,
+                    w,
+                    h,
+                    landmarks,
+                    options.previousDetection || null,
+                    frameTimeMs
+                );
+                if (shaftHit) {
+                    const jump = previousFresh ? Math.hypot(shaftHit.x - previous.x, shaftHit.y - previous.y) : 0;
+                    if (!(previous?.source === 'tape' && previousFresh && jump > shoulderPx * 1.2 && shaftHit.quality < 0.72)) {
+                        return { hit: shaftHit, roi, radius };
+                    }
+                }
+            }
+            return { hit: null, roi, radius };
+        }
+
         function updateShinaiTipRoi(landmarks) {
             if (!Params.tipTracking || !landmarks[14] || !landmarks[16]) {
                 AppState.roiStatus = Params.tipTracking ? '探索待ち' : 'OFF';
                 AppState.lastTapePoint = null;
                 AppState.lastTapeRoi = null;
                 AppState.lastTapeQuality = 0;
+                AppState.lastShinaiPoint = null;
+                AppState.lastShinaiQuality = 0;
+                AppState.lastShinaiSource = 'none';
+                AppState.lastShinaiDetection = null;
+                AppState.currentShinaiDetected = false;
+                AppState.currentShinaiSource = 'none';
                 return null;
             }
             const roi = shinaiRoiCenter(landmarks, canvasElement.width, canvasElement.height);
@@ -11211,42 +11537,73 @@ service cloud.firestore {
                 AppState.lastTapePoint = null;
                 AppState.lastTapeRoi = null;
                 AppState.lastTapeQuality = 0;
+                AppState.lastShinaiPoint = null;
+                AppState.lastShinaiQuality = 0;
+                AppState.lastShinaiSource = 'none';
+                AppState.lastShinaiDetection = null;
+                AppState.currentShinaiDetected = false;
+                AppState.currentShinaiSource = 'none';
                 return null;
             }
-            const cx = roi.x;
-            const cy = roi.y;
-            const shoulderPx = roi.shoulderPx;
-            const radius = clamp(shoulderPx * Params.tipRoiRatio, 20, 90);
-            const hit = detectTapeInRoi(canvasCtx, cx, cy, radius, Params.tapeColor);
+            const detection = detectShinaiPointInCanvas(AppState.scanCtx || canvasCtx, canvasElement.width, canvasElement.height, landmarks, {
+                mode: Params.shinaiTrackingMode,
+                previousDetection: AppState.lastShinaiDetection,
+                frameTimeMs: AppState.currentFrameTimeMs,
+            });
+            const hit = detection.hit;
+            const cx = detection.roi?.x ?? roi.x;
+            const cy = detection.roi?.y ?? roi.y;
+            const radius = detection.radius || clamp(Number(roi.shoulderPx || 80) * Params.tipRoiRatio, 20, 90);
             AppState.lastTapeRoi = { ...roi, radius };
 
             if (Params.tapeRoiVisible) {
                 canvasCtx.save();
-                canvasCtx.setLineDash([8, 6]);
-                canvasCtx.strokeStyle = hit ? 'rgba(250, 204, 21, 0.95)' : 'rgba(148, 163, 184, 0.65)';
+                canvasCtx.setLineDash(hit?.source === 'shaft' ? [5, 4] : [8, 6]);
+                canvasCtx.strokeStyle = hit
+                    ? (hit.source === 'tape' ? 'rgba(250, 204, 21, 0.95)' : 'rgba(34, 211, 238, 0.95)')
+                    : 'rgba(148, 163, 184, 0.65)';
                 canvasCtx.lineWidth = hit ? 3 : 2;
-                canvasCtx.beginPath();
-                canvasCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-                canvasCtx.stroke();
+                if (hit?.source === 'shaft' && hit.lineStart && hit.lineEnd) {
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(hit.lineStart.x, hit.lineStart.y);
+                    canvasCtx.lineTo(hit.lineEnd.x, hit.lineEnd.y);
+                    canvasCtx.stroke();
+                } else {
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+                    canvasCtx.stroke();
+                }
                 canvasCtx.setLineDash([]);
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(roi.start.x, roi.start.y);
-                canvasCtx.lineTo(cx, cy);
-                canvasCtx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
+                canvasCtx.lineTo(hit?.x ?? cx, hit?.y ?? cy);
+                canvasCtx.strokeStyle = hit?.source === 'shaft' ? 'rgba(34, 211, 238, 0.72)' : 'rgba(251, 191, 36, 0.75)';
                 canvasCtx.stroke();
                 if (hit) {
-                    canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.9)';
+                    canvasCtx.fillStyle = hit.source === 'tape' ? 'rgba(250, 204, 21, 0.9)' : 'rgba(34, 211, 238, 0.92)';
                     canvasCtx.beginPath();
                     canvasCtx.arc(hit.x, hit.y, 7, 0, Math.PI * 2);
                     canvasCtx.fill();
-                    canvasCtx.fillStyle = 'rgba(250, 204, 21, 0.95)';
+                    canvasCtx.fillStyle = hit.source === 'tape' ? 'rgba(250, 204, 21, 0.95)' : 'rgba(34, 211, 238, 0.98)';
                     canvasCtx.font = `${Math.max(12, canvasElement.width * 0.012)}px sans-serif`;
-                    canvasCtx.fillText(`tape ${Math.round((hit.quality || 0) * 100)}%`, hit.x + 10, hit.y - 10);
+                    canvasCtx.fillText(`${hit.source === 'tape' ? 'tape' : 'shinai'} ${Math.round((hit.quality || 0) * 100)}%`, hit.x + 10, hit.y - 10);
                 }
                 canvasCtx.restore();
             }
-            AppState.lastTapeQuality = hit ? Number(hit.quality || 0) : 0;
-            AppState.roiStatus = hit ? `検出 ${hit.count} / 品質${Math.round(AppState.lastTapeQuality * 100)}% / ${roi.source}` : `探索中 / ${roi.source}`;
+            AppState.lastShinaiQuality = hit ? Number(hit.quality || 0) : 0;
+            AppState.lastShinaiSource = hit?.source || 'none';
+            AppState.lastShinaiPoint = hit;
+            AppState.lastTapeQuality = AppState.lastShinaiQuality;
+            AppState.currentShinaiDetected = !!hit;
+            AppState.currentShinaiSource = AppState.lastShinaiSource;
+            if (hit) AppState.lastShinaiDetection = hit;
+            else if (AppState.lastShinaiDetection && AppState.currentFrameTimeMs - Number(AppState.lastShinaiDetection.timeMs || 0) > 140) AppState.lastShinaiDetection = null;
+            if (hit?.source === 'shaft') AppState.lastShaftDetection = hit;
+            else if (AppState.lastShaftDetection && AppState.currentFrameTimeMs - Number(AppState.lastShaftDetection.timeMs || 0) > 280) AppState.lastShaftDetection = null;
+            const sourceLabel = hit?.source === 'tape' ? 'テープ' : (hit?.source === 'shaft' ? '竹刀本体' : '');
+            AppState.roiStatus = hit
+                ? `${sourceLabel}検出 ${hit.count || '-'} / 品質${Math.round(AppState.lastShinaiQuality * 100)}%`
+                : `探索中 / ${normalizeShinaiTrackingMode() === 'auto' ? '自動' : (normalizeShinaiTrackingMode() === 'tape' ? 'テープ' : '竹刀本体')}`;
             AppState.lastTapePoint = hit;
             return hit;
         }
@@ -11314,12 +11671,12 @@ service cloud.firestore {
             const tone = score >= 86 && viewQuality >= Params.minViewQuality ? 'good' : (score >= 57 ? 'warn' : 'bad');
             const readyLamp = document.getElementById('measurementReadyLamp');
             if (readyLamp) {
-                const tapeReady = AppState.currentTapeDetected
-                    && Number(AppState.lastTapeQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
+                const tapeReady = AppState.currentShinaiDetected
+                    && Number(AppState.lastShinaiQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
                 const ready = AppState.isCameraRunning && tone === 'good' && tapeReady;
                 readyLamp.style.background = ready ? '#22c55e' : '#64748b';
                 readyLamp.style.boxShadow = ready ? '0 0 7px rgba(34,197,94,.95)' : 'none';
-                readyLamp.setAttribute('aria-label', ready ? '竹刀測定準備完了' : '竹刀先端テープ待ち');
+                readyLamp.setAttribute('aria-label', ready ? '竹刀測定準備完了' : '竹刀先端の検出待ち');
             }
             card.classList.remove('condition-good', 'condition-warn', 'condition-bad');
             card.classList.add(`condition-${tone}`);
@@ -11381,7 +11738,7 @@ service cloud.firestore {
                 const shoulderWidth = landmarks?.[11] && landmarks?.[12] ? distance2d(landmarks[11], landmarks[12]) : 0;
                 const tapeDistance = distance2d(rightWrist, tapePoint);
                 if (tapeDistance > Math.max(0.04, shoulderWidth * 0.18)) {
-                    return { start: rightWrist, end: tapePoint, source: 'tape' };
+                    return { start: rightWrist, end: tapePoint, source: tapePoint.source === 'shaft' ? 'shaft' : 'tape' };
                 }
             }
             if (leftWrist && rightWrist && visibilityOf(leftWrist) >= Params.minAngleVisibility && visibilityOf(rightWrist) >= Params.minAngleVisibility) {
@@ -11406,7 +11763,10 @@ service cloud.firestore {
         function calculateShinaiAxisQuality(landmarks, tapePoint = null) {
             const axis = shinaiAxisFromLandmarks(landmarks, tapePoint);
             if (!axis) return 0;
-            if (axis.source === 'tape') return Math.min(0.9, Math.max(0.55, visibilityOf(landmarks?.[16]) || 0.7));
+            if (axis.source === 'tape' || axis.source === 'shaft') {
+                const directQuality = Number(tapePoint?.quality || 0);
+                return clamp(Math.max(directQuality, visibilityOf(landmarks?.[16]) || 0.55), 0.4, 0.95);
+            }
             const startQuality = visibilityOf(axis.start);
             const endQuality = visibilityOf(axis.end);
             return clamp((startQuality + endQuality) / 2, 0, 1);
@@ -11421,7 +11781,7 @@ service cloud.firestore {
             const dy = baseEnd.y - start.y;
             const len = Math.hypot(dx, dy);
             if (len < 1) return null;
-            const extend = axis.source === 'tape' ? 0 : extensionPx;
+            const extend = axis.source === 'tape' || axis.source === 'shaft' ? 0 : extensionPx;
             return {
                 start,
                 end: { x: baseEnd.x + (dx / len) * extend, y: baseEnd.y + (dy / len) * extend },
@@ -11562,7 +11922,13 @@ service cloud.firestore {
             targets.forEach((def, defIndex) => {
                 if (def.points[0] === 'shinaiAxis') {
                     const tapePoint = Params.tipTracking && AppState.lastTapePoint
-                        ? { x: AppState.lastTapePoint.x / canvasElement.width, y: AppState.lastTapePoint.y / canvasElement.height, visibility: 0.85 }
+                        ? {
+                            x: AppState.lastTapePoint.x / canvasElement.width,
+                            y: AppState.lastTapePoint.y / canvasElement.height,
+                            visibility: 0.85,
+                            quality: Number(AppState.lastTapePoint.quality || AppState.lastShinaiQuality || 0),
+                            source: AppState.lastTapePoint.source || AppState.lastShinaiSource || 'tape'
+                        }
                         : null;
                     const axisLine = shinaiAxisCanvasLine(landmarks, canvasElement.width, canvasElement.height, tapePoint, Math.max(70, canvasElement.width * 0.08));
                     if (!axisLine) return;
@@ -11582,7 +11948,7 @@ service cloud.firestore {
                     const anchor = axisLine.end;
                     canvasCtx.font = `${Math.max(14, canvasElement.width * 0.016)}px sans-serif`;
                     canvasCtx.fillStyle = 'rgba(15, 23, 42, 0.82)';
-                    const sourceLabel = axisLine.source === 'tape' ? '実剣先' : (axisLine.source === 'grip' ? '両手' : '腕推定');
+                    const sourceLabel = axisLine.source === 'tape' ? 'テープ剣先' : (axisLine.source === 'shaft' ? '竹刀本体' : (axisLine.source === 'grip' ? '両手' : '腕推定'));
                     const label = `${def.label} / ${sourceLabel}`;
                     const labelWidth = canvasCtx.measureText(label).width + 18;
                     const labelX = clamp(anchor.x + 12, 6, canvasElement.width - labelWidth - 6);
@@ -11643,7 +12009,7 @@ service cloud.firestore {
                 points: [15, 16],
                 labels: ['左手首', '右手首', '両手首→推定剣先の方向'],
                 valueKey: 'hasuji',
-                definition: '竹刀先端テープが取れる場合は右手首からテープ方向、取れない場合は左手首から右手首方向を優先します。両手首が重なって不安定な時だけ右肘から右手首方向に戻します。'
+                definition: '竹刀先端を直接検出できた場合は右手首から剣先方向を使います。直接検出できないフレームだけ、角度表示では両手首または前腕方向を参考表示します。打突時間は直接検出フレームのみで測定します。'
             }
         };
 
@@ -13138,13 +13504,17 @@ service cloud.firestore {
         }
 
         function evaluateSwingEnd(now, fallbackVel, rightAng, elbowVel, wristY, rShoulder) {
-            const speed = AppState.currentTapeDetected
+            const speed = AppState.currentShinaiDetected
                 ? Number(AppState.currentTapeTipSpeed || 0)
                 : Number(AppState.swingPreviousSpeedMps || 0);
             AppState.swingTapeTotalFrames += 1;
-            if (AppState.currentTapeDetected) {
+            if (AppState.currentShinaiDetected) {
                 AppState.swingTapeDetectedFrames += 1;
                 AppState.swingTapeMissingFrames = 0;
+                const source = AppState.currentShinaiSource;
+                if (source === 'tape' || source === 'shaft') {
+                    AppState.swingShinaiSourceCounts[source] = Number(AppState.swingShinaiSourceCounts[source] || 0) + 1;
+                }
             } else {
                 AppState.swingTapeMissingFrames += 1;
             }
@@ -13572,7 +13942,7 @@ service cloud.firestore {
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
-                timingDefinition: '開始=竹刀先端テープの移動速度が閾値を2フレーム継続して超えた補間時刻 / 終了=竹刀先端ピーク後の急減速またはピーク比38%未満を2フレーム確認した最初の補間時刻'
+                timingDefinition: '開始=直接検出した竹刀先端の移動速度が閾値を2フレーム継続して超えた補間時刻 / 終了=竹刀先端ピーク後の急減速またはピーク比38%未満を2フレーム確認した最初の補間時刻'
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(24, Math.round((AppState.frameFps || Params.targetFps) * 1.5)));
             record.clipFrames = clipFrames;
@@ -13830,6 +14200,11 @@ service cloud.firestore {
             if (!results.poseLandmarks) {
                 AppState.currentViewQuality = 0;
                 AppState.currentTapeDetected = false;
+                AppState.currentShinaiDetected = false;
+                AppState.currentShinaiSource = 'none';
+                AppState.lastShinaiPoint = null;
+                AppState.lastShinaiQuality = 0;
+                AppState.lastShinaiDetection = null;
                 AppState.currentTapeTipSpeed = 0;
                 updatePrecisionPanel();
                 canvasCtx.restore();
@@ -13874,7 +14249,13 @@ service cloud.firestore {
             
             let rightAng = 0, leftAng = 0, torsoAng = 0, hasuji = 0, shoulderLineAng = 0;
             const previousTapePoint = Params.tipTracking && AppState.lastTapePoint
-                ? { x: AppState.lastTapePoint.x / canvasElement.width, y: AppState.lastTapePoint.y / canvasElement.height, visibility: 0.85 }
+                ? {
+                    x: AppState.lastTapePoint.x / canvasElement.width,
+                    y: AppState.lastTapePoint.y / canvasElement.height,
+                    visibility: 0.85,
+                    quality: Number(AppState.lastTapePoint.quality || AppState.lastShinaiQuality || 0),
+                    source: AppState.lastTapePoint.source || AppState.lastShinaiSource || 'tape'
+                }
                 : null;
             
             if(rShoulder && rElbow && rWrist && visibilityOf(rShoulder) > 0.35 && visibilityOf(rElbow) > 0.35 && visibilityOf(rWrist) > 0.35) {
@@ -13963,17 +14344,24 @@ service cloud.firestore {
 	            }
 
 		            const tapeHit = updateShinaiTipRoi(lm);
-		            AppState.currentTapeDetected = !!tapeHit;
+		            AppState.currentTapeDetected = tapeHit?.source === 'tape';
+		            AppState.currentShinaiDetected = !!tapeHit;
+		            AppState.currentShinaiSource = tapeHit?.source || 'none';
 		            if (tapeHit) {
 		                AppState.liveTapeMissingFrames = 0;
 	                const tapeMetric = metricFromCanvasPoint(tapeHit, lm);
+	                if (AppState.tapeFilterSource !== tapeHit.source) AppState.tapeFilter3d = null;
 	                if (!AppState.tapeFilter3d) AppState.tapeFilter3d = new VisibilityAdaptiveFilter3D();
 	                const tapeFiltered = AppState.tapeFilter3d.update(tapeMetric, frameTimeMs, 0.85);
+	                AppState.tapeFilterSource = tapeHit.source || 'none';
 	                AppState.currentTapeTipSpeed = tapeFiltered.speed || 0;
 	                AppState.currentTapeTipUnit = 'm/s*';
 		            } else {
 		                AppState.liveTapeMissingFrames += 1;
-		                if (AppState.liveTapeMissingFrames >= 3) AppState.tapeFilter3d = null;
+		                if (AppState.liveTapeMissingFrames >= 3) {
+		                    AppState.tapeFilter3d = null;
+		                    AppState.tapeFilterSource = 'none';
+		                }
 		                AppState.currentTapeTipSpeed = 0;
 		            }
 	            drawGuideLines();
@@ -14134,6 +14522,9 @@ service cloud.firestore {
 		                            : 0;
 		                        const tapeTimingValid = AppState.swingTapeDetectedFrames >= 3
 		                            && tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55);
+		                        const sourceCounts = AppState.swingShinaiSourceCounts || {};
+		                        const shinaiSource = Number(sourceCounts.tape || 0) >= Number(sourceCounts.shaft || 0) ? 'tape' : 'shaft';
+		                        const shinaiSourceLabel = shinaiSource === 'tape' ? '竹刀先端テープ' : '竹刀本体検出（テープなし）';
 		                        if(duration > Params.timingMinDurationMs && duration < (Params.signalMode ? 3000 : Params.timingMaxDurationMs) && tapeTimingValid) {
 		                            saveRecord(duration, rawSyncDiff, impactSignal, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, 0, {
 		                                ...(refinedMetrics || {}),
@@ -14150,12 +14541,14 @@ service cloud.firestore {
 	                                endTimeMs,
 	                                peakTimeMs: AppState.swingPeakFrameTimeMs || AppState.swingPeakTimeMs,
 	                                endReason: swingEnd.reason || AppState.swingEndReason,
-	                                endConfirmationFrames: swingEnd.endConfirmationFrames,
+		                                endConfirmationFrames: swingEnd.endConfirmationFrames,
 		                                tapeHitRate,
-		                                measurementMethod: `${AppState.frameSyncMode} / 竹刀先端テープ / angleQ:${Math.round((AppState.currentAngleQuality || 0) * 100)}%`
+		                                shinaiHitRate: tapeHitRate,
+		                                shinaiDetectionSource: shinaiSource,
+		                                measurementMethod: `${AppState.frameSyncMode} / ${shinaiSourceLabel} / angleQ:${Math.round((AppState.currentAngleQuality || 0) * 100)}%`
 		                            });
 		                        } else {
-		                            if (!tapeTimingValid) showToast('竹刀先端テープを十分に追跡できなかったため記録しませんでした', 'yellow');
+		                            if (!tapeTimingValid) showToast('竹刀先端を十分に追跡できなかったため記録しませんでした', 'yellow');
 	                            AppState.swingState = 'IDLE';
 	                            updateStateUI('IDLE');
 	                            AppState.velHistory = [];
@@ -14178,7 +14571,7 @@ service cloud.firestore {
 
             AppState.previousDownVelocityMps = AppState.currentDownVelocityMps || 0;
             AppState.previousSignalFrameTimeMs = frameTimeMs;
-            AppState.previousTapeTipSpeed = AppState.currentTapeDetected ? Number(AppState.currentTapeTipSpeed || 0) : 0;
+            AppState.previousTapeTipSpeed = AppState.currentShinaiDetected ? Number(AppState.currentTapeTipSpeed || 0) : 0;
             AppState.previousTapeSignalTimeMs = frameTimeMs;
 
             captureReplayFrame();
@@ -14487,7 +14880,10 @@ service cloud.firestore {
         async function createPoseLandmarkerInstance(vision, delegate = 'CPU', timeoutMs = 45000) {
             const wasmRoot = new URL('./vendor/mediapipe/tasks-vision/wasm/', location.href).href;
             const modelPath = new URL('./vendor/models/pose_landmarker_full.task', location.href).href;
-            const fileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 30000, 'Vision WASM');
+            if (!AppState.poseFileset) {
+                AppState.poseFileset = await withTimeout(vision.FilesetResolver.forVisionTasks(wasmRoot), 30000, 'Vision WASM');
+            }
+            const fileset = AppState.poseFileset;
             const baseOptions = { modelAssetPath: modelPath };
             if (delegate === 'GPU') baseOptions.delegate = 'GPU';
             return withTimeout(vision.PoseLandmarker.createFromOptions(fileset, {
@@ -14522,9 +14918,9 @@ service cloud.firestore {
                         isVideoPurpose ? 50000 : 35000,
                         'MediaPipe Tasks'
                     );
-                    const delegates = options.purpose === 'video'
-                        ? (window.crossOriginIsolated ? ['GPU', 'CPU'] : ['CPU'])
-                        : ['CPU'];
+                    // 動画解析は速度より再現性を優先。同じFullモデルをCPUで実行し、
+                    // タイムアウトしたGPU初期化とCPU初期化が競合する状態を避ける。
+                    const delegates = ['CPU'];
                     for (const delegate of delegates) {
                         try {
                             AppState.landmarkerDiag = `${delegate}初期化中`;
@@ -16105,7 +16501,7 @@ service cloud.firestore {
             if (shouldDraw('hasuji')) {
                 const axisLine = shinaiAxisCanvasLine(lm, width, height, frame.tapePoint, 90);
                 if (axisLine) {
-                    const sourceLabel = axisLine.source === 'tape' ? 'テープ' : (axisLine.source === 'grip' ? '握り' : '前腕');
+                    const sourceLabel = axisLine.source === 'tape' ? 'テープ' : (axisLine.source === 'shaft' ? '竹刀本体' : (axisLine.source === 'grip' ? '握り' : '前腕'));
                     drawVideoAngleLine(ctx, axisLine.start, axisLine.end, '#f59e0b', label('hasuji', `刃筋 ${Number(frame.hasuji || 0).toFixed(1)}° / ${sourceLabel}`), lineWidth('hasuji'));
                 }
             }
@@ -16218,7 +16614,7 @@ service cloud.firestore {
             if (typeof Pose === 'undefined') throw new Error('Legacy Poseが読み込まれていません');
             const videoPose = new Pose({ locateFile: (file) => `./vendor/mediapipe/pose/${file}` });
             videoPose.setOptions({
-                modelComplexity: 0,
+                modelComplexity: isIOSLikeBrowser() ? 1 : 2,
                 smoothLandmarks: false,
                 minDetectionConfidence: 0.5,
                 minTrackingConfidence: 0.5,
@@ -16236,6 +16632,14 @@ service cloud.firestore {
                 }
             });
             AppState.videoLegacyPose = videoPose;
+            if (typeof videoPose.initialize === 'function') {
+                try {
+                    await withTimeout(videoPose.initialize(), 45000, 'Legacy Pose initialize');
+                } catch (error) {
+                    resetLegacyVideoPose();
+                    throw error;
+                }
+            }
             return videoPose;
         }
 
@@ -16245,8 +16649,9 @@ service cloud.firestore {
                 const timer = setTimeout(() => {
                     AppState.videoLegacyResolver = null;
                     AppState.videoLegacyReject = null;
+                    resetLegacyVideoPose();
                     reject(new Error('Legacy Pose video timeout'));
-                }, 7000);
+                }, 15000);
                 AppState.videoLegacyResolver = (result) => {
                     clearTimeout(timer);
                     resolve(result);
@@ -16453,7 +16858,7 @@ service cloud.firestore {
             safeText('videoStrikeDetailSpeed', frame ? `${Math.round(Number(frame.timeMs || 0))} ms` : '---');
             safeText('videoStrikeDetailRightElbow', frame?.rightAng ? `${frame.rightAng.toFixed(1)}°` : '---');
             safeText('videoStrikeDetailTorso', frame?.torsoAng ? `${frame.torsoAng.toFixed(1)}°` : '---');
-            const hasujiSourceLabel = frame?.hasujiSource === 'tape' ? 'テープ' : (frame?.hasujiSource === 'grip' ? '握り' : (frame?.hasujiSource === 'forearm' ? '前腕' : ''));
+            const hasujiSourceLabel = frame?.hasujiSource === 'tape' ? 'テープ' : (frame?.hasujiSource === 'shaft' ? '竹刀本体' : (frame?.hasujiSource === 'grip' ? '握り' : (frame?.hasujiSource === 'forearm' ? '前腕' : '')));
             safeText('videoStrikeDetailHasuji', frame?.hasuji ? `${frame.hasuji.toFixed(1)}°${hasujiSourceLabel ? ` / ${hasujiSourceLabel}` : ''}` : '---');
             updateVideoCorrectionEditDock(data, current);
             updateVideoStrikeDetailScale(current, range);
@@ -17023,8 +17428,19 @@ service cloud.firestore {
             const startTapeY = videoTapeYNear(data.frames, startFrame, 3);
             const endTapeY = videoTapeYNear(data.frames, endFrame, 3);
             const tapeDropRatio = Number.isFinite(startTapeY) && Number.isFinite(endTapeY) ? endTapeY - startTapeY : NaN;
-            const tapeFrames = slice.filter(frame => frame?.tapePoint && Number(frame.tapeConfidence || 0) >= Number(Params.minTapeConfidence || 0.18)).length;
+            const shinaiSource = data.preferredShinaiSource || dominantShinaiDetectionSource(slice);
+            const shinaiYValues = slice
+                .map(frame => Number(frame?.tapePoint?.y))
+                .filter(Number.isFinite);
+            const shinaiVerticalTravelRatio = shinaiYValues.length
+                ? Math.max(...shinaiYValues) - Math.min(...shinaiYValues)
+                : NaN;
+            const shinaiPeakDescentRatio = videoTapeDescentRatio(data.frames, officialPeakFrame, 3);
+            const tapeFrames = slice.filter(frame => frame?.tapePoint
+                && (!shinaiSource || shinaiSource === 'none' || (frame.shinaiSource || frame.tapePoint?.source) === shinaiSource)
+                && Number(frame.tapeConfidence || 0) >= Number(Params.minTapeConfidence || 0.18)).length;
             const tapeHitRate = slice.length ? tapeFrames / slice.length : 0;
+            const avgShinaiConfidence = segmentAverage(slice, 'tapeConfidence');
             const avgVisibility = segmentAverage(slice, 'poseConfidence') || segmentAverage(slice, 'visibility');
             const avgViewQuality = segmentAverage(slice, 'viewQuality');
             const startSpeedMps = videoFrameSpeed(start, Params.officialSpeedSource).value || 0;
@@ -17049,6 +17465,11 @@ service cloud.firestore {
                 wristDropRatio,
                 tapeDropRatio,
                 tapeHitRate,
+                shinaiSource,
+                shinaiHitRate: tapeHitRate,
+                avgShinaiConfidence,
+                shinaiVerticalTravelRatio,
+                shinaiPeakDescentRatio,
                 shoulderWidthRatio,
                 rightAng: Number(end.rightAng || 0),
                 torsoAng: Number(end.torsoAng || 0),
@@ -17090,7 +17511,21 @@ service cloud.firestore {
             if (!summary.rightAng || summary.rightAng < 55 || summary.rightAng > 185) return { ok: false, reason: '右肘角異常' };
             if (Math.abs(summary.torsoAng || 0) > 55) return { ok: false, reason: '体幹検出異常' };
             if (summary.officialSpeedSource === 'tape') {
-                if (!Number.isFinite(summary.tapeDropRatio) || summary.tapeDropRatio < 0.012) return { ok: false, reason: '竹刀下降量不足' };
+                if (summary.shinaiSource === 'shaft') {
+                    const minShaftQuality = Math.max(0.32, Number(Params.shaftMinQuality || 0.34));
+                    if (Number(summary.shinaiHitRate || 0) < 0.50 || Number(summary.avgShinaiConfidence || 0) < minShaftQuality) {
+                        return { ok: false, reason: '竹刀本体の検出品質不足' };
+                    }
+                    const verticalTravel = Number(summary.shinaiVerticalTravelRatio);
+                    const peakDescent = Number(summary.shinaiPeakDescentRatio);
+                    const netDrop = Number(summary.tapeDropRatio);
+                    const hasVisibleTravel = Number.isFinite(verticalTravel) && verticalTravel >= 0.018;
+                    const hasDownwardMotion = (Number.isFinite(peakDescent) && peakDescent >= 0.004)
+                        || (Number.isFinite(netDrop) && netDrop >= 0.010);
+                    if (!hasVisibleTravel || !hasDownwardMotion) return { ok: false, reason: '竹刀本体の移動量不足' };
+                } else if (!Number.isFinite(summary.tapeDropRatio) || summary.tapeDropRatio < 0.012) {
+                    return { ok: false, reason: '竹刀下降量不足' };
+                }
             } else if (Number.isFinite(summary.wristDropRatio) && summary.wristDropRatio < Math.max(0.018, Number(summary.shoulderWidthRatio || 0) * 0.10)) {
                 return { ok: false, reason: '下降量不足' };
             }
@@ -17134,8 +17569,10 @@ service cloud.firestore {
             const frames = Array.isArray(data?.frames) ? data.frames : [];
             const fps = videoEffectiveTimingFps(data, data?.fps || Params.targetFps || 60);
             const minConfidence = Number(Params.minTapeConfidence || 0.18);
+            const preferredSource = data?.preferredShinaiSource || null;
             const values = frames.map(frame => (
                 frame?.tapePoint
+                && (!preferredSource || (frame.shinaiSource || frame.tapePoint?.source) === preferredSource)
                 && Number(frame.tapeConfidence || 0) >= minConfidence
                 && Number.isFinite(Number(frame.tapeSpeed))
                     ? Math.max(0, Number(frame.tapeSpeed))
@@ -17165,7 +17602,7 @@ service cloud.firestore {
                 validCount,
                 hitRate,
                 reliable,
-                reason: reliable ? '' : `竹刀先端テープ不足 (${validCount}/${frames.length}f)`
+                reason: reliable ? '' : `竹刀先端の直接検出不足 (${validCount}/${frames.length}f)`
             };
         }
 
@@ -18654,25 +19091,28 @@ service cloud.firestore {
             const box = document.getElementById('videoTapeQualityStatus');
             if (!box) return;
             if (!data?.frames?.length) {
-                const liveQuality = Math.round(Number(AppState.lastTapeQuality || 0) * 100);
+                const liveQuality = Math.round(Number(AppState.lastShinaiQuality || 0) * 100);
                 const waitingLabel = AppState.isCameraRunning ? (AppState.roiStatus || '探索待ち') : '動画解析待ち';
-                box.textContent = AppState.lastTapePoint
-                    ? `竹刀検出: リアルタイム品質 ${liveQuality}% / 測定準備OK`
-                    : `竹刀検出: ${waitingLabel} / テープをROI内に入れてください`;
-                box.className = AppState.lastTapePoint
+                const sourceLabel = AppState.lastShinaiSource === 'tape' ? 'テープ' : (AppState.lastShinaiSource === 'shaft' ? '竹刀本体' : '');
+                box.textContent = AppState.lastShinaiPoint
+                    ? `竹刀検出: ${sourceLabel} / 品質 ${liveQuality}% / 測定準備OK`
+                    : `竹刀検出: ${waitingLabel} / 手元から剣先まで映してください`;
+                box.className = AppState.lastShinaiPoint
                     ? 'rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900'
                     : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-900';
                 return;
             }
             const hits = data.frames.filter(frame => frame?.tapePoint).length;
+            const tapeHits = data.frames.filter(frame => frame?.shinaiSource === 'tape' || frame?.tapePoint?.source === 'tape').length;
+            const shaftHits = data.frames.filter(frame => frame?.shinaiSource === 'shaft' || frame?.tapePoint?.source === 'shaft').length;
             const avgQuality = hits
                 ? data.frames.reduce((sum, frame) => sum + Number(frame?.tapeConfidence || 0), 0) / hits
                 : 0;
             const rate = data.frames.length ? hits / data.frames.length : 0;
             const reliable = !!data.tapeTiming?.reliable || (hits >= 6 && rate >= Number(Params.minTapeHitRate || 0.08));
             box.textContent = hits
-                ? `竹刀検出: ${hits}/${data.frames.length}f (${Math.round(rate * 100)}%) / 品質 ${Math.round(avgQuality * 100)}% / ${reliable ? '測定可能' : '不足'}`
-                : '竹刀検出: 未検出（先端テープ・ROI・色・照明を確認）';
+                ? `竹刀検出: ${hits}/${data.frames.length}f (${Math.round(rate * 100)}%) / テープ${tapeHits}・本体${shaftHits} / 品質 ${Math.round(avgQuality * 100)}% / ${reliable ? '測定可能' : '不足'}`
+                : '竹刀検出: 未検出（竹刀全体・背景・照明を確認）';
             box.className = reliable
                 ? 'rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900'
                 : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-900';
@@ -18740,7 +19180,7 @@ service cloud.firestore {
                 ? slice.filter(frame => frame?.tapePoint && Number(frame.tapeConfidence || 0) >= Number(Params.minTapeConfidence || 0.18)).length / slice.length
                 : 0;
             add(Number.isFinite(durationMs) && durationMs >= videoFormalMinDurationMs() && durationMs <= videoFormalMaxDurationMs(), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', `${videoFormalMinDurationMs()}ms未満または${videoFormalMaxDurationMs()}ms超は除外候補`);
-	            add(tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55), '竹刀先端', `${Math.round(tapeHitRate * 100)}%`, '開始から終了までのテープ検出率');
+	            add(tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55), '竹刀先端', `${Math.round(tapeHitRate * 100)}%`, '開始から終了までの竹刀先端検出率');
 	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), '竹刀ピーク', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '竹刀先端のピーク時刻');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
@@ -18880,30 +19320,38 @@ service cloud.firestore {
                 if (roi && radius > 0) {
                     const tapePoint = frame.tapePoint ? normalizedToCanvas(frame.tapePoint, w, h) : null;
                     const quality = Number(frame.tapeConfidence || 0);
+                    const detectionSource = frame.shinaiSource || frame.tapePoint?.source || 'none';
+                    const isShaft = detectionSource === 'shaft';
                     ctx.save();
-                    ctx.strokeStyle = tapePoint ? 'rgba(250, 204, 21, 0.95)' : 'rgba(148, 163, 184, 0.62)';
-                    ctx.fillStyle = tapePoint ? 'rgba(250, 204, 21, 0.12)' : 'rgba(148, 163, 184, 0.08)';
+                    ctx.strokeStyle = tapePoint ? (isShaft ? 'rgba(34, 211, 238, 0.96)' : 'rgba(250, 204, 21, 0.95)') : 'rgba(148, 163, 184, 0.62)';
+                    ctx.fillStyle = tapePoint ? (isShaft ? 'rgba(34, 211, 238, 0.08)' : 'rgba(250, 204, 21, 0.12)') : 'rgba(148, 163, 184, 0.08)';
                     ctx.setLineDash([7, 6]);
                     ctx.lineWidth = tapePoint ? 3 : 2;
-                    ctx.beginPath();
-                    ctx.arc(roi.x, roi.y, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
+                    if (!isShaft) {
+                        ctx.beginPath();
+                        ctx.arc(roi.x, roi.y, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
                     ctx.setLineDash([]);
-                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.72)';
+                    ctx.strokeStyle = isShaft ? 'rgba(34, 211, 238, 0.82)' : 'rgba(245, 158, 11, 0.72)';
                     ctx.beginPath();
                     ctx.moveTo(roi.start.x, roi.start.y);
-                    ctx.lineTo(roi.x, roi.y);
+                    ctx.lineTo(tapePoint?.x ?? roi.x, tapePoint?.y ?? roi.y);
                     ctx.stroke();
                     if (tapePoint) {
-                        ctx.fillStyle = 'rgba(250, 204, 21, 0.95)';
+                        ctx.fillStyle = isShaft ? 'rgba(34, 211, 238, 0.98)' : 'rgba(250, 204, 21, 0.95)';
                         ctx.beginPath();
                         ctx.arc(tapePoint.x, tapePoint.y, 7, 0, Math.PI * 2);
                         ctx.fill();
                     }
-                    ctx.fillStyle = tapePoint ? '#fef3c7' : '#e2e8f0';
+                    ctx.fillStyle = tapePoint ? (isShaft ? '#cffafe' : '#fef3c7') : '#e2e8f0';
                     ctx.font = `${Math.max(12, w * 0.012)}px sans-serif`;
-                    ctx.fillText(tapePoint ? `テープ検出 ${Math.round(quality * 100)}%` : `テープROI / ${roi.source}`, roi.x + radius + 8, Math.max(18, roi.y - 6));
+                    ctx.fillText(
+                        tapePoint ? `${isShaft ? '竹刀本体' : 'テープ'} ${Math.round(quality * 100)}%` : `竹刀探索 / ${roi.source}`,
+                        Math.min(w - 180, (tapePoint?.x ?? roi.x) + 12),
+                        Math.max(18, (tapePoint?.y ?? roi.y) - 8)
+                    );
                     ctx.restore();
                 }
             }
@@ -19393,6 +19841,8 @@ service cloud.firestore {
             canvas.height = Math.max(1, Math.round(displayHeight * scale));
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             const tapeFilters = new Map();
+            const tapeFilterSources = new Map();
+            const previousShinaiDetections = new Map();
             safeText('videoAnalysisStatus', `高fps二次解析 0/${context.frameTable.length}`);
             AppState.webCodecsStatus = '二次解析中';
 
@@ -19415,27 +19865,42 @@ service cloud.firestore {
                     tapePosition: null,
                     tapeSpeed: 0,
                     tapeConfidence: 0,
-                    tapeRoi: null
+                    tapeRoi: null,
+                    shinaiSource: 'none'
                 };
                 drawDecodedVideoFrame(ctx, videoFrame, canvas.width, canvas.height, context.rotation);
                 if (fine.landmarks?.[11] && fine.landmarks?.[12] && fine.landmarks?.[14] && fine.landmarks?.[16]) {
-                    const roi = shinaiRoiCenter(fine.landmarks, canvas.width, canvas.height);
-                    if (roi) {
-                        const shoulderPx = Math.max(40, distance2d(fine.landmarks[11], fine.landmarks[12]) * canvas.width);
-                        const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
+                    const detection = detectShinaiPointInCanvas(ctx, canvas.width, canvas.height, fine.landmarks, {
+                        mode: data.preferredShinaiSource && data.preferredShinaiSource !== 'none'
+                            ? data.preferredShinaiSource
+                            : Params.shinaiTrackingMode,
+                        previousDetection: previousShinaiDetections.get(meta.windowIndex) || null,
+                        frameTimeMs: fine.timeMs
+                    });
+                    const tapeHit = detection.hit;
+                    if (detection.roi) {
                         fine.tapeRoi = {
-                            x: roi.x / canvas.width,
-                            y: roi.y / canvas.height,
-                            radius: radius / Math.max(canvas.width, canvas.height),
-                            source: roi.source
+                            x: detection.roi.x / canvas.width,
+                            y: detection.roi.y / canvas.height,
+                            radius: detection.radius / Math.max(canvas.width, canvas.height),
+                            source: detection.roi.source
                         };
-                        const tapeHit = detectTapeInCanvas(ctx, canvas.width, canvas.height, roi.x, roi.y, radius, Params.tapeColor);
                         if (tapeHit) {
-                            fine.tapePoint = { x: tapeHit.x / canvas.width, y: tapeHit.y / canvas.height, visibility: 0.85 };
+                            fine.shinaiSource = tapeHit.source || 'none';
+                            previousShinaiDetections.set(meta.windowIndex, tapeHit);
+                            fine.tapePoint = {
+                                x: tapeHit.x / canvas.width,
+                                y: tapeHit.y / canvas.height,
+                                visibility: 0.85,
+                                quality: Number(tapeHit.quality || 0),
+                                source: fine.shinaiSource
+                            };
                             fine.tapeConfidence = Number(tapeHit.quality || 0);
                             const metric = metricFromFramePoint(tapeHit, fine.landmarks, canvas.width, canvas.height);
                             if (metric) {
+                                if (tapeFilterSources.get(meta.windowIndex) !== fine.shinaiSource) tapeFilters.delete(meta.windowIndex);
                                 if (!tapeFilters.has(meta.windowIndex)) tapeFilters.set(meta.windowIndex, new VisibilityAdaptiveFilter3D());
+                                tapeFilterSources.set(meta.windowIndex, fine.shinaiSource);
                                 const filtered = tapeFilters.get(meta.windowIndex).update(metric, fine.timeMs, 0.85);
                                 fine.tapePosition = filtered.position ? { ...filtered.position } : null;
                                 fine.tapeSpeed = filtered.speed || 0;
@@ -19443,6 +19908,18 @@ service cloud.firestore {
                         }
                     }
                 }
+                if (fine.landmarks?.[14] && fine.landmarks?.[16]) {
+                    fine.hasujiSource = shinaiAxisFromLandmarks(fine.landmarks, fine.tapePoint)?.source || 'none';
+                    fine.hasujiScreen = calculateShinaiHasuji(fine.landmarks, fine.tapePoint);
+                    fine.hasujiBody = calculateBodyReferencedHasuji(fine.landmarks[14], fine.landmarks[16], fine.landmarks, fine.tapePoint);
+                    fine.hasuji = Params.angleReference === 'torso' ? fine.hasujiBody : fine.hasujiScreen;
+                }
+                fine.officialSpeed = chooseOfficialSpeed({
+                    wrist: fine.speed,
+                    tip: fine.tipSpeed,
+                    tape: fine.tapeSpeed,
+                    unit: fine.speedUnit
+                }, Params.officialSpeedSource).value;
                 fineFrames.push(fine);
             }, (completed, total) => {
                 const percent = clamp(Math.round((completed / Math.max(1, total)) * 100), 0, 100);
@@ -19485,7 +19962,11 @@ service cloud.firestore {
                 webCodecsTotalFrames: context.frameTable.length,
                 webCodecsFullFrameCount: context.frameTable.length,
                 webCodecsDecodedFrames: fineFrames.length,
-                webCodecsDecodedFrameCount: fineFrames.length
+                webCodecsDecodedFrameCount: fineFrames.length,
+                shinaiHitRate: fineFrames.length ? fineFrames.filter(frame => frame.tapePoint).length / fineFrames.length : 0,
+                shinaiTapeHitRate: fineFrames.length ? fineFrames.filter(frame => frame.shinaiSource === 'tape').length / fineFrames.length : 0,
+                shinaiShaftHitRate: fineFrames.length ? fineFrames.filter(frame => frame.shinaiSource === 'shaft').length / fineFrames.length : 0,
+                shinaiTrackingMode: normalizeShinaiTrackingMode()
             };
             data.strikes = coarseStrikes
                 .map((strike, index) => mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, index + 1, false))
@@ -19619,7 +20100,8 @@ service cloud.firestore {
             Params.angleReference = document.getElementById('angleReferenceSelect')?.value || Params.angleReference;
             const filter = new VisibilityAdaptiveFilter3D();
             const tipFilter = new VisibilityAdaptiveFilter3D();
-            const tapeFilter = new VisibilityAdaptiveFilter3D();
+            let tapeFilter = new VisibilityAdaptiveFilter3D();
+            let filteredShinaiSource = 'none';
             let frames = [];
             const sourceVideoWidth = video.videoWidth || 640;
             const sourceVideoHeight = video.videoHeight || 360;
@@ -19654,6 +20136,11 @@ service cloud.firestore {
             let detectedFrames = 0;
             let confidenceSum = 0;
             let tapeHitFrames = 0;
+            let tapeSourceFrames = 0;
+            let shaftSourceFrames = 0;
+            let previousShinaiDetection = null;
+            const requestedShinaiTrackingMode = normalizeShinaiTrackingMode();
+            let videoAutoPreferredSource = requestedShinaiTrackingMode === 'auto' ? 'none' : requestedShinaiTrackingMode;
             const useManualTiming = !!manualRange;
             const correctedFrameStepSec = Math.max(0.001, 1 / Math.max(1, fps * slowSettings.factor));
 
@@ -19690,6 +20177,7 @@ service cloud.firestore {
                 let frameTapePoint = null;
                 let frameTapeConfidence = 0;
                 let frameTapeRoi = null;
+                let frameShinaiSource = 'none';
                 let frameRightAng = 0;
                 let frameLeftAng = 0;
                 let frameTorsoAng = 0;
@@ -19720,23 +20208,53 @@ service cloud.firestore {
                     if (lm[11] && lm[12]) {
                         try {
                             videoScanCtx.drawImage(video, 0, 0, videoScanCanvas.width, videoScanCanvas.height);
-                            const shoulderPx = Math.max(40, distance2d(lm[11], lm[12]) * videoScanCanvas.width);
-                            const radius = clamp(shoulderPx * Params.tipRoiRatio, 18, 90);
-                            const roi = shinaiRoiCenter(lm, videoScanCanvas.width, videoScanCanvas.height);
-                            frameTapeRoi = roi ? { x: roi.x / videoScanCanvas.width, y: roi.y / videoScanCanvas.height, radius: radius / Math.max(videoScanCanvas.width, videoScanCanvas.height), source: roi.source } : null;
-                            const tapeHit = roi ? detectTapeInCanvas(videoScanCtx, videoScanCanvas.width, videoScanCanvas.height, roi.x, roi.y, radius, Params.tapeColor) : null;
+                            const detection = detectShinaiPointInCanvas(
+                                videoScanCtx,
+                                videoScanCanvas.width,
+                                videoScanCanvas.height,
+                                lm,
+                                {
+                                    // 正式解析ではテープを一度検出した後に本体座標へ混ぜない。
+                                    // 異なる座標系列の切替による偽の速度ピークを防ぐ。
+                                    mode: requestedShinaiTrackingMode === 'auto' && videoAutoPreferredSource === 'tape'
+                                        ? 'tape'
+                                        : requestedShinaiTrackingMode,
+                                    previousDetection: previousShinaiDetection,
+                                    frameTimeMs: timeMs
+                                }
+                            );
+                            const tapeHit = detection.hit;
+                            frameTapeRoi = detection.roi ? {
+                                x: detection.roi.x / videoScanCanvas.width,
+                                y: detection.roi.y / videoScanCanvas.height,
+                                radius: detection.radius / Math.max(videoScanCanvas.width, videoScanCanvas.height),
+                                source: detection.roi.source
+                            } : null;
                             if (tapeHit) {
                                 tapeHitFrames += 1;
-                                frameTapePoint = { x: tapeHit.x / videoScanCanvas.width, y: tapeHit.y / videoScanCanvas.height, visibility: 0.85 };
+                                frameShinaiSource = tapeHit.source || 'none';
+                                if (requestedShinaiTrackingMode === 'auto' && frameShinaiSource === 'tape') videoAutoPreferredSource = 'tape';
+                                if (frameShinaiSource === 'tape') tapeSourceFrames += 1;
+                                if (frameShinaiSource === 'shaft') shaftSourceFrames += 1;
+                                previousShinaiDetection = tapeHit;
+                                frameTapePoint = {
+                                    x: tapeHit.x / videoScanCanvas.width,
+                                    y: tapeHit.y / videoScanCanvas.height,
+                                    visibility: 0.85,
+                                    quality: Number(tapeHit.quality || 0),
+                                    source: frameShinaiSource
+                                };
                                 frameTapeConfidence = Number(tapeHit.quality || 0);
                                 const tapeMetric = metricFromFramePoint(tapeHit, lm, videoScanCanvas.width, videoScanCanvas.height);
+                                if (filteredShinaiSource !== frameShinaiSource) tapeFilter = new VisibilityAdaptiveFilter3D();
                                 const tapeFiltered = tapeFilter.update(tapeMetric, timeMs, 0.85);
+                                filteredShinaiSource = frameShinaiSource;
                                 frameTapeSpeed = tapeFiltered.speed || 0;
                                 frameTapePosition = tapeFiltered.position ? { ...tapeFiltered.position } : null;
                             }
                         } catch (err) {
                             if (source.type === 'url' && frame === 0) {
-                                setVideoUrlStatus('URL動画はCORS制限によりテープ色検出が無効です。骨格解析は可能な範囲で続行します。', 'amber');
+                                setVideoUrlStatus('URL動画はCORS制限により竹刀の画素検出が無効です。骨格解析は可能な範囲で続行します。', 'amber');
                             }
                         }
                     }
@@ -19816,6 +20334,7 @@ service cloud.firestore {
                     tapePoint: frameTapePoint,
                     tapeConfidence: frameTapeConfidence,
                     tapeRoi: frameTapeRoi,
+                    shinaiSource: frameShinaiSource,
                     tapeSpeed: frameTapeSpeed,
                     officialSpeed: chooseOfficialSpeed({ wrist: frameSpeed, tip: frameTipSpeed, tape: frameTapeSpeed, unit: speedUnit }, Params.officialSpeedSource).value,
                     speedUnit,
@@ -19861,6 +20380,11 @@ service cloud.firestore {
             const avgConfidence = detectedFrames ? confidenceSum / detectedFrames : 0;
             const detectionRate = frames.length ? detectedFrames / frames.length : 0;
             const avgViewQuality = segmentAverage(frames, 'viewQuality');
+            const preferredShinaiSource = requestedShinaiTrackingMode === 'tape'
+                ? 'tape'
+                : (requestedShinaiTrackingMode === 'shaft'
+                    ? 'shaft'
+                    : (videoAutoPreferredSource === 'tape' ? 'tape' : (shaftSourceFrames ? 'shaft' : 'none')));
             const diagnostics = {
                 fileName: source.name,
                 fileSize: source.size,
@@ -19874,6 +20398,11 @@ service cloud.firestore {
                 detectionRate,
                 viewQuality: avgViewQuality,
                 tapeHitRate: frames.length ? tapeHitFrames / frames.length : 0,
+                shinaiHitRate: frames.length ? tapeHitFrames / frames.length : 0,
+                shinaiTapeHitRate: frames.length ? tapeSourceFrames / frames.length : 0,
+                shinaiShaftHitRate: frames.length ? shaftSourceFrames / frames.length : 0,
+                shinaiTrackingMode: normalizeShinaiTrackingMode(),
+                preferredShinaiSource,
                 actualFpsUnknown: !webCodecsContext && !(AppState.videoDiagnostics?.nativeFpsEstimate),
                 nativeFpsEstimate: webCodecsContext?.nativeFps || AppState.videoDiagnostics?.nativeFpsEstimate || null,
                 nativeFpsStatus: webCodecsContext ? 'webcodecs' : (AppState.videoDiagnostics?.nativeFpsStatus || 'unknown'),
@@ -19903,6 +20432,8 @@ service cloud.firestore {
                 peakFrame,
                 speedUnit,
                 officialSpeedSource: Params.officialSpeedSource,
+                shinaiTrackingMode: normalizeShinaiTrackingMode(),
+                preferredShinaiSource,
                 angleReference: Params.angleReference,
                 diagnostics,
                 strikeMode: AppState.videoStrikeMode,
@@ -20080,10 +20611,10 @@ service cloud.firestore {
 	                });
 	                csv += '\n';
 	            }
-	            csv += 'frame,timeMs,rawVideoTimeMs,decodedFrame,ptsUs,durationUs,keyFrame,rightElbow,hasuji,torso,visibility,mark\n';
+	            csv += 'frame,timeMs,rawVideoTimeMs,decodedFrame,ptsUs,durationUs,keyFrame,shinaiSource,shinaiConfidence,rightElbow,hasuji,torso,visibility,mark\n';
 	            data.frames.forEach(frame => {
 	                const mark = frame.index === data.startFrame ? 'START' : (frame.index === data.peakFrame ? 'PEAK' : (frame.index === data.endFrame ? 'END' : ''));
-	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${videoRawMsFromFrame(frame).toFixed(3)},${frame.decodedFrameIndex ?? ''},${frame.ptsUs ?? ''},${frame.durationUs ?? ''},${frame.keyFrame ? 1 : 0},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${Number(frame.visibility || 0).toFixed(3)},${mark}\n`;
+	                csv += `${frame.index},${frame.timeMs.toFixed(3)},${videoRawMsFromFrame(frame).toFixed(3)},${frame.decodedFrameIndex ?? ''},${frame.ptsUs ?? ''},${frame.durationUs ?? ''},${frame.keyFrame ? 1 : 0},${frame.shinaiSource || frame.tapePoint?.source || 'none'},${Number(frame.tapeConfidence || 0).toFixed(3)},${Number(frame.rightAng||0).toFixed(2)},${Number(frame.hasuji||0).toFixed(2)},${Number(frame.torsoAng||0).toFixed(2)},${Number(frame.visibility || 0).toFixed(3)},${mark}\n`;
 	            });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const link = document.createElement('a');
@@ -20117,6 +20648,8 @@ service cloud.firestore {
             const diag = data.diagnostics || AppState.videoDiagnostics || {};
             const confidence = Number(diag.confidence || 0);
             const detectionRate = Number(diag.detectionRate || 0);
+            const shinaiSource = dominantShinaiDetectionSource(data.frames.slice(data.startFrame ?? 0, (data.endFrame ?? data.frames.length - 1) + 1));
+            const shinaiHitRate = Number(diag.shinaiHitRate ?? diag.tapeHitRate ?? 0);
             const rows = [
                 ['動画ファイル', escapeHtml(diag.fileName || '---')],
                 ['解像度', diag.width && diag.height ? `${diag.width}x${diag.height}` : '---'],
@@ -20128,6 +20661,8 @@ service cloud.firestore {
                 ['動画全フレーム数', data.webCodecs?.totalFrameCount || '---'],
                 ['姿勢検出信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---'],
                 ['検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---'],
+                ['竹刀検出方式', shinaiDetectionSourceLabel(shinaiSource)],
+                ['竹刀検出率', shinaiHitRate ? `${Math.round(shinaiHitRate * 100)}%` : '---'],
                 ['開始フレーム', data.startFrame ?? '---'],
                 ['最高速フレーム', data.peakFrame ?? '---'],
                 ['終了フレーム', data.endFrame ?? '---'],
@@ -20199,6 +20734,8 @@ service cloud.firestore {
             const xValues = slice.map(frame => frame.landmarks?.[16]?.x).filter(value => Number.isFinite(value));
             const trajectorySway = xValues.length ? ((Math.max(...xValues) - Math.min(...xValues)) * 100).toFixed(1) : '0.0';
             const avgVisibility = slice.length ? slice.reduce((sum, frame) => sum + Number(frame.visibility || 0), 0) / slice.length : 0;
+	            const shinaiDetectionSource = dominantShinaiDetectionSource(slice);
+	            const shinaiHitRate = slice.length ? slice.filter(frame => frame.tapePoint).length / slice.length : 0;
 	            const rightAng = Number(endFrame.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || 0);
@@ -20222,7 +20759,9 @@ service cloud.firestore {
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
-                roiStatus: tapeMetrics ? '動画テープ検出' : '動画ROI未検出',
+                roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
+                shinaiDetectionSource,
+                shinaiHitRate,
                 startFrameIndex: data.startFrame,
                 peakFrameIndex: data.peakFrame,
                 endFrameIndex: data.endFrame,
@@ -20230,7 +20769,7 @@ service cloud.firestore {
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : (official.metrics?.peakIndex != null ? slice[Math.min(slice.length - 1, official.metrics.peakIndex + 1)]?.timeMs || 0 : 0),
                 endTimeMs: endFrame.timeMs,
                 endReason: '動画解析・手動補正後',
-	                measurementMethod: `動画解析 / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
+	                measurementMethod: `動画解析 / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: '動画解析から正式記録へ保存',
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -20240,7 +20779,7 @@ service cloud.firestore {
                     hasuji
                 },
                 clipFrames: [],
-                timingDefinition: `動画解析: 竹刀先端テープ基準。開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
+                timingDefinition: `動画解析: 竹刀先端の直接検出基準。開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
             };
             record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs);
             record.researchCorrection = buildResearchCorrection(data);
@@ -20290,6 +20829,8 @@ service cloud.firestore {
             const xValues = slice.map(frame => frame.landmarks?.[16]?.x).filter(value => Number.isFinite(value));
             const trajectorySway = xValues.length ? ((Math.max(...xValues) - Math.min(...xValues)) * 100).toFixed(1) : '0.0';
             const avgVisibility = Number(strike.avgVisibility || (slice.length ? slice.reduce((sum, frame) => sum + Number(frame.visibility || frame.poseConfidence || 0), 0) / slice.length : 0));
+            const shinaiDetectionSource = dominantShinaiDetectionSource(slice);
+            const shinaiHitRate = slice.length ? slice.filter(frame => frame.tapePoint).length / slice.length : 0;
             const rightAng = Number(endFrame.rightAng || strike.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || strike.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || strike.hasuji || 0);
@@ -20315,7 +20856,9 @@ service cloud.firestore {
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
-                roiStatus: tapeMetrics ? '動画テープ検出' : '動画ROI未検出',
+                roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
+                shinaiDetectionSource,
+                shinaiHitRate,
                 startFrameIndex: strike.startFrame,
                 peakFrameIndex: strike.peakFrame,
                 endFrameIndex: strike.endFrame,
@@ -20323,7 +20866,7 @@ service cloud.firestore {
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : strike.peakTimeMs,
                 endTimeMs: endFrame.timeMs,
                 endReason: strike.manualAdjusted ? '複数打突・手動補正後' : '複数打突・自動分割',
-	                measurementMethod: `動画解析${numberLabel} / ${officialSpeedLabel(Params.officialSpeedSource)}${official.key !== Params.officialSpeedSource ? `→${officialSpeedLabel(official.key)}` : ''} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
+	                measurementMethod: `動画解析${numberLabel} / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
                 memo: `複数打突${numberLabel}を正式記録へ保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -20333,7 +20876,7 @@ service cloud.firestore {
                     hasuji
                 },
                 clipFrames: [],
-	                timingDefinition: `動画解析${numberLabel}: 竹刀先端テープ基準。開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
+	                timingDefinition: `動画解析${numberLabel}: 竹刀先端の直接検出基準。開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
                 researchAngles: buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs),
                 researchCorrection: (
                     Number(data.startFrame) === Number(strike.startFrame)
@@ -21154,6 +21697,24 @@ service cloud.firestore {
             updateVideoTapeQualityStatus();
             drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
         });
+        const setShinaiTrackingMode = mode => {
+            Params.shinaiTrackingMode = normalizeShinaiTrackingMode(mode);
+            const videoMode = document.getElementById('videoShinaiTrackingMode');
+            const settingsMode = document.getElementById('paramShinaiTrackingMode');
+            if (videoMode) videoMode.value = Params.shinaiTrackingMode;
+            if (settingsMode) settingsMode.value = Params.shinaiTrackingMode;
+            AppState.lastShaftDetection = null;
+            AppState.lastShinaiPoint = null;
+            AppState.lastShinaiQuality = 0;
+            AppState.lastShinaiSource = 'none';
+            AppState.lastShinaiDetection = null;
+            AppState.currentShinaiDetected = false;
+            AppState.currentShinaiSource = 'none';
+            updateVideoTapeQualityStatus();
+            drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0));
+        };
+        const videoShinaiTrackingMode = document.getElementById('videoShinaiTrackingMode');
+        if (videoShinaiTrackingMode) videoShinaiTrackingMode.addEventListener('change', e => setShinaiTrackingMode(e.target.value));
         const videoTapeRoiSlider = document.getElementById('videoTapeRoiSlider');
         if (videoTapeRoiSlider) videoTapeRoiSlider.addEventListener('input', e => {
             Params.tipRoiRatio = parseFloat(e.target.value);
@@ -21553,9 +22114,20 @@ service cloud.firestore {
         if (elTipTracking) elTipTracking.addEventListener('change', e=>{
             Params.tipTracking = e.target.checked;
             AppState.roiStatus = Params.tipTracking ? '探索待ち' : 'OFF';
+            if (!Params.tipTracking) {
+                AppState.currentShinaiDetected = false;
+                AppState.currentShinaiSource = 'none';
+                AppState.lastShinaiPoint = null;
+                AppState.lastShinaiQuality = 0;
+                AppState.lastShinaiDetection = null;
+                AppState.lastShaftDetection = null;
+            }
             updatePrecisionPanel();
             updateVideoTapeQualityStatus();
         });
+
+        const elShinaiTrackingMode = document.getElementById('paramShinaiTrackingMode');
+        if (elShinaiTrackingMode) elShinaiTrackingMode.addEventListener('change', e => setShinaiTrackingMode(e.target.value));
 
         const elTapeColor = document.getElementById('paramTapeColor');
         if (elTapeColor) elTapeColor.addEventListener('change', e=>{
