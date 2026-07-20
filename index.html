@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v176';
+            var version = 'v177';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -17332,6 +17332,10 @@ service cloud.firestore {
                 clearTimeout(AppState.videoSlowTimer);
                 AppState.videoSlowTimer = null;
             }
+            ['analysisVideoElement', 'videoResultElement', 'videoCorrectionElement'].forEach(id => {
+                const video = document.getElementById(id);
+                if (video && !video.paused) video.pause();
+            });
             AppState.videoSlowPlaying = false;
             setVideoSlowButtonsPlaying(false);
         }
@@ -17343,31 +17347,53 @@ service cloud.firestore {
             AppState.videoSlowPlaying = true;
             setVideoSlowButtonsPlaying(true);
             const rate = getVideoSlowRate();
-            const fps = Math.max(1, data.fps || Params.targetFps || 60);
-            const frameStepMs = videoFrameStepMs(data, fps);
-            const frameStep = 1;
             const scope = getVideoPlaybackScope();
             const playStart = scope === 'strike' ? clamp(data.startFrame ?? 0, 0, data.frames.length - 1) : 0;
             const playUntil = scope === 'strike' && Number.isFinite(data.endFrame) && data.endFrame !== null
                 ? clamp(data.endFrame, playStart, data.frames.length - 1)
                 : data.frames.length - 1;
+            const slider = document.getElementById('videoFrameSlider');
+            let current = clamp(Number(slider?.value || playStart), playStart, playUntil);
+            let originFrame = current;
+            let originFrameMs = Number(data.frames[originFrame]?.timeMs || 0);
+            let originWallMs = performance.now();
+            const endMs = Number(data.frames[playUntil]?.timeMs || originFrameMs);
+            const frameAtTime = targetMs => {
+                let low = playStart;
+                let high = playUntil;
+                while (low < high) {
+                    const mid = Math.floor((low + high) / 2);
+                    if (Number(data.frames[mid]?.timeMs || 0) < targetMs) low = mid + 1;
+                    else high = mid;
+                }
+                if (low > playStart) {
+                    const before = low - 1;
+                    const beforeDiff = Math.abs(Number(data.frames[before]?.timeMs || 0) - targetMs);
+                    const afterDiff = Math.abs(Number(data.frames[low]?.timeMs || 0) - targetMs);
+                    if (beforeDiff <= afterDiff) return before;
+                }
+                return low;
+            };
             const tick = () => {
                 if (!AppState.videoSlowPlaying) return;
-                const slider = document.getElementById('videoFrameSlider');
-                const startAt = playStart;
-                const currentRaw = Number(slider?.value || startAt);
-                const current = currentRaw < startAt || currentRaw > playUntil ? startAt : currentRaw;
-                const next = current >= playUntil ? startAt : Math.min(playUntil, current + frameStep);
-                // 描画完了を待つとMOVや高fps動画で再生が止まって見えるため、
-                // フレーム進行は独立させ、古い描画はvideoDrawTokenで破棄する。
-                setVideoAnalysisFrame(next);
-                const currentFrame = data.frames[current];
-                const nextFrame = data.frames[next];
-                const frameDeltaMs = currentFrame && nextFrame && next >= current
-                    ? Math.max(frameStepMs, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
-                    : frameStepMs;
-                const delayMs = clamp(frameDeltaMs / Math.max(rate, 0.05), 18, 1600);
-                AppState.videoSlowTimer = setTimeout(tick, delayMs);
+                const now = performance.now();
+                const targetMs = originFrameMs + (now - originWallMs) * Math.max(rate, 0.05);
+                if (targetMs >= endMs || current >= playUntil) {
+                    current = playStart;
+                    originFrame = playStart;
+                    originFrameMs = Number(data.frames[playStart]?.timeMs || 0);
+                    originWallMs = now;
+                    setVideoAnalysisFrame(playStart);
+                } else {
+                    const next = frameAtTime(targetMs);
+                    if (next !== current) {
+                        current = next;
+                        // 240fpsでも再生時間を正しく保つため、表示能力を超える分は
+                        // 再生時だけ飛ばす。1コマ送りでは全フレームを利用できる。
+                        setVideoAnalysisFrame(next);
+                    }
+                }
+                AppState.videoSlowTimer = setTimeout(tick, 16);
             };
             tick();
         }
