@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v173';
+            var version = 'v174';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -17761,7 +17761,7 @@ service cloud.firestore {
             };
         }
 
-        function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, globalPeak) {
+        function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, referencePeak) {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
             if (Number(frame.poseConfidence || 0) < 0.35) return false;
@@ -17773,13 +17773,19 @@ service cloud.firestore {
             const descent = usesTape ? videoTapeDescentRatio(frames, index, 2) : videoWristDescentRatio(frames, index, 2);
             const minDescent = usesTape ? 0.004 : Math.max(0.006, shoulder * 0.035);
             const downVelocity = Number(frame.downVelocity || 0);
+            const angleRadius = 8;
+            const angleBefore = videoShinaiProgressAngle(frames[Math.max(0, index - angleRadius)]);
+            const angleAfter = videoShinaiProgressAngle(frames[Math.min(frames.length - 1, index + angleRadius)]);
+            const shinaiAngleSweep = Number.isFinite(angleBefore) && Number.isFinite(angleAfter)
+                ? angleAfter - angleBefore
+                : 0;
             const downOk = usesTape
-                ? descent >= minDescent
+                ? (descent >= minDescent || (descent >= 0.0015 && shinaiAngleSweep >= 18) || shinaiAngleSweep >= 26)
                 : (descent >= minDescent || downVelocity >= Math.max(0.08, Params.timingStartDownVelocityMps * 0.20));
             if (!downOk) return false;
             const prominence = videoPeakProminence(speeds, index, 4);
             const peak = Number(speeds[index] || 0);
-            return prominence >= Math.max(0.12, globalPeak * 0.045) || peak >= globalPeak * Math.max(0.55, sensitivity.peakRatio * 1.25);
+            return prominence >= Math.max(0.12, referencePeak * 0.045) || peak >= referencePeak * Math.max(0.55, sensitivity.peakRatio * 1.25);
         }
 
         function resolveTapeStrikeWindow(data, peakFrame, speeds, sensitivity) {
@@ -18094,14 +18100,21 @@ service cloud.firestore {
                 return [];
             }
             const sensitivity = videoStrikeSensitivityProfile();
-            const threshold = Math.max(globalPeak * sensitivity.peakRatio, sensitivity.minSpeed);
+            // 単発の追跡飛びを全候補の基準にすると、正常な打突を見逃す。
+            // 上位3%点を基準ピークとして、外れ値の影響を抑える。
+            const positiveSpeeds = speeds.filter(value => Number.isFinite(value) && value > 0).sort((a, b) => a - b);
+            const robustPeak = positiveSpeeds.length
+                ? positiveSpeeds[Math.min(positiveSpeeds.length - 1, Math.floor(positiveSpeeds.length * 0.97))]
+                : globalPeak;
+            const referencePeak = Math.max(Number(sensitivity.minSpeed || 0), Math.min(globalPeak, robustPeak || globalPeak));
+            const threshold = Math.max(referencePeak * sensitivity.peakRatio, sensitivity.minSpeed);
             const minGap = Math.max(6, Math.round(timingFps * sensitivity.minGapSec));
             const candidates = [];
             for (let i = 2; i < speeds.length - 2; i++) {
                 if (speeds[i] < threshold) continue;
                 if (speeds[i] < speeds[i - 1] || speeds[i] < speeds[i + 1]) continue;
                 if (speeds[i] < speeds[i - 2] || speeds[i] < speeds[i + 2]) continue;
-                if (!isVideoDownwardStrikeCandidate(frames, speeds, i, sensitivity, globalPeak)) continue;
+                if (!isVideoDownwardStrikeCandidate(frames, speeds, i, sensitivity, referencePeak)) continue;
                 const tooClose = candidates.some(candidate => Math.abs(candidate.peakFrame - i) < minGap);
                 if (tooClose) {
                     const current = candidates.find(candidate => Math.abs(candidate.peakFrame - i) < minGap);
