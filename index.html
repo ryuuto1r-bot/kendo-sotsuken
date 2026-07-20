@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v174';
+            var version = 'v175';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -15973,7 +15973,7 @@ service cloud.firestore {
             if (!data?.frames?.length) return null;
             const relativeMs = (Number(sourceSecond || 0) - Number(data.sourceStartSec || 0)) * 1000;
             if (!Number.isFinite(relativeMs)) return null;
-            // WebCodecsの二次解析フレームは、打突候補区間だけを連結した配列である。
+            // WebCodecs正式解析では、選択した動画範囲の全フレームを時刻順に保持する。
             // 配列番号をfps換算すると区間の切れ目で別コマへ飛ぶため、実PTSに相当する
             // rawTimeMsを二分探索し、動画時刻に最も近い解析フレームを返す。
             const frames = data.frames;
@@ -19905,6 +19905,18 @@ service cloud.firestore {
             }));
         }
 
+        function buildWebCodecsFullVideoWindows(data, context) {
+            const contextEndMs = Number(context?.frameTable?.at(-1)?.rawTimeMs || 0);
+            const sourceStartMs = clamp(Number(data?.sourceStartSec || 0) * 1000, 0, Math.max(0, contextEndMs));
+            const requestedEndMs = Number(data?.sourceEndSec);
+            const sourceEndMs = clamp(
+                Number.isFinite(requestedEndMs) ? requestedEndMs * 1000 : contextEndMs,
+                sourceStartMs + 0.001,
+                Math.max(sourceStartMs + 0.001, contextEndMs)
+            );
+            return [{ startMs: sourceStartMs, endMs: sourceEndMs, labels: ['動画全体'] }];
+        }
+
         function nearestCoarseVideoFrame(frames, rawTimeMs) {
             if (!frames?.length) return null;
             let low = 0;
@@ -20047,11 +20059,11 @@ service cloud.firestore {
         }
 
         async function refineVideoAnalysisWithWebCodecs(context, data, slowSettings, progress, progressText) {
-            const windows = buildWebCodecsStrikeWindows(data, context);
+            // 一次解析の候補だけに限定すると、粗解析で見逃した打突は二次解析にも
+            // 到達しない。正式測定では選択範囲の全フレームを順番に復号する。
+            const windows = buildWebCodecsFullVideoWindows(data, context);
             if (!windows.length) return false;
             const coarseFrames = data.frames;
-            const coarseStrikes = [...(data.strikes || [])];
-            const coarseRejected = [...(data.rejectedStrikes || [])];
             const fineFrames = [];
             const canvas = document.createElement('canvas');
             const maxSide = 960;
@@ -20064,8 +20076,8 @@ service cloud.firestore {
             const tapeFilters = new Map();
             const tapeFilterSources = new Map();
             const previousShinaiDetections = new Map();
-            safeText('videoAnalysisStatus', `高fps二次解析 0/${context.frameTable.length}`);
-            AppState.webCodecsStatus = '二次解析中';
+            safeText('videoAnalysisStatus', `全コマ竹刀解析 0/${context.frameTable.length}`);
+            AppState.webCodecsStatus = '全フレーム竹刀追跡中';
 
             await webCodecsDecodeRanges(context, windows, (videoFrame, meta) => {
                 const sourceRelativeRawMs = meta.rawTimeMs - Number(data.sourceStartSec || 0) * 1000;
@@ -20146,15 +20158,42 @@ service cloud.firestore {
                 const percent = clamp(Math.round((completed / Math.max(1, total)) * 100), 0, 100);
                 if (progress) progress.value = percent;
                 if (progressText) progressText.textContent = `${percent}%`;
-                safeText('videoAnalysisStatus', `高fps二次解析 ${completed}/${total}`);
+                safeText('videoAnalysisStatus', `全コマ竹刀解析 ${completed}/${total}`);
             });
 
             fineFrames.sort((a, b) => a.rawTimeMs - b.rawTimeMs || a.ptsUs - b.ptsUs);
-            fineFrames.forEach((frame, index) => { frame.index = index; });
+            let orderedTapeFilter = new VisibilityAdaptiveFilter3D();
+            let orderedTapeSource = 'none';
+            fineFrames.forEach((frame, index) => {
+                frame.index = index;
+                frame.tapeSpeed = 0;
+                frame.tapePosition = null;
+                const source = frame.shinaiSource || frame.tapePoint?.source || 'none';
+                if (frame.tapePoint && frame.landmarks?.[11] && frame.landmarks?.[12]) {
+                    if (orderedTapeSource !== source) orderedTapeFilter = new VisibilityAdaptiveFilter3D();
+                    orderedTapeSource = source;
+                    const metric = metricFromFramePoint({
+                        x: Number(frame.tapePoint.x || 0) * canvas.width,
+                        y: Number(frame.tapePoint.y || 0) * canvas.height
+                    }, frame.landmarks, canvas.width, canvas.height);
+                    if (metric) {
+                        const filtered = orderedTapeFilter.update(metric, frame.timeMs, 0.85);
+                        frame.tapePosition = filtered.position ? { ...filtered.position } : null;
+                        frame.tapeSpeed = filtered.speed || 0;
+                    }
+                }
+                frame.officialSpeed = chooseOfficialSpeed({
+                    wrist: frame.speed,
+                    tip: frame.tipSpeed,
+                    tape: frame.tapeSpeed,
+                    unit: frame.speedUnit
+                }, Params.officialSpeedSource).value;
+            });
             if (fineFrames.length < 2) throw new Error('高fps区間の復号フレームが不足しています');
 
             data.frames = fineFrames;
             data.fps = context.effectiveFps;
+            data.preferredShinaiSource = dominantShinaiDetectionSource(fineFrames);
             data.tapeTiming = buildTapeTimingSeries(data);
             data.webCodecs = {
                 enabled: true,
@@ -20169,7 +20208,7 @@ service cloud.firestore {
                 displayWidth: context.displayWidth || context.width,
                 displayHeight: context.displayHeight || context.height
             };
-            data.timingSource = 'webcodecs-two-pass';
+            data.timingSource = 'webcodecs-full-frame';
             data.diagnostics = {
                 ...(data.diagnostics || {}),
                 fps: context.effectiveFps,
@@ -20178,7 +20217,7 @@ service cloud.firestore {
                 nativeFpsStatus: 'webcodecs',
                 actualFpsUnknown: false,
                 webCodecs: true,
-                webCodecsMode: 'two-pass',
+                webCodecsMode: 'full-frame',
                 webCodecsCodec: context.codec,
                 webCodecsTotalFrames: context.frameTable.length,
                 webCodecsFullFrameCount: context.frameTable.length,
@@ -20189,24 +20228,20 @@ service cloud.firestore {
                 shinaiShaftHitRate: fineFrames.length ? fineFrames.filter(frame => frame.shinaiSource === 'shaft').length / fineFrames.length : 0,
                 shinaiTrackingMode: normalizeShinaiTrackingMode()
             };
-            data.strikes = coarseStrikes
-                .map((strike, index) => mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, index + 1, false))
-                .filter(Boolean);
-            data.rejectedStrikes = coarseRejected
-                .map((strike, index) => mapCoarseStrikeToFine(data, coarseFrames, fineFrames, strike, index + 1, true))
-                .filter(Boolean);
-            const mappedStart = Number.isFinite(data.startFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.startFrame])) : null;
-            const mappedPeak = Number.isFinite(data.peakFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.peakFrame])) : null;
-            const mappedEnd = Number.isFinite(data.endFrame) ? nearestFineFrameIndex(fineFrames, videoRawMsFromFrame(coarseFrames[data.endFrame])) : null;
-            data.startFrame = data.manualRange ? 0 : mappedStart;
-            data.peakFrame = mappedPeak;
-            data.endFrame = data.manualRange ? fineFrames.length - 1 : mappedEnd;
+            // 全コマの竹刀軌跡が完成してから打突を分割する。粗解析候補の
+            // 開始・終了は引き継がず、見逃しや長大区間を正式解析へ持ち込まない。
+            data.strikes = [];
+            data.rejectedStrikes = [];
+            detectVideoStrikes(data);
+            const firstStrike = data.strikes?.[0] || data.rejectedStrikes?.[0] || null;
+            data.startFrame = firstStrike?.startFrame ?? null;
+            data.peakFrame = firstStrike?.peakFrame ?? null;
+            data.endFrame = firstStrike?.endFrame ?? null;
             data.autoStartFrame = data.startFrame;
-            data.autoPeakFrame = mappedPeak;
+            data.autoPeakFrame = data.peakFrame;
             data.autoEndFrame = data.endFrame;
-            normalizeVideoStrikeBuckets(data);
             updateVideoDiagnostics(data.diagnostics);
-            AppState.webCodecsStatus = 'WebCodecs二段階解析';
+            AppState.webCodecsStatus = 'WebCodecs全フレーム解析';
             return true;
         }
 
@@ -20308,9 +20343,13 @@ service cloud.firestore {
                 : (coarsePlaybackFps || clamp(Params.targetFps || 60, 30, 240));
             const manualRange = getVideoManualAnalysisRange(video, fps);
             const sourceStartSec = manualRange ? manualRange.startSec : 0;
-            const sourceEndSec = manualRange ? manualRange.endSec : Math.min(video.duration || 0, 12);
+            const sourceEndSec = manualRange ? manualRange.endSec : Math.max(0.001, Number(video.duration || 0));
             const duration = Math.max(0.001, sourceEndSec - sourceStartSec);
-            const totalFrames = Math.max(1, Math.min(Math.floor(duration * fps) + 1, 1800));
+            const maxCoarseFrames = 1800;
+            if (Math.floor(duration * fps) + 1 > maxCoarseFrames) {
+                fps = Math.max(2, (maxCoarseFrames - 1) / duration);
+            }
+            const totalFrames = Math.max(1, Math.floor(duration * fps) + 1);
             updateVideoDiagnostics({
                 width: video.videoWidth || 0,
                 height: video.videoHeight || 0,
@@ -20821,7 +20860,7 @@ service cloud.firestore {
             csv += `スロー補正倍率,${data.slowMotionFactor || 1}\n`;
             csv += `撮影fps,${data.captureFps || ''}\n`;
             csv += `再生fps,${data.playbackFps || ''}\n`;
-            csv += `解析方式,${data.webCodecs?.enabled ? 'WebCodecs二段階解析' : '従来解析'}\n`;
+            csv += `解析方式,${data.webCodecs?.enabled ? 'WebCodecs全フレーム解析' : '従来解析'}\n`;
             csv += `動画codec,${data.webCodecs?.codec || ''}\n`;
             csv += `動画全フレーム数,${data.webCodecs?.totalFrameCount || ''}\n`;
             csv += `高fps解析フレーム数,${data.webCodecs?.decodedFrameCount || ''}\n`;
@@ -20889,7 +20928,7 @@ service cloud.firestore {
                 ['動画fps目安', diag.nativeFpsEstimate ? `${diag.nativeFpsEstimate} fps` : '---'],
                 ['解析fps', `${data.fps} fps${diag.actualFpsUnknown ? ' *ブラウザ上の解析設定値' : ''}`],
                 ['解析フレーム数', data.frames.length],
-                ['解析方式', data.webCodecs?.enabled ? 'WebCodecs二段階解析' : '従来解析'],
+                ['解析方式', data.webCodecs?.enabled ? 'WebCodecs全フレーム解析' : '従来解析'],
                 ['動画codec', data.webCodecs?.codec || '---'],
                 ['動画全フレーム数', data.webCodecs?.totalFrameCount || '---'],
                 ['姿勢検出信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---'],
