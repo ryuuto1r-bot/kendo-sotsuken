@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v185';
+            var version = 'v186';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -21422,8 +21422,9 @@ service cloud.firestore {
             const rightAng = Number(endFrame.rightAng || strike.rightAng || 0);
             const torsoAng = Number(endFrame.torsoAng || strike.torsoAng || 0);
             const hasuji = Number(endFrame.hasuji || strike.hasuji || 0);
-	            const validation = validateVideoStrikeSummary(strike, data);
+	            const validation = validateVideoStrikeSummary(videoStrikeValidationTarget(strike), data);
             const numberLabel = strike.number ? ` #${strike.number}` : '';
+            const timingSource = strike.manualAdjusted ? 'manual-correction' : 'automatic-detection';
             return {
 	                id: AppState.records.length + 1,
                     ...researchRecordMetadata(),
@@ -21454,8 +21455,10 @@ service cloud.firestore {
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : strike.peakTimeMs,
                 endTimeMs: endFrame.timeMs,
                 endReason: strike.manualAdjusted ? '複数打突・手動補正後' : '複数打突・自動分割',
+	                timingSource,
+	                manualTimingConfirmed: !!strike.manualAdjusted,
 	                measurementMethod: `動画解析${numberLabel} / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
-                memo: `複数打突${numberLabel}を正式記録へ保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
+	                memo: `複数打突${numberLabel}を${strike.manualAdjusted ? '補正済み' : '自動測定・未補正'}として保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelAngleValues: {
@@ -21505,11 +21508,11 @@ service cloud.firestore {
                 if (!options.silent) showToast('保存する打突がありません', 'yellow');
                 return null;
             }
-            if (!strike.manualAdjusted) {
+            if (!strike.manualAdjusted && !options.allowAutomatic) {
                 if (!options.silent) showToast('自動分割候補は保存できません。補正で開始/終了を確定してください', 'yellow');
                 return null;
             }
-            const validation = validateVideoStrikeSummary(strike, data);
+            const validation = validateVideoStrikeSummary(videoStrikeValidationTarget(strike), data);
             if (!validation.ok) {
                 if (!options.silent) showToast(`この打突は${validation.reason}のため保存できません。開始/終了を補正してください`, 'yellow');
                 return null;
@@ -21549,23 +21552,26 @@ service cloud.firestore {
             if (!strikes.length) return showToast('保存できる複数打突がありません', 'yellow');
             let lastRecord = null;
             let savedCount = 0;
-            let skippedUnconfirmed = 0;
+            let automaticCount = 0;
+            let correctedCount = 0;
             strikes.forEach((strike, index) => {
                 if (strike.savedRecordId) return;
-                if (!strike.manualAdjusted) {
-                    skippedUnconfirmed++;
-                    return;
-                }
-                const record = saveVideoStrikeAsRecord(index, { silent: true, deferRefresh: true });
+                const record = saveVideoStrikeAsRecord(index, { silent: true, deferRefresh: true, allowAutomatic: true });
                 if (record) {
                     savedCount++;
+                    if (strike.manualAdjusted) correctedCount++;
+                    else automaticCount++;
                     lastRecord = record;
                 }
             });
-            if (!savedCount) return showToast(skippedUnconfirmed ? '自動候補は保存できません。各打突の開始/終了を補正してください' : '全て保存済みです', 'yellow');
+            if (!savedCount) return showToast('全て保存済みです', 'yellow');
             refreshAfterVideoRecordSave(lastRecord);
             updateVideoMultiStrikePanel(data);
-            showToast(`${savedCount}本の打突を正式記録に保存しました`, 'green');
+            const breakdown = [
+                correctedCount ? `補正済み${correctedCount}本` : '',
+                automaticCount ? `自動測定${automaticCount}本` : ''
+            ].filter(Boolean).join('・');
+            showToast(`${savedCount}本を保存しました${breakdown ? `（${breakdown}）` : ''}`, 'green');
         }
 
 	        function exportCSV() {
