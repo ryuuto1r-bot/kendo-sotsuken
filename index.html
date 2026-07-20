@@ -19497,6 +19497,70 @@ service cloud.firestore {
             return 0;
         }
 
+        // AppleのHFR動画は、コンテナ上では30fps再生でも120/240fpsで撮影されている場合がある。
+        // QuickTimeメタデータを読み、通常動画として誤換算しないために使用する。
+        function mp4QuickTimeMetadataValue(mp4File, targetKey) {
+            const moov = mp4File?.moov || mp4File?.boxes?.find?.(box => box?.type === 'moov');
+            const meta = moov?.meta;
+            const keys = meta?.keys?.keys || {};
+            const values = meta?.ilst?.list || {};
+            for (const [index, rawKey] of Object.entries(keys)) {
+                const key = String(rawKey || '').replace(/^mdta/, '');
+                if (key !== targetKey) continue;
+                const value = values[index]?.value;
+                if (typeof value === 'bigint') return Number(value);
+                return value;
+            }
+            return null;
+        }
+
+        function applyWebCodecsSlowMotionFactor(context, factor) {
+            if (!context) return context;
+            const safeFactor = clamp(Number(factor || 1), 1, 16);
+            context.slowMotionFactor = safeFactor;
+            context.effectiveFps = Number(context.nativeFps || 0) * safeFactor;
+            (context.frameTable || []).forEach(frame => {
+                frame.timeMs = Number(frame.rawTimeMs || 0) / safeFactor;
+            });
+            return context;
+        }
+
+        function inferVideoSlowMotionFromWebCodecs(context, currentSettings) {
+            const current = currentSettings || readVideoSlowMotionSettings();
+            if (!context?.highFrameRateSlowMotionIntent || current.factor > 1.001) {
+                return { settings: current, autoDetected: false };
+            }
+            const nativeFps = Number(context.nativeFps || 0);
+            const selectedCaptureFps = Number(document.getElementById('videoAnalysisFpsSelect')?.value || 0);
+            const captureFps = clamp(
+                Number(selectedCaptureFps >= 120 ? selectedCaptureFps : (document.getElementById('videoCaptureFpsInput')?.value || 0)),
+                30,
+                960
+            );
+            if (!Number.isFinite(nativeFps) || nativeFps <= 0 || captureFps < 120 || captureFps <= nativeFps * 1.5) {
+                return { settings: current, autoDetected: false, needsCaptureFps: true };
+            }
+
+            const rawFactor = captureFps / nativeFps;
+            const knownFactor = [2, 4, 8].reduce((best, value) =>
+                Math.abs(value - rawFactor) < Math.abs(best - rawFactor) ? value : best, 2);
+            const factor = Math.abs(knownFactor - rawFactor) / knownFactor <= 0.12
+                ? knownFactor
+                : clamp(rawFactor, 1, 16);
+            const select = document.getElementById('videoSlowMotionSelect');
+            const captureInput = document.getElementById('videoCaptureFpsInput');
+            const playbackInput = document.getElementById('videoPlaybackFpsInput');
+            if (captureInput) captureInput.value = String(Math.round(captureFps));
+            if (playbackInput) playbackInput.value = String(Math.max(1, Math.round(nativeFps)));
+            if (select) select.value = [2, 4, 8].includes(factor) ? String(factor) : 'custom';
+            const settings = updateVideoSlowMotionUi();
+            return {
+                settings,
+                autoDetected: true,
+                message: `Appleスロー動画を検出: ${Math.round(captureFps)}fps撮影 → ${Math.round(nativeFps)}fps再生 / 実時間÷${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)}`
+            };
+        }
+
         function drawDecodedVideoFrame(ctx, frame, width, height, rotation = 0) {
             const normalizedRotation = ((Math.round(Number(rotation || 0)) % 360) + 360) % 360;
             ctx.save();
@@ -19572,6 +19636,10 @@ service cloud.firestore {
                         );
                         const nativeFps = presentation.length / playbackDurationSec;
                         const factor = clamp(Number(slowSettings?.factor || 1), 1, 16);
+                        const fullFrameRatePlaybackIntent = mp4QuickTimeMetadataValue(
+                            mp4File,
+                            'com.apple.quicktime.full-frame-rate-playback-intent'
+                        );
                         const rotation = mp4TrackRotation(track);
                         const displayWidth = rotation === 90 || rotation === 270
                             ? decoderConfig.codedHeight
@@ -19598,6 +19666,8 @@ service cloud.firestore {
                             nativeFps,
                             effectiveFps: nativeFps * factor,
                             slowMotionFactor: factor,
+                            fullFrameRatePlaybackIntent,
+                            highFrameRateSlowMotionIntent: Number(fullFrameRatePlaybackIntent) === 0,
                             codec: track.codec,
                             width: decoderConfig.codedWidth,
                             height: decoderConfig.codedHeight,
@@ -20015,7 +20085,7 @@ service cloud.firestore {
                 return;
             }
             applyCalibrationInputs();
-            const slowSettings = updateVideoSlowMotionUi();
+            let slowSettings = updateVideoSlowMotionUi();
             if (!AppState.poseLandmarker) {
                 safeText('videoAnalysisStatus', window.crossOriginIsolated ? 'Pose Landmarker準備中' : '互換AI準備中');
                 AppState.poseLandmarker = null;
@@ -20053,10 +20123,20 @@ service cloud.firestore {
                 throw err;
             }
             let webCodecsContext = null;
+            AppState.videoSlowMotionAutoDetected = false;
             if (source.file && window.VideoDecoder && window.EncodedVideoChunk) {
                 try {
                     safeText('videoAnalysisStatus', '全フレーム時刻を取得中');
                     webCodecsContext = await prepareWebCodecsVideo(source.file, slowSettings);
+                    const slowMotionInference = inferVideoSlowMotionFromWebCodecs(webCodecsContext, slowSettings);
+                    slowSettings = slowMotionInference.settings;
+                    applyWebCodecsSlowMotionFactor(webCodecsContext, slowSettings.factor);
+                    if (slowMotionInference.autoDetected) {
+                        AppState.videoSlowMotionAutoDetected = true;
+                        showToast(slowMotionInference.message, 'blue');
+                    } else {
+                        AppState.videoSlowMotionAutoDetected = false;
+                    }
                     AppState.webCodecsContext = webCodecsContext;
                     AppState.webCodecsStatus = `準備OK / ${webCodecsContext.codec}`;
                 } catch (webCodecsError) {
@@ -20409,6 +20489,8 @@ service cloud.firestore {
                 webCodecs: !!webCodecsContext,
                 webCodecsCodec: webCodecsContext?.codec || '',
                 webCodecsTotalFrames: webCodecsContext?.frameTable?.length || 0,
+                highFrameRateSlowMotionIntent: !!webCodecsContext?.highFrameRateSlowMotionIntent,
+                slowMotionAutoDetected: !!AppState.videoSlowMotionAutoDetected,
                 slowMotionFactor: slowSettings.factor,
                 slowMotionMode: slowSettings.mode,
                 captureFps: slowSettings.captureFps,
