@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v183';
+            var version = 'v184';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -18789,6 +18789,8 @@ service cloud.firestore {
             updated.validationReason = validation.reason;
             updated.validationWarning = validation.warning || '';
             updated.rejected = !validation.ok;
+            data.currentValidation = validation;
+            data.exclusionReason = validation.ok ? '' : validation.reason;
             if (AppState.videoSelectedStrikeRejected && validation.ok) {
                 data.strikes = data.strikes || [];
                 data.strikes.push({ ...updated, rejected: false, validationReason: 'OK', number: data.strikes.length + 1 });
@@ -19597,7 +19599,15 @@ service cloud.firestore {
                 return data?.currentValidation || null;
             }
             const summary = summarizeVideoStrike(data, data.startFrame, data.peakFrame ?? data.startFrame, data.endFrame, 1);
-            const validation = validateVideoStrikeSummary(summary, data);
+            const selected = selectedVideoStrikeRef(data)?.strike;
+            const selectedMatches = selected
+                && Number(selected.startFrame) === Number(data.startFrame)
+                && Number(selected.peakFrame) === Number(data.peakFrame)
+                && Number(selected.endFrame) === Number(data.endFrame);
+            const validationTarget = selectedMatches
+                ? videoStrikeValidationTarget({ ...selected, ...summary })
+                : summary;
+            const validation = validateVideoStrikeSummary(validationTarget, data);
             data.currentValidation = validation;
             data.exclusionReason = validation.ok ? '' : validation.reason;
             return validation;
