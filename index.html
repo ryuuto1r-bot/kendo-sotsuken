@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v184';
+            var version = 'v185';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -22054,9 +22054,17 @@ service cloud.firestore {
             videoTimelineZoomSlider.addEventListener('input', e => setVideoTimelineZoom(e.target.value));
             setVideoTimelineZoom(videoTimelineZoomSlider.value);
         }
+        // 動画測定の主要導線は、委譲イベントの初期化状態に左右されないよう直接結び付ける。
+        document.querySelectorAll('[data-kendo-action="switch-video-step"]').forEach(btn => {
+            if (btn.dataset.videoStepListenerBound === 'true') return;
+            btn.dataset.videoStepListenerBound = 'true';
+            btn.addEventListener('click', event => {
+                event.preventDefault();
+                switchVideoStep(btn.dataset.value);
+            });
+        });
         VideoEditorRuntime.bindActions(document, {
             'switch-tab': ({ value }) => switchTab(value),
-            'switch-video-step': ({ value }) => switchVideoStep(value),
             'export-csv': () => exportCSV(),
             'clear-history': () => clearHistory(),
             'export-data-csv': ({ value }) => exportDataCenterCSV(value),
