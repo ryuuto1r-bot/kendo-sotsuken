@@ -8,7 +8,7 @@
     <script>
         // GitHub Pagesでは古いService Workerが残ると、動画選択UIだけ古い版に戻ることがあるため先に掃除する。
         (function(){
-            var version = 'v186';
+            var version = 'v187';
             var isGithubPages = location.protocol === 'https:' && /(^|\.)github\.io$/.test(location.hostname);
             if (!isGithubPages) return;
             var key = 'kendo-github-cache-clean-' + version;
@@ -6904,6 +6904,25 @@ service cloud.firestore {
                     </div>
                 </div>
 
+                <div class="bg-white p-4 rounded-lg border border-slate-200">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800"><i class="fa-solid fa-stopwatch mr-1"></i>打突時間の開始基準</h4>
+                            <p class="text-xs text-slate-500 mt-1">リアルタイムと動画測定の両方に反映します。</p>
+                        </div>
+                        <span id="strikeTimingModeBadge" class="shrink-0 rounded-full bg-slate-900 px-3 py-1 text-[11px] font-black text-white">全動作</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" role="group" aria-label="打突時間の開始基準">
+                        <button id="strikeTimingFullMotionBtn" type="button" class="rounded border border-slate-900 bg-slate-900 px-3 py-3 text-sm font-black text-white" aria-pressed="true">
+                            全動作
+                        </button>
+                        <button id="strikeTimingDownswingBtn" type="button" class="rounded border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700" aria-pressed="false">
+                            振り下ろし
+                        </button>
+                    </div>
+                    <p id="strikeTimingModeHelp" class="mt-3 text-xs font-bold leading-relaxed text-slate-600">下の構えから竹刀が動き始めた時点 → 振り下ろし終了</p>
+                </div>
+
                 <details class="settings-advanced">
                     <summary><span><i class="fa-solid fa-flask-vial mr-1 text-slate-500"></i>上級設定</span></summary>
                     <p class="text-xs text-slate-500 mt-2">通常は変更不要です。</p>
@@ -7256,6 +7275,7 @@ service cloud.firestore {
             videoDiagnostics: null,
             videoStrikeMode: 'multi',
             videoStrikeSensitivity: 'normal',
+            strikeTimingMode: 'full-motion',
             videoSelectedStrikeIndex: null,
             videoSelectedStrikeRejected: false,
             videoResultTimelineTickKey: '',
@@ -7365,6 +7385,7 @@ service cloud.firestore {
             timingStartTapeSpeedMps: 1.2,
             timingMotionStartTapeSpeedMps: 0.55,
             videoStrikeSensitivity: 'normal',
+            strikeTimingMode: 'full-motion',
             angleReference: 'torso',
             timingEndDecelMps2: 28,
             timingEndSpeedRatio: 0.38,
@@ -7965,9 +7986,11 @@ service cloud.firestore {
             AppState.videoAngleOverlayTarget = 'rightElbow';
             AppState.videoStrikeMode = 'multi';
             AppState.videoStrikeSensitivity = 'normal';
+            AppState.strikeTimingMode = 'full-motion';
             AppState.videoSelectedStrikeIndex = null;
             AppState.videoSelectedStrikeRejected = false;
             Params.videoStrikeSensitivity = 'normal';
+            Params.strikeTimingMode = 'full-motion';
             AppState.showGuide = true;
 
             const raised = document.getElementById('paramRaisedY');
@@ -8033,6 +8056,7 @@ service cloud.firestore {
             if (videoShinaiExtension) { videoShinaiExtension.value = Params.shinaiExtension; safeText('videoShinaiExtensionValue', Params.shinaiExtension.toFixed(2)); }
             safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps} / ${Params.cameraStableFps}fps`);
             setVideoStrikeMode('multi');
+            setStrikeTimingMode('full-motion', { notify: false, reanalyze: false });
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
                 const values = [42, 120, 250, 60];
                 const el = document.getElementById(id);
@@ -8077,6 +8101,82 @@ service cloud.firestore {
             } catch (err) {
                 console.warn('保存領域を更新できませんでした', err);
             }
+        }
+
+        function normalizeStrikeTimingMode(value) {
+            return value === 'downswing' ? 'downswing' : 'full-motion';
+        }
+
+        function strikeTimingModeOf(source = null) {
+            return normalizeStrikeTimingMode(source?.strikeTimingMode || Params.strikeTimingMode || AppState.strikeTimingMode);
+        }
+
+        function strikeTimingModeLabel(mode = Params.strikeTimingMode) {
+            return normalizeStrikeTimingMode(mode) === 'downswing' ? '振り下ろし' : '全動作';
+        }
+
+        function strikeTimingModeDefinition(mode = Params.strikeTimingMode) {
+            return normalizeStrikeTimingMode(mode) === 'downswing'
+                ? '竹刀が上がった状態から下降を開始した時点 → 振り下ろし終了'
+                : '下の構えから竹刀が動き始めた時点 → 振り下ろし終了';
+        }
+
+        function strikeTimingMinimumMs(source = null) {
+            return strikeTimingModeOf(source) === 'downswing' ? 60 : 180;
+        }
+
+        function strikeTimingMaximumMs(source = null) {
+            const configured = Math.min(2000, Number(Params.timingMaxDurationMs || 2000));
+            return strikeTimingModeOf(source) === 'downswing' ? Math.min(1000, configured) : configured;
+        }
+
+        function updateStrikeTimingModeUi() {
+            const mode = normalizeStrikeTimingMode(Params.strikeTimingMode);
+            const fullButton = document.getElementById('strikeTimingFullMotionBtn');
+            const downButton = document.getElementById('strikeTimingDownswingBtn');
+            [[fullButton, mode === 'full-motion'], [downButton, mode === 'downswing']].forEach(([button, active]) => {
+                if (!button) return;
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+                button.classList.toggle('bg-slate-900', active);
+                button.classList.toggle('border-slate-900', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('bg-white', !active);
+                button.classList.toggle('border-slate-200', !active);
+                button.classList.toggle('text-slate-700', !active);
+            });
+            safeText('strikeTimingModeBadge', strikeTimingModeLabel(mode));
+            safeText('strikeTimingModeHelp', strikeTimingModeDefinition(mode));
+        }
+
+        function setStrikeTimingMode(value, options = {}) {
+            const mode = normalizeStrikeTimingMode(value);
+            const changed = mode !== Params.strikeTimingMode;
+            Params.strikeTimingMode = mode;
+            AppState.strikeTimingMode = mode;
+            if (options.persist !== false) safeStorageSet('kendoStrikeTimingMode', mode);
+            updateStrikeTimingModeUi();
+
+            if (changed && options.reanalyze !== false && AppState.videoAnalysis?.frames?.length) {
+                const data = AppState.videoAnalysis;
+                data.strikeTimingMode = mode;
+                data.manualTimingConfirmed = false;
+                data.timingSource = 'auto-candidate';
+                data.strikes = detectVideoStrikes(data);
+                const selected = data.strikes?.[0] || data.rejectedStrikes?.[0] || null;
+                if (selected) {
+                    data.startFrame = selected.startFrame;
+                    data.peakFrame = selected.peakFrame;
+                    data.endFrame = selected.endFrame;
+                }
+                recomputeVideoAnalysisResult();
+                updateVideoMultiStrikePanel(data);
+                drawVideoAnalysisFrame(data.startFrame ?? data.peakFrame ?? 0);
+            }
+            if (changed && options.notify !== false) {
+                const suffix = AppState.videoAnalysis?.frames?.length ? '。動画の自動候補も再計算しました' : '';
+                showToast(`開始基準を「${strikeTimingModeLabel(mode)}」に変更しました${suffix}`, 'blue');
+            }
+            return mode;
         }
 
         function isIOSLikeBrowser() {
@@ -8360,7 +8460,8 @@ service cloud.firestore {
                 ...record,
                 recordType: recordTypeOf(record),
                 source: record.source || (recordTypeOf(record) === 'formal' ? 'video-analysis' : 'realtime'),
-                recordedAt: record.recordedAt || ''
+                recordedAt: record.recordedAt || '',
+                strikeTimingMode: normalizeStrikeTimingMode(record.strikeTimingMode || 'full-motion')
             };
         }
 
@@ -8736,7 +8837,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v162',
+                appVersion: 'v187',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -10591,7 +10692,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v162',
+                appVersion: normalized.appVersion || 'v187',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -10624,6 +10725,7 @@ service cloud.firestore {
                 poseEngine: normalized.poseEngine || '',
                 measurementMethod: normalized.measurementMethod || '',
                 memo: normalized.memo || '',
+                strikeTimingMode: normalizeStrikeTimingMode(normalized.strikeTimingMode || 'full-motion'),
                 timingDefinition: normalized.timingDefinition || '',
                 participantId: normalized.participantId || '',
                 sessionId: normalized.sessionId || '',
@@ -10722,6 +10824,7 @@ service cloud.firestore {
                 poseEngine: payload.poseEngine || '',
                 measurementMethod: payload.measurementMethod || '',
                 memo: payload.memo || '',
+                strikeTimingMode: normalizeStrikeTimingMode(payload.strikeTimingMode || 'full-motion'),
                 timingDefinition: payload.timingDefinition || '',
                 participantId: payload.participantId || '',
                 sessionId: payload.sessionId || '',
@@ -13565,7 +13668,7 @@ service cloud.firestore {
             resetSwingTracking();
             AppState.swingStartY = wristY;
             AppState.swingStartFrameTimeMs = startTime;
-            AppState.swingStartPresentedFrame = AppState.fullMotionStartPresentedFrame
+            AppState.swingStartPresentedFrame = (strikeTimingModeOf() === 'full-motion' ? AppState.fullMotionStartPresentedFrame : 0)
                 || AppState.currentPresentedFrame
                 || AppState.cameraFrameCount
                 || 0;
@@ -13612,7 +13715,7 @@ service cloud.firestore {
             const endByDecel = afterPeak && decel >= Params.timingEndDecelMps2;
             const ratioThreshold = AppState.swingPeakSpeedMps * Params.timingEndSpeedRatio;
             const endByRatio = afterPeak && AppState.swingPeakSpeedMps > 0 && speed <= ratioThreshold;
-            const timedOut = now - AppState.swingStartTime > Params.timingMaxDurationMs;
+            const timedOut = now - AppState.swingStartTime > strikeTimingMaximumMs();
             const tapeStillVisible = AppState.swingTapeMissingFrames <= Math.max(2, Params.timingEndConsecutiveFrames);
             const endSignal = tapeStillVisible && (endByDecel || endByRatio);
 
@@ -13905,7 +14008,7 @@ service cloud.firestore {
             if (angleQuality < Params.minAngleVisibility) reasons.push('角度信頼度不足');
             if (timingQuality.uncertaintyMs > 45) reasons.push(`時間分解能±${timingQuality.uncertaintyMs}ms`);
             if (unprocessedRatio > 0.45) reasons.push(`未処理フレーム${Math.round(unprocessedRatio * 100)}%`);
-            if (durationMs < Params.timingMinDurationMs || durationMs > Params.timingMaxDurationMs) reasons.push('打突時間範囲外');
+            if (durationMs < strikeTimingMinimumMs() || durationMs > strikeTimingMaximumMs()) reasons.push('打突時間範囲外');
             return {
                 accepted: reasons.length === 0,
                 status: reasons.length ? '参考' : '採用候補',
@@ -14012,11 +14115,12 @@ service cloud.firestore {
                 peakFrameIndex: AppState.swingPeakPresentedFrame || null,
                 endFrameIndex: AppState.swingEndPresentedFrame || null,
                 endReason: metrics.endReason || AppState.swingEndReason || '',
-                measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 検証:${realtimeValidation.status}`,
+                measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 開始基準:${strikeTimingModeLabel()} / 検証:${realtimeValidation.status}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
-                timingDefinition: '開始=下の構えで直接検出した竹刀先端が動き始め、速度閾値を2フレーム継続して超えた補間時刻 / 終了=振り下ろしの竹刀先端ピーク後、急減速またはピーク比38%未満を2フレーム確認した最初の補間時刻'
+                strikeTimingMode: strikeTimingModeOf(),
+                timingDefinition: `開始基準=${strikeTimingModeDefinition()}。開始・終了は竹刀先端速度の連続判定と補間時刻を使用。`
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(36, Math.round((AppState.frameFps || Params.targetFps) * 2.4)));
             record.clipFrames = clipFrames;
@@ -14480,7 +14584,7 @@ service cloud.firestore {
                             updateStateUI('IDLE');
                         }
                     } else if (AppState.swingState === 'SIGNAL_GO' || AppState.swingState === 'RAISED') {
-                        const fullMotionStart = Params.tsukiMode
+                        const fullMotionStart = Params.tsukiMode || strikeTimingModeOf() !== 'full-motion'
                             ? 0
                             : updateFullMotionStart(now, wristY, vel, rShoulder);
                         const startCandidate = Params.tsukiMode ? null : updateSwingStartCandidate(now, vel, wristY, rShoulder);
@@ -14497,14 +14601,16 @@ service cloud.firestore {
 	                                beginSwing(now, wristY);
 	                            }
 	                        } else {
-                            updateFullMotionStart(now, wristY, vel, rShoulder);
+                            if (strikeTimingModeOf() === 'full-motion') updateFullMotionStart(now, wristY, vel, rShoulder);
                             if(wristY < nose.y + Params.raisedYOffset) {
                                 AppState.swingState = 'RAISED';
                                 updateStateUI('RAISED');
                             }
                         }
 	                    } else if(AppState.swingState === 'RAISED') {
-	                        const fullMotionStart = updateFullMotionStart(now, wristY, vel, rShoulder);
+                            const fullMotionStart = strikeTimingModeOf() === 'full-motion'
+                                ? updateFullMotionStart(now, wristY, vel, rShoulder)
+                                : 0;
 	                        const startCandidate = updateSwingStartCandidate(now, vel, wristY, rShoulder);
 	                        if(startCandidate) {
 	                            beginSwing(fullMotionStart || startCandidate.timeMs, AppState.fullMotionStartWristY || startCandidate.wristY);
@@ -14606,7 +14712,7 @@ service cloud.firestore {
 		                        const sourceCounts = AppState.swingShinaiSourceCounts || {};
 		                        const shinaiSource = Number(sourceCounts.tape || 0) >= Number(sourceCounts.shaft || 0) ? 'tape' : 'shaft';
 		                        const shinaiSourceLabel = shinaiSource === 'tape' ? '竹刀先端テープ' : '竹刀本体検出（テープなし）';
-		                        if(duration > Params.timingMinDurationMs && duration < (Params.signalMode ? 3000 : Params.timingMaxDurationMs) && tapeTimingValid) {
+		                        if(duration > strikeTimingMinimumMs() && duration < (Params.signalMode ? 3000 : strikeTimingMaximumMs()) && tapeTimingValid) {
 		                            saveRecord(duration, rawSyncDiff, impactSignal, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, 0, {
 		                                ...(refinedMetrics || {}),
 		                                peakTipSpeedMps: refinedTipMetrics ? refinedTipMetrics.peakSpeedMps : AppState.currentEstimatedTipSpeed,
@@ -17503,15 +17609,16 @@ service cloud.firestore {
             return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
         }
 
-	        function scoreVideoStrike(durationMs, metrics, endFrame, avgVisibility) {
+	        function scoreVideoStrike(durationMs, metrics, endFrame, avgVisibility, data = AppState.videoAnalysis) {
 	            const peakOffset = normalizeMs(metrics?.peakOffsetMs);
-	            // 全動作時間へ定義を統一したため、短時間ほど高得点にはしない。
-	            // 時間は妥当範囲と、振り下ろしピークが動作後半にあるかだけを見る。
-	            const durationScore = durationMs >= 250 && durationMs <= 1500
+	            const downswing = strikeTimingModeOf(data) === 'downswing';
+	            const durationMin = downswing ? 80 : 250;
+	            const durationMax = downswing ? 700 : 1500;
+	            const durationScore = durationMs >= durationMin && durationMs <= durationMax
 	                ? 32
-	                : Math.max(0, 32 - Math.min(Math.abs(durationMs - 250), Math.abs(durationMs - 1500)) / 18);
+	                : Math.max(0, 32 - Math.min(Math.abs(durationMs - durationMin), Math.abs(durationMs - durationMax)) / 18);
 	            const peakRatio = peakOffset !== null && durationMs > 0 ? peakOffset / durationMs : null;
-	            const peakScore = peakRatio !== null ? Math.max(0, 22 - Math.abs(peakRatio - 0.72) * 55) : 0;
+	            const peakScore = peakRatio !== null ? Math.max(0, 22 - Math.abs(peakRatio - (downswing ? 0.58 : 0.72)) * 55) : 0;
 	            const elbowScore = Math.max(0, 20 - Math.abs(Number(endFrame?.rightAng || 0) - 152) / 2.4);
 	            const torsoScore = Math.max(0, 14 - Math.abs(Number(endFrame?.torsoAng || 0)) * 1.3);
 	            const hasujiScore = Math.max(0, 8 - Math.abs(Number(endFrame?.hasuji || 0)) * 0.35);
@@ -17559,7 +17666,7 @@ service cloud.firestore {
             const avgViewQuality = segmentAverage(slice, 'viewQuality');
             const startSpeedMps = videoFrameSpeed(start, Params.officialSpeedSource).value || 0;
             const endSpeedMps = videoFrameSpeed(end, Params.officialSpeedSource).value || 0;
-            const score = scoreVideoStrike(durationMs, official.metrics, end, avgVisibility);
+	            const score = scoreVideoStrike(durationMs, official.metrics, end, avgVisibility, data);
             return {
                 number,
                 startFrame,
@@ -17673,11 +17780,11 @@ service cloud.firestore {
         }
 
         function videoFormalMinDurationMs(data = AppState.videoAnalysis) {
-            return 180;
+            return strikeTimingMinimumMs(data);
         }
 
-        function videoFormalMaxDurationMs() {
-            return Math.min(2000, Number(Params.timingMaxDurationMs || 2000));
+        function videoFormalMaxDurationMs(data = AppState.videoAnalysis) {
+            return strikeTimingMaximumMs(data);
         }
 
         function videoWristScreenY(frame) {
@@ -18012,6 +18119,55 @@ service cloud.firestore {
             };
         }
 
+        // 「振り下ろし」モードでは、振りかぶり頂点の静止ではなく、
+        // 竹刀先端が下方向へ連続して動き始めた最初のコマを開始にする。
+        function refineTapeDownswingStart(data, window, speeds = []) {
+            const frames = data?.frames || [];
+            if (!frames.length || !window || !Number.isInteger(window.peakFrame)) return window;
+            const fps = videoEffectiveTimingFps(data, data.fps || Params.targetFps || 60);
+            const peakFrame = clamp(Number(window.peakFrame), 1, frames.length - 1);
+            let topFrame = Number.isInteger(window.topFrame) ? Number(window.topFrame) : -1;
+            if (topFrame < 0 || topFrame >= peakFrame) {
+                const topSearchStart = Math.max(0, peakFrame - Math.max(12, Math.round(fps * 0.60)));
+                const topSearchEnd = Math.max(topSearchStart, peakFrame - Math.max(2, Math.round(fps * 0.025)));
+                let topY = Infinity;
+                for (let i = topSearchStart; i <= topSearchEnd; i++) {
+                    const y = videoTapeYNear(frames, i, 2);
+                    if (Number.isFinite(y) && y <= topY) {
+                        topY = y;
+                        topFrame = i;
+                    }
+                }
+            }
+            if (topFrame < 0 || topFrame >= peakFrame) return window;
+
+            const localPeakSpeed = Math.max(0.001, ...speeds.slice(topFrame, peakFrame + 1).map(value => Number(value) || 0));
+            const activeThreshold = Math.max(0.14, localPeakSpeed * 0.055);
+            const span = Math.max(2, Math.round(fps * 0.014));
+            const minDownwardTravel = Math.max(0.0025, Number(videoShoulderWidthRatio(frames[peakFrame]) || 0) * 0.014);
+            let startFrame = topFrame;
+            for (let i = topFrame; i <= peakFrame - span; i++) {
+                const y0 = videoTapeYNear(frames, i, 2);
+                const y1 = videoTapeYNear(frames, i + span, 2);
+                if (!Number.isFinite(y0) || !Number.isFinite(y1) || y1 - y0 < minDownwardTravel) continue;
+                let activeFrames = 0;
+                for (let j = i; j <= i + span; j++) {
+                    if (Number(speeds[j] || 0) >= activeThreshold) activeFrames += 1;
+                }
+                if (activeFrames >= Math.max(2, Math.ceil((span + 1) * 0.5))) {
+                    startFrame = i;
+                    break;
+                }
+            }
+            return {
+                ...window,
+                startFrame: clamp(startFrame, 0, peakFrame - 1),
+                topFrame,
+                downwardStartFrame: clamp(startFrame, 0, peakFrame - 1),
+                startDetection: 'downswing-tip-motion'
+            };
+        }
+
         function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, referencePeak) {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
@@ -18111,7 +18267,10 @@ service cloud.firestore {
             }
 
             if (endFrame <= startFrame) endFrame = Math.min(frames.length - 1, startFrame + 1);
-            return refineTapeStrikeWindowByAngle(data, { startFrame, peakFrame, endFrame }, speeds);
+            const refined = refineTapeStrikeWindowByAngle(data, { startFrame, peakFrame, endFrame }, speeds);
+            return strikeTimingModeOf(data) === 'downswing'
+                ? refineTapeDownswingStart(data, refined, speeds)
+                : refined;
         }
 
         function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
@@ -18355,6 +18514,8 @@ service cloud.firestore {
                 return [];
             }
             data.strikeSensitivity = Params.videoStrikeSensitivity || AppState.videoStrikeSensitivity || 'normal';
+            data.strikeTimingMode = strikeTimingModeOf(data);
+            const timingMode = data.strikeTimingMode;
             const frames = data.frames;
             const fps = data.fps || Params.targetFps || 60;
             const timingFps = videoEffectiveTimingFps(data, fps);
@@ -18426,10 +18587,11 @@ service cloud.firestore {
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
+                if (summary) summary.strikeTimingMode = timingMode;
                 const validation = validateVideoStrikeSummary(summary, data);
                 if (validation.ok) {
                     let acceptedSummary = summary;
-                    if (Params.officialSpeedSource === 'tape') {
+                    if (Params.officialSpeedSource === 'tape' && timingMode === 'full-motion') {
                         const lowerGuard = refineTapeStrikeStartByTipHeight(
                             data,
                             { startFrame: summary.startFrame, peakFrame: summary.peakFrame, endFrame: summary.endFrame },
@@ -18455,7 +18617,7 @@ service cloud.firestore {
                             }
                         }
                     }
-                    segments.push(acceptedSummary);
+                    segments.push({ ...acceptedSummary, strikeTimingMode: timingMode });
                 } else {
                     pushRejection(startFrame, peakFrame, endFrame, validation.reason);
                 }
@@ -21020,6 +21182,7 @@ service cloud.firestore {
                 peakFrame,
                 speedUnit,
                 officialSpeedSource: Params.officialSpeedSource,
+                strikeTimingMode: strikeTimingModeOf(),
                 shinaiTrackingMode: normalizeShinaiTrackingMode(),
                 preferredShinaiSource,
                 angleReference: Params.angleReference,
@@ -21181,6 +21344,7 @@ service cloud.firestore {
             csv += `動画全フレーム数,${data.webCodecs?.totalFrameCount || ''}\n`;
             csv += `高fps解析フレーム数,${data.webCodecs?.decodedFrameCount || ''}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
+            csv += `開始基準,${strikeTimingModeLabel(strikeTimingModeOf(data))}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
             csv += `最高速フレーム,${data.peakFrame ?? ''}\n`;
             csv += `終了フレーム,${data.endFrame ?? ''}\n`;
@@ -21263,6 +21427,7 @@ service cloud.firestore {
                 ['体幹軸', end?.torsoAng ? `${end.torsoAng.toFixed(1)}°` : '---'],
                 ['刃筋', end?.hasuji ? `${end.hasuji.toFixed(1)}°` : '---'],
                 ['角度基準', Params.angleReference === 'torso' ? '体幹基準' : '画面基準'],
+                ['開始基準', `${strikeTimingModeLabel(strikeTimingModeOf(data))}（${strikeTimingModeDefinition(strikeTimingModeOf(data))}）`],
                 ['測定除外数', `${data.rejectedStrikes?.length || 0}本`],
                 ['除外理由', (data.rejectedStrikes || []).map(item => `frame${item.peakFrame}: ${item.reason}`).join(' / ') || '---'],
                 ['測定メモ', '開始/終了フレームは動画解析タブで手動補正可能。正式値は補正後フレームで再計算し、最高速フレームも補正範囲内で再検出。']
@@ -21345,8 +21510,9 @@ service cloud.firestore {
 		                officialPeakOffsetMs: official.metrics ? normalizeMs(official.metrics.peakOffsetMs) : null,
 		                avgVisibility,
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
-                frameSyncMode: '動画解析',
+	                frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
+                strikeTimingMode: strikeTimingModeOf(data),
                 roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
                 shinaiDetectionSource,
                 shinaiHitRate,
@@ -21357,7 +21523,7 @@ service cloud.firestore {
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : (official.metrics?.peakIndex != null ? slice[Math.min(slice.length - 1, official.metrics.peakIndex + 1)]?.timeMs || 0 : 0),
                 endTimeMs: endFrame.timeMs,
                 endReason: '動画解析・手動補正後',
-	                measurementMethod: `動画解析 / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
+	                measurementMethod: `動画解析 / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: '動画解析から正式記録へ保存',
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -21367,7 +21533,7 @@ service cloud.firestore {
                     hasuji
                 },
                 clipFrames: [],
-                timingDefinition: `動画解析: 竹刀先端の直接検出基準。下の構えから動き始めた開始frame ${data.startFrame} / 振り下ろしピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
+	                timingDefinition: `動画解析: ${strikeTimingModeDefinition(strikeTimingModeOf(data))}。開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
             };
             record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs);
             record.researchCorrection = buildResearchCorrection(data);
@@ -21445,6 +21611,7 @@ service cloud.firestore {
                 frameDtMs: data.fps ? 1000 / data.fps : 0,
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
+                strikeTimingMode: strikeTimingModeOf(strike) || strikeTimingModeOf(data),
                 roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
                 shinaiDetectionSource,
                 shinaiHitRate,
@@ -21457,7 +21624,7 @@ service cloud.firestore {
                 endReason: strike.manualAdjusted ? '複数打突・手動補正後' : '複数打突・自動分割',
 	                timingSource,
 	                manualTimingConfirmed: !!strike.manualAdjusted,
-	                measurementMethod: `動画解析${numberLabel} / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
+	                measurementMethod: `動画解析${numberLabel} / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(strike) || strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
 	                memo: `複数打突${numberLabel}を${strike.manualAdjusted ? '補正済み' : '自動測定・未補正'}として保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
@@ -21467,7 +21634,7 @@ service cloud.firestore {
                     hasuji
                 },
                 clipFrames: [],
-	                timingDefinition: `動画解析${numberLabel}: 竹刀先端の直接検出基準。下の構えから動き始めた開始frame ${strike.startFrame} / 振り下ろしピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
+	                timingDefinition: `動画解析${numberLabel}: ${strikeTimingModeDefinition(strikeTimingModeOf(strike) || strikeTimingModeOf(data))}。開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
                 researchAngles: buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs),
                 researchCorrection: (
                     Number(data.startFrame) === Number(strike.startFrame)
@@ -21578,9 +21745,9 @@ service cloud.firestore {
                 const records = analysisRecords();
 	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
+		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),開始基準,測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
 		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(strikeTimingModeLabel(r.strikeTimingMode))},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
@@ -21913,6 +22080,11 @@ service cloud.firestore {
                 showToast('検出感度を反映しました', 'blue');
             }
         });
+
+        const strikeTimingFullMotionBtn = document.getElementById('strikeTimingFullMotionBtn');
+        if (strikeTimingFullMotionBtn) strikeTimingFullMotionBtn.addEventListener('click', () => setStrikeTimingMode('full-motion'));
+        const strikeTimingDownswingBtn = document.getElementById('strikeTimingDownswingBtn');
+        if (strikeTimingDownswingBtn) strikeTimingDownswingBtn.addEventListener('click', () => setStrikeTimingMode('downswing'));
 
         const videoFrameSlider = document.getElementById('videoFrameSlider');
         if (videoFrameSlider) videoFrameSlider.addEventListener('input', e => {
@@ -22832,6 +23004,11 @@ service cloud.firestore {
             });
         });
         
+        setStrikeTimingMode(safeStorageGet('kendoStrikeTimingMode') || 'full-motion', {
+            notify: false,
+            reanalyze: false,
+            persist: false
+        });
         AppState.researchProfile = loadResearchProfile();
         applyResearchProfileToUi();
         refreshResearchExcelTargetName();
