@@ -4051,9 +4051,7 @@
             }
         }
         /* v170: 通常利用モード。研究用の補助画面は隠すが、動画確認に必要な編集・3D・グラフは維持する。 */
-        body.measurement-simple #tabBtn-analysis,
         body.measurement-simple #tabBtn-data,
-        body.measurement-simple #tab-analysis,
         body.measurement-simple #tab-data,
         body.measurement-simple #videoSideDrawerToggle,
         body.measurement-simple #videoSideDrawer,
@@ -5275,6 +5273,31 @@
                         <button data-kendo-action="clear-history" class="bg-red-50 border border-red-200 hover:bg-red-100 transition text-red-700 px-3 py-2 rounded text-sm flex items-center gap-2"><i class="fa-solid fa-trash"></i>削除</button>
                     </div>
                 </details>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 shadow-sm">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-9 h-9 shrink-0 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center" aria-hidden="true"><i class="fa-solid fa-filter"></i></span>
+                    <div>
+                        <div class="text-sm font-black text-slate-800">グラフのNo.範囲</div>
+                        <div id="analysisRangeStatus" class="text-xs font-bold text-slate-500" aria-live="polite">全件を表示</div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div class="grid items-center gap-2" style="grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)">
+                        <label class="sr-only" for="analysisRangeStart">開始No.</label>
+                        <input id="analysisRangeStart" type="number" min="1" step="1" inputmode="numeric" placeholder="開始 No." class="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold font-mono-num focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-slate-400 font-black" aria-hidden="true">〜</span>
+                        <label class="sr-only" for="analysisRangeEnd">終了No.</label>
+                        <input id="analysisRangeEnd" type="number" min="1" step="1" inputmode="numeric" placeholder="終了 No." class="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold font-mono-num focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 sm:flex">
+                        <button id="analysisRangeApplyBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-black transition"><i class="fa-solid fa-chart-line mr-1"></i>適用</button>
+                        <button id="analysisRangeResetBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-black transition"><i class="fa-solid fa-rotate-left mr-1"></i>全件</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -7109,6 +7132,8 @@ service cloud.firestore {
             swingWristXHistory: [], 
             records: [],
             recordFilter: 'formal',
+            analysisRangeStart: null,
+            analysisRangeEnd: null,
             zanshinTimer: null,
             zanshinBroken: false,
             currentHasujiAngle: 0,
@@ -8529,6 +8554,78 @@ service cloud.firestore {
             return records.filter(record => recordTypeOf(record) === filter);
         }
 
+        function normalizeAnalysisRangeValue(value) {
+            if (value === '' || value === null || value === undefined) return null;
+            const number = Math.floor(Number(value));
+            return Number.isFinite(number) && number > 0 ? number : null;
+        }
+
+        function analysisRangeRecords(records = analysisRecords()) {
+            const start = normalizeAnalysisRangeValue(AppState.analysisRangeStart);
+            const end = normalizeAnalysisRangeValue(AppState.analysisRangeEnd);
+            if (start === null && end === null) return records;
+            return records.filter(record => {
+                const id = Number(record?.id);
+                if (!Number.isFinite(id)) return false;
+                return (start === null || id >= start) && (end === null || id <= end);
+            });
+        }
+
+        function updateAnalysisRangeUi() {
+            const startInput = document.getElementById('analysisRangeStart');
+            const endInput = document.getElementById('analysisRangeEnd');
+            const start = normalizeAnalysisRangeValue(AppState.analysisRangeStart);
+            const end = normalizeAnalysisRangeValue(AppState.analysisRangeEnd);
+            if (startInput && document.activeElement !== startInput) startInput.value = start ?? '';
+            if (endInput && document.activeElement !== endInput) endInput.value = end ?? '';
+
+            const sourceRecords = analysisRecords();
+            const visibleRecords = analysisRangeRecords(sourceRecords);
+            const sourceIds = sourceRecords.map(record => Number(record?.id)).filter(Number.isFinite);
+            const availableText = sourceIds.length ? ` / 記録 No.${Math.min(...sourceIds)}〜No.${Math.max(...sourceIds)}` : '';
+            const rangeText = start === null && end === null
+                ? `全件 ${visibleRecords.length}本`
+                : `${start === null ? '最初' : `No.${start}`}〜${end === null ? '最後' : `No.${end}`} / ${visibleRecords.length}本`;
+            safeText('analysisRangeStatus', `${rangeText}${availableText}`);
+        }
+
+        function setAnalysisRecordRange(startValue, endValue, options = {}) {
+            let start = normalizeAnalysisRangeValue(startValue);
+            let end = normalizeAnalysisRangeValue(endValue);
+            let swapped = false;
+            if (start !== null && end !== null && start > end) {
+                [start, end] = [end, start];
+                swapped = true;
+            }
+            AppState.analysisRangeStart = start;
+            AppState.analysisRangeEnd = end;
+            safeStorageSet('kendoAnalysisRecordRange', JSON.stringify({ start, end }));
+            updateAnalysisRangeUi();
+            if (options.update !== false) {
+                ensureChartsReady()
+                    .then(updateCharts)
+                    .catch(error => reportOptionalAssetError('グラフ', error));
+            }
+            if (!options.silent) {
+                const count = analysisRangeRecords().length;
+                if (swapped) showToast('開始No.と終了No.を入れ替えて適用しました', 'blue');
+                else if (!count && (start !== null || end !== null)) showToast('指定範囲に記録がありません', 'yellow');
+                else showToast(start === null && end === null ? '全件表示に戻しました' : `${count}本をグラフに表示しました`, 'green');
+            }
+        }
+
+        function restoreAnalysisRecordRange() {
+            const saved = safeStorageGet('kendoAnalysisRecordRange');
+            if (!saved) return updateAnalysisRangeUi();
+            try {
+                const range = JSON.parse(saved);
+                setAnalysisRecordRange(range?.start, range?.end, { silent: true, update: false });
+            } catch (error) {
+                safeStorageRemove('kendoAnalysisRecordRange');
+                updateAnalysisRangeUi();
+            }
+        }
+
         function setRecordFilterMode(mode = 'formal', options = {}) {
             const next = ['formal', 'realtime', 'all'].includes(mode) ? mode : 'formal';
             AppState.recordFilter = next;
@@ -8549,14 +8646,14 @@ service cloud.firestore {
             const all = AppState.records || [];
             const formal = all.filter(record => recordTypeOf(record) === 'formal').length;
             const realtime = all.length - formal;
-            const visible = analysisRecords().length;
+            const visible = analysisRangeRecords().length;
             safeText('recordVisibleCount', `表示 ${visible}本`);
             safeText('recordFormalCount', `正式 ${formal}本`);
             safeText('recordRealtimeCount', `目安 ${realtime}本`);
         }
 
         function updateRecordComparisonSummary() {
-            const records = analysisRecords();
+            const records = analysisRangeRecords();
             const emptyIds = ['recordSummaryAvgTime', 'recordSummaryBest', 'recordSummaryWorst', 'recordSummaryAvgElbow', 'recordSummaryAvgTorso', 'recordSummaryAvgHasuji', 'recordSummaryLastSaved'];
             safeText('recordSummaryCount', `${records.length}本`);
             if (!records.length) {
@@ -15673,9 +15770,10 @@ service cloud.firestore {
 
         function updateCharts() {
             if(!timeChart || !radarChart) return;
-            const records = analysisRecords();
+            const records = analysisRangeRecords();
             updateRecordFilterSummary();
             updateRecordComparisonSummary();
+            updateAnalysisRangeUi();
             const labels = records.map(r => `#${r.id}`);
             const updateLine = (chart, values) => {
                 if (!chart) return;
@@ -22714,6 +22812,19 @@ service cloud.firestore {
         if (detailRecordFilterSelect) detailRecordFilterSelect.addEventListener('change', e => {
             setRecordFilterMode(e.target.value || 'formal');
         });
+        const analysisRangeStartInput = document.getElementById('analysisRangeStart');
+        const analysisRangeEndInput = document.getElementById('analysisRangeEnd');
+        const applyAnalysisRange = () => setAnalysisRecordRange(analysisRangeStartInput?.value, analysisRangeEndInput?.value);
+        [analysisRangeStartInput, analysisRangeEndInput].forEach(input => {
+            if (!input) return;
+            input.addEventListener('keydown', event => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                applyAnalysisRange();
+            });
+        });
+        document.getElementById('analysisRangeApplyBtn')?.addEventListener('click', applyAnalysisRange);
+        document.getElementById('analysisRangeResetBtn')?.addEventListener('click', () => setAnalysisRecordRange(null, null));
 
         const firebaseConnectBtn = document.getElementById('firebaseConnectBtn');
         if (firebaseConnectBtn) firebaseConnectBtn.addEventListener('click', connectFirebaseFromUi);
@@ -23025,6 +23136,7 @@ service cloud.firestore {
                 AppState.records = [];
             }
         }
+        restoreAnalysisRecordRange();
         AppState.firebaseAutoSync = safeStorageGet('kendoFirebaseAutoSync') === '1';
         updateFirebaseConfigUi();
         const savedFirebaseConfig = safeStorageGet('kendoFirebaseConfig');
