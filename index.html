@@ -5149,6 +5149,23 @@
                     <p id="aiComment" class="text-slate-700 font-medium bg-slate-50 p-3 rounded text-sm md:text-base border border-slate-100">「稽古開始」を押して開始</p>
                 </div>
 
+	                <div id="reactionTrainingCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+	                    <div class="flex items-center justify-between gap-3">
+	                        <div>
+	                            <div class="flex items-center gap-2"><i class="fa-solid fa-ear-listen text-fuchsia-600"></i><h3 class="font-bold text-sm text-slate-800">反応トレーニング</h3></div>
+	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">OFF時は通常の打突測定です。</p>
+	                        </div>
+	                        <button id="reactionTrainingToggleBtn" type="button" aria-pressed="false" class="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black text-slate-700">
+	                            OFF
+	                        </button>
+	                    </div>
+	                    <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+	                        <div class="rounded-lg border border-slate-100 bg-slate-50 p-2"><span class="text-[10px] text-slate-500">状態</span><div id="reactionTrainingState" class="mt-1 text-xs font-black text-slate-700">通常測定</div></div>
+	                        <div class="rounded-lg border border-fuchsia-100 bg-fuchsia-50 p-2"><span class="text-[10px] text-fuchsia-700">反応時間</span><div id="latestReactionTime" class="mt-1 text-base font-black text-fuchsia-700 font-mono-num">---</div></div>
+	                        <div class="rounded-lg border border-indigo-100 bg-indigo-50 p-2"><span class="text-[10px] text-indigo-700">合計時間</span><div id="latestTotalResponseTime" class="mt-1 text-base font-black text-indigo-700 font-mono-num">---</div></div>
+	                    </div>
+	                </div>
+
 	                <div class="bg-white rounded-xl shadow-sm border p-4">
 	                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">直近の打突</h3>
 	                    <div class="grid grid-cols-2 gap-2 text-center">
@@ -5181,6 +5198,8 @@
 	                        <div class="realtime-session-item"><span>最短時間</span><strong id="realtimeSessionBestTime">---</strong></div>
 	                        <div class="realtime-session-item"><span>平均右肘</span><strong id="realtimeSessionAvgElbow">---</strong></div>
 	                        <div class="realtime-session-item"><span>平均体幹</span><strong id="realtimeSessionAvgTorso">---</strong></div>
+	                        <div class="realtime-session-item"><span>平均反応</span><strong id="realtimeSessionAvgReaction">---</strong></div>
+	                        <div class="realtime-session-item"><span>反応回数</span><strong id="realtimeSessionReactionCount">0本</strong></div>
 	                        <div class="realtime-session-item"><span>直近保存</span><strong id="realtimeSessionLastSaved">---</strong></div>
 	                    </div>
 	                    <p id="realtimeSessionHint" class="mt-3 text-[11px] text-slate-500">1本打つと自動で更新されます。</p>
@@ -5238,9 +5257,9 @@
                     <div class="overflow-y-auto max-h-64 flex-grow">
                         <table class="w-full text-xs text-center">
                             <thead class="bg-white sticky top-0 shadow-sm text-slate-500">
-	                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">ピーク</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2">体幹</th><th class="px-1 py-2 text-left">メモ</th><th class="px-1 py-2">操作</th></tr>
+	                                <tr><th class="px-1 py-2">#</th><th class="px-1 py-2" id="thTime">時間</th><th class="px-1 py-2">反応</th><th class="px-1 py-2">ピーク</th><th class="px-1 py-2">刃筋</th><th class="px-1 py-2">右肘</th><th class="px-1 py-2">体幹</th><th class="px-1 py-2 text-left">メモ</th><th class="px-1 py-2">操作</th></tr>
                             </thead>
-                            <tbody id="recentHistoryBody" class="font-mono-num"><tr><td colspan="8" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr></tbody>
+                            <tbody id="recentHistoryBody" class="font-mono-num"><tr><td colspan="9" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -6706,8 +6725,10 @@ service cloud.firestore {
             </div>
         </div>
 
-        <div class="detail-kpi-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="detail-kpi-grid grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-fuchsia-500"><span class="text-xs text-slate-500">反応時間</span><div id="detailLatestReaction" class="text-2xl font-black text-fuchsia-700 font-mono-num">---</div></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-violet-500"><span class="text-xs text-slate-500">音から終了</span><div id="detailLatestTotalResponse" class="text-2xl font-black text-violet-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-indigo-500"><span class="text-xs text-slate-500">正式ピーク時刻</span><div id="detailLatestOfficialSpeed" class="text-2xl font-black text-indigo-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-emerald-500"><span class="text-xs text-slate-500">姿勢信頼度</span><div id="detailLatestVisibility" class="text-2xl font-black text-emerald-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-cyan-500"><span class="text-xs text-slate-500">リアルタイム検証</span><div id="detailLatestValidation" class="text-xl font-black text-cyan-700">---</div><div id="detailLatestValidationReason" class="mt-1 text-[10px] text-slate-500">---</div></div>
@@ -6724,9 +6745,11 @@ service cloud.firestore {
                 <h3 class="font-bold text-sm text-slate-700">練習サマリー</h3>
                 <span class="text-xs text-slate-500">本日の履歴から自動集計</span>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-7 gap-3 p-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-3 p-4">
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">本数カウント</span><div id="summaryCount" class="text-xl font-black text-slate-900 font-mono-num">0本</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均打突時間</span><div id="summaryAvgTime" class="text-xl font-black text-blue-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均反応時間</span><div id="summaryAvgReaction" class="text-xl font-black text-fuchsia-700 font-mono-num">---</div></div>
+                <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均合計時間</span><div id="summaryAvgTotalResponse" class="text-xl font-black text-violet-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">最短ピーク時刻</span><div id="summaryMaxSpeed" class="text-xl font-black text-cyan-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均推定刃筋</span><div id="summaryBest" class="text-xl font-black text-amber-700 font-mono-num">---</div></div>
                 <div class="bg-slate-50 rounded-lg border p-3"><span class="text-[11px] text-slate-500">平均姿勢信頼度</span><div id="summaryWorst" class="text-xl font-black text-emerald-700 font-mono-num">---</div></div>
@@ -6748,6 +6771,8 @@ service cloud.firestore {
                             <th class="px-2 py-2">種別</th>
                             <th class="px-2 py-2">記録日時</th>
                             <th class="px-2 py-2">時間</th>
+                            <th class="px-2 py-2">反応</th>
+                            <th class="px-2 py-2">合計</th>
                             <th class="px-2 py-2">ピーク</th>
                             <th class="px-2 py-2">右肘</th>
 	                            <th class="px-2 py-2">体幹</th>
@@ -6756,7 +6781,7 @@ service cloud.firestore {
                             <th class="px-2 py-2 text-left">メモ</th>
                         </tr>
                     </thead>
-	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="10" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
+	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="12" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -7119,6 +7144,12 @@ service cloud.firestore {
             swingState: 'IDLE', 
             signalTimer: null,
             signalTime: 0,
+            signalPerformanceTimeMs: 0,
+            signalAudioLatencyMs: 0,
+            currentReactionTimeMs: null,
+            currentReactionValid: false,
+            currentReactionReason: '',
+            reactionFalseStarts: 0,
             idleTimer: 0, 
             swingStartTime: 0,
             swingStartY: 0,
@@ -7162,6 +7193,7 @@ service cloud.firestore {
             frameLoopRunning: false,
             processingFrame: false,
             currentFrameTimeMs: 0,
+            currentFramePerformanceMs: 0,
             lastFrameTimeMs: 0,
             lastAnalysisFrameTimeMs: 0,
             analysisScheduleNextMs: 0,
@@ -7373,6 +7405,11 @@ service cloud.firestore {
             swingVelThreshold: 0.015,
             kiaiThreshold: 0.1,
             signalMode: false,
+            reactionDelayMinMs: 1500,
+            reactionDelayMaxMs: 3500,
+            reactionMinimumMs: 80,
+            reactionMaximumMs: 1500,
+            reactionTimeoutMs: 2500,
             tsukiMode: false,
             usePoseLandmarker: false,
             referenceShoulderMeters: 0.42,
@@ -7669,21 +7706,156 @@ service cloud.firestore {
         window.switchTab = switchTab;
         window.switchVideoStep = switchVideoStep;
 
-        function playBeep() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime); 
-                osc.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.15); 
-                
+        async function ensureReactionAudioReady() {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) throw new Error('このブラウザは音刺激に対応していません');
+            if (!AppState.audioContext || AppState.audioContext.state === 'closed') {
+                AppState.audioContext = new AudioContextClass({ latencyHint: 'interactive' });
+            }
+            if (AppState.audioContext.state === 'suspended') await AppState.audioContext.resume();
+            return AppState.audioContext;
+        }
+
+        function frameClockAtPerformanceTime(performanceTimeMs) {
+            const frameTimeMs = Number(AppState.currentFrameTimeMs);
+            const framePerformanceMs = Number(AppState.currentFramePerformanceMs);
+            if (Number.isFinite(frameTimeMs) && Number.isFinite(framePerformanceMs) && framePerformanceMs > 0) {
+                return frameTimeMs + (performanceTimeMs - framePerformanceMs);
+            }
+            return performanceTimeMs;
+        }
+
+        async function playBeep() {
+            const ctx = await ensureReactionAudioReady();
+            const performanceAtScheduleMs = performance.now();
+            const audioAtScheduleSec = ctx.currentTime;
+            const leadSec = 0.035;
+            const outputLatencySec = Math.max(0, Number(ctx.outputLatency || ctx.baseLatency || 0));
+            const startAtSec = audioAtScheduleSec + leadSec;
+            const audibleAtSec = startAtSec + outputLatencySec;
+            const audiblePerformanceMs = performanceAtScheduleMs + (audibleAtSec - audioAtScheduleSec) * 1000;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, startAtSec);
+            gain.gain.setValueAtTime(0.0001, startAtSec);
+            gain.gain.exponentialRampToValueAtTime(0.18, startAtSec + 0.006);
+            gain.gain.setValueAtTime(0.18, startAtSec + 0.11);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAtSec + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startAtSec);
+            osc.stop(startAtSec + 0.16);
+
+            const flashDelayMs = Math.max(0, audiblePerformanceMs - performance.now());
+            setTimeout(() => {
                 const flash = document.getElementById('flashOverlay');
+                if (!flash) return;
                 flash.classList.remove('flash-signal');
-                void flash.offsetWidth; 
+                void flash.offsetWidth;
                 flash.classList.add('flash-signal');
-            } catch(e) {}
+            }, flashDelayMs);
+
+            return {
+                performanceTimeMs: audiblePerformanceMs,
+                frameTimeMs: frameClockAtPerformanceTime(audiblePerformanceMs),
+                outputLatencyMs: outputLatencySec * 1000
+            };
+        }
+
+        function reactionMsLabel(value) {
+            return Number.isFinite(Number(value)) ? `${Math.round(Number(value))} ms` : '---';
+        }
+
+        function updateReactionTrainingUi(statusText = '') {
+            const enabled = !!Params.signalMode;
+            const button = document.getElementById('reactionTrainingToggleBtn');
+            const card = document.getElementById('reactionTrainingCard');
+            if (button) {
+                button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+                button.textContent = enabled ? 'ON' : 'OFF';
+                button.className = 'shrink-0 rounded-full border px-4 py-2 text-xs font-black';
+                button.style.backgroundColor = enabled ? '#c026d3' : '#f1f5f9';
+                button.style.borderColor = enabled ? '#c026d3' : '#e2e8f0';
+                button.style.color = enabled ? '#ffffff' : '#334155';
+            }
+            if (card) {
+                card.style.borderColor = enabled ? '#f0abfc' : '#e2e8f0';
+                card.style.boxShadow = enabled ? '0 0 0 2px rgba(250, 232, 255, 0.9)' : '';
+            }
+            safeText('reactionTrainingGuide', enabled
+                ? '静止後1.5〜3.5秒で音が鳴ります。音から竹刀の動き始めまでを反応時間として測定します。'
+                : 'OFF時は通常の打突測定です。');
+            safeText('reactionTrainingState', statusText || (enabled ? '構えて静止' : '通常測定'));
+        }
+
+        function resetReactionTrialClock() {
+            if (AppState.signalTimer) clearTimeout(AppState.signalTimer);
+            AppState.signalTimer = null;
+            AppState.signalTime = 0;
+            AppState.signalPerformanceTimeMs = 0;
+            AppState.signalAudioLatencyMs = 0;
+            AppState.currentReactionTimeMs = null;
+            AppState.currentReactionValid = false;
+            AppState.currentReactionReason = '';
+        }
+
+        async function setReactionTrainingMode(enabled, options = {}) {
+            const next = !!enabled;
+            if (next && options.unlockAudio !== false) {
+                try {
+                    await ensureReactionAudioReady();
+                } catch (error) {
+                    Params.signalMode = false;
+                    updateReactionTrainingUi('音を使用できません');
+                    showToast(error.message || '音刺激を開始できません', 'red');
+                    return false;
+                }
+            }
+            Params.signalMode = next;
+            if (next) setStrikeTimingMode('full-motion', { notify: false });
+            if (options.persist !== false) safeStorageSet('kendoReactionTrainingMode', next ? '1' : '0');
+            resetReactionTrialClock();
+            AppState.idleTimer = 0;
+            if (['SIGNAL_WAIT', 'SIGNAL_GO'].includes(AppState.swingState)) {
+                AppState.swingState = 'IDLE';
+                updateStateUI('IDLE');
+            }
+            updateReactionTrainingUi(next ? '構えて静止' : '通常測定');
+            if (options.notify !== false) {
+                showToast(next ? '反応トレーニングを開始します' : '通常の打突測定へ戻しました', next ? 'green' : 'blue');
+            }
+            return true;
+        }
+
+        async function issueReactionSignal() {
+            if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return false;
+            try {
+                AppState.signalTimer = null;
+                const signal = await playBeep();
+                if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return false;
+                const onsetDelayMs = Math.max(0, signal.performanceTimeMs - performance.now());
+                AppState.signalTimer = setTimeout(() => {
+                    AppState.signalTimer = null;
+                    if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return;
+                    resetFullMotionStart();
+                    resetSwingStartCandidate();
+                    AppState.signalTime = signal.frameTimeMs;
+                    AppState.signalPerformanceTimeMs = signal.performanceTimeMs;
+                    AppState.signalAudioLatencyMs = signal.outputLatencyMs;
+                    AppState.swingState = 'SIGNAL_GO';
+                    updateReactionTrainingUi('音が鳴りました');
+                    updateStateUI('SIGNAL_GO');
+                }, onsetDelayMs);
+                return true;
+            } catch (error) {
+                AppState.swingState = 'IDLE';
+                updateStateUI('IDLE');
+                updateReactionTrainingUi('音の再生に失敗');
+                showToast('音刺激を再生できませんでした', 'red');
+                return false;
+            }
         }
 
         function setPracticeFocus(enabled) {
@@ -8082,6 +8254,9 @@ service cloud.firestore {
             safeText('realtimeAnalysisFpsLabel', `${Params.realtimeAnalysisFps} / ${Params.cameraStableFps}fps`);
             setVideoStrikeMode('multi');
             setStrikeTimingMode('full-motion', { notify: false, reanalyze: false });
+            safeStorageSet('kendoReactionTrainingMode', '0');
+            resetReactionTrialClock();
+            updateReactionTrainingUi('通常測定');
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
                 const values = [42, 120, 250, 60];
                 const el = document.getElementById(id);
@@ -8481,12 +8656,19 @@ service cloud.firestore {
 
         function normalizeRecordMeta(record) {
             if (!record || typeof record !== 'object') return record;
+            const reactionTimeMs = Number(record.reactionTimeMs);
+            const totalResponseTimeMs = Number(record.totalResponseTimeMs);
             return {
                 ...record,
                 recordType: recordTypeOf(record),
                 source: record.source || (recordTypeOf(record) === 'formal' ? 'video-analysis' : 'realtime'),
                 recordedAt: record.recordedAt || '',
-                strikeTimingMode: normalizeStrikeTimingMode(record.strikeTimingMode || 'full-motion')
+                strikeTimingMode: normalizeStrikeTimingMode(record.strikeTimingMode || 'full-motion'),
+                reactionMode: !!record.reactionMode,
+                reactionTimeMs: Number.isFinite(reactionTimeMs) ? reactionTimeMs : null,
+                totalResponseTimeMs: Number.isFinite(totalResponseTimeMs) ? totalResponseTimeMs : null,
+                reactionValid: record.reactionMode ? record.reactionValid !== false : false,
+                reactionReason: record.reactionReason || ''
             };
         }
 
@@ -8530,6 +8712,8 @@ service cloud.firestore {
                 safeText('realtimeSessionBestTime', '---');
                 safeText('realtimeSessionAvgElbow', '---');
                 safeText('realtimeSessionAvgTorso', '---');
+                safeText('realtimeSessionAvgReaction', '---');
+                safeText('realtimeSessionReactionCount', '0本');
                 safeText('realtimeSessionLastSaved', '---');
                 safeText('realtimeSessionHint', '1本打つと自動で更新されます。');
                 return;
@@ -8537,12 +8721,16 @@ service cloud.firestore {
             const avgTime = averageNumber(records, 'timeMs');
             const avgElbow = averageNumber(records, 'rightAng');
             const avgTorso = averageNumber(records, 'torsoAng');
+            const reactionRecords = records.filter(record => record.reactionMode && record.reactionValid && Number.isFinite(Number(record.reactionTimeMs)));
+            const avgReaction = averageNumber(reactionRecords, 'reactionTimeMs');
             const best = records.reduce((current, record) => Number(record.timeMs || Infinity) < Number(current.timeMs || Infinity) ? record : current, records[0]);
             const latest = records[records.length - 1];
             safeText('realtimeSessionAvgTime', avgTime !== null ? `${Math.round(avgTime)} ms` : '---');
             safeText('realtimeSessionBestTime', Number.isFinite(Number(best?.timeMs)) ? `${Math.round(Number(best.timeMs))} ms` : '---');
             safeText('realtimeSessionAvgElbow', avgElbow !== null ? `${avgElbow.toFixed(1)}°` : '---');
             safeText('realtimeSessionAvgTorso', avgTorso !== null ? `${avgTorso.toFixed(1)}°` : '---');
+            safeText('realtimeSessionAvgReaction', avgReaction !== null ? `${Math.round(avgReaction)} ms` : '---');
+            safeText('realtimeSessionReactionCount', `${reactionRecords.length}本`);
             safeText('realtimeSessionLastSaved', formatRecordDate(latest));
             safeText('realtimeSessionHint', `直近 #${latest.id} を保存しました。練習後は「打突詳細」で確認できます。`);
         }
@@ -8771,6 +8959,7 @@ service cloud.firestore {
             if (!records.length) return showToast(normalized === 'formal' ? '動画測定データがありません' : 'リアルタイム分析データがありません', 'yellow');
             const labels = [
                 'No.', '区分', '記録日時', '打突時間(ms)', '正式ピーク時刻(ms)',
+                '反応時間(ms)', '音から終了(ms)', '反応測定', '反応有効', '反応除外理由', '音声出力遅延(ms)',
                 '右肘(deg)', '体幹軸(deg)', '推定刃筋(deg)', '姿勢信頼度',
                 '右腕分離品質', '角度信頼度', '実測カメラfps', 'AI解析fps', '未処理フレーム', 'フレーム欠落', '未処理率', '検証状態', '検証理由',
                 '開始フレーム', '最高速フレーム', '終了フレーム', '開始時刻(ms)', '最高速時刻(ms)', '終了時刻(ms)', '測定方式', 'メモ', '打突時間定義'
@@ -8781,6 +8970,12 @@ service cloud.firestore {
                 formatRecordDate(record),
                 record.timeMs ?? '',
                 recordPeakOffsetMs(record, 'official') ?? '',
+                record.reactionTimeMs ?? '',
+                record.totalResponseTimeMs ?? '',
+                record.reactionMode ? 'あり' : '',
+                record.reactionMode ? (record.reactionValid ? '有効' : '要確認') : '',
+                record.reactionReason ?? '',
+                record.reactionAudioLatencyMs ?? '',
                 record.rightAng ?? '',
                 record.torsoAng ?? '',
                 record.hasujiAngle ?? '',
@@ -9377,6 +9572,12 @@ service cloud.firestore {
             ['deviceLabel', '撮影端末', 22],
             ['appVersion', 'アプリ版', 11],
             ['timeMs', '打突時間(ms)', 14],
+            ['reactionTimeMs', '反応時間(ms)', 14],
+            ['totalResponseTimeMs', '音から終了(ms)', 16],
+            ['reactionMode', '反応測定', 11],
+            ['reactionValid', '反応有効', 11],
+            ['reactionReason', '反応除外理由', 24],
+            ['reactionAudioLatencyMs', '音声出力遅延(ms)', 18],
             ['officialPeakOffsetMs', '正式ピーク時刻(ms)', 18],
             ['rightAng', '終了右肘角(deg)', 16],
             ['torsoAng', '終了体幹軸(deg)', 16],
@@ -9477,11 +9678,14 @@ service cloud.firestore {
                 realtimeValidationReasons: String(values.realtimeValidationReasons || '').split(' / ').filter(Boolean)
             };
             [
-                'experienceYears', 'cameraDistanceMeters', 'timeMs', 'officialPeakOffsetMs',
+                'experienceYears', 'cameraDistanceMeters', 'timeMs', 'reactionTimeMs', 'totalResponseTimeMs', 'reactionAudioLatencyMs', 'officialPeakOffsetMs',
                 'rightAng', 'torsoAng', 'hasujiAngle', 'avgVisibility', 'viewQuality', 'angleQuality',
                 'realtimeCameraFps', 'analysisFps', 'missedFrames', 'droppedFrames', 'unprocessedRatio',
                 'videoFpsEstimate', 'startFrameIndex', 'peakFrameIndex', 'endFrameIndex'
             ].forEach(key => { record[key] = researchNumber(values[key]); });
+            record.reactionMode = String(values.reactionMode || '').trim() === 'あり';
+            record.reactionValid = String(values.reactionValid || '').trim() === '有効';
+            record.reactionReason = String(values.reactionReason || '').trim();
             if (record.realtimeValidationStatus) record.realtimeValidationAccepted = record.realtimeValidationStatus === '採用候補';
             const angles = {
                 start: {
@@ -9541,7 +9745,9 @@ service cloud.firestore {
             actualHeaders.forEach((header, index) => {
                 if (header && !headerIndexes.has(header)) headerIndexes.set(header, index + 1);
             });
-            const optionalHeaders = new Set();
+            const optionalHeaders = new Set([
+                '反応時間(ms)', '音から終了(ms)', '反応測定', '反応有効', '反応除外理由', '音声出力遅延(ms)'
+            ]);
             const missingHeaders = expectedHeaders.filter(header => !headerIndexes.has(header) && !optionalHeaders.has(header));
             if (missingHeaders.length) {
                 throw new Error(`列構成が現行スキーマと異なるため、安全のため更新を中止しました。不足: ${missingHeaders.slice(0, 4).join(' / ')}`);
@@ -9635,6 +9841,12 @@ service cloud.firestore {
                 deviceLabel: record.deviceLabel || '',
                 appVersion: record.appVersion || '',
                 timeMs: researchNumber(record.timeMs),
+                reactionTimeMs: researchNumber(record.reactionTimeMs),
+                totalResponseTimeMs: researchNumber(record.totalResponseTimeMs),
+                reactionMode: record.reactionMode ? 'あり' : '',
+                reactionValid: record.reactionMode ? (record.reactionValid ? '有効' : '要確認') : '',
+                reactionReason: record.reactionReason || '',
+                reactionAudioLatencyMs: researchNumber(record.reactionAudioLatencyMs),
                 officialPeakOffsetMs: recordPeakOffsetMs(record, 'official'),
                 rightAng: researchNumber(record.rightAng),
                 torsoAng: researchNumber(record.torsoAng),
@@ -13760,6 +13972,22 @@ service cloud.firestore {
         }
 
         function beginSwing(startTime, wristY) {
+            const stateBeforeSwing = AppState.swingState;
+            if (Params.signalMode) {
+                const rawReactionMs = Number(startTime) - Number(AppState.signalTime || 0);
+                AppState.currentReactionTimeMs = Number.isFinite(rawReactionMs) ? Math.round(rawReactionMs) : null;
+                AppState.currentReactionValid = stateBeforeSwing === 'SIGNAL_GO'
+                    && Number.isFinite(rawReactionMs)
+                    && rawReactionMs >= Params.reactionMinimumMs
+                    && rawReactionMs <= Params.reactionMaximumMs;
+                AppState.currentReactionReason = AppState.currentReactionValid
+                    ? ''
+                    : (!AppState.signalTime
+                        ? '音刺激時刻なし'
+                        : (rawReactionMs < Params.reactionMinimumMs ? '反応が短すぎる' : '反応が長すぎる'));
+                safeText('latestReactionTime', reactionMsLabel(AppState.currentReactionTimeMs));
+                updateReactionTrainingUi(AppState.currentReactionValid ? `反応 ${reactionMsLabel(AppState.currentReactionTimeMs)}` : '反応を要確認');
+            }
             AppState.swingState = 'SWINGING';
             AppState.swingStartTime = startTime;
             resetSwingTracking();
@@ -14106,6 +14334,9 @@ service cloud.firestore {
             if (timingQuality.uncertaintyMs > 45) reasons.push(`時間分解能±${timingQuality.uncertaintyMs}ms`);
             if (unprocessedRatio > 0.45) reasons.push(`未処理フレーム${Math.round(unprocessedRatio * 100)}%`);
             if (durationMs < strikeTimingMinimumMs() || durationMs > strikeTimingMaximumMs()) reasons.push('打突時間範囲外');
+            if (metrics.reactionMode && !metrics.reactionValid) {
+                reasons.push(metrics.reactionReason || '反応時間を確定できない');
+            }
             return {
                 accepted: reasons.length === 0,
                 status: reasons.length ? '参考' : '採用候補',
@@ -14159,13 +14390,31 @@ service cloud.firestore {
             const startTimeMs = Number(metrics.startTimeMs || AppState.swingStartFrameTimeMs || 0);
             const peakTimeMs = Number(metrics.peakTimeMs || AppState.swingPeakFrameTimeMs || 0);
             const endTimeMs = Number(metrics.endTimeMs || AppState.swingEndFrameTimeMs || 0);
+            const reactionMode = !!Params.signalMode;
+            const reactionTimeMs = reactionMode && Number.isFinite(Number(AppState.currentReactionTimeMs))
+                ? Math.round(Number(AppState.currentReactionTimeMs))
+                : null;
+            const totalResponseTimeMs = reactionMode && Number.isFinite(Number(AppState.signalTime)) && endTimeMs > Number(AppState.signalTime)
+                ? Math.round(endTimeMs - Number(AppState.signalTime))
+                : (Number.isFinite(reactionTimeMs) ? Math.round(reactionTimeMs + Number(timeMs || 0)) : null);
+            const reactionValid = reactionMode
+                && !!AppState.currentReactionValid
+                && Number.isFinite(reactionTimeMs)
+                && reactionTimeMs >= Params.reactionMinimumMs
+                && reactionTimeMs <= Params.reactionMaximumMs;
+            const reactionReason = reactionValid ? '' : (AppState.currentReactionReason || (reactionMode ? '反応時間を確定できない' : ''));
             const peakOffsets = {
                 wrist: normalizeMs(metrics.peakOffsetMs ?? (peakTimeMs && startTimeMs ? peakTimeMs - startTimeMs : null)),
                 tip: normalizeMs(metrics.peakTipOffsetMs),
                 tape: normalizeMs(metrics.peakTapeOffsetMs)
             };
             const officialPeakOffsetMs = peakOffsets[officialSpeed.key] ?? null;
-            const realtimeValidation = buildRealtimeValidationSnapshot(timeMs, metrics);
+            const realtimeValidation = buildRealtimeValidationSnapshot(timeMs, {
+                ...metrics,
+                reactionMode,
+                reactionValid,
+                reactionReason
+            });
 
             const record = {
                 id: AppState.records.length + 1,
@@ -14174,6 +14423,15 @@ service cloud.firestore {
                 source: 'realtime',
                 recordedAt: new Date().toISOString(),
                 timeMs: timeMs, 
+                reactionMode,
+                reactionTimeMs,
+                totalResponseTimeMs,
+                reactionValid,
+                reactionReason,
+                reactionSignalTimeMs: reactionMode ? Number(AppState.signalTime || 0) : null,
+                reactionSignalPerformanceTimeMs: reactionMode ? Number(AppState.signalPerformanceTimeMs || 0) : null,
+                reactionAudioLatencyMs: reactionMode ? Number(AppState.signalAudioLatencyMs || 0) : null,
+                reactionFalseStarts: reactionMode ? Number(AppState.reactionFalseStarts || 0) : 0,
                 hasujiAngle: hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
                 rightAng: rightAng.toFixed(1), 
@@ -14212,12 +14470,12 @@ service cloud.firestore {
                 peakFrameIndex: AppState.swingPeakPresentedFrame || null,
                 endFrameIndex: AppState.swingEndPresentedFrame || null,
                 endReason: metrics.endReason || AppState.swingEndReason || '',
-                measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 開始基準:${strikeTimingModeLabel()} / 検証:${realtimeValidation.status}`,
+                measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 開始基準:${strikeTimingModeLabel()}${reactionMode ? ' / 音刺激反応測定' : ''} / 検証:${realtimeValidation.status}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
                 strikeTimingMode: strikeTimingModeOf(),
-                timingDefinition: `開始基準=${strikeTimingModeDefinition()}。開始・終了は竹刀先端速度の連続判定と補間時刻を使用。`
+                timingDefinition: `${reactionMode ? '反応時間=音の出力時刻→竹刀の動作開始。合計時間=音の出力時刻→振り下ろし終了。' : ''}開始基準=${strikeTimingModeDefinition()}。開始・終了は竹刀先端速度の連続判定と補間時刻を使用。`
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(36, Math.round((AppState.frameFps || Params.targetFps) * 2.4)));
             record.clipFrames = clipFrames;
@@ -14231,6 +14489,8 @@ service cloud.firestore {
             if (AppState.firebaseAutoSync) syncRecordToFirebase(record, { silent: true });
             
             safeText('latestTime', `${timeMs} ms`);
+            safeText('latestReactionTime', reactionMsLabel(record.reactionTimeMs));
+            safeText('latestTotalResponseTime', reactionMsLabel(record.totalResponseTimeMs));
             safeText('latestSync', '---');
             safeText('latestSae', '---');
             safeText('latestStride', '---');
@@ -14252,6 +14512,11 @@ service cloud.firestore {
             updateRealtimePracticeSummary();
             updateDataCenter();
             prepareReplay();
+            if (record.reactionMode) {
+                updateReactionTrainingUi(record.reactionValid
+                    ? `記録完了 / 反応 ${reactionMsLabel(record.reactionTimeMs)}`
+                    : `記録完了 / ${record.reactionReason || '反応を要確認'}`);
+            }
             
             scheduleRealtimeRearm();
             return true;
@@ -14278,7 +14543,9 @@ service cloud.firestore {
                 AppState.idleTimer = 0;
                 resetSwingStartCandidate();
                 resetFullMotionStart();
+                resetReactionTrialClock();
                 setTimingStatus('待機', '---', '---');
+                if (Params.signalMode) updateReactionTrainingUi('構えて静止');
                 AppState.zanshinTimer = null;
             }, Math.max(100, Number(delayMs) || 350));
         }
@@ -14288,7 +14555,7 @@ service cloud.firestore {
             tbody.innerHTML = '';
             const recent = [...AppState.records].reverse().slice(0, 8);
             if (!recent.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr>';
                 return;
             }
             
@@ -14298,6 +14565,7 @@ service cloud.firestore {
 	                tr.innerHTML = `
 	                    <td class="px-1 py-2 text-slate-500">${record.id}</td>
 	                    <td class="px-1 py-2 text-blue-600 font-bold">${record.timeMs}ms</td>
+	                    <td class="px-1 py-2 text-fuchsia-700 font-bold">${record.reactionMode ? reactionMsLabel(record.reactionTimeMs) : '---'}</td>
 	                    <td class="px-1 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
 	                    <td class="px-1 py-2 text-teal-600 font-bold">${record.hasujiAngle}°</td>
 	                    <td class="px-1 py-2 text-purple-600 font-bold">${record.rightAng}°</td>
@@ -14324,7 +14592,7 @@ service cloud.firestore {
             updateRecordComparisonSummary();
             safeText('summaryCount', `${records.length}本`);
             if (!records.length) {
-                ['summaryAvgTime', 'summaryMaxSpeed', 'summaryBest', 'summaryWorst', 'summaryAvgAxis', 'summaryAvgRightElbow'].forEach(id => safeText(id, '---'));
+                ['summaryAvgTime', 'summaryAvgReaction', 'summaryAvgTotalResponse', 'summaryMaxSpeed', 'summaryBest', 'summaryWorst', 'summaryAvgAxis', 'summaryAvgRightElbow'].forEach(id => safeText(id, '---'));
                 return;
             }
             const avg = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -14333,9 +14601,19 @@ service cloud.firestore {
             const elbows = records.map(r => Number(r.rightAng || 0)).filter(value => Number.isFinite(value) && value > 0);
             const hasuji = records.map(r => Math.abs(Number(r.hasujiAngle || 0))).filter(Number.isFinite);
             const visibility = records.map(r => Number(r.avgVisibility || 0)).filter(value => Number.isFinite(value) && value > 0);
+            const reactionTimes = records
+                .filter(record => record.reactionMode && record.reactionValid)
+                .map(record => Number(record.reactionTimeMs))
+                .filter(value => Number.isFinite(value) && value >= 0);
+            const totalResponseTimes = records
+                .filter(record => record.reactionMode && record.reactionValid)
+                .map(record => Number(record.totalResponseTimeMs))
+                .filter(value => Number.isFinite(value) && value >= 0);
 	            const peaks = records.map(record => ({ record, value: recordPeakOffsetMs(record, 'official') })).filter(item => item.value !== null);
 	            const shortestPeak = peaks.reduce((best, item) => !best || item.value < best.value ? item : best, null);
             safeText('summaryAvgTime', `${Math.round(avg(times))} ms`);
+            safeText('summaryAvgReaction', reactionTimes.length ? `${Math.round(avg(reactionTimes))} ms` : '---');
+            safeText('summaryAvgTotalResponse', totalResponseTimes.length ? `${Math.round(avg(totalResponseTimes))} ms` : '---');
 	            safeText('summaryMaxSpeed', shortestPeak ? `#${shortestPeak.record.id} / ${shortestPeak.value} ms` : '---');
             safeText('summaryBest', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
             safeText('summaryWorst', visibility.length ? `${Math.round(avg(visibility) * 100)}%` : '---');
@@ -14348,12 +14626,14 @@ service cloud.firestore {
             const records = analysisRecords();
             const latest = records[records.length - 1];
             if (!latest) {
-                ['detailLatestTime', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailLatestValidation', 'detailLatestValidationReason', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
+                ['detailLatestTime', 'detailLatestReaction', 'detailLatestTotalResponse', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailLatestValidation', 'detailLatestValidationReason', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
-	                if (body) body.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
+	                if (body) body.innerHTML = '<tr><td colspan="12" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr>';
 	                return;
 	            }
 	            safeText('detailLatestTime', `${latest.timeMs} ms`);
+	            safeText('detailLatestReaction', latest.reactionMode ? reactionMsLabel(latest.reactionTimeMs) : '---');
+	            safeText('detailLatestTotalResponse', latest.reactionMode ? reactionMsLabel(latest.totalResponseTimeMs) : '---');
 	            safeText('detailLatestOfficialSpeed', recordPeakOffsetText(latest, 'official'));
             safeText('detailLatestVisibility', latest.avgVisibility ? `${Math.round(Number(latest.avgVisibility) * 100)}%` : '---');
             safeText('detailLatestValidation', recordTypeOf(latest) === 'realtime' ? (latest.realtimeValidationStatus || '旧記録') : '正式動画');
@@ -14375,6 +14655,8 @@ service cloud.firestore {
                         <td class="px-2 py-2"><span class="px-2 py-1 rounded-full text-[11px] font-bold ${recordTypeOf(record) === 'formal' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}">${recordTypeLabel(record)}</span></td>
                         <td class="px-2 py-2 text-slate-600 whitespace-nowrap">${formatRecordDate(record)}</td>
 	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
+	                    <td class="px-2 py-2 text-fuchsia-700 font-bold">${record.reactionMode ? reactionMsLabel(record.reactionTimeMs) : '---'}</td>
+	                    <td class="px-2 py-2 text-violet-700 font-bold">${record.reactionMode ? reactionMsLabel(record.totalResponseTimeMs) : '---'}</td>
 	                    <td class="px-2 py-2 text-cyan-700 font-bold">${recordPeakOffsetText(record, 'official')}</td>
 	                    <td class="px-2 py-2 text-purple-700 font-bold">${record.rightAng || '---'}°</td>
                     <td class="px-2 py-2 text-emerald-700 font-bold">${Number(record.torsoAng || 0).toFixed(1)}°</td>
@@ -14427,7 +14709,10 @@ service cloud.firestore {
                 return;
             }
             const images = frames.map((frame, index) => `<img src="${frame.image}" alt="frame ${index + 1}">`).join('\n');
-            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms</p><p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
+            const reactionMeta = record.reactionMode
+                ? `<p>反応時間: ${reactionMsLabel(record.reactionTimeMs)}</p><p>音から終了: ${reactionMsLabel(record.totalResponseTimeMs)}</p>`
+                : '';
+            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms</p>${reactionMeta}<p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -14659,14 +14944,12 @@ service cloud.firestore {
                             if (AppState.idleTimer > 30) { 
                                 AppState.swingState = 'SIGNAL_WAIT';
                                 updateStateUI('SIGNAL_WAIT');
-                                let delay = 1000 + Math.random() * 2000;
+                                const minDelay = Math.max(500, Number(Params.reactionDelayMinMs || 1500));
+                                const maxDelay = Math.max(minDelay, Number(Params.reactionDelayMaxMs || 3500));
+                                const delay = minDelay + Math.random() * (maxDelay - minDelay);
+                                updateReactionTrainingUi('音を待つ');
                                 AppState.signalTimer = setTimeout(() => {
-	                                    if(AppState.swingState === 'SIGNAL_WAIT') {
-	                                        AppState.swingState = 'SIGNAL_GO';
-	                                        AppState.signalTime = performance.now();
-	                                        playBeep();
-	                                        updateStateUI('SIGNAL_GO');
-	                                    }
+	                                    issueReactionSignal();
                                 }, delay);
                             }
                         } else {
@@ -14675,20 +14958,36 @@ service cloud.firestore {
                     } else if (AppState.swingState === 'SIGNAL_WAIT') {
                         if (AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps || vel > Params.swingVelThreshold || wristY < nose.y) {
                             clearTimeout(AppState.signalTimer);
+                            AppState.signalTimer = null;
+                            AppState.reactionFalseStarts += 1;
                             showToast('フライングです！静止して待ちましょう', 'red');
                             AppState.swingState = 'IDLE';
                             AppState.idleTimer = 0;
+                            resetFullMotionStart();
+                            resetSwingStartCandidate();
+                            resetReactionTrialClock();
+                            updateReactionTrainingUi('フライング / もう一度静止');
                             updateStateUI('IDLE');
                         }
                     } else if (AppState.swingState === 'SIGNAL_GO' || AppState.swingState === 'RAISED') {
-                        const fullMotionStart = Params.tsukiMode || strikeTimingModeOf() !== 'full-motion'
-                            ? 0
-                            : updateFullMotionStart(now, wristY, vel, rShoulder);
-                        const startCandidate = Params.tsukiMode ? null : updateSwingStartCandidate(now, vel, wristY, rShoulder);
-                        const isTriggered = Params.tsukiMode ? (elbowVel > 5) : !!startCandidate;
-                        if(isTriggered) {
-                            beginSwing(fullMotionStart || startCandidate?.timeMs || now, AppState.fullMotionStartWristY || startCandidate?.wristY || wristY);
-	                        }
+                        if (AppState.signalTime && now - AppState.signalTime > Params.reactionTimeoutMs) {
+                            AppState.swingState = 'IDLE';
+                            AppState.idleTimer = 0;
+                            resetFullMotionStart();
+                            resetSwingStartCandidate();
+                            resetReactionTrialClock();
+                            updateReactionTrainingUi('時間切れ / もう一度静止');
+                            updateStateUI('IDLE');
+                        } else {
+                            const fullMotionStart = Params.tsukiMode || strikeTimingModeOf() !== 'full-motion'
+                                ? 0
+                                : updateFullMotionStart(now, wristY, vel, rShoulder);
+                            const startCandidate = Params.tsukiMode ? null : updateSwingStartCandidate(now, vel, wristY, rShoulder);
+                            const isTriggered = Params.tsukiMode ? (elbowVel > 5) : !!startCandidate;
+                            if(isTriggered) {
+                                beginSwing(fullMotionStart || startCandidate?.timeMs || now, AppState.fullMotionStartWristY || startCandidate?.wristY || wristY);
+	                            }
+                        }
 	                    }
                 } 
                 else {
@@ -14845,7 +15144,9 @@ service cloud.firestore {
 	                            AppState.idleTimer = 0;
 	                            resetSwingStartCandidate();
 	                            resetFullMotionStart();
+	                            resetReactionTrialClock();
 	                            setTimingStatus('待機', '---', '---');
+	                            if (Params.signalMode) updateReactionTrainingUi('測定不可 / もう一度静止');
 	                        }
                     }
                 } else if(AppState.swingState === 'ZANSHIN') {
@@ -15606,6 +15907,7 @@ service cloud.firestore {
         async function processVideoFrame(now, metadata) {
             if (!AppState.frameLoopRunning) return;
             const frameTimeMs = getFrameTimestampMs(now, metadata);
+            AppState.currentFramePerformanceMs = Number.isFinite(Number(now)) ? Number(now) : performance.now();
             AppState.cameraFrameCount += 1;
             trackRollingFrameTime(AppState.cameraFrameTimes, frameTimeMs);
             const presentedFrame = Number(metadata?.presentedFrames || 0);
@@ -15750,6 +16052,8 @@ service cloud.firestore {
                 updateHistoryTable();
                 const latest = AppState.records[AppState.records.length - 1];
                 document.getElementById('latestTime').innerText = latest.timeMs + ' ms';
+	                safeText('latestReactionTime', latest.reactionMode ? reactionMsLabel(latest.reactionTimeMs) : '---');
+	                safeText('latestTotalResponseTime', latest.reactionMode ? reactionMsLabel(latest.totalResponseTimeMs) : '---');
 	                document.getElementById('latestSync').innerText = '---';
 	                document.getElementById('latestSae').innerText = '---';
 		                document.getElementById('latestStride').innerText = '---';
@@ -21843,9 +22147,9 @@ service cloud.firestore {
                 const records = analysisRecords();
 	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
 	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,記録日時,時間(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),開始基準,測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
+		            csvContent += "No.,記録種別,記録日時,時間(ms),反応時間(ms),音から終了(ms),反応測定,反応有効,反応除外理由,音声出力遅延(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),開始基準,測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
 		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(strikeTimingModeLabel(r.strikeTimingMode))},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
+		                csvContent += `${r.id},${recordTypeLabel(r)},${formatRecordDate(r)},${r.timeMs},${r.reactionTimeMs ?? ''},${r.totalResponseTimeMs ?? ''},${r.reactionMode ? 'あり' : ''},${r.reactionMode ? (r.reactionValid ? '有効' : '要確認') : ''},${JSON.stringify(r.reactionReason || '')},${r.reactionAudioLatencyMs ?? ''},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(strikeTimingModeLabel(r.strikeTimingMode))},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
 		            });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
@@ -21858,8 +22162,8 @@ service cloud.firestore {
             if(confirm('全データを消去しますか？')) {
                 AppState.records = [];
                 safeStorageRemove('kendoRecords');
-                document.getElementById('recentHistoryBody').innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr>';
-	                ['latestTime', 'latestSync', 'latestSae', 'latestStride', 'latestHasuji', 'latestRightAng', 'latestTorso', 'latestPeakSpeed', 'latestTipSpeed', 'latestTapeSpeed', 'latestVisibility', 'latestFrameMode'].forEach(id => {
+                document.getElementById('recentHistoryBody').innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr>';
+	                ['latestTime', 'latestReactionTime', 'latestTotalResponseTime', 'latestSync', 'latestSae', 'latestStride', 'latestHasuji', 'latestRightAng', 'latestTorso', 'latestPeakSpeed', 'latestTipSpeed', 'latestTapeSpeed', 'latestVisibility', 'latestFrameMode'].forEach(id => {
 	                    const el = document.getElementById(id);
 	                    if (el) el.innerText = '---';
                 });
@@ -21875,6 +22179,7 @@ service cloud.firestore {
             const btn = document.getElementById('startBtn'); btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 起動中...'; btn.disabled = true;
             if(AppState.enableMic && !AppState.analyser) await initMicrophone();
             try {
+                if (Params.signalMode) await ensureReactionAudioReady();
                 await startCameraStream();
                 AppState.isCameraRunning = true; 
                 document.getElementById('startOverlay').style.display = 'none'; 
@@ -21925,6 +22230,16 @@ service cloud.firestore {
             } else {
                 this.className = "ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600";
                 this.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> 音声OFF';
+            }
+        });
+
+        const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
+        if (reactionTrainingToggleBtn) reactionTrainingToggleBtn.addEventListener('click', async () => {
+            reactionTrainingToggleBtn.disabled = true;
+            try {
+                await setReactionTrainingMode(!Params.signalMode);
+            } finally {
+                reactionTrainingToggleBtn.disabled = false;
             }
         });
 
@@ -23119,6 +23434,11 @@ service cloud.firestore {
             notify: false,
             reanalyze: false,
             persist: false
+        });
+        setReactionTrainingMode(safeStorageGet('kendoReactionTrainingMode') === '1', {
+            notify: false,
+            persist: false,
+            unlockAudio: false
         });
         AppState.researchProfile = loadResearchProfile();
         applyResearchProfileToUi();
