@@ -372,12 +372,103 @@
             flex-direction: column;
             justify-content: center;
         }
+        .realtime-mode-launcher {
+            display: grid;
+            grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 16px;
+            border: 1px solid #dbe3ee;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+        .realtime-mode-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .measure-mode-button {
+            min-height: 82px;
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+            padding: 13px 14px;
+            border: 2px solid #dbe3ee;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #334155;
+            text-align: left;
+            transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+        }
+        .measure-mode-button:hover { border-color: #94a3b8; background: #f8fafc; }
+        .measure-mode-button .mode-icon {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 16px;
+        }
+        .measure-mode-button strong,
+        .measure-mode-button small { display: block; }
+        .measure-mode-button strong { color: #0f172a; font-size: 0.9rem; }
+        .measure-mode-button small { margin-top: 3px; color: #64748b; font-size: 0.7rem; line-height: 1.4; }
+        .measure-mode-button.standard.is-active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+        .measure-mode-button.standard.is-active .mode-icon { background: #2563eb; color: #ffffff; }
+        .measure-mode-button.reaction.is-active {
+            border-color: #c026d3;
+            background: #fdf4ff;
+            box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.12);
+        }
+        .measure-mode-button.reaction.is-active .mode-icon { background: #c026d3; color: #ffffff; }
+        @media (max-width: 820px) {
+            .realtime-mode-launcher { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 540px) {
+            .realtime-mode-launcher { padding: 12px; }
+            .realtime-mode-options { grid-template-columns: 1fr; }
+            .measure-mode-button { min-height: 70px; }
+            #measureHeader {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 12px;
+            }
+            #measureHeader > div:last-child {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                width: 100%;
+                gap: 8px;
+            }
+            #measureHeader #practiceFocusBtn,
+            #measureHeader #practiceModeBtn {
+                min-height: 40px;
+                padding: 8px 12px;
+                border-radius: 8px;
+                white-space: nowrap;
+            }
+            #measureHeader #systemStatus {
+                grid-column: 1 / -1;
+                min-height: 38px;
+                justify-content: center;
+                border-radius: 8px;
+            }
+        }
         .replay-canvas-wrap { min-height: 220px; }
         body.practice-focus { background: #000; overflow: hidden; }
         body.practice-focus nav { display: none; }
         body.practice-focus main { max-width: none; width: 100vw; height: 100vh; padding: 0; margin: 0; }
         body.practice-focus #tab-measure { height: 100vh; }
         body.practice-focus #measureHeader { display: none; }
+        body.practice-focus #realtimeModeLauncher { display: none; }
         body.practice-focus #measureLayout { display: block; height: 100vh; }
         body.practice-focus #videoColumn { height: 100vh; }
         body.practice-focus #videoContainer { width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; }
@@ -5053,8 +5144,11 @@
     <div id="tab-measure" class="tab-content active">
         <div id="measureHeader" class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-circle-play text-blue-500 mr-2"></i>練習</h2>
-                <p class="text-xs text-slate-500 mt-1">カメラで打突時間と角度をすぐ確認します。</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="font-bold text-lg"><i class="fa-solid fa-circle-play text-blue-500 mr-2"></i><span id="measureModeHeading">通常の打突測定</span></h2>
+                    <span id="measureModeBadge" class="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black text-blue-700">通常測定</span>
+                </div>
+                <p id="measureModeSubtitle" class="text-xs text-slate-500 mt-1">竹刀の動き始めから振り下ろし終了までを測定します。</p>
             </div>
             <div class="flex items-center gap-2">
                 <button id="practiceFocusBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-bold transition">大きく表示</button>
@@ -5066,6 +5160,23 @@
                 </div>
             </div>
         </div>
+        <section id="realtimeModeLauncher" class="realtime-mode-launcher" aria-labelledby="realtimeModeLauncherTitle">
+            <div>
+                <p class="text-[11px] font-black uppercase tracking-wider text-slate-400">Realtime measurement</p>
+                <h3 id="realtimeModeLauncherTitle" class="mt-1 text-base font-black text-slate-900">測定モードを選ぶ</h3>
+                <p id="realtimeModeDescription" class="mt-1 text-xs leading-relaxed text-slate-500">通常の打突時間と角度を測定します。</p>
+            </div>
+            <div class="realtime-mode-options" role="group" aria-label="リアルタイム測定モード">
+                <button id="standardMeasurementModeBtn" type="button" class="measure-mode-button standard is-active" aria-pressed="true">
+                    <span class="mode-icon"><i class="fa-solid fa-person-running"></i></span>
+                    <span><strong>通常の打突測定</strong><small>打突時間・右肘・体幹・刃筋を記録</small></span>
+                </button>
+                <button id="reactionMeasurementModeBtn" type="button" class="measure-mode-button reaction" aria-pressed="false">
+                    <span class="mode-icon"><i class="fa-solid fa-ear-listen"></i></span>
+                    <span><strong>反応・打突測定</strong><small>音への反応と打突動作を同時に記録</small></span>
+                </button>
+            </div>
+        </section>
         <div class="kvc-route-cards practice-secondary">
             <button type="button" class="kvc-route-card video" data-kendo-action="switch-tab" data-value="video">
                 <span class="kvc-route-icon"><i class="fa-solid fa-film"></i></span>
@@ -5113,8 +5224,9 @@
 	                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
 	                            <p class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
 	                        </div>
+                        <p id="startModePrompt" class="mb-3 max-w-sm text-center text-xs font-bold leading-relaxed text-slate-200">通常の打突時間を測定します。</p>
                         <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] transition transform hover:scale-105">
-                            <i class="fa-solid fa-play mr-2"></i> 開始
+                            <i class="fa-solid fa-play mr-2"></i> 通常測定を開始
                         </button>
                     </div>
 
@@ -5149,14 +5261,14 @@
                     <p id="aiComment" class="text-slate-700 font-medium bg-slate-50 p-3 rounded text-sm md:text-base border border-slate-100">「稽古開始」を押して開始</p>
                 </div>
 
-	                <div id="reactionTrainingCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+	                <div id="reactionTrainingCard" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-4">
 	                    <div class="flex items-center justify-between gap-3">
 	                        <div>
-	                            <div class="flex items-center gap-2"><i class="fa-solid fa-ear-listen text-fuchsia-600"></i><h3 class="font-bold text-sm text-slate-800">反応トレーニング</h3></div>
-	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">OFF時は通常の打突測定です。</p>
+	                            <div class="flex items-center gap-2"><i class="fa-solid fa-ear-listen text-fuchsia-600"></i><h3 class="font-bold text-sm text-slate-800">反応・打突測定</h3></div>
+	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">音が鳴ったら打突します。</p>
 	                        </div>
 	                        <button id="reactionTrainingToggleBtn" type="button" aria-pressed="false" class="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black text-slate-700">
-	                            OFF
+	                            通常測定へ
 	                        </button>
 	                    </div>
 	                    <div class="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -7768,17 +7880,59 @@ service cloud.firestore {
             return Number.isFinite(Number(value)) ? `${Math.round(Number(value))} ms` : '---';
         }
 
+        function updateRealtimeMeasurementModeUi(enabled) {
+            const standardButton = document.getElementById('standardMeasurementModeBtn');
+            const reactionButton = document.getElementById('reactionMeasurementModeBtn');
+            const card = document.getElementById('reactionTrainingCard');
+            const startButton = document.getElementById('startBtn');
+            const badge = document.getElementById('measureModeBadge');
+            document.body.classList.toggle('reaction-measurement-mode', enabled);
+
+            if (standardButton) {
+                standardButton.classList.toggle('is-active', !enabled);
+                standardButton.setAttribute('aria-pressed', enabled ? 'false' : 'true');
+            }
+            if (reactionButton) {
+                reactionButton.classList.toggle('is-active', enabled);
+                reactionButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+            }
+            if (card) card.classList.toggle('hidden', !enabled);
+
+            safeText('measureModeHeading', enabled ? '反応・打突測定' : '通常の打突測定');
+            safeText('measureModeSubtitle', enabled
+                ? '音から竹刀の動き始めまでと、打突動作の終了までを続けて測定します。'
+                : '竹刀の動き始めから振り下ろし終了までを測定します。');
+            safeText('realtimeModeDescription', enabled
+                ? '構えて静止すると音が鳴ります。反応時間・打突時間・合計時間を1本の記録に保存します。'
+                : '通常の打突時間と角度を測定します。');
+            safeText('startModePrompt', enabled
+                ? '音が鳴ったら打突してください。反応時間と打突時間を同時に記録します。'
+                : '通常の打突時間を測定します。');
+
+            if (badge) {
+                badge.textContent = enabled ? '反応測定' : '通常測定';
+                badge.style.backgroundColor = enabled ? '#fdf4ff' : '#eff6ff';
+                badge.style.color = enabled ? '#a21caf' : '#1d4ed8';
+            }
+            if (startButton && !AppState.isCameraRunning && !startButton.disabled) {
+                startButton.innerHTML = enabled
+                    ? '<i class="fa-solid fa-ear-listen mr-2"></i> 反応測定を開始'
+                    : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
+                startButton.style.backgroundColor = enabled ? '#c026d3' : '#2563eb';
+            }
+        }
+
         function updateReactionTrainingUi(statusText = '') {
             const enabled = !!Params.signalMode;
             const button = document.getElementById('reactionTrainingToggleBtn');
             const card = document.getElementById('reactionTrainingCard');
             if (button) {
                 button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-                button.textContent = enabled ? 'ON' : 'OFF';
+                button.textContent = '通常測定へ';
                 button.className = 'shrink-0 rounded-full border px-4 py-2 text-xs font-black';
-                button.style.backgroundColor = enabled ? '#c026d3' : '#f1f5f9';
-                button.style.borderColor = enabled ? '#c026d3' : '#e2e8f0';
-                button.style.color = enabled ? '#ffffff' : '#334155';
+                button.style.backgroundColor = '#ffffff';
+                button.style.borderColor = '#e879f9';
+                button.style.color = '#a21caf';
             }
             if (card) {
                 card.style.borderColor = enabled ? '#f0abfc' : '#e2e8f0';
@@ -7786,8 +7940,9 @@ service cloud.firestore {
             }
             safeText('reactionTrainingGuide', enabled
                 ? '静止後1.5〜3.5秒で音が鳴ります。音から竹刀の動き始めまでを反応時間として測定します。'
-                : 'OFF時は通常の打突測定です。');
+                : '音が鳴ったら打突します。');
             safeText('reactionTrainingState', statusText || (enabled ? '構えて静止' : '通常測定'));
+            updateRealtimeMeasurementModeUi(enabled);
         }
 
         function resetReactionTrialClock() {
@@ -22199,7 +22354,10 @@ service cloud.firestore {
                 });
             } catch(e) {
                 console.error('カメラ起動エラー', e);
-                btn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> 稽古開始';
+                btn.innerHTML = Params.signalMode
+                    ? '<i class="fa-solid fa-ear-listen mr-2"></i> 反応測定を開始'
+                    : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
+                btn.style.backgroundColor = Params.signalMode ? '#c026d3' : '#2563eb';
                 btn.disabled = false;
                 document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-red-500"></span> カメラエラー`;
                 showToast(cameraErrorText(e), 'red');
@@ -22233,11 +22391,31 @@ service cloud.firestore {
             }
         });
 
+        const standardMeasurementModeBtn = document.getElementById('standardMeasurementModeBtn');
+        if (standardMeasurementModeBtn) standardMeasurementModeBtn.addEventListener('click', async () => {
+            standardMeasurementModeBtn.disabled = true;
+            try {
+                await setReactionTrainingMode(false);
+            } finally {
+                standardMeasurementModeBtn.disabled = false;
+            }
+        });
+
+        const reactionMeasurementModeBtn = document.getElementById('reactionMeasurementModeBtn');
+        if (reactionMeasurementModeBtn) reactionMeasurementModeBtn.addEventListener('click', async () => {
+            reactionMeasurementModeBtn.disabled = true;
+            try {
+                await setReactionTrainingMode(true);
+            } finally {
+                reactionMeasurementModeBtn.disabled = false;
+            }
+        });
+
         const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
         if (reactionTrainingToggleBtn) reactionTrainingToggleBtn.addEventListener('click', async () => {
             reactionTrainingToggleBtn.disabled = true;
             try {
-                await setReactionTrainingMode(!Params.signalMode);
+                await setReactionTrainingMode(false);
             } finally {
                 reactionTrainingToggleBtn.disabled = false;
             }
