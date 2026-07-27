@@ -7261,6 +7261,7 @@ service cloud.firestore {
             currentReactionTimeMs: null,
             currentReactionValid: false,
             currentReactionReason: '',
+            currentReactionMotionSource: 'none',
             reactionFalseStarts: 0,
             idleTimer: 0, 
             swingStartTime: 0,
@@ -7522,6 +7523,8 @@ service cloud.firestore {
             reactionMinimumMs: 80,
             reactionMaximumMs: 1500,
             reactionTimeoutMs: 2500,
+            reactionWristSpeedMps: 0.18,
+            reactionWristDeltaPerFrame: 0.006,
             tsukiMode: false,
             usePoseLandmarker: false,
             referenceShoulderMeters: 0.42,
@@ -7954,6 +7957,7 @@ service cloud.firestore {
             AppState.currentReactionTimeMs = null;
             AppState.currentReactionValid = false;
             AppState.currentReactionReason = '';
+            AppState.currentReactionMotionSource = 'none';
         }
 
         async function setReactionTrainingMode(enabled, options = {}) {
@@ -8713,13 +8717,27 @@ service cloud.firestore {
             const lowerGuard = !rShoulder || wristY >= Number(rShoulder.y || 0) - 0.06;
             const raisingOrLevel = !Number.isFinite(wristVelocityY) || wristVelocityY <= 0.0035;
             const frameStable = !AppState.frameDtMs || AppState.frameDtMs <= 100;
-            const motionOk = tapeReady && lowerGuard && raisingOrLevel && frameStable && tapeSpeed >= threshold;
+            const tapeMotionOk = tapeReady && lowerGuard && raisingOrLevel && frameStable && tapeSpeed >= threshold;
+            // 反応測定では振り上げ方向も動作開始として扱う。竹刀検出を優先し、
+            // 検出が途切れた場合だけ、信頼度の高い右手首速度へフォールバックする。
+            const reactionPoseReady = Params.signalMode
+                && AppState.swingState === 'SIGNAL_GO'
+                && AppState.currentWristVisibility >= 0.55
+                && AppState.currentViewQuality >= Params.minViewQuality;
+            const reactionPoseMoved = Math.abs(Number(wristVelocityY || 0)) >= Number(Params.reactionWristDeltaPerFrame || 0.006)
+                || Number(AppState.currentSpeed3d || 0) >= Number(Params.reactionWristSpeedMps || 0.18);
+            const reactionPoseMotionOk = reactionPoseReady
+                && lowerGuard
+                && frameStable
+                && reactionPoseMoved;
+            const motionOk = tapeMotionOk || reactionPoseMotionOk;
             if (!motionOk) {
                 resetFullMotionStart();
                 return 0;
             }
             if (!AppState.fullMotionStartFrames) {
-                const canInterpolate = AppState.previousTapeTipSpeed < threshold
+                const canInterpolate = tapeMotionOk
+                    && AppState.previousTapeTipSpeed < threshold
                     && AppState.previousTapeSignalTimeMs > 0;
                 AppState.fullMotionStartTimeMs = canInterpolate
                     ? interpolateThresholdTime(
@@ -8732,6 +8750,11 @@ service cloud.firestore {
                     : frameTimeMs;
                 AppState.fullMotionStartWristY = wristY;
                 AppState.fullMotionStartPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
+                if (Params.signalMode) {
+                    AppState.currentReactionMotionSource = tapeMotionOk
+                        ? (AppState.currentShinaiSource || 'shinai')
+                        : 'wrist';
+                }
             }
             AppState.fullMotionStartFrames += 1;
             AppState.fullMotionLastActiveMs = frameTimeMs;
@@ -14161,9 +14184,13 @@ service cloud.firestore {
         }
 
         function evaluateSwingEnd(now, fallbackVel, rightAng, elbowVel, wristY, rShoulder) {
+            const reactionWristFallback = Params.signalMode
+                && AppState.currentReactionMotionSource === 'wrist';
             const speed = AppState.currentShinaiDetected
                 ? Number(AppState.currentTapeTipSpeed || 0)
-                : Number(AppState.swingPreviousSpeedMps || 0);
+                : (reactionWristFallback
+                    ? Number(AppState.currentSpeed3d || 0)
+                    : Number(AppState.swingPreviousSpeedMps || 0));
             AppState.swingTapeTotalFrames += 1;
             if (AppState.currentShinaiDetected) {
                 AppState.swingTapeDetectedFrames += 1;
@@ -14197,7 +14224,10 @@ service cloud.firestore {
             const endByRatio = afterPeak && AppState.swingPeakSpeedMps > 0 && speed <= ratioThreshold;
             const timedOut = now - AppState.swingStartTime > strikeTimingMaximumMs();
             const tapeStillVisible = AppState.swingTapeMissingFrames <= Math.max(2, Params.timingEndConsecutiveFrames);
-            const endSignal = tapeStillVisible && (endByDecel || endByRatio);
+            const wristStillVisible = AppState.currentWristVisibility >= 0.45
+                && AppState.currentViewQuality >= Math.max(0.3, Params.minViewQuality - 0.1);
+            const motionStillTrackable = reactionWristFallback ? wristStillVisible : tapeStillVisible;
+            const endSignal = motionStillTrackable && (endByDecel || endByRatio);
 
             if (endSignal) {
                 if (!AppState.endCandidateFrames) {
@@ -14587,6 +14617,7 @@ service cloud.firestore {
                 reactionSignalPerformanceTimeMs: reactionMode ? Number(AppState.signalPerformanceTimeMs || 0) : null,
                 reactionAudioLatencyMs: reactionMode ? Number(AppState.signalAudioLatencyMs || 0) : null,
                 reactionFalseStarts: reactionMode ? Number(AppState.reactionFalseStarts || 0) : 0,
+                reactionMotionSource: reactionMode ? (AppState.currentReactionMotionSource || 'none') : '',
                 hasujiAngle: hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
                 rightAng: rightAng.toFixed(1), 
@@ -15111,7 +15142,13 @@ service cloud.firestore {
                             AppState.idleTimer = 0; 
                         }
                     } else if (AppState.swingState === 'SIGNAL_WAIT') {
-                        if (AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps || vel > Params.swingVelThreshold || wristY < nose.y) {
+                        const falseStartByPose = AppState.currentWristVisibility >= 0.55
+                            && AppState.currentViewQuality >= Params.minViewQuality
+                            && (
+                                Math.abs(vel) >= Number(Params.reactionWristDeltaPerFrame || 0.006)
+                                || Number(AppState.currentSpeed3d || 0) >= Number(Params.reactionWristSpeedMps || 0.18)
+                            );
+                        if (AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps || falseStartByPose || wristY < nose.y) {
                             clearTimeout(AppState.signalTimer);
                             AppState.signalTimer = null;
                             AppState.reactionFalseStarts += 1;
@@ -15138,7 +15175,7 @@ service cloud.firestore {
                                 ? 0
                                 : updateFullMotionStart(now, wristY, vel, rShoulder);
                             const startCandidate = Params.tsukiMode ? null : updateSwingStartCandidate(now, vel, wristY, rShoulder);
-                            const isTriggered = Params.tsukiMode ? (elbowVel > 5) : !!startCandidate;
+                            const isTriggered = Params.tsukiMode ? (elbowVel > 5) : !!(fullMotionStart || startCandidate);
                             if(isTriggered) {
                                 beginSwing(fullMotionStart || startCandidate?.timeMs || now, AppState.fullMotionStartWristY || startCandidate?.wristY || wristY);
 	                            }
@@ -15260,10 +15297,19 @@ service cloud.firestore {
 		                            : 0;
 		                        const tapeTimingValid = AppState.swingTapeDetectedFrames >= 3
 		                            && tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55);
+		                        const reactionPoseTimingValid = !!Params.signalMode
+		                            && AppState.currentReactionMotionSource === 'wrist'
+		                            && Number(AppState.currentWristVisibility || 0) >= 0.55
+		                            && Number(AppState.currentViewQuality || 0) >= Math.max(0.3, Number(Params.minViewQuality || 0.45) - 0.1);
+		                        const timingSourceValid = tapeTimingValid || reactionPoseTimingValid;
 		                        const sourceCounts = AppState.swingShinaiSourceCounts || {};
-		                        const shinaiSource = Number(sourceCounts.tape || 0) >= Number(sourceCounts.shaft || 0) ? 'tape' : 'shaft';
-		                        const shinaiSourceLabel = shinaiSource === 'tape' ? '竹刀先端テープ' : '竹刀本体検出（テープなし）';
-		                        if(duration > strikeTimingMinimumMs() && duration < (Params.signalMode ? 3000 : strikeTimingMaximumMs()) && tapeTimingValid) {
+		                        const shinaiSource = reactionPoseTimingValid && !tapeTimingValid
+		                            ? 'wrist'
+		                            : (Number(sourceCounts.tape || 0) >= Number(sourceCounts.shaft || 0) ? 'tape' : 'shaft');
+		                        const shinaiSourceLabel = shinaiSource === 'wrist'
+		                            ? '右手首動作（反応補助）'
+		                            : (shinaiSource === 'tape' ? '竹刀先端テープ' : '竹刀本体検出（テープなし）');
+		                        if(duration > strikeTimingMinimumMs() && duration < (Params.signalMode ? 3000 : strikeTimingMaximumMs()) && timingSourceValid) {
 		                            saveRecord(duration, rawSyncDiff, impactSignal, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, 0, {
 		                                ...(refinedMetrics || {}),
 		                                peakTipSpeedMps: refinedTipMetrics ? refinedTipMetrics.peakSpeedMps : AppState.currentEstimatedTipSpeed,
@@ -15286,7 +15332,14 @@ service cloud.firestore {
 		                                measurementMethod: `${AppState.frameSyncMode} / ${shinaiSourceLabel} / angleQ:${Math.round((AppState.currentAngleQuality || 0) * 100)}%`
 		                            });
 		                        } else {
-		                            if (!tapeTimingValid) showToast('竹刀先端を十分に追跡できなかったため記録しませんでした', 'yellow');
+		                            if (!timingSourceValid) {
+		                                showToast(
+		                                    Params.signalMode
+		                                        ? '竹刀または右手首を十分に追跡できなかったため記録しませんでした'
+		                                        : '竹刀先端を十分に追跡できなかったため記録しませんでした',
+		                                    'yellow'
+		                                );
+		                            }
 	                            AppState.swingState = 'IDLE';
 	                            updateStateUI('IDLE');
 	                            AppState.velHistory = [];
@@ -15939,10 +15992,26 @@ service cloud.firestore {
             candidates.push({ audio: false, video: true });
             let lastError = null;
             for (const constraints of candidates) {
+                let requestExpired = false;
                 try {
-                    return await navigator.mediaDevices.getUserMedia(constraints);
+                    const streamRequest = navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+                        if (requestExpired) {
+                            stream.getTracks?.().forEach(track => track.stop());
+                            throw new Error('camera request expired');
+                        }
+                        return stream;
+                    });
+                    return await withTimeout(
+                        streamRequest,
+                        20000,
+                        'camera permission'
+                    );
                 } catch (err) {
                     lastError = err;
+                    if (String(err?.message || '').includes('camera permission timeout')) {
+                        requestExpired = true;
+                        throw err;
+                    }
                     console.warn('カメラ取得を再試行します', err);
                 }
             }
@@ -15958,6 +16027,7 @@ service cloud.firestore {
             if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return '利用できるカメラが見つかりません。外部カメラ接続や選択を確認してください';
             if (name === 'NotReadableError' || name === 'TrackStartError') return '他のアプリがカメラを使用中です。Zoom/Teams/FaceTime等を閉じてください';
             if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') return '選択したカメラ条件で起動できません。自動選択に戻して再試行してください';
+            if (String(error?.message || '').includes('camera permission timeout')) return 'カメラ許可の応答がありません。アドレスバーのカメラ許可を確認して再試行してください';
             return `カメラを起動できませんでした${name ? ` (${name})` : ''}`;
         }
 
@@ -22354,6 +22424,7 @@ service cloud.firestore {
                 });
             } catch(e) {
                 console.error('カメラ起動エラー', e);
+                stopCameraStream();
                 btn.innerHTML = Params.signalMode
                     ? '<i class="fa-solid fa-ear-listen mr-2"></i> 反応測定を開始'
                     : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
