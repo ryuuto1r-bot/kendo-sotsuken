@@ -430,32 +430,40 @@
             box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.12);
         }
         .measure-mode-button.reaction.is-active .mode-icon { background: #c026d3; color: #ffffff; }
-        .reaction-card-actions {
+        .reaction-overlay-actions {
             display: grid;
-            grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-            gap: 8px;
-            margin-top: 12px;
+            grid-template-columns: minmax(112px, 0.7fr) minmax(210px, 1.3fr);
+            gap: 10px;
+            width: min(92%, 30rem);
+            margin-top: 4px;
         }
-        .reaction-card-action {
-            min-height: 44px;
-            border-radius: 8px;
-            border: 1px solid #dbe3ee;
-            background: #ffffff;
-            color: #334155;
-            font-size: 0.78rem;
+        .reaction-overlay-action {
+            min-height: 54px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.32);
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            font-size: 0.86rem;
             font-weight: 900;
         }
-        .reaction-card-action.primary {
+        .reaction-overlay-action.primary {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 1rem;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
+        }
+        body.reaction-measurement-mode .reaction-overlay-action.primary {
             border-color: #c026d3;
             background: #c026d3;
-            color: #ffffff;
-            box-shadow: 0 8px 18px rgba(192, 38, 211, 0.18);
+            box-shadow: 0 8px 24px rgba(192, 38, 211, 0.28);
         }
-        .reaction-card-action:disabled {
+        .reaction-overlay-action:disabled {
             cursor: not-allowed;
             opacity: 0.5;
             box-shadow: none;
         }
+        body:not(.reaction-measurement-mode) #reactionSoundTestBtn { display: none; }
         @media (max-width: 820px) {
             .realtime-mode-launcher { grid-template-columns: 1fr; }
         }
@@ -463,6 +471,11 @@
             .realtime-mode-launcher { padding: 12px; }
             .realtime-mode-options { grid-template-columns: 1fr; }
             .measure-mode-button { min-height: 70px; }
+            .reaction-overlay-actions {
+                grid-template-columns: 1fr;
+                width: min(88%, 23rem);
+            }
+            .reaction-overlay-action { min-height: 48px; }
             #measureHeader {
                 align-items: stretch;
                 flex-direction: column;
@@ -5199,7 +5212,7 @@
                 </button>
                 <button id="reactionMeasurementModeBtn" type="button" class="measure-mode-button reaction" aria-pressed="false">
                     <span class="mode-icon"><i class="fa-solid fa-ear-listen"></i></span>
-                    <span><strong>反応測定を開始</strong><small>音への反応と打突動作を同時に記録</small></span>
+                    <span><strong>反応測定</strong><small>音への反応と打突動作を同時に記録</small></span>
                 </button>
             </div>
         </section>
@@ -5251,9 +5264,14 @@
 	                            <p class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
 	                        </div>
                         <p id="startModePrompt" class="mb-3 max-w-sm text-center text-xs font-bold leading-relaxed text-slate-200">通常の打突時間を測定します。</p>
-                        <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-[0_0_30px_rgba(37,99,235,0.5)] transition transform hover:scale-105">
-                            <i class="fa-solid fa-play mr-2"></i> 通常測定を開始
-                        </button>
+                        <div class="reaction-overlay-actions">
+                            <button id="reactionSoundTestBtn" type="button" class="reaction-overlay-action">
+                                <i class="fa-solid fa-volume-high mr-1"></i>音を確認
+                            </button>
+                            <button id="startBtn" class="reaction-overlay-action primary">
+                                <i class="fa-solid fa-play mr-2"></i> 通常測定を開始
+                            </button>
+                        </div>
                     </div>
 
                     <div id="stateIndicator" class="absolute top-4 left-4 bg-black/60 border border-slate-500 px-4 py-2 rounded-lg text-white hidden shadow-lg backdrop-blur-md z-30">
@@ -5288,23 +5306,12 @@
                 </div>
 
 	                <div id="reactionTrainingCard" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-	                    <div class="flex items-center justify-between gap-3">
+	                    <div>
 	                        <div>
 	                            <div class="flex items-center gap-2"><i class="fa-solid fa-ear-listen text-fuchsia-600"></i><h3 class="font-bold text-sm text-slate-800">反応・打突測定</h3></div>
 	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">測定開始 → 構えて静止 → 音で打突</p>
 	                        </div>
-	                        <button id="reactionTrainingToggleBtn" type="button" aria-pressed="false" class="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black text-slate-700">
-	                            通常測定へ
-	                        </button>
 	                    </div>
-                        <div class="reaction-card-actions">
-                            <button id="reactionSoundTestBtn" type="button" class="reaction-card-action">
-                                <i class="fa-solid fa-volume-high mr-1"></i>音を試す
-                            </button>
-                            <button id="reactionQuickStartBtn" type="button" class="reaction-card-action primary">
-                                <i class="fa-solid fa-play mr-1"></i>測定開始
-                            </button>
-                        </div>
 	                    <div class="mt-3 grid grid-cols-3 gap-2 text-center">
 	                        <div class="rounded-lg border border-slate-100 bg-slate-50 p-2"><span class="text-[10px] text-slate-500">状態</span><div id="reactionTrainingState" class="mt-1 text-xs font-black text-slate-700">通常測定</div></div>
 	                        <div class="rounded-lg border border-fuchsia-100 bg-fuchsia-50 p-2"><span class="text-[10px] text-fuchsia-700">反応時間</span><div id="latestReactionTime" class="mt-1 text-base font-black text-fuchsia-700 font-mono-num">---</div></div>
@@ -7297,6 +7304,7 @@ service cloud.firestore {
             currentReactionReason: '',
             currentReactionMotionSource: 'none',
             reactionFalseStarts: 0,
+            reactionFalseStartCandidateFrames: 0,
             idleTimer: 0, 
             swingStartTime: 0,
             swingStartY: 0,
@@ -7559,6 +7567,9 @@ service cloud.firestore {
             reactionTimeoutMs: 2500,
             reactionWristSpeedMps: 0.18,
             reactionWristDeltaPerFrame: 0.006,
+            reactionFalseStartSpeedMps: 0.38,
+            reactionFalseStartDeltaPerFrame: 0.012,
+            reactionFalseStartConfirmFrames: 3,
             tsukiMode: false,
             usePoseLandmarker: false,
             referenceShoulderMeters: 0.42,
@@ -7923,7 +7934,6 @@ service cloud.firestore {
             const card = document.getElementById('reactionTrainingCard');
             const startButton = document.getElementById('startBtn');
             const soundTestButton = document.getElementById('reactionSoundTestBtn');
-            const quickStartButton = document.getElementById('reactionQuickStartBtn');
             const badge = document.getElementById('measureModeBadge');
             document.body.classList.toggle('reaction-measurement-mode', enabled);
 
@@ -7961,14 +7971,6 @@ service cloud.firestore {
             }
             const reactionBusy = !!AppState.isCameraRunning || !!startButton?.disabled;
             if (soundTestButton) soundTestButton.disabled = !enabled || reactionBusy;
-            if (quickStartButton) {
-                quickStartButton.disabled = !enabled || reactionBusy;
-                quickStartButton.innerHTML = AppState.isCameraRunning
-                    ? '<i class="fa-solid fa-circle-check mr-1"></i>測定中'
-                    : (reactionBusy
-                        ? '<i class="fa-solid fa-spinner fa-spin mr-1"></i>起動中'
-                        : '<i class="fa-solid fa-play mr-1"></i>測定開始');
-            }
         }
 
         function updateReactionTrainingUi(statusText = '') {
@@ -8004,6 +8006,7 @@ service cloud.firestore {
             AppState.currentReactionValid = false;
             AppState.currentReactionReason = '';
             AppState.currentReactionMotionSource = 'none';
+            AppState.reactionFalseStartCandidateFrames = 0;
         }
 
         async function setReactionTrainingMode(enabled, options = {}) {
@@ -8031,20 +8034,6 @@ service cloud.firestore {
             if (options.notify !== false) {
                 showToast(next ? '反応トレーニングを開始します' : '通常の打突測定へ戻しました', next ? 'green' : 'blue');
             }
-            return true;
-        }
-
-        async function startReactionMeasurementNow() {
-            const modeReady = Params.signalMode || await setReactionTrainingMode(true, { notify: false });
-            if (!modeReady) return false;
-            if (AppState.isCameraRunning) {
-                updateReactionTrainingUi('構えて静止');
-                return true;
-            }
-            const startButton = document.getElementById('startBtn');
-            if (!startButton || startButton.disabled) return false;
-            startButton.click();
-            updateRealtimeMeasurementModeUi(true);
             return true;
         }
 
@@ -8084,6 +8073,7 @@ service cloud.firestore {
                     if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return;
                     resetFullMotionStart();
                     resetSwingStartCandidate();
+                    AppState.reactionFalseStartCandidateFrames = 0;
                     AppState.signalTime = signal.frameTimeMs;
                     AppState.signalPerformanceTimeMs = signal.performanceTimeMs;
                     AppState.signalAudioLatencyMs = signal.outputLatencyMs;
@@ -15213,6 +15203,7 @@ service cloud.firestore {
                             AppState.idleTimer++;
                             if (AppState.idleTimer > 30) { 
                                 AppState.swingState = 'SIGNAL_WAIT';
+                                AppState.reactionFalseStartCandidateFrames = 0;
                                 updateStateUI('SIGNAL_WAIT');
                                 const minDelay = Math.max(500, Number(Params.reactionDelayMinMs || 1500));
                                 const maxDelay = Math.max(minDelay, Number(Params.reactionDelayMaxMs || 3500));
@@ -15226,13 +15217,19 @@ service cloud.firestore {
                             AppState.idleTimer = 0; 
                         }
                     } else if (AppState.swingState === 'SIGNAL_WAIT') {
-                        const falseStartByPose = AppState.currentWristVisibility >= 0.55
+                        const falseStartMotion = AppState.currentWristVisibility >= 0.55
                             && AppState.currentViewQuality >= Params.minViewQuality
                             && (
-                                Math.abs(vel) >= Number(Params.reactionWristDeltaPerFrame || 0.006)
-                                || Number(AppState.currentSpeed3d || 0) >= Number(Params.reactionWristSpeedMps || 0.18)
+                                Math.abs(vel) >= Number(Params.reactionFalseStartDeltaPerFrame || 0.012)
+                                || Number(AppState.currentSpeed3d || 0) >= Number(Params.reactionFalseStartSpeedMps || 0.38)
+                                || (AppState.currentShinaiDetected && Number(AppState.currentTapeTipSpeed || 0) >= 0.8)
                             );
-                        if (AppState.currentDownVelocityMps >= Params.timingStartDownVelocityMps || falseStartByPose || wristY < nose.y) {
+                        AppState.reactionFalseStartCandidateFrames = falseStartMotion
+                            ? Number(AppState.reactionFalseStartCandidateFrames || 0) + 1
+                            : Math.max(0, Number(AppState.reactionFalseStartCandidateFrames || 0) - 1);
+                        const falseStartConfirmed = AppState.reactionFalseStartCandidateFrames
+                            >= Number(Params.reactionFalseStartConfirmFrames || 3);
+                        if (falseStartConfirmed) {
                             clearTimeout(AppState.signalTimer);
                             AppState.signalTimer = null;
                             AppState.reactionFalseStarts += 1;
@@ -22562,8 +22559,7 @@ service cloud.firestore {
         if (reactionMeasurementModeBtn) reactionMeasurementModeBtn.addEventListener('click', async () => {
             reactionMeasurementModeBtn.disabled = true;
             try {
-                const modeReady = await setReactionTrainingMode(true);
-                if (modeReady) await startReactionMeasurementNow();
+                await setReactionTrainingMode(true);
             } finally {
                 reactionMeasurementModeBtn.disabled = false;
             }
@@ -22571,9 +22567,6 @@ service cloud.firestore {
 
         const reactionSoundTestBtn = document.getElementById('reactionSoundTestBtn');
         if (reactionSoundTestBtn) reactionSoundTestBtn.addEventListener('click', testReactionSound);
-
-        const reactionQuickStartBtn = document.getElementById('reactionQuickStartBtn');
-        if (reactionQuickStartBtn) reactionQuickStartBtn.addEventListener('click', startReactionMeasurementNow);
 
         const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
         if (reactionTrainingToggleBtn) reactionTrainingToggleBtn.addEventListener('click', async () => {
@@ -23777,7 +23770,10 @@ service cloud.firestore {
             reanalyze: false,
             persist: false
         });
-        setReactionTrainingMode(safeStorageGet('kendoReactionTrainingMode') === '1', {
+        const requestedRealtimeMode = new URLSearchParams(location.search).get('mode');
+        const initialReactionMode = requestedRealtimeMode === 'reaction'
+            || (requestedRealtimeMode !== 'standard' && safeStorageGet('kendoReactionTrainingMode') === '1');
+        setReactionTrainingMode(initialReactionMode, {
             notify: false,
             persist: false,
             unlockAudio: false
