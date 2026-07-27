@@ -430,6 +430,32 @@
             box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.12);
         }
         .measure-mode-button.reaction.is-active .mode-icon { background: #c026d3; color: #ffffff; }
+        .reaction-card-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .reaction-card-action {
+            min-height: 44px;
+            border-radius: 8px;
+            border: 1px solid #dbe3ee;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 900;
+        }
+        .reaction-card-action.primary {
+            border-color: #c026d3;
+            background: #c026d3;
+            color: #ffffff;
+            box-shadow: 0 8px 18px rgba(192, 38, 211, 0.18);
+        }
+        .reaction-card-action:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
         @media (max-width: 820px) {
             .realtime-mode-launcher { grid-template-columns: 1fr; }
         }
@@ -5173,7 +5199,7 @@
                 </button>
                 <button id="reactionMeasurementModeBtn" type="button" class="measure-mode-button reaction" aria-pressed="false">
                     <span class="mode-icon"><i class="fa-solid fa-ear-listen"></i></span>
-                    <span><strong>反応・打突測定</strong><small>音への反応と打突動作を同時に記録</small></span>
+                    <span><strong>反応測定を開始</strong><small>音への反応と打突動作を同時に記録</small></span>
                 </button>
             </div>
         </section>
@@ -5265,12 +5291,20 @@
 	                    <div class="flex items-center justify-between gap-3">
 	                        <div>
 	                            <div class="flex items-center gap-2"><i class="fa-solid fa-ear-listen text-fuchsia-600"></i><h3 class="font-bold text-sm text-slate-800">反応・打突測定</h3></div>
-	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">音が鳴ったら打突します。</p>
+	                            <p id="reactionTrainingGuide" class="mt-1 text-[11px] text-slate-500">測定開始 → 構えて静止 → 音で打突</p>
 	                        </div>
 	                        <button id="reactionTrainingToggleBtn" type="button" aria-pressed="false" class="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black text-slate-700">
 	                            通常測定へ
 	                        </button>
 	                    </div>
+                        <div class="reaction-card-actions">
+                            <button id="reactionSoundTestBtn" type="button" class="reaction-card-action">
+                                <i class="fa-solid fa-volume-high mr-1"></i>音を試す
+                            </button>
+                            <button id="reactionQuickStartBtn" type="button" class="reaction-card-action primary">
+                                <i class="fa-solid fa-play mr-1"></i>測定開始
+                            </button>
+                        </div>
 	                    <div class="mt-3 grid grid-cols-3 gap-2 text-center">
 	                        <div class="rounded-lg border border-slate-100 bg-slate-50 p-2"><span class="text-[10px] text-slate-500">状態</span><div id="reactionTrainingState" class="mt-1 text-xs font-black text-slate-700">通常測定</div></div>
 	                        <div class="rounded-lg border border-fuchsia-100 bg-fuchsia-50 p-2"><span class="text-[10px] text-fuchsia-700">反応時間</span><div id="latestReactionTime" class="mt-1 text-base font-black text-fuchsia-700 font-mono-num">---</div></div>
@@ -7888,6 +7922,8 @@ service cloud.firestore {
             const reactionButton = document.getElementById('reactionMeasurementModeBtn');
             const card = document.getElementById('reactionTrainingCard');
             const startButton = document.getElementById('startBtn');
+            const soundTestButton = document.getElementById('reactionSoundTestBtn');
+            const quickStartButton = document.getElementById('reactionQuickStartBtn');
             const badge = document.getElementById('measureModeBadge');
             document.body.classList.toggle('reaction-measurement-mode', enabled);
 
@@ -7923,6 +7959,16 @@ service cloud.firestore {
                     : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
                 startButton.style.backgroundColor = enabled ? '#c026d3' : '#2563eb';
             }
+            const reactionBusy = !!AppState.isCameraRunning || !!startButton?.disabled;
+            if (soundTestButton) soundTestButton.disabled = !enabled || reactionBusy;
+            if (quickStartButton) {
+                quickStartButton.disabled = !enabled || reactionBusy;
+                quickStartButton.innerHTML = AppState.isCameraRunning
+                    ? '<i class="fa-solid fa-circle-check mr-1"></i>測定中'
+                    : (reactionBusy
+                        ? '<i class="fa-solid fa-spinner fa-spin mr-1"></i>起動中'
+                        : '<i class="fa-solid fa-play mr-1"></i>測定開始');
+            }
         }
 
         function updateReactionTrainingUi(statusText = '') {
@@ -7942,7 +7988,7 @@ service cloud.firestore {
                 card.style.boxShadow = enabled ? '0 0 0 2px rgba(250, 232, 255, 0.9)' : '';
             }
             safeText('reactionTrainingGuide', enabled
-                ? '静止後1.5〜3.5秒で音が鳴ります。音から竹刀の動き始めまでを反応時間として測定します。'
+                ? '測定開始 → 構えて静止 → 音で打突'
                 : '音が鳴ったら打突します。');
             safeText('reactionTrainingState', statusText || (enabled ? '構えて静止' : '通常測定'));
             updateRealtimeMeasurementModeUi(enabled);
@@ -7986,6 +8032,44 @@ service cloud.firestore {
                 showToast(next ? '反応トレーニングを開始します' : '通常の打突測定へ戻しました', next ? 'green' : 'blue');
             }
             return true;
+        }
+
+        async function startReactionMeasurementNow() {
+            const modeReady = Params.signalMode || await setReactionTrainingMode(true, { notify: false });
+            if (!modeReady) return false;
+            if (AppState.isCameraRunning) {
+                updateReactionTrainingUi('構えて静止');
+                return true;
+            }
+            const startButton = document.getElementById('startBtn');
+            if (!startButton || startButton.disabled) return false;
+            startButton.click();
+            updateRealtimeMeasurementModeUi(true);
+            return true;
+        }
+
+        async function testReactionSound() {
+            const button = document.getElementById('reactionSoundTestBtn');
+            if (!button || button.disabled || AppState.isCameraRunning) return false;
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>再生中';
+            try {
+                await playBeep();
+                safeText('reactionTrainingGuide', 'この音が合図です');
+                showToast('この音が測定の合図です', 'green');
+                setTimeout(() => {
+                    if (Params.signalMode && !AppState.isCameraRunning) {
+                        safeText('reactionTrainingGuide', '測定開始 → 構えて静止 → 音で打突');
+                    }
+                }, 1400);
+                return true;
+            } catch (error) {
+                showToast(error.message || '音を再生できませんでした', 'red');
+                return false;
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fa-solid fa-volume-high mr-1"></i>音を試す';
+            }
         }
 
         async function issueReactionSignal() {
@@ -22407,6 +22491,7 @@ service cloud.firestore {
                 if (Params.signalMode) await ensureReactionAudioReady();
                 await startCameraStream();
                 AppState.isCameraRunning = true; 
+                updateRealtimeMeasurementModeUi(!!Params.signalMode);
                 document.getElementById('startOverlay').style.display = 'none'; 
                 document.getElementById('stateIndicator').classList.remove('hidden'); 
                 document.getElementById('canvasOverlayData').classList.remove('hidden');
@@ -22430,6 +22515,7 @@ service cloud.firestore {
                     : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
                 btn.style.backgroundColor = Params.signalMode ? '#c026d3' : '#2563eb';
                 btn.disabled = false;
+                updateRealtimeMeasurementModeUi(!!Params.signalMode);
                 document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-red-500"></span> カメラエラー`;
                 showToast(cameraErrorText(e), 'red');
             }
@@ -22476,11 +22562,18 @@ service cloud.firestore {
         if (reactionMeasurementModeBtn) reactionMeasurementModeBtn.addEventListener('click', async () => {
             reactionMeasurementModeBtn.disabled = true;
             try {
-                await setReactionTrainingMode(true);
+                const modeReady = await setReactionTrainingMode(true);
+                if (modeReady) await startReactionMeasurementNow();
             } finally {
                 reactionMeasurementModeBtn.disabled = false;
             }
         });
+
+        const reactionSoundTestBtn = document.getElementById('reactionSoundTestBtn');
+        if (reactionSoundTestBtn) reactionSoundTestBtn.addEventListener('click', testReactionSound);
+
+        const reactionQuickStartBtn = document.getElementById('reactionQuickStartBtn');
+        if (reactionQuickStartBtn) reactionQuickStartBtn.addEventListener('click', startReactionMeasurementNow);
 
         const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
         if (reactionTrainingToggleBtn) reactionTrainingToggleBtn.addEventListener('click', async () => {
