@@ -5620,11 +5620,18 @@
                                     </button>
                                 </div>
                             </div>
-                            <select id="cameraQuickSelect" class="w-full rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white">
-                                <option value="">自動選択（内蔵/既定カメラ）</option>
-                            </select>
+	                            <select id="cameraQuickSelect" class="w-full rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white">
+	                                <option value="">自動選択（内蔵/既定カメラ）</option>
+	                            </select>
 	                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
-	                            <p class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
+	                            <label class="mt-3 flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/15 bg-white/10 px-3 py-2">
+	                                <span class="min-w-0">
+	                                    <span class="block text-sm font-black text-white">竹刀なし（手の素振りだけ）</span>
+	                                    <span class="block text-[11px] leading-relaxed text-slate-300">ONでは右手首の動きから打突時間を測定</span>
+	                                </span>
+	                                <input id="handSwingModeToggle" type="checkbox" class="h-5 w-5 shrink-0 accent-emerald-500" aria-label="竹刀なしの手の素振り測定を切り替える">
+	                            </label>
+	                            <p id="realtimeMeasurementSourceHelp" class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
 	                        </div>
                         <p id="startModePrompt" class="mb-3 max-w-sm text-center text-xs font-bold leading-relaxed text-slate-200">通常の打突時間を測定します。</p>
                         <div class="reaction-overlay-actions">
@@ -5663,6 +5670,10 @@
             </div>
 
             <div id="measureSidePanel" class="flex flex-col gap-4">
+                <label class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <span class="min-w-0"><strong class="block text-sm text-slate-800">竹刀なし</strong><small class="block text-[11px] text-slate-500">手の素振りは右手首基準</small></span>
+                    <input id="handSwingModeLiveToggle" type="checkbox" class="h-5 w-5 shrink-0 accent-emerald-600" aria-label="竹刀なしの手の素振り測定を切り替える">
+                </label>
                 <div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-blue-500 p-4 practice-secondary">
                     <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-message text-blue-500"></i><h3 class="font-bold text-slate-700">コメント</h3></div>
                     <p id="aiComment" class="text-slate-700 font-medium bg-slate-50 p-3 rounded text-sm md:text-base border border-slate-100">「稽古開始」を押して開始</p>
@@ -5757,14 +5768,14 @@
 		                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 		                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 		                    <div class="space-y-2 text-xs text-slate-700">
-		                        <p><span class="font-bold text-slate-900">開始:</span> 下の構えで竹刀先端が動き始め、速度閾値を2フレーム続けて超えた時刻</p>
-		                        <p><span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻</p>
+	                        <p id="realtimeTimingStartDefinition"><span class="font-bold text-slate-900">開始:</span> 下の構えで竹刀先端が動き始め、速度閾値を2フレーム続けて超えた時刻</p>
+	                        <p id="realtimeTimingEndDefinition"><span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">終了</span><div id="timingEndStatus" class="font-bold">---</div></div>
 	                        </div>
-		                        <p class="text-[11px] text-slate-500">自動モードは色テープを優先し、ない場合は竹刀本体の連続した直線から剣先を追跡します。どちらも信頼度が不足した場合は、手首へ置き換えず測定不可にします。</p>
+	                        <p id="realtimeTimingSourceDefinition" class="text-[11px] text-slate-500">自動モードは色テープを優先し、ない場合は竹刀本体の連続した直線から剣先を追跡します。どちらも信頼度が不足した場合は、手首へ置き換えず測定不可にします。</p>
 		                    </div>
 		                </div>
 
@@ -6130,12 +6141,19 @@ service cloud.firestore {
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画を選ぶ</span>
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">iPhoneは写真またはファイルから選べます。</span>
-                        <span class="mt-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀先端を基準に測定</span>
+	                        <span id="videoMeasurementSourceBadge" class="mt-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀先端を基準に測定</span>
                     </span>
                     <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>写真/ファイルを選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ">
                     <div class="video-file-drop-note"><i class="fa-solid fa-hand mr-1"></i>ドラッグ＆ドロップでも読み込めます。</div>
                 </div>
+                <label class="flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <span class="min-w-0">
+                        <span class="block text-sm font-black text-slate-800">竹刀なし（手の素振りだけ）</span>
+                        <span class="mt-1 block text-[11px] leading-relaxed text-slate-500">ONでは竹刀検出を使わず、右手首の動きから各打突時間を測定します。</span>
+                    </span>
+                    <input id="videoHandSwingModeToggle" type="checkbox" class="h-5 w-5 shrink-0 accent-emerald-600" aria-label="動画を手の素振りモードで解析する">
+                </label>
                 <div class="video-file-fallback">
                     <div class="text-xs font-black text-slate-700 mb-2"><i class="fa-solid fa-life-ring text-amber-600 mr-1"></i>開けない時</div>
                     <input type="file" id="videoFileInputFallback" accept="video/*,video/quicktime,.mp4,.mov,.m4v" aria-label="予備の動画ファイル選択">
@@ -6466,9 +6484,9 @@ service cloud.firestore {
                         </div>
                     </div>
                     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
-	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p class="mt-1">検出した竹刀先端の移動速度が基準を超えた最初のフレーム。</p></div>
-	                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">ピーク</span><p class="mt-1">竹刀先端の移動速度が最大になったフレーム。</p></div>
-	                        <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p class="mt-1">竹刀先端のピーク後、速度が十分に低下した最初のフレーム。</p></div>
+	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p id="videoTimingStartDefinition" class="mt-1">検出した竹刀先端の移動速度が基準を超えた最初のフレーム。</p></div>
+	                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">ピーク</span><p id="videoTimingPeakDefinition" class="mt-1">竹刀先端の移動速度が最大になったフレーム。</p></div>
+	                        <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p id="videoTimingEndDefinition" class="mt-1">竹刀先端のピーク後、速度が十分に低下した最初のフレーム。</p></div>
                         <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-2"><span class="font-black text-emerald-700">正式値</span><p class="mt-1">開始/終了を1コマ単位で補正し、確定した範囲の時間と角度。</p></div>
                     </div>
                 </div>
@@ -7136,7 +7154,7 @@ service cloud.firestore {
                 </div>
             </details>
 
-            <details class="compact-disclosure bg-white rounded-xl shadow-sm border">
+            <details id="videoShinaiSettingsPanel" class="compact-disclosure bg-white rounded-xl shadow-sm border">
                 <summary><span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-crosshairs text-lime-600 mr-2"></i>竹刀先端検出</span></summary>
                 <div class="disclosure-body space-y-3 text-xs">
                     <label class="block font-bold text-slate-700">検出方式
@@ -7960,6 +7978,7 @@ service cloud.firestore {
             cameraMaxFps: 60,
             useNativeVideoLayer: true,
             overlayHoldMs: 1200,
+            handSwingMode: false,
             tipTracking: true,
             shinaiTrackingMode: 'auto',
             tapeColor: 'yellow',
@@ -8391,6 +8410,7 @@ service cloud.firestore {
         }
 
         function updateRealtimeMeasurementModeUi(enabled) {
+            const handOnly = isHandSwingMode();
             const standardButton = document.getElementById('standardMeasurementModeBtn');
             const reactionButton = document.getElementById('reactionMeasurementModeBtn');
             const card = document.getElementById('reactionTrainingCard');
@@ -8409,26 +8429,30 @@ service cloud.firestore {
             }
             if (card) card.classList.toggle('hidden', !enabled);
 
-            safeText('measureModeHeading', enabled ? '反応・打突測定' : '通常の打突測定');
+            safeText('measureModeHeading', enabled ? '反応・打突測定' : (handOnly ? '手の素振り測定' : '通常の打突測定'));
             safeText('measureModeSubtitle', enabled
-                ? '音から竹刀の動き始めまでと、打突動作の終了までを続けて測定します。'
-                : '竹刀の動き始めから振り下ろし終了までを測定します。');
+                ? `音から${handOnly ? '右手首' : '竹刀'}の動き始めまでと、打突動作の終了までを続けて測定します。`
+                : (handOnly
+                    ? '右手首の動き始めから振り下ろし終了までを測定します。'
+                    : '竹刀の動き始めから振り下ろし終了までを測定します。'));
             safeText('realtimeModeDescription', enabled
                 ? '構えて静止すると音が鳴ります。反応時間・打突時間・合計時間を1本の記録に保存します。'
-                : '通常の打突時間と角度を測定します。');
+                : (handOnly ? '竹刀を持たない素振りの打突時間と上半身角度を測定します。' : '通常の打突時間と角度を測定します。'));
             safeText('startModePrompt', enabled
                 ? '音が鳴ったら打突してください。反応時間と打突時間を同時に記録します。'
-                : '通常の打突時間を測定します。');
+                : (handOnly ? '竹刀なしで、右手首の動きから打突時間を測定します。' : '通常の打突時間を測定します。'));
 
             if (badge) {
-                badge.textContent = enabled ? '反応測定' : '通常測定';
+                badge.textContent = enabled ? '反応測定' : (handOnly ? '手の素振り' : '通常測定');
                 badge.style.backgroundColor = enabled ? '#fdf4ff' : '#eff6ff';
                 badge.style.color = enabled ? '#a21caf' : '#1d4ed8';
             }
             if (startButton && !AppState.isCameraRunning && !startButton.disabled) {
                 startButton.innerHTML = enabled
                     ? '<i class="fa-solid fa-ear-listen mr-2"></i> 反応測定を開始'
-                    : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始';
+                    : (handOnly
+                        ? '<i class="fa-solid fa-hand mr-2"></i> 手の素振りを開始'
+                        : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始');
                 startButton.style.backgroundColor = enabled ? '#c026d3' : '#2563eb';
             }
             const reactionBusy = !!AppState.isCameraRunning || !!startButton?.disabled;
@@ -8839,6 +8863,7 @@ service cloud.firestore {
             Params.signalMode = false;
             Params.tsukiMode = false;
             Params.usePoseLandmarker = false;
+            Params.handSwingMode = false;
             Params.tipTracking = true;
             Params.shinaiTrackingMode = 'auto';
             Params.tapeColor = 'yellow';
@@ -8859,7 +8884,7 @@ service cloud.firestore {
             Params.videoPlaybackFps = 30;
             AppState.cameraPerformanceMode = 'precision';
             applyCameraPerformanceMode('precision');
-            Params.officialSpeedSource = 'tape';
+            Params.officialSpeedSource = isHandSwingMode() ? 'wrist' : 'tape';
             Params.angleReference = 'torso';
             Params.timingStartDownVelocityMps = 0.55;
             Params.timingStartConsecutiveFrames = 2;
@@ -8950,6 +8975,8 @@ service cloud.firestore {
             setVideoStrikeMode('multi');
             setStrikeTimingMode('full-motion', { notify: false, reanalyze: false });
             safeStorageSet('kendoReactionTrainingMode', '0');
+            safeStorageSet('kendoHandSwingMode', '0');
+            syncHandSwingModeUi();
             resetReactionTrialClock();
             updateReactionTrainingUi('通常測定');
             ['paramShoulderWidthCm', 'paramShinaiLengthCm', 'paramCameraDistanceCm', 'paramTargetFps'].forEach((id, idx) => {
@@ -8998,6 +9025,107 @@ service cloud.firestore {
             }
         }
 
+        function isHandSwingMode() {
+            return !!Params.handSwingMode;
+        }
+
+        function handSwingSourceLabel() {
+            return isHandSwingMode() ? '手の素振り（右手首基準）' : '竹刀先端基準';
+        }
+
+        function syncHandSwingModeUi() {
+            const enabled = isHandSwingMode();
+            document.body.classList.toggle('hand-swing-mode', enabled);
+            ['handSwingModeToggle', 'handSwingModeLiveToggle', 'videoHandSwingModeToggle'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.checked = enabled;
+            });
+
+            const shinaiPanel = document.getElementById('videoShinaiSettingsPanel');
+            if (shinaiPanel) {
+                shinaiPanel.classList.toggle('opacity-60', enabled);
+                shinaiPanel.querySelectorAll('select, input').forEach(control => { control.disabled = enabled; });
+                if (enabled) shinaiPanel.open = false;
+            }
+
+            const badge = document.getElementById('videoMeasurementSourceBadge');
+            if (badge) {
+                badge.innerHTML = enabled
+                    ? '<i class="fa-solid fa-hand mr-1"></i>右手首を基準に測定'
+                    : '<i class="fa-solid fa-crosshairs mr-1"></i>竹刀先端を基準に測定';
+                badge.className = enabled
+                    ? 'mt-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800'
+                    : 'mt-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800';
+            }
+
+            safeText('realtimeMeasurementSourceHelp', enabled
+                ? '竹刀は不要です。右肩・右肘・右手首がすべて映るようにしてください。'
+                : '竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。');
+            const realtimeStart = document.getElementById('realtimeTimingStartDefinition');
+            const realtimeEnd = document.getElementById('realtimeTimingEndDefinition');
+            const realtimeSource = document.getElementById('realtimeTimingSourceDefinition');
+            if (realtimeStart) realtimeStart.innerHTML = enabled
+                ? '<span class="font-bold text-slate-900">開始:</span> 下の構えで右手首が動き始め、速度閾値を2フレーム続けて超えた時刻'
+                : '<span class="font-bold text-slate-900">開始:</span> 下の構えで竹刀先端が動き始め、速度閾値を2フレーム続けて超えた時刻';
+            if (realtimeEnd) realtimeEnd.innerHTML = enabled
+                ? '<span class="font-bold text-slate-900">終了:</span> 右手首速度のピーク後、速度低下を2フレーム確認した最初の時刻'
+                : '<span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻';
+            if (realtimeSource) realtimeSource.textContent = enabled
+                ? '手の素振りモードでは竹刀検出を行わず、右手首の姿勢信頼度と速度系列を使用します。'
+                : '自動モードは色テープを優先し、ない場合は竹刀本体の連続した直線から剣先を追跡します。どちらも信頼度が不足した場合は、手首へ置き換えず測定不可にします。';
+
+            safeText('videoTimingStartDefinition', enabled
+                ? '右手首の移動速度が基準を超えた最初のフレーム。'
+                : '検出した竹刀先端の移動速度が基準を超えた最初のフレーム。');
+            safeText('videoTimingPeakDefinition', enabled
+                ? '右手首の移動速度が最大になったフレーム。'
+                : '竹刀先端の移動速度が最大になったフレーム。');
+            safeText('videoTimingEndDefinition', enabled
+                ? '右手首速度のピーク後、速度が十分に低下した最初のフレーム。'
+                : '竹刀先端のピーク後、速度が十分に低下した最初のフレーム。');
+
+            updateRealtimeMeasurementModeUi(!!Params.signalMode);
+            updateRealtimeConditionPanel();
+            updateVideoTapeQualityStatus();
+        }
+
+        function setHandSwingMode(enabled, options = {}) {
+            const next = !!enabled;
+            const changed = next !== isHandSwingMode();
+            Params.handSwingMode = next;
+            Params.officialSpeedSource = next ? 'wrist' : 'tape';
+            if (options.persist !== false) safeStorageSet('kendoHandSwingMode', next ? '1' : '0');
+            if (changed && AppState.isCameraRunning) {
+                AppState.swingState = 'IDLE';
+                resetSwingTracking();
+                resetFullMotionStart();
+                setTimingStatus('待機', '---', '---');
+                updateStateUI('IDLE');
+            }
+            syncHandSwingModeUi();
+
+            if (changed && options.reanalyze !== false && AppState.videoAnalysis?.frames?.length) {
+                const data = AppState.videoAnalysis;
+                data.officialSpeedSource = Params.officialSpeedSource;
+                data.handSwingMode = next;
+                data.strikes = detectVideoStrikes(data);
+                const selected = data.strikes?.[0] || data.rejectedStrikes?.[0] || null;
+                if (selected) {
+                    data.startFrame = selected.startFrame;
+                    data.peakFrame = selected.peakFrame;
+                    data.endFrame = selected.endFrame;
+                }
+                recomputeVideoAnalysisResult();
+                updateVideoMultiStrikePanel(data);
+                drawVideoAnalysisFrame(data.startFrame ?? data.peakFrame ?? 0);
+            }
+            if (changed && options.notify !== false) {
+                showToast(next
+                    ? '竹刀なしモード: 右手首を基準に測定します'
+                    : '竹刀測定モード: 竹刀先端を基準に測定します', next ? 'green' : 'blue');
+            }
+        }
+
         function normalizeStrikeTimingMode(value) {
             return value === 'downswing' ? 'downswing' : 'full-motion';
         }
@@ -9011,9 +9139,10 @@ service cloud.firestore {
         }
 
         function strikeTimingModeDefinition(mode = Params.strikeTimingMode) {
+            const source = isHandSwingMode() ? '右手首' : '竹刀';
             return normalizeStrikeTimingMode(mode) === 'downswing'
-                ? '竹刀が上がった状態から下降を開始した時点 → 振り下ろし終了'
-                : '下の構えから竹刀が動き始めた時点 → 振り下ろし終了';
+                ? `${source}が上がった状態から下降を開始した時点 → 振り下ろし終了`
+                : `下の構えから${source}が動き始めた時点 → 振り下ろし終了`;
         }
 
         function strikeTimingMinimumMs(source = null) {
@@ -9254,6 +9383,17 @@ service cloud.firestore {
             const raisingOrLevel = !Number.isFinite(wristVelocityY) || wristVelocityY <= 0.0035;
             const frameStable = !AppState.frameDtMs || AppState.frameDtMs <= 100;
             const tapeMotionOk = tapeReady && lowerGuard && raisingOrLevel && frameStable && tapeSpeed >= threshold;
+            const handSwingPoseReady = isHandSwingMode()
+                && AppState.currentWristVisibility >= 0.55
+                && AppState.currentViewQuality >= Math.max(0.3, Number(Params.minViewQuality || 0.42) - 0.1);
+            const handSwingMotionOk = handSwingPoseReady
+                && lowerGuard
+                && raisingOrLevel
+                && frameStable
+                && (
+                    Math.abs(Number(wristVelocityY || 0)) >= Number(Params.reactionWristDeltaPerFrame || 0.006)
+                    || Number(AppState.currentSpeed3d || 0) >= Number(Params.reactionWristSpeedMps || 0.18)
+                );
             // 反応測定では振り上げ方向も動作開始として扱う。竹刀検出を優先し、
             // 検出が途切れた場合だけ、信頼度の高い右手首速度へフォールバックする。
             const reactionPoseReady = Params.signalMode
@@ -9266,13 +9406,15 @@ service cloud.firestore {
                 && lowerGuard
                 && frameStable
                 && reactionPoseMoved;
-            const motionOk = tapeMotionOk || reactionPoseMotionOk;
+            const motionOk = isHandSwingMode()
+                ? handSwingMotionOk
+                : (tapeMotionOk || reactionPoseMotionOk);
             if (!motionOk) {
                 resetFullMotionStart();
                 return 0;
             }
             if (!AppState.fullMotionStartFrames) {
-                const canInterpolate = tapeMotionOk
+                const canInterpolate = !isHandSwingMode() && tapeMotionOk
                     && AppState.previousTapeTipSpeed < threshold
                     && AppState.previousTapeSignalTimeMs > 0;
                 AppState.fullMotionStartTimeMs = canInterpolate
@@ -9286,10 +9428,12 @@ service cloud.firestore {
                     : frameTimeMs;
                 AppState.fullMotionStartWristY = wristY;
                 AppState.fullMotionStartPresentedFrame = AppState.currentPresentedFrame || AppState.cameraFrameCount || 0;
-                if (Params.signalMode) {
-                    AppState.currentReactionMotionSource = tapeMotionOk
+                if (Params.signalMode || isHandSwingMode()) {
+                    AppState.currentReactionMotionSource = isHandSwingMode()
+                        ? 'wrist'
+                        : (tapeMotionOk
                         ? (AppState.currentShinaiSource || 'shinai')
-                        : 'wrist';
+                        : 'wrist');
                 }
             }
             AppState.fullMotionStartFrames += 1;
@@ -9324,14 +9468,17 @@ service cloud.firestore {
             const tapeSpeedOk = tapeReady && tapeSpeed >= tapeThreshold;
             const frameStable = !AppState.frameDtMs || AppState.frameDtMs <= 100;
             const poseStable = AppState.currentWristVisibility >= 0.55 && AppState.currentViewQuality >= Params.minViewQuality;
-            const startOk = aboveShoulder && frameStable && poseStable && tapeSpeedOk;
+            const wristDownOk = Number(AppState.currentDownVelocityMps || 0) >= Number(Params.reactionWristSpeedMps || 0.18)
+                || Number(legacyVel || 0) >= Number(Params.reactionWristDeltaPerFrame || 0.006);
+            const sourceSpeedOk = isHandSwingMode() ? wristDownOk : tapeSpeedOk;
+            const startOk = aboveShoulder && frameStable && poseStable && sourceSpeedOk;
 
             if (!startOk) {
                 resetSwingStartCandidate();
                 return null;
             }
             if (!AppState.startCandidateFrames) {
-                const canInterpolate = tapeSpeedOk
+                const canInterpolate = !isHandSwingMode() && tapeSpeedOk
                     && AppState.previousTapeTipSpeed < tapeThreshold
                     && AppState.previousTapeSignalTimeMs > 0;
                 AppState.startCandidateTimeMs = canInterpolate
@@ -11720,6 +11867,8 @@ service cloud.firestore {
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
                 recordedAt: normalized.recordedAt || new Date().toISOString(),
+                handSwingMode: normalized.handSwingMode === true,
+                measurementSource: normalized.measurementSource || '',
                 timeMs: toFiniteOrNull(normalized.timeMs),
                 officialPeakOffsetMs: recordPeakOffsetMs(normalized, 'official'),
                 rightAng: toFiniteOrNull(normalized.rightAng),
@@ -11828,6 +11977,8 @@ service cloud.firestore {
                 recordType: type,
                 source: payload.source || (type === 'formal' ? 'firebase-video' : 'firebase-realtime'),
                 recordedAt: payload.recordedAt || new Date().toISOString(),
+                handSwingMode: payload.handSwingMode === true,
+                measurementSource: payload.measurementSource || '',
                 timeMs: payload.timeMs ?? '',
                 officialPeakOffsetMs: payload.officialPeakOffsetMs,
                 rightAng: payload.rightAng ?? '',
@@ -12870,18 +13021,26 @@ service cloud.firestore {
             const statusChip = document.getElementById('measurementStatusChip');
             const statusText = document.getElementById('measurementUnifiedStatusText');
             if (readyLamp) {
+                const handOnly = isHandSwingMode();
                 const tapeReady = AppState.currentShinaiDetected
                     && Number(AppState.lastShinaiQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
-                const ready = AppState.isCameraRunning && tone === 'good' && tapeReady;
+                const wristReady = Number(AppState.currentWristVisibility || 0) >= 0.55
+                    && Number(AppState.currentViewQuality || 0) >= Math.max(0.3, Number(Params.minViewQuality || 0.42) - 0.1);
+                const sourceReady = handOnly ? wristReady : tapeReady;
+                const ready = AppState.isCameraRunning && tone === 'good' && sourceReady;
                 readyLamp.style.background = ready ? '#22c55e' : '#64748b';
                 readyLamp.style.boxShadow = ready ? '0 0 7px rgba(34,197,94,.95)' : 'none';
-                readyLamp.setAttribute('aria-label', ready ? '竹刀測定準備完了' : '竹刀先端の検出待ち');
+                readyLamp.setAttribute('aria-label', ready
+                    ? (handOnly ? '手の素振り測定準備完了' : '竹刀測定準備完了')
+                    : (handOnly ? '右手首の検出待ち' : '竹刀先端の検出待ち'));
                 if (statusChip) statusChip.dataset.state = ready ? 'ready' : (AppState.isCameraRunning ? 'adjust' : 'waiting');
                 if (statusText) {
                     statusText.textContent = ready
-                        ? '測定可能'
+                        ? (handOnly ? '手首基準・測定可能' : '測定可能')
                         : (AppState.isCameraRunning
-                            ? (AppState.currentShinaiDetected ? '位置を調整' : '竹刀を検出中')
+                            ? (handOnly
+                                ? (wristReady ? '位置を調整' : '右手首を検出中')
+                                : (AppState.currentShinaiDetected ? '位置を調整' : '竹刀を検出中'))
                             : 'カメラ待機');
                 }
             }
@@ -14732,10 +14891,11 @@ service cloud.firestore {
         function evaluateSwingEnd(now, fallbackVel, rightAng, elbowVel, wristY, rShoulder) {
             const reactionWristFallback = Params.signalMode
                 && AppState.currentReactionMotionSource === 'wrist';
-            const speed = AppState.currentShinaiDetected
-                ? Number(AppState.currentTapeTipSpeed || 0)
-                : (reactionWristFallback
-                    ? Number(AppState.currentSpeed3d || 0)
+            const wristTiming = isHandSwingMode() || reactionWristFallback;
+            const speed = wristTiming
+                ? Number(AppState.currentSpeed3d || 0)
+                : (AppState.currentShinaiDetected
+                    ? Number(AppState.currentTapeTipSpeed || 0)
                     : Number(AppState.swingPreviousSpeedMps || 0));
             AppState.swingTapeTotalFrames += 1;
             if (AppState.currentShinaiDetected) {
@@ -14772,7 +14932,7 @@ service cloud.firestore {
             const tapeStillVisible = AppState.swingTapeMissingFrames <= Math.max(2, Params.timingEndConsecutiveFrames);
             const wristStillVisible = AppState.currentWristVisibility >= 0.45
                 && AppState.currentViewQuality >= Math.max(0.3, Params.minViewQuality - 0.1);
-            const motionStillTrackable = reactionWristFallback ? wristStillVisible : tapeStillVisible;
+            const motionStillTrackable = wristTiming ? wristStillVisible : tapeStillVisible;
             const endSignal = motionStillTrackable && (endByDecel || endByRatio);
 
             if (endSignal) {
@@ -15102,7 +15262,7 @@ service cloud.firestore {
             
             if (Math.abs(Number(torsoAng || 0)) > 15) { comment = "体幹軸が傾いています。上半身の軸を立てて振り下ろしましょう。"; shortLabel = "姿勢注意"; }
             else if (rightAng < 150) { comment = "肘が曲がっています。剣先に力を伝えるよう腕を伸ばしましょう。"; shortLabel = "肘曲がり"; }
-            else if (hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。両手首と竹刀方向を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
+            else if (!isHandSwingMode() && hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。両手首と竹刀方向を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
             else if (timeMs > 350) { comment = "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
             else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
 
@@ -15153,6 +15313,8 @@ service cloud.firestore {
                 recordType: 'realtime',
                 source: 'realtime',
                 recordedAt: new Date().toISOString(),
+                handSwingMode: isHandSwingMode(),
+                measurementSource: handSwingSourceLabel(),
                 timeMs: timeMs, 
                 reactionMode,
                 reactionTimeMs,
@@ -15164,7 +15326,7 @@ service cloud.firestore {
                 reactionAudioLatencyMs: reactionMode ? Number(AppState.signalAudioLatencyMs || 0) : null,
                 reactionFalseStarts: reactionMode ? Number(AppState.reactionFalseStarts || 0) : 0,
                 reactionMotionSource: reactionMode ? (AppState.currentReactionMotionSource || 'none') : '',
-                hasujiAngle: hasujiAngle.toFixed(1),
+                hasujiAngle: isHandSwingMode() ? '' : hasujiAngle.toFixed(1),
                 trajectorySway: trajectorySway,
                 rightAng: rightAng.toFixed(1), 
                 torsoAng: parseFloat(torsoAng), 
@@ -15207,7 +15369,7 @@ service cloud.firestore {
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelAngleValues: { rightAng, torsoAng, hasuji: hasujiAngle },
                 strikeTimingMode: strikeTimingModeOf(),
-                timingDefinition: `${reactionMode ? '反応時間=音の出力時刻→竹刀の動作開始。合計時間=音の出力時刻→振り下ろし終了。' : ''}開始基準=${strikeTimingModeDefinition()}。開始・終了は竹刀先端速度の連続判定と補間時刻を使用。`
+                timingDefinition: `${reactionMode ? `反応時間=音の出力時刻→${isHandSwingMode() ? '右手首' : '竹刀'}の動作開始。合計時間=音の出力時刻→振り下ろし終了。` : ''}開始基準=${strikeTimingModeDefinition()}。開始・終了は${isHandSwingMode() ? '右手首速度' : '竹刀先端速度'}の連続判定と補間時刻を使用。`
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(36, Math.round((AppState.frameFps || Params.targetFps) * 2.4)));
             record.clipFrames = clipFrames;
@@ -15226,7 +15388,7 @@ service cloud.firestore {
             safeText('latestSync', '---');
             safeText('latestSae', '---');
             safeText('latestStride', '---');
-            safeText('latestHasuji', `${hasujiAngle.toFixed(1)}°`);
+            safeText('latestHasuji', isHandSwingMode() ? '---' : `${hasujiAngle.toFixed(1)}°`);
             safeText('latestRightAng', `${rightAng.toFixed(1)}°`);
             safeText('latestTorso', `${Number(torsoAng || 0).toFixed(1)}°`);
             safeText('latestPeakSpeed', recordPeakOffsetText(record, 'official'));
@@ -15473,7 +15635,7 @@ service cloud.firestore {
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             drawCanvasVideoBackground(results.image, results.drawMirrored);
-            if (Params.tipTracking) {
+            if (Params.tipTracking && !isHandSwingMode()) {
                 if (!AppState.scanCanvas) {
                     AppState.scanCanvas = document.createElement('canvas');
                     AppState.scanCtx = AppState.scanCanvas.getContext('2d', { willReadFrequently: true });
@@ -15545,7 +15707,7 @@ service cloud.firestore {
             }
             
             let rightAng = 0, leftAng = 0, torsoAng = 0, hasuji = 0, shoulderLineAng = 0;
-            const previousTapePoint = Params.tipTracking && AppState.lastTapePoint
+            const previousTapePoint = Params.tipTracking && !isHandSwingMode() && AppState.lastTapePoint
                 ? {
                     x: AppState.lastTapePoint.x / canvasElement.width,
                     y: AppState.lastTapePoint.y / canvasElement.height,
@@ -15640,7 +15802,7 @@ service cloud.firestore {
 	                }
 	            }
 
-		            const tapeHit = updateShinaiTipRoi(lm);
+	            const tapeHit = isHandSwingMode() ? null : updateShinaiTipRoi(lm);
 		            AppState.currentTapeDetected = tapeHit?.source === 'tape';
 		            AppState.currentShinaiDetected = !!tapeHit;
 		            AppState.currentShinaiSource = tapeHit?.source || 'none';
@@ -15852,19 +16014,23 @@ service cloud.firestore {
 		                        const tapeHitRate = AppState.swingTapeTotalFrames
 		                            ? AppState.swingTapeDetectedFrames / AppState.swingTapeTotalFrames
 		                            : 0;
-		                        const tapeTimingValid = AppState.swingTapeDetectedFrames >= 3
-		                            && tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55);
-		                        const reactionPoseTimingValid = !!Params.signalMode
-		                            && AppState.currentReactionMotionSource === 'wrist'
+	                        const tapeTimingValid = AppState.swingTapeDetectedFrames >= 3
+	                            && tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55);
+	                        const handSwingTimingValid = isHandSwingMode()
+	                            && Number(AppState.currentWristVisibility || 0) >= 0.55
+	                            && Number(AppState.currentViewQuality || 0) >= Math.max(0.3, Number(Params.minViewQuality || 0.42) - 0.1)
+	                            && AppState.swingSamples.length >= 3;
+	                        const reactionPoseTimingValid = !!Params.signalMode
+	                            && AppState.currentReactionMotionSource === 'wrist'
 		                            && Number(AppState.currentWristVisibility || 0) >= 0.55
 		                            && Number(AppState.currentViewQuality || 0) >= Math.max(0.3, Number(Params.minViewQuality || 0.45) - 0.1);
-		                        const timingSourceValid = tapeTimingValid || reactionPoseTimingValid;
-		                        const sourceCounts = AppState.swingShinaiSourceCounts || {};
-		                        const shinaiSource = reactionPoseTimingValid && !tapeTimingValid
-		                            ? 'wrist'
+	                        const timingSourceValid = handSwingTimingValid || tapeTimingValid || reactionPoseTimingValid;
+	                        const sourceCounts = AppState.swingShinaiSourceCounts || {};
+	                        const shinaiSource = handSwingTimingValid || (reactionPoseTimingValid && !tapeTimingValid)
+	                            ? 'wrist'
 		                            : (Number(sourceCounts.tape || 0) >= Number(sourceCounts.shaft || 0) ? 'tape' : 'shaft');
-		                        const shinaiSourceLabel = shinaiSource === 'wrist'
-		                            ? '右手首動作（反応補助）'
+	                        const shinaiSourceLabel = shinaiSource === 'wrist'
+	                            ? (isHandSwingMode() ? '手の素振り（右手首基準）' : '右手首動作（反応補助）')
 		                            : (shinaiSource === 'tape' ? '竹刀先端テープ' : '竹刀本体検出（テープなし）');
 		                        if(duration > strikeTimingMinimumMs() && duration < (Params.signalMode ? 3000 : strikeTimingMaximumMs()) && timingSourceValid) {
 		                            saveRecord(duration, rawSyncDiff, impactSignal, hasuji, rightAng, torsoAng, AppState.peakKiaiVolume, trajectorySway, 0, {
@@ -15889,13 +16055,15 @@ service cloud.firestore {
 		                                measurementMethod: `${AppState.frameSyncMode} / ${shinaiSourceLabel} / angleQ:${Math.round((AppState.currentAngleQuality || 0) * 100)}%`
 		                            });
 		                        } else {
-		                            if (!timingSourceValid) {
-		                                showToast(
-		                                    Params.signalMode
-		                                        ? '竹刀または右手首を十分に追跡できなかったため記録しませんでした'
-		                                        : '竹刀先端を十分に追跡できなかったため記録しませんでした',
-		                                    'yellow'
-		                                );
+	                            if (!timingSourceValid) {
+	                                showToast(
+	                                    isHandSwingMode()
+	                                        ? '右肩・右肘・右手首を十分に追跡できなかったため記録しませんでした'
+	                                        : (Params.signalMode
+	                                        ? '竹刀または右手首を十分に追跡できなかったため記録しませんでした'
+	                                        : '竹刀先端を十分に追跡できなかったため記録しませんでした'),
+	                                    'yellow'
+	                                );
 		                            }
 	                            AppState.swingState = 'IDLE';
 	                            updateStateUI('IDLE');
@@ -18808,7 +18976,7 @@ service cloud.firestore {
 	            const peakScore = peakRatio !== null ? Math.max(0, 22 - Math.abs(peakRatio - (downswing ? 0.58 : 0.72)) * 55) : 0;
 	            const elbowScore = Math.max(0, 20 - Math.abs(Number(endFrame?.rightAng || 0) - 152) / 2.4);
 	            const torsoScore = Math.max(0, 14 - Math.abs(Number(endFrame?.torsoAng || 0)) * 1.3);
-	            const hasujiScore = Math.max(0, 8 - Math.abs(Number(endFrame?.hasuji || 0)) * 0.35);
+	            const hasujiScore = isHandSwingMode() ? 8 : Math.max(0, 8 - Math.abs(Number(endFrame?.hasuji || 0)) * 0.35);
 	            const confidenceScore = Math.min(5, Number(avgVisibility || 0) * 5);
 	            return Math.round(clamp(durationScore + peakScore + elbowScore + torsoScore + hasujiScore + confidenceScore, 0, 100));
 	        }
@@ -18928,7 +19096,7 @@ service cloud.firestore {
             if (summary.durationMs < videoFormalMinDurationMs(data)) return { ok: false, reason: '短すぎる' };
             if (summary.durationMs > videoFormalMaxDurationMs()) return { ok: false, reason: '長すぎる' };
             if (summary.officialSpeedSource === 'tape' && Number(summary.tapeHitRate || 0) < Number(Params.realtimeMinTapeHitRate || 0.55)) return { ok: false, reason: '竹刀検出率不足' };
-	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: '竹刀ピーク不足' };
+	            if (!Number.isFinite(summary.peakSpeedMps) || summary.peakSpeedMps < 0.45) return { ok: false, reason: isHandSwingMode() ? '手首ピーク不足' : '竹刀ピーク不足' };
 	            if (summary.peakSpeedMps > maxReasonableSpeedForSource(summary.actualOfficialSpeedSource || summary.officialSpeedSource)) return { ok: false, reason: 'ピーク異常' };
             if (summary.avgVisibility && summary.avgVisibility < 0.32) return { ok: false, reason: '検出信頼度不足' };
             const directShinaiTiming = hasReliableDirectShinaiTiming(summary);
@@ -19816,7 +19984,9 @@ service cloud.firestore {
                 .sort((a, b) => a.startFrame - b.startFrame)
                 .map((segment, index) => ({ ...segment, number: index + 1 }));
             if (!data.strikes.length && !data.rejectedStrikes.length) {
-                data.exclusionReason = '竹刀の打突区間を検出できません';
+                data.exclusionReason = isHandSwingMode()
+                    ? '手の素振り区間を検出できません'
+                    : '竹刀の打突区間を検出できません';
             } else if (data.strikes.length) {
                 data.exclusionReason = '';
             }
@@ -20900,6 +21070,19 @@ service cloud.firestore {
         function updateVideoTapeQualityStatus(data = AppState.videoAnalysis) {
             const box = document.getElementById('videoTapeQualityStatus');
             if (!box) return;
+            if (isHandSwingMode()) {
+                const poseRate = data?.frames?.length
+                    ? data.frames.filter(frame => Number(frame?.visibility || frame?.poseConfidence || 0) >= 0.45).length / data.frames.length
+                    : Number(AppState.currentWristVisibility || 0);
+                const ready = poseRate >= 0.55;
+                box.textContent = data?.frames?.length
+                    ? `手の素振り: 右手首基準 / 姿勢検出 ${Math.round(poseRate * 100)}% / ${ready ? '測定可能' : '不足'}`
+                    : '手の素振り: 右手首基準（竹刀検出は使用しません）';
+                box.className = ready || !data?.frames?.length
+                    ? 'rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-900'
+                    : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-900';
+                return;
+            }
             if (!data?.frames?.length) {
                 const liveQuality = Math.round(Number(AppState.lastShinaiQuality || 0) * 100);
                 const waitingLabel = AppState.isCameraRunning ? (AppState.roiStatus || '探索待ち') : '動画解析待ち';
@@ -20998,8 +21181,10 @@ service cloud.firestore {
                 ? slice.filter(frame => frame?.tapePoint && Number(frame.tapeConfidence || 0) >= Number(Params.minTapeConfidence || 0.18)).length / slice.length
                 : 0;
             add(Number.isFinite(durationMs) && durationMs >= videoFormalMinDurationMs() && durationMs <= videoFormalMaxDurationMs(), '打突時間', Number.isFinite(durationMs) ? `${Math.round(durationMs)} ms` : '未検出', `${videoFormalMinDurationMs()}ms未満または${videoFormalMaxDurationMs()}ms超は除外候補`);
-	            add(tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55), '竹刀先端', `${Math.round(tapeHitRate * 100)}%`, '開始から終了までの竹刀先端検出率');
-	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), '竹刀ピーク', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', '竹刀先端のピーク時刻');
+            if (!isHandSwingMode()) {
+	                add(tapeHitRate >= Number(Params.realtimeMinTapeHitRate || 0.55), '竹刀先端', `${Math.round(tapeHitRate * 100)}%`, '開始から終了までの竹刀先端検出率');
+            }
+	            add(Number.isFinite(peakSpeed) && peakSpeed >= 0.45 && peakSpeed <= speedLimit && Number.isFinite(peakOffset), isHandSwingMode() ? '手首ピーク' : '竹刀ピーク', Number.isFinite(peakOffset) ? `${peakOffset} ms` : '未検出', isHandSwingMode() ? '右手首速度のピーク時刻' : '竹刀先端のピーク時刻');
             add(confidence >= 0.45, '姿勢信頼度', confidence ? `${Math.round(confidence * 100)}%` : '---', '上半身の検出安定度');
             add(detectionRate >= 0.65, '検出率', detectionRate ? `${Math.round(detectionRate * 100)}%` : '---', '解析フレーム中で姿勢を取れた割合');
             add(maxTorsoJump <= 28, '体幹角の急変', `${maxTorsoJump.toFixed(1)}°`, '大きい場合は検出飛びの可能性');
@@ -22031,7 +22216,7 @@ service cloud.firestore {
                 webCodecsCodec: webCodecsContext?.codec || '',
                 webCodecsTotalFrames: webCodecsContext?.frameTable?.length || 0
             });
-            Params.officialSpeedSource = 'tape';
+            Params.officialSpeedSource = isHandSwingMode() ? 'wrist' : 'tape';
             Params.angleReference = document.getElementById('angleReferenceSelect')?.value || Params.angleReference;
             const filter = new VisibilityAdaptiveFilter3D();
             const tipFilter = new VisibilityAdaptiveFilter3D();
@@ -22219,11 +22404,18 @@ service cloud.firestore {
                     previousY = wristY;
                     frameDownVelocity = Math.max(0, -(filtered.velocity?.y || 0));
                     const tapeTimingReady = !!frameTapePoint && frameTapeConfidence >= Number(Params.minTapeConfidence || 0.18);
-                    const tapeStartThreshold = Number(Params.timingStartTapeSpeedMps || 1.2);
-                    if (!useManualTiming && startTimeMs === null && poseConfidence >= 0.55 && frameViewQuality >= Params.minViewQuality && tapeTimingReady && frameTapeSpeed >= tapeStartThreshold) {
+                    const handTimingReady = isHandSwingMode()
+                        && poseConfidence >= 0.55
+                        && frameViewQuality >= Math.max(0.3, Number(Params.minViewQuality || 0.42) - 0.1);
+                    const timingSignalReady = isHandSwingMode() ? handTimingReady : tapeTimingReady;
+                    const timingSignalSpeed = isHandSwingMode() ? frameSpeed : frameTapeSpeed;
+                    const timingStartThreshold = isHandSwingMode()
+                        ? Number(Params.reactionWristSpeedMps || 0.18)
+                        : Number(Params.timingStartTapeSpeedMps || 1.2);
+                    if (!useManualTiming && startTimeMs === null && poseConfidence >= 0.55 && frameViewQuality >= Math.max(0.3, Params.minViewQuality - 0.1) && timingSignalReady && timingSignalSpeed >= timingStartThreshold) {
                         if (!startCandidateFrames) {
-                            startCandidateTimeMs = previousTapeSignalTimeMs > 0 && previousTapeSignalSpeed < tapeStartThreshold
-                                ? interpolateThresholdTime(previousTapeSignalTimeMs, timeMs, previousTapeSignalSpeed, frameTapeSpeed, tapeStartThreshold)
+                            startCandidateTimeMs = previousTapeSignalTimeMs > 0 && previousTapeSignalSpeed < timingStartThreshold
+                                ? interpolateThresholdTime(previousTapeSignalTimeMs, timeMs, previousTapeSignalSpeed, timingSignalSpeed, timingStartThreshold)
                                 : timeMs;
                             startCandidateFrame = frame;
                         }
@@ -22253,7 +22445,7 @@ service cloud.firestore {
                         previousSpeed = speed;
                         previousTimeMs = timeMs;
                     }
-                    previousTapeSignalSpeed = tapeTimingReady ? frameTapeSpeed : 0;
+                    previousTapeSignalSpeed = timingSignalReady ? timingSignalSpeed : 0;
                     previousTapeSignalTimeMs = timeMs;
                 }
                 frames.push({
@@ -22369,6 +22561,7 @@ service cloud.firestore {
                 peakFrame,
                 speedUnit,
                 officialSpeedSource: Params.officialSpeedSource,
+                handSwingMode: isHandSwingMode(),
                 strikeTimingMode: strikeTimingModeOf(),
                 shinaiTrackingMode: normalizeShinaiTrackingMode(),
                 preferredShinaiSource,
@@ -22684,11 +22877,13 @@ service cloud.firestore {
                     ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
+                    handSwingMode: isHandSwingMode(),
+                    measurementSource: handSwingSourceLabel(),
                     analysisFps: data.fps || data.diagnostics?.fps || '',
                     videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
                     slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
-		                hasujiAngle: hasuji.toFixed(1),
+	                hasujiAngle: isHandSwingMode() ? '' : hasuji.toFixed(1),
 		                trajectorySway,
 		                rightAng: rightAng.toFixed(1),
 		                torsoAng,
@@ -22700,9 +22895,9 @@ service cloud.firestore {
 	                frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
                 strikeTimingMode: strikeTimingModeOf(data),
-                roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
-                shinaiDetectionSource,
-                shinaiHitRate,
+                roiStatus: isHandSwingMode() ? '動画右手首基準' : (tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出'),
+                shinaiDetectionSource: isHandSwingMode() ? 'wrist' : shinaiDetectionSource,
+                shinaiHitRate: isHandSwingMode() ? null : shinaiHitRate,
                 startFrameIndex: data.startFrame,
                 peakFrameIndex: data.peakFrame,
                 endFrameIndex: data.endFrame,
@@ -22710,14 +22905,14 @@ service cloud.firestore {
                 peakTimeMs: peakFrameData ? peakFrameData.timeMs : (official.metrics?.peakIndex != null ? slice[Math.min(slice.length - 1, official.metrics.peakIndex + 1)]?.timeMs || 0 : 0),
                 endTimeMs: endFrame.timeMs,
                 endReason: '動画解析・手動補正後',
-	                measurementMethod: `動画解析 / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
+	                measurementMethod: `動画解析 / ${isHandSwingMode() ? '手の素振り（右手首基準）' : shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`,
                 memo: '動画解析から正式記録へ保存',
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelAngleValues: {
                     rightAng,
                     torsoAng,
-                    hasuji
+                    hasuji: isHandSwingMode() ? 0 : hasuji
                 },
                 clipFrames: [],
 	                timingDefinition: `動画解析: ${strikeTimingModeDefinition(strikeTimingModeOf(data))}。開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
@@ -22783,11 +22978,13 @@ service cloud.firestore {
                     ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
+                    handSwingMode: isHandSwingMode(),
+                    measurementSource: handSwingSourceLabel(),
                     analysisFps: data.fps || data.diagnostics?.fps || '',
                     videoFpsEstimate: data.diagnostics?.nativeFpsEstimate || '',
                     slowMotionFactor: data.slowMotionFactor || data.diagnostics?.slowMotionFactor || 1,
 	                timeMs: durationMs,
-		                hasujiAngle: hasuji.toFixed(1),
+	                hasujiAngle: isHandSwingMode() ? '' : hasuji.toFixed(1),
 		                trajectorySway,
 	                rightAng: rightAng.toFixed(1),
 		                torsoAng,
@@ -22799,9 +22996,9 @@ service cloud.firestore {
                 frameSyncMode: '動画解析',
                 poseEngine: AppState.poseEngine || 'Pose Landmarker',
                 strikeTimingMode: strikeTimingModeOf(strike) || strikeTimingModeOf(data),
-                roiStatus: tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出',
-                shinaiDetectionSource,
-                shinaiHitRate,
+                roiStatus: isHandSwingMode() ? '動画右手首基準' : (tapeMetrics ? `動画${shinaiDetectionSourceLabel(shinaiDetectionSource)}` : '動画竹刀未検出'),
+                shinaiDetectionSource: isHandSwingMode() ? 'wrist' : shinaiDetectionSource,
+                shinaiHitRate: isHandSwingMode() ? null : shinaiHitRate,
                 startFrameIndex: strike.startFrame,
                 peakFrameIndex: strike.peakFrame,
                 endFrameIndex: strike.endFrame,
@@ -22811,14 +23008,14 @@ service cloud.firestore {
                 endReason: strike.manualAdjusted ? '複数打突・手動補正後' : '複数打突・自動分割',
 	                timingSource,
 	                manualTimingConfirmed: !!strike.manualAdjusted,
-	                measurementMethod: `動画解析${numberLabel} / ${shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(strike) || strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
+	                measurementMethod: `動画解析${numberLabel} / ${isHandSwingMode() ? '手の素振り（右手首基準）' : shinaiDetectionSourceLabel(shinaiDetectionSource)} / 開始基準:${strikeTimingModeLabel(strikeTimingModeOf(strike) || strikeTimingModeOf(data))} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'} / 感度 ${Params.videoStrikeSensitivity || 'normal'}`,
 	                memo: `複数打突${numberLabel}を${strike.manualAdjusted ? '補正済み' : '自動測定・未補正'}として保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelAngleValues: {
                     rightAng,
                     torsoAng,
-                    hasuji
+                    hasuji: isHandSwingMode() ? 0 : hasuji
                 },
                 clipFrames: [],
 	                timingDefinition: `動画解析${numberLabel}: ${strikeTimingModeDefinition(strikeTimingModeOf(strike) || strikeTimingModeOf(data))}。開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
@@ -23722,6 +23919,10 @@ service cloud.firestore {
         };
         const videoShinaiTrackingMode = document.getElementById('videoShinaiTrackingMode');
         if (videoShinaiTrackingMode) videoShinaiTrackingMode.addEventListener('change', e => setShinaiTrackingMode(e.target.value));
+        ['handSwingModeToggle', 'handSwingModeLiveToggle', 'videoHandSwingModeToggle'].forEach(id => {
+            const toggle = document.getElementById(id);
+            if (toggle) toggle.addEventListener('change', event => setHandSwingMode(event.target.checked));
+        });
         const videoTapeRoiSlider = document.getElementById('videoTapeRoiSlider');
         if (videoTapeRoiSlider) videoTapeRoiSlider.addEventListener('input', e => {
             Params.tipRoiRatio = parseFloat(e.target.value);
@@ -24250,6 +24451,11 @@ service cloud.firestore {
             });
         });
         
+        setHandSwingMode(safeStorageGet('kendoHandSwingMode') === '1', {
+            notify: false,
+            reanalyze: false,
+            persist: false
+        });
         setStrikeTimingMode(safeStorageGet('kendoStrikeTimingMode') || 'full-motion', {
             notify: false,
             reanalyze: false,
