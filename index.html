@@ -5240,6 +5240,25 @@
             border-color: rgba(250, 204, 21, .55);
             background: rgba(66, 32, 6, .88);
         }
+        .camera-flip-floating {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 50;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            border: 1px solid #64748b;
+            background: rgba(30, 41, 59, .9);
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 800;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .24);
+            backdrop-filter: blur(10px);
+        }
         body[data-active-tab="video"][data-video-step="load"] .video-workflow-main-head,
         body[data-active-tab="video"][data-video-step="load"] #videoNextActionBanner,
         body[data-active-tab="video"][data-video-step="load"] #videoStepHint,
@@ -5384,7 +5403,7 @@
                 order: 2;
             }
             body.measurement-simple #videoContainer {
-                height: min(46svh, 360px);
+                height: min(50svh, 390px);
                 min-height: 280px;
                 aspect-ratio: auto !important;
                 border-radius: 12px;
@@ -5584,6 +5603,9 @@
                         <span id="measurementReadyLamp" class="rounded-full" style="width:8px;height:8px;background:#64748b;box-shadow:none" aria-label="測定準備状態"></span>
                         <span id="measurementUnifiedStatusText">カメラ待機</span>
                     </div>
+                    <button id="flipCameraBtn" type="button" class="camera-flip-floating" aria-label="カメラ映像を左右反転">
+                        <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
+                    </button>
 
                     <div id="flashOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
 
@@ -5595,9 +5617,6 @@
                                 <div class="flex items-center gap-2">
                                     <button id="detectIPhoneCameraBtn" type="button" class="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">
                                         <i class="fa-solid fa-mobile-screen-button mr-1"></i>iPhoneを探す
-                                    </button>
-                                    <button id="flipCameraBtn" type="button" class="rounded-lg border border-slate-500 bg-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600">
-                                        <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
                                     </button>
                                 </div>
                             </div>
@@ -22983,11 +23002,11 @@ service cloud.firestore {
             updateVideoElementMirror();
             if (pose && !AppState.poseLandmarker) pose.setOptions({ selfieMode: AppState.isFlipped });
             if(AppState.isFlipped) {
-                this.className = "rounded-lg border border-blue-400 bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500";
+                this.className = "camera-flip-floating border-blue-400 bg-blue-600 text-white hover:bg-blue-500";
                 this.innerHTML = '<i class="fa-solid fa-right-left mr-1"></i>反転 ON';
                 showToast('カメラを鏡写し（反転）にしました', 'blue');
             } else {
-                this.className = "rounded-lg border border-slate-500 bg-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600";
+                this.className = "camera-flip-floating border-slate-500 bg-slate-700 text-slate-200 hover:bg-slate-600";
                 this.innerHTML = '<i class="fa-solid fa-right-left mr-1"></i>反転 OFF';
                 showToast('カメラの反転を元に戻しました', 'blue');
             }
