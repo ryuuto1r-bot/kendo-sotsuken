@@ -5131,21 +5131,352 @@
                 display: none;
             }
         }
+        /* v174: 初見でも迷わない4導線とスマホ優先の操作面。解析機能自体は維持する。 */
+        .kvc-nav-brand {
+            min-width: max-content;
+        }
+        .kvc-tab-strip > .tab-btn,
+        .kvc-more-nav-button,
+        .kvc-more-nav-panel .tab-btn,
+        .kvc-more-nav-panel .research-nav-link {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            cursor: pointer;
+        }
+        .kvc-more-nav {
+            position: relative;
+        }
+        .kvc-more-nav > summary {
+            list-style: none;
+            user-select: none;
+        }
+        .kvc-more-nav > summary::-webkit-details-marker {
+            display: none;
+        }
+        .kvc-more-nav-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 10px);
+            z-index: 90;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+            width: 210px;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 18px 46px rgba(15, 23, 42, .22);
+        }
+        .kvc-more-nav-panel .tab-btn,
+        .kvc-more-nav-panel .research-nav-link {
+            justify-content: flex-start;
+            width: 100%;
+            color: #334155 !important;
+            background: transparent;
+        }
+        .kvc-more-nav-panel .tab-btn.bg-slate-800 {
+            color: #1d4ed8 !important;
+            background: #eff6ff !important;
+        }
+        .kvc-more-nav.has-active > summary {
+            color: #ffffff !important;
+            background: #1e293b;
+        }
+        body.measurement-simple #tabBtn-data {
+            display: inline-flex !important;
+        }
+        body.measurement-simple #tab-data.tab-content.active {
+            display: block !important;
+        }
+        .video-context-action-bar {
+            position: sticky;
+            bottom: 12px;
+            z-index: 55;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 16px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .96);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, .14);
+            backdrop-filter: blur(14px);
+        }
+        .video-context-action-text {
+            color: #475569;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .video-context-next-btn {
+            min-height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 900;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
+        }
+        .video-context-next-btn:disabled {
+            cursor: not-allowed;
+            background: #94a3b8;
+            box-shadow: none;
+        }
+        #measurementStatusChip[data-state="ready"] {
+            border-color: rgba(74, 222, 128, .55);
+            background: rgba(5, 46, 22, .88);
+        }
+        #measurementStatusChip[data-state="adjust"] {
+            border-color: rgba(250, 204, 21, .55);
+            background: rgba(66, 32, 6, .88);
+        }
+        body[data-active-tab="video"][data-video-step="load"] .video-workflow-main-head,
+        body[data-active-tab="video"][data-video-step="load"] #videoNextActionBanner,
+        body[data-active-tab="video"][data-video-step="load"] #videoStepHint,
+        body[data-active-tab="video"][data-video-step="load"] #videoDeviceCheckCard,
+        #videoStep-load > .flex.justify-end,
+        #videoStep-mark .mark-footer {
+            display: none !important;
+        }
+        @media (max-width: 820px) {
+            body.measurement-simple {
+                padding-bottom: calc(76px + env(safe-area-inset-bottom));
+            }
+            body.measurement-simple .kvc-app-nav {
+                position: sticky;
+                top: 0;
+                z-index: 70;
+            }
+            body.measurement-simple .kvc-app-nav > div {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            body.measurement-simple .kvc-nav-inner {
+                min-height: 48px;
+                height: 48px !important;
+                padding: 0 !important;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+            }
+            body.measurement-simple .kvc-nav-brand {
+                width: 100%;
+                justify-content: center;
+            }
+            body.measurement-simple .kvc-nav-brand .fa-helmet-battle {
+                display: inline-block !important;
+                font-size: 17px;
+            }
+            body.measurement-simple .kvc-nav-brand > span {
+                display: inline !important;
+                font-size: 14px;
+            }
+            body.measurement-simple .kvc-tab-strip {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 90;
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 2px;
+                padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+                border-top: 1px solid rgba(148, 163, 184, .25);
+                background: rgba(15, 23, 42, .97);
+                box-shadow: 0 -12px 32px rgba(15, 23, 42, .2);
+                backdrop-filter: blur(16px);
+            }
+            body.measurement-simple .kvc-tab-strip > .tab-btn,
+            body.measurement-simple .kvc-more-nav-button {
+                min-height: 54px;
+                padding: 6px 2px !important;
+                border-radius: 9px !important;
+                flex-direction: column;
+                gap: 3px;
+                color: #cbd5e1;
+                font-size: 10px !important;
+                line-height: 1.1;
+            }
+            body.measurement-simple .kvc-tab-strip > .tab-btn i,
+            body.measurement-simple .kvc-more-nav-button i {
+                font-size: 16px;
+            }
+            body.measurement-simple .kvc-more-nav {
+                position: static;
+            }
+            body.measurement-simple .kvc-more-nav-panel {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: calc(72px + env(safe-area-inset-bottom));
+                top: auto;
+                width: auto;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+                padding: 10px;
+                border-radius: 16px;
+            }
+            body.measurement-simple[data-active-tab="video"] .kvc-more-nav-panel {
+                bottom: calc(142px + env(safe-area-inset-bottom));
+            }
+            body.measurement-simple .kvc-more-nav-panel .tab-btn,
+            body.measurement-simple .kvc-more-nav-panel .research-nav-link {
+                min-height: 50px;
+                padding: 10px 12px !important;
+                flex-direction: row;
+                justify-content: flex-start;
+                font-size: 12px !important;
+            }
+            body.measurement-simple main {
+                padding: 8px 8px calc(18px + env(safe-area-inset-bottom));
+            }
+            body.measurement-simple #tab-measure.active {
+                display: flex;
+                flex-direction: column;
+            }
+            body.measurement-simple #measureHeader,
+            body.measurement-simple .practice-secondary {
+                display: none !important;
+            }
+            body.measurement-simple #realtimeModeLauncher {
+                order: 1;
+                margin-bottom: 8px;
+                padding: 8px;
+                border-radius: 12px;
+            }
+            body.measurement-simple #realtimeModeLauncher > div:first-child {
+                display: none;
+            }
+            body.measurement-simple .realtime-mode-options {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 6px;
+            }
+            body.measurement-simple .measure-mode-button {
+                min-height: 50px;
+                grid-template-columns: 30px minmax(0, 1fr);
+                gap: 7px;
+                padding: 7px;
+                border-radius: 10px;
+            }
+            body.measurement-simple .measure-mode-button .mode-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 9px;
+            }
+            body.measurement-simple .measure-mode-button strong {
+                font-size: 11px;
+            }
+            body.measurement-simple .measure-mode-button small {
+                display: none;
+            }
+            body.measurement-simple #measureLayout {
+                order: 2;
+            }
+            body.measurement-simple #videoContainer {
+                height: min(46svh, 360px);
+                min-height: 280px;
+                aspect-ratio: auto !important;
+                border-radius: 12px;
+            }
+            body.measurement-simple #startOverlay {
+                padding: 10px;
+            }
+            body.measurement-simple #startOverlay > .fa-camera {
+                display: none;
+            }
+            body.measurement-simple #startOverlay > .w-\[min\(92\%\,28rem\)\] {
+                margin-top: 22px;
+                margin-bottom: 8px;
+                padding: 9px;
+            }
+            body.measurement-simple #detectIPhoneCameraBtn,
+            body.measurement-simple #flipCameraBtn,
+            body.measurement-simple #startBtn,
+            body.measurement-simple #reactionSoundTestBtn,
+            body.measurement-simple main button:not(.video-editor-marker) {
+                min-height: 44px;
+            }
+            body.measurement-simple #measurementStatusChip {
+                top: 6px;
+                left: 6px;
+            }
+            body.measurement-simple .video-page-header {
+                display: none !important;
+            }
+            body.measurement-simple .video-workflow-tabs {
+                top: 48px;
+                grid-template-columns: 1fr;
+            }
+            body.measurement-simple .video-workflow-tabs > div {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            body.measurement-simple .video-step-btn {
+                min-height: 48px;
+                font-size: 10px !important;
+            }
+            body.measurement-simple .video-step-btn i {
+                display: block;
+                margin: 0 0 2px !important;
+            }
+            body.measurement-simple .video-workflow-main {
+                padding: 10px !important;
+            }
+            body.measurement-simple #videoStep-load .flex.justify-end,
+            body.measurement-simple #videoStep-mark .mark-footer {
+                display: none !important;
+            }
+            body.measurement-simple .video-context-action-bar {
+                position: fixed;
+                left: 8px;
+                right: 8px;
+                bottom: calc(72px + env(safe-area-inset-bottom));
+                z-index: 80;
+                margin: 0;
+                padding: 8px;
+                border-radius: 14px;
+            }
+            body.measurement-simple .video-context-action-text {
+                max-width: 46%;
+                font-size: 11px;
+                line-height: 1.25;
+            }
+            body.measurement-simple .video-context-next-btn {
+                min-height: 46px;
+                flex: 1;
+                padding: 9px 12px;
+            }
+            body.measurement-simple[data-active-tab="video"] {
+                padding-bottom: calc(142px + env(safe-area-inset-bottom));
+            }
+            body.measurement-simple #videoFilePickCard {
+                min-height: 150px;
+                padding: 14px;
+            }
+            body.measurement-simple #detailEmptyState {
+                padding: 34px 18px;
+            }
+        }
         </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui measurement-simple">
 
-<nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+<nav class="kvc-app-nav bg-slate-900 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="kvc-nav-inner flex items-center justify-between h-16">
-            <div class="flex items-center gap-4">
+            <div class="kvc-nav-brand flex items-center gap-3">
                 <i class="fa-solid fa-helmet-battle text-blue-400 text-2xl"></i>
-                <span class="font-bold text-xl tracking-tight hidden sm:block">Kendo Virtual Coach</span>
-
-                <!-- 【★追加】左右反転ボタン -->
-                <button id="flipCameraBtn" class="ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600">
-                    <i class="fa-solid fa-right-left"></i> 左右反転: OFF
-                </button>
+                <span class="font-bold text-xl tracking-tight">Kendo Virtual Coach</span>
 
                 <button id="audioToggleBtn" class="hidden ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs items-center gap-2 transition border border-slate-600">
                     <i class="fa-solid fa-volume-xmark" id="audioIcon"></i> 音声OFF
@@ -5157,12 +5488,17 @@
             <div class="kvc-tab-strip flex space-x-1">
                 <button data-kendo-action="switch-tab" data-value="measure" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 練習</button>
                 <button data-kendo-action="switch-tab" data-value="video" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画測定</button>
-                <button data-kendo-action="switch-tab" data-value="analysis" id="tabBtn-analysis" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-chart-line"></i> 分析</button>
-                <button data-kendo-action="switch-tab" data-value="data" id="tabBtn-data" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-database"></i> 研究データ</button>
                 <button data-kendo-action="switch-tab" data-value="details" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 記録</button>
-                <button data-kendo-action="switch-tab" data-value="model" id="tabBtn-model" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-person-rays"></i> 3D角度</button>
-                <button data-kendo-action="switch-tab" data-value="settings" id="tabBtn-settings" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-gear"></i> 設定</button>
-                <a href="./research/" class="research-nav-link text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-circle-info"></i> 説明</a>
+                <details id="moreNavMenu" class="kvc-more-nav">
+                    <summary class="kvc-more-nav-button text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-ellipsis"></i> その他</summary>
+                    <div class="kvc-more-nav-panel">
+                        <button data-kendo-action="switch-tab" data-value="analysis" id="tabBtn-analysis" class="tab-btn text-slate-700 hover:bg-slate-100 px-4 py-3 rounded-lg text-sm"><i class="fa-solid fa-chart-line"></i><span>分析</span></button>
+                        <button data-kendo-action="switch-tab" data-value="data" id="tabBtn-data" class="tab-btn text-slate-700 hover:bg-slate-100 px-4 py-3 rounded-lg text-sm"><i class="fa-solid fa-database"></i><span>研究データ</span></button>
+                        <button data-kendo-action="switch-tab" data-value="model" id="tabBtn-model" class="tab-btn text-slate-700 hover:bg-slate-100 px-4 py-3 rounded-lg text-sm"><i class="fa-solid fa-person-rays"></i><span>3D角度</span></button>
+                        <button data-kendo-action="switch-tab" data-value="settings" id="tabBtn-settings" class="tab-btn text-slate-700 hover:bg-slate-100 px-4 py-3 rounded-lg text-sm"><i class="fa-solid fa-gear"></i><span>設定</span></button>
+                        <a href="./research/" class="research-nav-link text-slate-700 hover:bg-slate-100 px-4 py-3 rounded-lg text-sm"><i class="fa-solid fa-circle-info"></i><span>説明</span></a>
+                    </div>
+                </details>
             </div>
         </div>
     </div>
@@ -5244,7 +5580,10 @@
                 <div class="relative bg-black rounded-xl overflow-hidden shadow-xl border border-slate-700 aspect-video" id="videoContainer">
                     <video id="videoElement" class="absolute inset-0 w-full h-full object-contain bg-black z-0" autoplay="" playsinline="" muted="" style="transform-origin: center center;"></video>
                     <canvas id="outputCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></canvas>
-                    <span id="measurementReadyLamp" class="absolute left-2 top-2 z-40 rounded-full pointer-events-none" style="width:8px;height:8px;background:#64748b;box-shadow:none" aria-label="測定準備状態"></span>
+                    <div id="measurementStatusChip" class="absolute left-2 top-2 z-40 flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/75 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur pointer-events-none">
+                        <span id="measurementReadyLamp" class="rounded-full" style="width:8px;height:8px;background:#64748b;box-shadow:none" aria-label="測定準備状態"></span>
+                        <span id="measurementUnifiedStatusText">カメラ待機</span>
+                    </div>
 
                     <div id="flashOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
 
@@ -5253,9 +5592,14 @@
                         <div class="w-[min(92%,28rem)] mb-4 rounded-lg border border-slate-600 bg-black/35 p-3 text-white shadow-lg">
                             <div class="mb-2 flex items-center justify-between gap-3">
                                 <label for="cameraQuickSelect" class="text-sm font-black">使用カメラ</label>
-                                <button id="detectIPhoneCameraBtn" type="button" class="rounded bg-white/10 px-3 py-1.5 text-xs font-bold hover:bg-white/20">
-                                    <i class="fa-solid fa-mobile-screen-button mr-1"></i>iPhoneを探す
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button id="detectIPhoneCameraBtn" type="button" class="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">
+                                        <i class="fa-solid fa-mobile-screen-button mr-1"></i>iPhoneを探す
+                                    </button>
+                                    <button id="flipCameraBtn" type="button" class="rounded-lg border border-slate-500 bg-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600">
+                                        <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
+                                    </button>
+                                </div>
                             </div>
                             <select id="cameraQuickSelect" class="w-full rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white">
                                 <option value="">自動選択（内蔵/既定カメラ）</option>
@@ -5762,23 +6106,15 @@ service cloud.firestore {
                     動画選択
                 </div>
 	                <div id="videoStep-load" class="video-step-panel active space-y-3">
-	                <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
-	                    <div class="font-black"><i class="fa-solid fa-crosshairs mr-1"></i>測定基準: 竹刀先端</div>
-	                    <p class="mt-1 leading-relaxed">竹刀全体を動画内にはっきり映してください。自動モードは先端テープを優先し、ない場合は竹刀本体の直線から剣先を追跡します。</p>
-	                </div>
 	                <div id="videoFilePickCard" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
                         <span class="block text-base font-black text-slate-900">動画を選ぶ</span>
                         <span class="mt-1 block text-xs text-slate-600 leading-relaxed">iPhoneは写真またはファイルから選べます。</span>
+                        <span class="mt-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀先端を基準に測定</span>
                     </span>
                     <span id="videoFilePickBtn" class="video-file-pick-action hidden-native-helper" aria-hidden="true"><i class="fa-solid fa-folder-open mr-1"></i>写真/ファイルを選択</span>
                     <input type="file" id="videoFileInput" accept="video/*,video/quicktime,.mp4,.mov,.m4v" class="video-file-pick-input" aria-label="動画ファイルを選ぶ">
-                    <div class="video-file-steps" aria-hidden="true">
-                        <div class="video-file-step">1. 動画を選ぶ</div>
-                        <div class="video-file-step">2. 開始/終了を置く</div>
-                        <div class="video-file-step">3. 解析して保存</div>
-                    </div>
                     <div class="video-file-drop-note"><i class="fa-solid fa-hand mr-1"></i>ドラッグ＆ドロップでも読み込めます。</div>
                 </div>
                 <div class="video-file-fallback">
@@ -6781,7 +7117,7 @@ service cloud.firestore {
                 </div>
             </details>
 
-            <details class="compact-disclosure bg-white rounded-xl shadow-sm border" open>
+            <details class="compact-disclosure bg-white rounded-xl shadow-sm border">
                 <summary><span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-crosshairs text-lime-600 mr-2"></i>竹刀先端検出</span></summary>
                 <div class="disclosure-body space-y-3 text-xs">
                     <label class="block font-bold text-slate-700">検出方式
@@ -6859,6 +7195,12 @@ service cloud.firestore {
             </div>
             </div>
         </div>
+        <div id="videoContextActionBar" class="video-context-action-bar" aria-live="polite">
+            <span id="videoContextActionText" class="video-context-action-text">動画を選んでください</span>
+            <button id="videoContextNextBtn" type="button" class="video-context-next-btn">
+                <i class="fa-solid fa-folder-open"></i><span>動画を選ぶ</span>
+            </button>
+        </div>
     </div>
 
     <div id="tab-details" class="tab-content">
@@ -6878,6 +7220,17 @@ service cloud.firestore {
             </div>
         </div>
 
+        <div id="detailEmptyState" class="hidden rounded-xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-600"><i class="fa-solid fa-chart-line"></i></span>
+            <h3 class="mt-4 text-lg font-black text-slate-900">まだ記録がありません</h3>
+            <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">練習のリアルタイム測定、または動画測定を行うと、打突時間と角度がここに保存されます。</p>
+            <div class="mt-5 flex flex-wrap justify-center gap-3">
+                <button type="button" data-kendo-action="switch-tab" data-value="measure" class="min-h-[44px] rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"><i class="fa-solid fa-video mr-2"></i>練習を始める</button>
+                <button type="button" data-kendo-action="switch-tab" data-value="video" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-film mr-2"></i>動画を測定する</button>
+            </div>
+        </div>
+
+        <div id="detailRecordsContent">
         <div class="detail-kpi-grid grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-blue-500"><span class="text-xs text-slate-500">打突時間</span><div id="detailLatestTime" class="text-2xl font-black text-blue-700 font-mono-num">---</div></div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-l-4 border-l-fuchsia-500"><span class="text-xs text-slate-500">反応時間</span><div id="detailLatestReaction" class="text-2xl font-black text-fuchsia-700 font-mono-num">---</div></div>
@@ -6937,6 +7290,7 @@ service cloud.firestore {
 	                    <tbody id="detailRecordsBody" class="font-mono-num"><tr><td colspan="12" class="text-center py-8 text-slate-400 font-sans">記録なし</td></tr></tbody>
                 </table>
             </div>
+        </div>
         </div>
     </div>
 
@@ -7661,6 +8015,7 @@ service cloud.firestore {
         function switchTab(tab) {
             document.body.dataset.activeTab = tab;
             if (tab !== 'video') delete document.body.dataset.videoStep;
+            else if (!document.body.dataset.videoStep) document.body.dataset.videoStep = 'load';
             if (tab !== 'measure') setPracticeFocus(false);
             if (tab !== 'video') {
                 stopVideoSlowPlayback();
@@ -7668,10 +8023,23 @@ service cloud.firestore {
             }
             if (tab !== 'model') stopModelPlayback();
             document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el=>{ el.classList.remove('bg-slate-800','text-white'); el.classList.add('text-slate-300'); });
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            document.getElementById(`tabBtn-${tab}`).classList.remove('text-slate-300');
-            document.getElementById(`tabBtn-${tab}`).classList.add('bg-slate-800','text-white');
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-slate-800', 'text-white', 'bg-blue-50', 'text-blue-700');
+                el.classList.remove('text-slate-300', 'text-slate-700');
+                el.classList.add(el.closest('.kvc-more-nav-panel') ? 'text-slate-700' : 'text-slate-300');
+            });
+            const targetPanel = document.getElementById(`tab-${tab}`);
+            const targetButton = document.getElementById(`tabBtn-${tab}`);
+            if (!targetPanel || !targetButton) return;
+            targetPanel.classList.add('active');
+            targetButton.classList.remove('text-slate-300', 'text-slate-700');
+            if (targetButton.closest('.kvc-more-nav-panel')) targetButton.classList.add('bg-blue-50', 'text-blue-700');
+            else targetButton.classList.add('bg-slate-800', 'text-white');
+            const moreMenu = document.getElementById('moreNavMenu');
+            if (moreMenu) {
+                moreMenu.classList.toggle('has-active', ['analysis', 'data', 'model', 'settings'].includes(tab));
+                moreMenu.open = false;
+            }
             if(tab==='analysis') {
                 ensureChartsReady()
                     .then(updateCharts)
@@ -7685,7 +8053,10 @@ service cloud.firestore {
                     .then(() => setTimeout(updateResearchDashboard, 80))
                     .catch(error => reportOptionalAssetError('研究グラフ', error));
             }
-            if(tab==='video') updateVideoAnalysisLabels();
+            if(tab==='video') {
+                updateVideoAnalysisLabels();
+                updateVideoContextAction(document.body.dataset.videoStep || 'load');
+            }
             if(tab==='details') updateDetailsTab();
             if(tab==='model') updateModelAnalysisTab();
         }
@@ -7710,6 +8081,7 @@ service cloud.firestore {
             if (activeStep !== 'mark') stopManualRangePlayback();
             reorderVideoResultPanels();
             updateVideoStepHint(activeStep);
+            updateVideoContextAction(activeStep);
             if (activeStep === 'result') {
                 setVideoResultView(AppState.videoAnalysis?.frames?.length ? 'strikes' : 'result');
                 drawVideoResultGraphs(Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis?.startFrame || 0));
@@ -7846,6 +8218,76 @@ service cloud.firestore {
                 };
                 next.innerHTML = `<i class="fa-solid fa-arrow-right mr-2"></i>${nextMessages[step] || nextMessages.load}`;
             }
+            updateVideoContextAction(step);
+        }
+
+        function updateVideoContextAction(step = document.body.dataset.videoStep || 'load') {
+            const textEl = document.getElementById('videoContextActionText');
+            const button = document.getElementById('videoContextNextBtn');
+            if (!textEl || !button) return;
+            const video = document.getElementById('analysisVideoElement');
+            const hasVideo = Number(video?.duration || 0) > 0 || !!AppState.videoSource;
+            const hasAnalysis = !!AppState.videoAnalysis?.frames?.length;
+            const hasManualRange = Number.isFinite(AppState.videoManualStartSec)
+                && Number.isFinite(AppState.videoManualEndSec)
+                && AppState.videoManualEndSec > AppState.videoManualStartSec;
+            const states = {
+                load: hasVideo
+                    ? { text: '動画を読み込みました', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false }
+                    : { text: '最初に動画を選びます', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false },
+                mark: hasVideo
+                    ? { text: hasManualRange ? '開始と終了を指定済みです' : '開始・終了を置くか、自動解析します', label: '解析する', icon: 'fa-magnifying-glass-chart', disabled: false }
+                    : { text: '先に動画を選んでください', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false },
+                analyze: { text: AppState.videoAnalysisBusy ? '動画を解析しています' : '解析を開始できます', label: AppState.videoAnalysisBusy ? '解析中' : '解析する', icon: AppState.videoAnalysisBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart', disabled: !!AppState.videoAnalysisBusy },
+                result: hasAnalysis
+                    ? { text: '各打突時間を確認できます', label: '選択した打突を補正', icon: 'fa-sliders', disabled: false }
+                    : { text: '先に動画を解析してください', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false },
+                correct: hasAnalysis
+                    ? { text: '開始・終了を確認してください', label: '補正を確定', icon: 'fa-circle-check', disabled: false }
+                    : { text: '解析結果がありません', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false },
+                report: hasAnalysis
+                    ? { text: '確定した結果を記録します', label: '保存する', icon: 'fa-floppy-disk', disabled: false }
+                    : { text: '保存できる結果がありません', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false }
+            };
+            const state = states[step] || states.load;
+            textEl.textContent = state.text;
+            button.disabled = !!state.disabled;
+            button.dataset.contextStep = step;
+            button.dataset.hasVideo = hasVideo ? 'true' : 'false';
+            button.dataset.hasAnalysis = hasAnalysis ? 'true' : 'false';
+            button.dataset.hasManualRange = hasManualRange ? 'true' : 'false';
+            button.innerHTML = `<i class="fa-solid ${state.icon}"></i><span>${state.label}</span>`;
+        }
+
+        function runVideoContextAction() {
+            const button = document.getElementById('videoContextNextBtn');
+            if (!button || button.disabled) return;
+            const step = button.dataset.contextStep || document.body.dataset.videoStep || 'load';
+            const hasVideo = button.dataset.hasVideo === 'true';
+            const hasAnalysis = button.dataset.hasAnalysis === 'true';
+            if (step === 'load') {
+                if (hasVideo) switchVideoStep('mark');
+                else document.getElementById('videoFileInput')?.click();
+                return;
+            }
+            if (step === 'mark' || step === 'analyze') {
+                if (!hasVideo) document.getElementById('videoFileInput')?.click();
+                else startVideoAnalysisFromButton();
+                return;
+            }
+            if (step === 'result') {
+                switchVideoStep(hasAnalysis ? 'correct' : 'mark');
+                return;
+            }
+            if (step === 'correct') {
+                if (hasAnalysis) confirmVideoTimingCorrection();
+                else switchVideoStep('mark');
+                return;
+            }
+            if (step === 'report') {
+                if (!hasAnalysis) return document.getElementById('videoFileInput')?.click();
+                document.getElementById('saveVideoRecordBtn')?.click();
+            }
         }
 
         function setVideoAnalysisBusy(isBusy) {
@@ -7861,6 +8303,7 @@ service cloud.firestore {
                     : '<i class="fa-solid fa-magnifying-glass-chart mr-1"></i> 解析開始';
             }
             if (progressText && isBusy) progressText.textContent = '0%';
+            updateVideoContextAction(isBusy ? 'analyze' : (document.body.dataset.videoStep || 'load'));
         }
         // タブ移動はAIやカメラ初期化に依存させない。後段で何か失敗してもUI確認を続けられるよう即時公開する。
         window.switchTab = switchTab;
@@ -12405,6 +12848,8 @@ service cloud.firestore {
             if (distance >= 2.0 && distance <= 3.0) score += 8;
             const tone = score >= 86 && viewQuality >= Params.minViewQuality ? 'good' : (score >= 57 ? 'warn' : 'bad');
             const readyLamp = document.getElementById('measurementReadyLamp');
+            const statusChip = document.getElementById('measurementStatusChip');
+            const statusText = document.getElementById('measurementUnifiedStatusText');
             if (readyLamp) {
                 const tapeReady = AppState.currentShinaiDetected
                     && Number(AppState.lastShinaiQuality || 0) >= Number(Params.minTapeConfidence || 0.18);
@@ -12412,6 +12857,14 @@ service cloud.firestore {
                 readyLamp.style.background = ready ? '#22c55e' : '#64748b';
                 readyLamp.style.boxShadow = ready ? '0 0 7px rgba(34,197,94,.95)' : 'none';
                 readyLamp.setAttribute('aria-label', ready ? '竹刀測定準備完了' : '竹刀先端の検出待ち');
+                if (statusChip) statusChip.dataset.state = ready ? 'ready' : (AppState.isCameraRunning ? 'adjust' : 'waiting');
+                if (statusText) {
+                    statusText.textContent = ready
+                        ? '測定可能'
+                        : (AppState.isCameraRunning
+                            ? (AppState.currentShinaiDetected ? '位置を調整' : '竹刀を検出中')
+                            : 'カメラ待機');
+                }
             }
             card.classList.remove('condition-good', 'condition-warn', 'condition-bad');
             card.classList.add(`condition-${tone}`);
@@ -14885,6 +15338,10 @@ service cloud.firestore {
             updateSessionSummary();
             const records = analysisRecords();
             const latest = records[records.length - 1];
+            const emptyState = document.getElementById('detailEmptyState');
+            const recordsContent = document.getElementById('detailRecordsContent');
+            if (emptyState) emptyState.classList.toggle('hidden', !!latest);
+            if (recordsContent) recordsContent.classList.toggle('hidden', !latest);
             if (!latest) {
                 ['detailLatestTime', 'detailLatestReaction', 'detailLatestTotalResponse', 'detailLatestOfficialSpeed', 'detailLatestVisibility', 'detailLatestValidation', 'detailLatestValidationReason', 'detailRightElbow', 'detailTorso', 'detailHasuji'].forEach(id => safeText(id, '---'));
                 const body = document.getElementById('detailRecordsBody');
@@ -15848,6 +16305,9 @@ service cloud.firestore {
                 readyLamp.style.background = '#64748b';
                 readyLamp.style.boxShadow = 'none';
             }
+            const statusChip = document.getElementById('measurementStatusChip');
+            if (statusChip) statusChip.dataset.state = 'waiting';
+            safeText('measurementUnifiedStatusText', 'カメラ待機');
             if (AppState.videoStream) {
                 AppState.videoStream.getTracks().forEach(track => track.stop());
                 AppState.videoStream = null;
@@ -22523,12 +22983,12 @@ service cloud.firestore {
             updateVideoElementMirror();
             if (pose && !AppState.poseLandmarker) pose.setOptions({ selfieMode: AppState.isFlipped });
             if(AppState.isFlipped) {
-                this.className = "ml-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 transition";
-                this.innerHTML = '<i class="fa-solid fa-right-left"></i> 左右反転: ON';
+                this.className = "rounded-lg border border-blue-400 bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500";
+                this.innerHTML = '<i class="fa-solid fa-right-left mr-1"></i>反転 ON';
                 showToast('カメラを鏡写し（反転）にしました', 'blue');
             } else {
-                this.className = "ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600";
-                this.innerHTML = '<i class="fa-solid fa-right-left"></i> 左右反転: OFF';
+                this.className = "rounded-lg border border-slate-500 bg-slate-700 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600";
+                this.innerHTML = '<i class="fa-solid fa-right-left mr-1"></i>反転 OFF';
                 showToast('カメラの反転を元に戻しました', 'blue');
             }
         });
@@ -22988,6 +23448,12 @@ service cloud.firestore {
                 event.preventDefault();
                 switchVideoStep(btn.dataset.value);
             });
+        });
+        const videoContextNextBtn = document.getElementById('videoContextNextBtn');
+        if (videoContextNextBtn) videoContextNextBtn.addEventListener('click', runVideoContextAction);
+        const moreNavMenu = document.getElementById('moreNavMenu');
+        document.addEventListener('click', event => {
+            if (moreNavMenu?.open && !moreNavMenu.contains(event.target)) moreNavMenu.open = false;
         });
         VideoEditorRuntime.bindActions(document, {
             'switch-tab': ({ value }) => switchTab(value),
@@ -23810,6 +24276,7 @@ service cloud.firestore {
         }
         updateHistoryTable();
         updateDetailsTab();
+        updateVideoContextAction(document.body.dataset.videoStep || 'load');
         updateRealtimePracticeSummary();
         updateDataCenter();
         applyCalibrationInputs();
