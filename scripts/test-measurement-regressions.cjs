@@ -78,6 +78,19 @@ const currentContext = context.videoCorrectionDraftContext({});
 assert.equal(context.videoCorrectionDraftContextMatches({ context: currentContext }, {}), true);
 assert.equal(context.videoCorrectionDraftContextMatches({ context: currentContext }, { handSwingMode: true }), false);
 assert.equal(context.videoCorrectionDraftContextMatches({ context: currentContext }, { strikeTimingMode: 'downswing' }), false);
+let manualSyncs = 0;
+context.AppState.videoAnalysis = { frames: [{ timeMs: 0 }] };
+context.document = { body: { dataset: { videoStep: 'correct' } }, getElementById: id => id === 'analysisVideoElement' ? { currentTime: 9, duration: 69 } : null };
+Object.assign(context, {
+    safeText: () => {}, updateVideoEditorTimeline: () => {}, formatVideoTime: String,
+    formatVideoTimeWithCorrection: String, syncCorrectionVideoSource: () => manualSyncs++
+});
+vm.runInContext(declaration('updateVideoManualRangeUi'), context);
+context.updateVideoManualRangeUi();
+assert.equal(manualSyncs, 0, 'late source timeupdate must not overwrite the correction frame');
+context.document.body.dataset.videoStep = 'mark';
+context.updateVideoManualRangeUi();
+assert.equal(manualSyncs, 1, 'manual range view still follows the source video');
 
 const runtimeContext = vm.createContext({ console, setTimeout, clearTimeout });
 runtimeContext.window = runtimeContext;

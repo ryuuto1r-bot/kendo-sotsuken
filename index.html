@@ -18259,7 +18259,10 @@ service cloud.firestore {
             safeText('videoManualEndLabel', Number.isFinite(end) ? formatVideoTime(end) : '未設定');
             safeText('videoManualDurationLabel', ok ? formatVideoTimeWithCorrection(end - start) : '---');
             updateVideoEditorTimeline(video, current, duration, start, end, ok);
-            syncCorrectionVideoSource(current);
+            // ここから追加: 読込用動画の遅れて届いたtimeupdateで、補正中の映像を巻き戻さない。
+            if (!AppState.videoAnalysis?.frames?.length || ['load', 'mark'].includes(document.body.dataset.videoStep)) {
+                syncCorrectionVideoSource(current);
+            }
             const status = document.getElementById('videoManualRangeStatus');
             if (status) {
                 status.className = ok ? 'mt-2 text-[11px] text-emerald-800 font-bold' : 'mt-2 text-[11px] text-blue-800';
@@ -18934,9 +18937,11 @@ service cloud.firestore {
                 if (resultEmpty) resultEmpty.classList.remove('hidden');
                 return;
             }
-            const targetTime = Number.isFinite(Number(timeSec))
-                ? Number(timeSec)
-                : Number(sourceVideo?.currentTime || correctionVideo?.currentTime || resultVideo?.currentTime || 0);
+            const data = AppState.videoAnalysis;
+            const selectedFrame = data?.frames?.[Number(document.getElementById('videoFrameSlider')?.value ?? data?.startFrame ?? 0)];
+            const selectedTime = selectedFrame ? videoSourceSecondForFrame(data, selectedFrame) : null;
+            const targetTime = toFiniteOrNull(timeSec) ?? selectedTime
+                ?? Number(sourceVideo?.currentTime || correctionVideo?.currentTime || resultVideo?.currentTime || 0);
             const fps = Math.max(1, Number(AppState.videoAnalysis?.fps || Params.targetFps || 60));
             const seekTolerance = Math.max(0.0005, 0.45 / fps);
             [correctionVideo, resultVideo].forEach(video => {
