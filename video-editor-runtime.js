@@ -49,24 +49,31 @@
         _timer: null,
         sourceKey,
         save(source, payload) {
-            if (!source || !payload || !global.sessionStorage) return false;
-            purgeDrafts(global.sessionStorage);
-            const draft = { ...payload, savedAt: Date.now(), sourceKey: sourceKey(source) };
-            global.sessionStorage.setItem(draftStorageKey(source), JSON.stringify(draft));
-            return true;
+            try {
+                if (!source || !payload || !global.sessionStorage) return false;
+                purgeDrafts(global.sessionStorage);
+                const draft = { ...payload, savedAt: Date.now(), sourceKey: sourceKey(source) };
+                global.sessionStorage.setItem(draftStorageKey(source), JSON.stringify(draft));
+                return true;
+            } catch (error) {
+                return false;
+            }
         },
-        schedule(source, payloadFactory, delayMs = 120) {
+        schedule(source, payloadFactory, delayMs = 120, onSaved = null) {
             clearTimeout(this._timer);
             this._timer = global.setTimeout(() => {
                 this._timer = null;
                 const payload = typeof payloadFactory === 'function' ? payloadFactory() : payloadFactory;
-                if (payload) this.save(source, payload);
+                if (payload) {
+                    const saved = this.save(source, payload);
+                    if (typeof onSaved === 'function') onSaved(saved);
+                }
             }, Math.max(0, Number(delayMs) || 0));
         },
         load(source) {
-            if (!source || !global.sessionStorage) return null;
-            purgeDrafts(global.sessionStorage);
             try {
+                if (!source || !global.sessionStorage) return null;
+                purgeDrafts(global.sessionStorage);
                 const draft = JSON.parse(global.sessionStorage.getItem(draftStorageKey(source)) || 'null');
                 return draft?.sourceKey === sourceKey(source) ? draft : null;
             } catch (error) {
@@ -74,8 +81,9 @@
             }
         },
         clear(source) {
-            if (!source || !global.sessionStorage) return;
-            global.sessionStorage.removeItem(draftStorageKey(source));
+            try {
+                if (source && global.sessionStorage) global.sessionStorage.removeItem(draftStorageKey(source));
+            } catch (error) {}
         }
     };
 
@@ -138,6 +146,8 @@
             this.cache = new Map();
             this.pending = new Map();
             this.context = null;
+            this.generation = 0;
+            this.drawRequests = new WeakMap();
         }
 
         setContext(context) {
@@ -147,6 +157,7 @@
         }
 
         clear() {
+            this.generation += 1;
             this.cache.forEach(bitmap => bitmap?.close?.());
             this.cache.clear();
             this.pending.clear();
@@ -230,21 +241,31 @@
                 return bitmap;
             }
             if (this.pending.has(key)) return this.pending.get(key);
+            const generation = this.generation;
             const pending = this._decodeBitmap(context, Number(timestampUs))
                 .then(bitmap => {
+                    // ここから追加: 動画切替前の復号結果で新しい映像を上書きしない。
+                    if (generation !== this.generation) {
+                        bitmap?.close?.();
+                        return null;
+                    }
                     if (bitmap) this._cacheBitmap(key, bitmap);
                     return bitmap;
                 })
-                .finally(() => this.pending.delete(key));
+                .finally(() => {
+                    if (this.pending.get(key) === pending) this.pending.delete(key);
+                });
             this.pending.set(key, pending);
             return pending;
         }
 
         async draw(context, timestampUs, canvasContext, width, height) {
             if (!context || !Number.isFinite(Number(timestampUs)) || !canvasContext) return false;
+            const request = {};
+            this.drawRequests.set(canvasContext, request);
             try {
                 const bitmap = await this.getBitmap(context, timestampUs);
-                if (!bitmap) return false;
+                if (!bitmap || context !== this.context || this.drawRequests.get(canvasContext) !== request) return false;
                 const rotation = ((Math.round(Number(context.rotation || 0)) % 360) + 360) % 360;
                 canvasContext.save();
                 if (rotation === 90) {
@@ -286,7 +307,7 @@
     }
 
     global.KendoVideoEditorRuntime = Object.freeze({
-        version: '2.0.0',
+        version: '2.1.0',
         correctionDrafts,
         seekVideoTo,
         bindActions,
