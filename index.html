@@ -8602,10 +8602,19 @@ service cloud.firestore {
 
         function refreshVideoFullscreenLayout() {
             if (!AppState.videoAnalysis?.frames?.length) return;
-            const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
             updateVideoFullscreenActiveStrip();
-            setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
-            setTimeout(refreshVideoGraphResolution, 120);
+            // ここから追加: レイアウト更新待ちの間に選ばれたコマを巻き戻さない。
+            clearTimeout(AppState.videoFullscreenLayoutTimer);
+            clearTimeout(AppState.videoFullscreenGraphTimer);
+            AppState.videoFullscreenLayoutTimer = setTimeout(() => {
+                if (!AppState.videoAnalysis?.frames?.length) return;
+                const frameIndex = Number(document.getElementById('videoFrameSlider')?.value ?? AppState.videoAnalysis.startFrame ?? 0);
+                const nativeVideo = ['videoResultElement', 'videoCorrectionElement']
+                    .map(id => document.getElementById(id))
+                    .find(video => video?._kendoPreviewUserControlled && !video.paused);
+                drawVideoAnalysisFrame(frameIndex, { nativeVideo });
+            }, 80);
+            AppState.videoFullscreenGraphTimer = setTimeout(refreshVideoGraphResolution, 120);
         }
 
         function isVideoFullscreenActive() {
@@ -18020,18 +18029,34 @@ service cloud.firestore {
 
         function syncVideoPreviewTimeToAnalysis(video) {
             if (!video || !AppState.videoAnalysis?.frames?.length) return;
+            // ここから追加: 補正操作で発生したseekedを、手動シークとして逆流させない。
+            if (!video._kendoPreviewUserControlled || video.seeking || AppState.videoSlowPlaying) return;
             const frameIndex = videoFrameIndexFromSourceSecond(video.currentTime);
             if (!Number.isFinite(frameIndex)) return;
             const current = Number(document.getElementById('videoFrameSlider')?.value || 0);
             if (Math.abs(current - frameIndex) < 1) return;
-            setVideoAnalysisFrame(frameIndex);
+            setVideoAnalysisFrame(frameIndex, { nativeVideo: video });
+        }
+
+        function beginNativeVideoPreviewControl(video) {
+            if (!video) return;
+            if (AppState.videoSlowTimer) clearTimeout(AppState.videoSlowTimer);
+            AppState.videoSlowTimer = null;
+            AppState.videoSlowPlaying = false;
+            setVideoSlowButtonsPlaying(false);
+            ['videoResultElement', 'videoCorrectionElement'].forEach(id => {
+                const preview = document.getElementById(id);
+                if (!preview) return;
+                preview._kendoPreviewUserControlled = preview === video;
+                if (preview !== video && !preview.paused) preview.pause();
+            });
         }
 
         function startNativePreviewFrameSync(video) {
             if (!video || video._kendoFrameSyncActive) return;
             video._kendoFrameSyncActive = true;
             const tick = () => {
-                if (!video || video.paused || video.ended) {
+                if (!video || video.paused || video.ended || !video._kendoPreviewUserControlled) {
                     if (video) video._kendoFrameSyncActive = false;
                     return;
                 }
@@ -18923,7 +18948,7 @@ service cloud.firestore {
             updateVideoStrikeDetailPanel(current);
         }
 
-        function syncCorrectionVideoSource(timeSec = null) {
+        function syncCorrectionVideoSource(timeSec = null, nativeVideo = null) {
             const sourceVideo = document.getElementById('analysisVideoElement');
             const correctionVideo = document.getElementById('videoCorrectionElement');
             const resultVideo = document.getElementById('videoResultElement');
@@ -18946,6 +18971,9 @@ service cloud.firestore {
             const seekTolerance = Math.max(0.0005, 0.45 / fps);
             [correctionVideo, resultVideo].forEach(video => {
                 if (!video) return;
+                // ネイティブ再生中の動画は時刻の入力元。コマ同期で再シークしない。
+                if (video === nativeVideo) return;
+                video._kendoPreviewUserControlled = false;
                 if (video.src !== src) {
                     video.src = src;
                     video.muted = true;
@@ -18975,7 +19003,7 @@ service cloud.firestore {
             if (resultEmpty) resultEmpty.classList.add('hidden');
         }
 
-        function setVideoAnalysisFrame(index) {
+        function setVideoAnalysisFrame(index, options = {}) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return Promise.resolve(false);
             const bounds = activeVideoFrameBounds();
@@ -18987,11 +19015,11 @@ service cloud.firestore {
                 const sourceEndSec = Number(data.sourceEndSec || sourceStartSec + data.duration || 0);
                 const seekSec = Math.min(sourceStartSec + videoRawMsFromFrame(frame) / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
                 // 合成キャンバスの完成を待たず、背面の動画を先に該当コマへ移動する。
-                syncCorrectionVideoSource(seekSec);
+                syncCorrectionVideoSource(seekSec, options.nativeVideo);
                 const correctionCanvas = document.getElementById('videoCorrectionCanvas');
                 if (correctionCanvas) correctionCanvas.style.opacity = '0';
             }
-            return drawVideoAnalysisFrame(frameIndex);
+            return drawVideoAnalysisFrame(frameIndex, options);
         }
 
         function copyVideoPreviewToCorrection(sourceCanvas, frameIndex) {
@@ -19292,6 +19320,7 @@ service cloud.firestore {
             }
             ['analysisVideoElement', 'videoResultElement', 'videoCorrectionElement'].forEach(id => {
                 const video = document.getElementById(id);
+                if (video) video._kendoPreviewUserControlled = false;
                 if (video && !video.paused) video.pause();
             });
             AppState.videoSlowPlaying = false;
@@ -21731,7 +21760,7 @@ service cloud.firestore {
             drawVideoCorrectionGraphs(graphFrameIndex);
         }
 
-        async function drawVideoAnalysisFrame(index) {
+        async function drawVideoAnalysisFrame(index, options = {}) {
             const data = AppState.videoAnalysis;
             const canvas = document.getElementById('videoAnalysisCanvas');
             const video = document.getElementById('analysisVideoElement');
@@ -21758,7 +21787,7 @@ service cloud.firestore {
 		            const sourceStartSec = Number(data.sourceStartSec || 0);
             const sourceEndSec = Number(data.sourceEndSec || sourceStartSec + data.duration || 0);
             const seekSec = Math.min(sourceStartSec + videoRawMsFromFrame(frame) / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
-            syncCorrectionVideoSource(seekSec);
+            syncCorrectionVideoSource(seekSec, options.nativeVideo);
 		            ctx.clearRect(0, 0, w, h);
 		            ctx.imageSmoothingEnabled = true;
 		            ctx.imageSmoothingQuality = 'high';
@@ -24029,7 +24058,13 @@ service cloud.firestore {
         ['videoResultElement', 'videoCorrectionElement'].forEach(id => {
             const previewVideo = document.getElementById(id);
             if (!previewVideo) return;
-            previewVideo.addEventListener('play', () => startNativePreviewFrameSync(previewVideo));
+            ['pointerdown', 'keydown'].forEach(eventName => {
+                previewVideo.addEventListener(eventName, () => beginNativeVideoPreviewControl(previewVideo));
+            });
+            previewVideo.addEventListener('play', () => {
+                beginNativeVideoPreviewControl(previewVideo);
+                startNativePreviewFrameSync(previewVideo);
+            });
             ['seeked', 'timeupdate'].forEach(eventName => {
                 previewVideo.addEventListener(eventName, () => {
                     if (!previewVideo.paused && eventName === 'timeupdate') return;
@@ -25176,11 +25211,7 @@ service cloud.firestore {
                 const btn = document.getElementById('practiceFocusBtn');
                 if (btn) btn.innerText = '大きく表示';
             }
-            if (AppState.videoAnalysis?.frames?.length) {
-                const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || AppState.videoAnalysis.startFrame || 0);
-                setTimeout(() => drawVideoAnalysisFrame(frameIndex), 80);
-                setTimeout(refreshVideoGraphResolution, 120);
-            }
+            refreshVideoFullscreenLayout();
         });
         window.addEventListener('resize', () => {
             if (AppState.videoAnalysis?.frames?.length) setTimeout(refreshVideoGraphResolution, 120);

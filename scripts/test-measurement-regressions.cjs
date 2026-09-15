@@ -92,6 +92,70 @@ context.document.body.dataset.videoStep = 'mark';
 context.updateVideoManualRangeUi();
 assert.equal(manualSyncs, 1, 'manual range view still follows the source video');
 
+const selectedCalls = [];
+const previews = {
+    videoCorrectionElement: { currentTime: 17.433, paused: true, seeking: false },
+    videoResultElement: { currentTime: 9, paused: true, seeking: false }
+};
+context.document = { getElementById: id => id === 'videoFrameSlider' ? { value: '523' } : previews[id] };
+Object.assign(context, {
+    videoFrameIndexFromSourceSecond: t => Math.round(t * 30),
+    setVideoAnalysisFrame: (...args) => selectedCalls.push(args),
+    setVideoSlowButtonsPlaying: () => {}, clearTimeout
+});
+vm.runInContext(['syncVideoPreviewTimeToAnalysis', 'beginNativeVideoPreviewControl'].map(declaration).join('\n'), context);
+context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
+assert.equal(selectedCalls.length, 0, 'late hidden-video seek cannot undo a frame edit');
+context.beginNativeVideoPreviewControl(previews.videoResultElement);
+previews.videoResultElement.seeking = true;
+context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
+assert.equal(selectedCalls.length, 0, 'unfinished native seek is not a confirmed frame');
+previews.videoResultElement.seeking = false;
+context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
+assert.equal(selectedCalls[0][0], 270, 'user native scrub still updates analysis');
+assert.equal(selectedCalls[0][1].nativeVideo, previews.videoResultElement);
+context.AppState.videoSlowPlaying = true;
+context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
+assert.equal(selectedCalls.length, 1, 'range playback owns the frame while active');
+context.AppState.videoSlowPlaying = false;
+const src = 'blob:qa-video';
+Object.values(previews).forEach(video => Object.assign(video, { src, readyState: 4 }));
+context.AppState.videoAnalysis = { fps: 240, frames: [{ rawTimeMs: 17433 }] };
+context.document = { getElementById: id => id === 'videoFrameSlider' ? { value: '0' }
+    : id === 'analysisVideoElement' ? { src, currentTime: 9 } : previews[id] };
+context.videoSourceSecondForFrame = (_data, frame) => frame.rawTimeMs / 1000;
+vm.runInContext(declaration('syncCorrectionVideoSource'), context);
+context.syncCorrectionVideoSource();
+assert.equal(previews.videoResultElement.currentTime, 17.433, 'selected frame wins over stale source time');
+assert.equal(previews.videoResultElement._kendoPreviewUserControlled, false);
+context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
+assert.equal(selectedCalls.length, 1, 'programmatic seek echoes stay ignored');
+previews.videoCorrectionElement.currentTime = 17.6;
+previews.videoCorrectionElement._kendoPreviewUserControlled = true;
+context.syncCorrectionVideoSource(17.633, previews.videoCorrectionElement);
+assert.equal(previews.videoCorrectionElement.currentTime, 17.6, 'native playing video must not seek every decoded frame');
+assert.equal(previews.videoCorrectionElement._kendoPreviewUserControlled, true);
+assert.equal(previews.videoResultElement.currentTime, 17.633);
+const layoutTimers = new Map();
+let nextTimer = 0;
+let currentFrame = '709';
+const layoutDraws = [];
+Object.assign(context, {
+    setTimeout: fn => { layoutTimers.set(++nextTimer, fn); return nextTimer; },
+    clearTimeout: id => layoutTimers.delete(id),
+    updateVideoFullscreenActiveStrip: () => {}, refreshVideoGraphResolution: () => {},
+    drawVideoAnalysisFrame: frame => layoutDraws.push(frame)
+});
+context.document = { getElementById: id => id === 'videoFrameSlider' ? { value: currentFrame } : null };
+vm.runInContext(declaration('refreshVideoFullscreenLayout'), context);
+context.refreshVideoFullscreenLayout();
+currentFrame = '522';
+context.refreshVideoFullscreenLayout();
+currentFrame = '523';
+assert.equal(layoutTimers.size, 2, 'fullscreen refreshes are debounced');
+[...layoutTimers.values()].forEach(fn => fn());
+assert.deepEqual(layoutDraws, [523], 'delayed layout redraw uses the newest edited frame');
+
 const runtimeContext = vm.createContext({ console, setTimeout, clearTimeout });
 runtimeContext.window = runtimeContext;
 const storage = new Map();
