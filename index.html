@@ -40,8 +40,67 @@
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .guide-line { pointer-events: none; }
-        .flash-signal { animation: flashBg 0.3s ease-out; }
-        @keyframes flashBg { 0% { background-color: rgba(239, 68, 68, 0.5); } 100% { background-color: transparent; } }
+        #flashOverlay {
+            position: absolute;
+            inset: 0;
+            z-index: 60;
+            display: grid;
+            place-items: center;
+            pointer-events: none;
+            visibility: hidden;
+            border: 10px solid #bef264;
+            background: rgba(190, 242, 100, 0.18);
+        }
+        #flashOverlay.flash-signal { visibility: visible; }
+        #flashOverlay strong {
+            padding: 14px 28px;
+            border-radius: 8px;
+            background: #bef264;
+            color: #142008;
+            font-size: 40px;
+            font-weight: 900;
+            line-height: 1.2;
+            letter-spacing: 0;
+        }
+        .reaction-live-tools {
+            position: absolute;
+            left: 12px;
+            top: 52px;
+            z-index: 45;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: calc(100% - 24px);
+        }
+        .reaction-live-tools[hidden] { display: none; }
+        .reaction-live-tools button {
+            min-height: 44px;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #172033;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .reaction-live-tools button:disabled { opacity: 0.6; }
+        .reaction-cue-status {
+            padding: 7px 10px;
+            border-radius: 6px;
+            background: #172033;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .reaction-cue-status[data-state="wait"] { background: #facc15; color: #422006; }
+        .reaction-cue-status[data-state="go"] { background: #bef264; color: #142008; }
+        .reaction-cue-status[data-state="blocked"] { background: #991b1b; color: #fff; }
+        body.reaction-measurement-mode #stateIndicator { display: none !important; }
+        @media (max-width: 640px) {
+            #flashOverlay { border-width: 8px; }
+            #flashOverlay strong { font-size: 32px; }
+        }
         #videoElement { transition: transform 0.15s ease; }
         #outputCanvas { background: transparent; }
         #canvasOverlayData { max-width: min(340px, calc(100% - 1.5rem)); }
@@ -449,10 +508,12 @@
             .realtime-mode-options { grid-template-columns: 1fr; }
             .measure-mode-button { min-height: 70px; }
             .reaction-overlay-actions {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
                 width: min(88%, 23rem);
+                gap: 6px;
             }
-            .reaction-overlay-action { min-height: 48px; }
+            .reaction-overlay-action,
+            .reaction-overlay-action.primary { min-height: 48px; font-size: 13px; }
             #measureHeader {
                 align-items: stretch;
                 flex-direction: column;
@@ -5388,6 +5449,15 @@
             body.measurement-simple #startOverlay {
                 padding: 10px;
             }
+            body.measurement-simple #videoContainer:not([data-camera-running="true"]) {
+                height: auto !important;
+                aspect-ratio: auto !important;
+            }
+            body.measurement-simple #videoContainer:not([data-camera-running="true"]) #startOverlay {
+                position: relative;
+                inset: auto;
+                padding: 48px 10px 16px;
+            }
             body.measurement-simple #startOverlay > .fa-camera {
                 display: none;
             }
@@ -5584,7 +5654,13 @@
                         <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
                     </button>
 
-                    <div id="flashOverlay" class="absolute inset-0 pointer-events-none z-10"></div>
+                    <div id="flashOverlay" aria-hidden="true"><strong>打突</strong></div>
+                    <div id="reactionLiveTools" class="reaction-live-tools" hidden>
+                        <button id="reactionLiveSoundTestBtn" type="button" title="現在の試行を止めて、音と光を確認">
+                            <i class="fa-solid fa-volume-high mr-1" aria-hidden="true"></i>合図を確認
+                        </button>
+                        <span id="reactionCueStatus" class="reaction-cue-status" role="status" aria-live="polite">構えて静止</span>
+                    </div>
 
                     <div id="startOverlay" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
                         <i class="fa-solid fa-camera text-5xl text-slate-400 mb-6"></i>
@@ -5613,7 +5689,7 @@
                         <p id="startModePrompt" class="mb-3 max-w-sm text-center text-xs font-bold leading-relaxed text-slate-200">通常の打突時間を測定します。</p>
                         <div class="reaction-overlay-actions">
                             <button id="reactionSoundTestBtn" type="button" class="reaction-overlay-action">
-                                <i class="fa-solid fa-volume-high mr-1"></i>音を確認
+                                <i class="fa-solid fa-volume-high mr-1"></i>音と光を確認
                             </button>
                             <button id="startBtn" class="reaction-overlay-action primary">
                                 <i class="fa-solid fa-play mr-2"></i> 通常測定を開始
@@ -7679,6 +7755,13 @@ service cloud.firestore {
             enableMic: false,
             micStream: null,
             audioContext: null,
+            reactionAudioBlocked: true,
+            reactionSoundTesting: false,
+            reactionCue: null,
+            reactionSignalGeneration: 0,
+            reactionIdleSinceMs: null,
+            reactionIdleLastFrameMs: null,
+            reactionIdleAnchorY: null,
             analyser: null,
             swingState: 'IDLE', 
             signalTimer: null,
@@ -7964,6 +8047,7 @@ service cloud.firestore {
             signalMode: false,
             reactionDelayMinMs: 1500,
             reactionDelayMaxMs: 3500,
+            reactionStillDurationMs: 700,
             reactionMinimumMs: 80,
             reactionMaximumMs: 1500,
             reactionTimeoutMs: 2500,
@@ -8063,6 +8147,10 @@ service cloud.firestore {
 
         function switchTab(tab) {
             document.body.dataset.activeTab = tab;
+            if (tab !== 'measure' && Params.signalMode) {
+                AppState.reactionAudioBlocked = true;
+                pauseReactionTrial('合図を確認してください');
+            }
             if (tab !== 'video') delete document.body.dataset.videoStep;
             else if (!document.body.dataset.videoStep) document.body.dataset.videoStep = 'load';
             if (tab !== 'measure') setPracticeFocus(false);
@@ -8360,12 +8448,57 @@ service cloud.firestore {
 
         async function ensureReactionAudioReady() {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContextClass) throw new Error('このブラウザは音刺激に対応していません');
-            if (!AppState.audioContext || AppState.audioContext.state === 'closed') {
-                AppState.audioContext = new AudioContextClass({ latencyHint: 'interactive' });
+            try {
+                if (!AudioContextClass) throw new Error('このブラウザは音刺激に対応していません');
+                if (!AppState.audioContext || AppState.audioContext.state === 'closed') {
+                    AppState.audioContext = new AudioContextClass({ latencyHint: 'interactive' });
+                }
+                const ctx = AppState.audioContext;
+                if (AppState.reactionObservedAudioContext !== ctx) {
+                    AppState.reactionObservedAudioContext = ctx;
+                    ctx.addEventListener('statechange', () => {
+                        if (AppState.audioContext !== ctx || ctx.state === 'running') return;
+                        AppState.reactionAudioBlocked = true;
+                        if (Params.signalMode) pauseReactionTrial('合図を確認してください');
+                    });
+                }
+                // Safariのinterruptedも復帰対象。resumeはクリックの直後に呼び出す。
+                if (ctx.state !== 'running') await withTimeout(ctx.resume(), 2000, '音声の有効化');
+                if (ctx.state !== 'running') throw new Error('音声が中断されています');
+                AppState.reactionAudioBlocked = false;
+                return ctx;
+            } catch (error) {
+                AppState.reactionAudioBlocked = true;
+                const audioError = new Error('音を有効にできません。「音と光を確認」を押してください');
+                audioError.code = 'REACTION_AUDIO_UNAVAILABLE';
+                throw audioError;
             }
-            if (AppState.audioContext.state === 'suspended') await AppState.audioContext.resume();
-            return AppState.audioContext;
+        }
+
+        function cancelReactionCue() {
+            const cue = AppState.reactionCue;
+            AppState.reactionCue = null;
+            if (cue) {
+                clearTimeout(cue.onsetTimer);
+                clearTimeout(cue.hideTimer);
+                try { cue.osc.stop(); } catch (_) {}
+                cue.osc.disconnect();
+                cue.gain.disconnect();
+                cue.finish?.(false);
+            }
+            document.getElementById('flashOverlay')?.classList.remove('flash-signal');
+        }
+
+        function pauseReactionTrial(message) {
+            resetReactionTrialClock();
+            resetFullMotionStart();
+            resetSwingStartCandidate();
+            resetSwingEndCandidate();
+            if (AppState.zanshinTimer) clearTimeout(AppState.zanshinTimer);
+            AppState.zanshinTimer = null;
+            AppState.swingState = 'IDLE';
+            updateStateUI('IDLE');
+            updateReactionTrainingUi(message);
         }
 
         function frameClockAtPerformanceTime(performanceTimeMs) {
@@ -8377,8 +8510,11 @@ service cloud.firestore {
             return performanceTimeMs;
         }
 
-        async function playBeep() {
+        async function playBeep(options = {}) {
+            const generation = AppState.reactionSignalGeneration;
             const ctx = await ensureReactionAudioReady();
+            if (generation !== AppState.reactionSignalGeneration || document.hidden) return null;
+            cancelReactionCue();
             const performanceAtScheduleMs = performance.now();
             const audioAtScheduleSec = ctx.currentTime;
             const leadSec = 0.035;
@@ -8389,31 +8525,49 @@ service cloud.firestore {
 
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'sine';
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(880, startAtSec);
             gain.gain.setValueAtTime(0.0001, startAtSec);
-            gain.gain.exponentialRampToValueAtTime(0.18, startAtSec + 0.006);
-            gain.gain.setValueAtTime(0.18, startAtSec + 0.11);
-            gain.gain.exponentialRampToValueAtTime(0.0001, startAtSec + 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.28, startAtSec + 0.008);
+            gain.gain.setValueAtTime(0.28, startAtSec + 0.20);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAtSec + 0.24);
             osc.connect(gain);
             gain.connect(ctx.destination);
+            osc.onended = () => { osc.disconnect(); gain.disconnect(); };
             osc.start(startAtSec);
-            osc.stop(startAtSec + 0.16);
+            osc.stop(startAtSec + 0.25);
 
-            const flashDelayMs = Math.max(0, audiblePerformanceMs - performance.now());
-            setTimeout(() => {
-                const flash = document.getElementById('flashOverlay');
-                if (!flash) return;
-                flash.classList.remove('flash-signal');
-                void flash.offsetWidth;
-                flash.classList.add('flash-signal');
-            }, flashDelayMs);
-
-            return {
+            const signal = {
                 performanceTimeMs: audiblePerformanceMs,
                 frameTimeMs: frameClockAtPerformanceTime(audiblePerformanceMs),
                 outputLatencyMs: outputLatencySec * 1000
             };
+            let finish;
+            signal.completed = new Promise(resolve => { finish = resolve; });
+            const cue = { osc, gain, finish, onsetTimer: null, hideTimer: null };
+            AppState.reactionCue = cue;
+            const flashDelayMs = Math.max(0, audiblePerformanceMs - performance.now());
+            cue.onsetTimer = setTimeout(() => {
+                if (AppState.reactionCue !== cue || generation !== AppState.reactionSignalGeneration) return;
+                if (ctx.state !== 'running' || document.hidden) {
+                    AppState.reactionAudioBlocked = true;
+                    pauseReactionTrial('合図を確認してください');
+                    return;
+                }
+                const flash = document.getElementById('flashOverlay');
+                if (flash) {
+                    flash.querySelector('strong').textContent = options.test ? '合図テスト' : '打突';
+                    flash.classList.add('flash-signal');
+                }
+                options.onCue?.(signal);
+                cue.hideTimer = setTimeout(() => {
+                    if (AppState.reactionCue !== cue) return;
+                    flash?.classList.remove('flash-signal');
+                    AppState.reactionCue = null;
+                    finish(true);
+                }, 650);
+            }, flashDelayMs);
+            return signal;
         }
 
         function reactionMsLabel(value) {
@@ -8422,6 +8576,8 @@ service cloud.firestore {
 
         function updateRealtimeMeasurementModeUi(enabled) {
             const handOnly = isHandSwingMode();
+            const cameraContainer = document.getElementById('videoContainer');
+            if (cameraContainer) cameraContainer.dataset.cameraRunning = String(!!AppState.isCameraRunning);
             const standardButton = document.getElementById('standardMeasurementModeBtn');
             const reactionButton = document.getElementById('reactionMeasurementModeBtn');
             const card = document.getElementById('reactionTrainingCard');
@@ -8466,8 +8622,12 @@ service cloud.firestore {
                         : '<i class="fa-solid fa-play mr-2"></i> 通常測定を開始');
                 startButton.style.backgroundColor = enabled ? '#c026d3' : '#2563eb';
             }
-            const reactionBusy = !!AppState.isCameraRunning || !!startButton?.disabled;
+            const reactionBusy = !!AppState.reactionSoundTesting;
             if (soundTestButton) soundTestButton.disabled = !enabled || reactionBusy;
+            const liveTools = document.getElementById('reactionLiveTools');
+            if (liveTools) liveTools.hidden = !enabled || !AppState.isCameraRunning;
+            const liveTestButton = document.getElementById('reactionLiveSoundTestBtn');
+            if (liveTestButton) liveTestButton.disabled = !enabled || reactionBusy;
         }
 
         function updateReactionTrainingUi(statusText = '') {
@@ -8489,11 +8649,18 @@ service cloud.firestore {
             safeText('reactionTrainingGuide', enabled
                 ? '測定開始 → 構えて静止 → 音で打突'
                 : '音が鳴ったら打突します。');
-            safeText('reactionTrainingState', statusText || (enabled ? '構えて静止' : '通常測定'));
+            const stateText = statusText || (enabled ? '構えて静止' : '通常測定');
+            safeText('reactionTrainingState', stateText);
+            safeText('reactionCueStatus', stateText);
+            const cueStatus = document.getElementById('reactionCueStatus');
+            if (cueStatus) cueStatus.dataset.state = AppState.reactionAudioBlocked ? 'blocked'
+                : (AppState.swingState === 'SIGNAL_GO' ? 'go' : (AppState.swingState === 'SIGNAL_WAIT' ? 'wait' : 'idle'));
             updateRealtimeMeasurementModeUi(enabled);
         }
 
         function resetReactionTrialClock() {
+            AppState.reactionSignalGeneration += 1;
+            cancelReactionCue();
             if (AppState.signalTimer) clearTimeout(AppState.signalTimer);
             AppState.signalTimer = null;
             AppState.signalTime = 0;
@@ -8504,6 +8671,9 @@ service cloud.firestore {
             AppState.currentReactionReason = '';
             AppState.currentReactionMotionSource = 'none';
             AppState.reactionFalseStartCandidateFrames = 0;
+            AppState.reactionIdleSinceMs = null;
+            AppState.reactionIdleLastFrameMs = null;
+            AppState.reactionIdleAnchorY = null;
         }
 
         async function setReactionTrainingMode(enabled, options = {}) {
@@ -8535,39 +8705,32 @@ service cloud.firestore {
         }
 
         async function testReactionSound() {
-            const button = document.getElementById('reactionSoundTestBtn');
-            if (!button || button.disabled || AppState.isCameraRunning) return false;
-            button.disabled = true;
-            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>再生中';
+            if (!Params.signalMode || AppState.reactionSoundTesting) return false;
+            AppState.reactionSoundTesting = true;
+            pauseReactionTrial('合図テスト中');
             try {
-                await playBeep();
-                safeText('reactionTrainingGuide', 'この音が合図です');
-                showToast('この音が測定の合図です', 'green');
-                setTimeout(() => {
-                    if (Params.signalMode && !AppState.isCameraRunning) {
-                        safeText('reactionTrainingGuide', '測定開始 → 構えて静止 → 音で打突');
-                    }
-                }, 1400);
+                const signal = await playBeep({ test: true });
+                if (!signal || !await signal.completed) return false;
+                updateReactionTrainingUi(AppState.isCameraRunning ? '構えて静止' : '測定を開始してください');
+                showToast('合図テスト。聞こえない場合は端末の音量・消音・出力先を確認してください', 'blue');
                 return true;
             } catch (error) {
+                updateReactionTrainingUi('音を有効にしてください');
                 showToast(error.message || '音を再生できませんでした', 'red');
                 return false;
             } finally {
-                button.disabled = false;
-                button.innerHTML = '<i class="fa-solid fa-volume-high mr-1"></i>音を試す';
+                AppState.reactionSoundTesting = false;
+                updateRealtimeMeasurementModeUi(!!Params.signalMode);
             }
         }
 
         async function issueReactionSignal() {
             if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return false;
+            const generation = AppState.reactionSignalGeneration;
             try {
                 AppState.signalTimer = null;
-                const signal = await playBeep();
-                if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return false;
-                const onsetDelayMs = Math.max(0, signal.performanceTimeMs - performance.now());
-                AppState.signalTimer = setTimeout(() => {
-                    AppState.signalTimer = null;
-                    if (!Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return;
+                const signal = await playBeep({ onCue: signal => {
+                    if (generation !== AppState.reactionSignalGeneration || !Params.signalMode || AppState.swingState !== 'SIGNAL_WAIT') return;
                     resetFullMotionStart();
                     resetSwingStartCandidate();
                     AppState.reactionFalseStartCandidateFrames = 0;
@@ -8575,17 +8738,51 @@ service cloud.firestore {
                     AppState.signalPerformanceTimeMs = signal.performanceTimeMs;
                     AppState.signalAudioLatencyMs = signal.outputLatencyMs;
                     AppState.swingState = 'SIGNAL_GO';
-                    updateReactionTrainingUi('音が鳴りました');
+                    updateReactionTrainingUi('打突');
                     updateStateUI('SIGNAL_GO');
-                }, onsetDelayMs);
-                return true;
+                } });
+                return !!signal;
             } catch (error) {
-                AppState.swingState = 'IDLE';
-                updateStateUI('IDLE');
-                updateReactionTrainingUi('音の再生に失敗');
-                showToast('音刺激を再生できませんでした', 'red');
+                if (generation !== AppState.reactionSignalGeneration) return false;
+                pauseReactionTrial('合図を確認してください');
+                showToast('音を再開するため「合図を確認」を押してください', 'yellow');
                 return false;
             }
+        }
+
+        function updateReactionIdle(frameTimeMs, wristY, wristVelocityY) {
+            if (AppState.reactionSoundTesting) return;
+            if (AppState.reactionAudioBlocked || AppState.audioContext?.state !== 'running') {
+                AppState.reactionIdleSinceMs = null;
+                updateReactionTrainingUi('合図を確認してください');
+                return;
+            }
+            const lastFrame = AppState.reactionIdleLastFrameMs;
+            const gap = lastFrame === null ? 0 : frameTimeMs - lastFrame;
+            AppState.reactionIdleLastFrameMs = frameTimeMs;
+            const poseReady = AppState.currentWristVisibility >= 0.55
+                && AppState.currentViewQuality >= Params.minViewQuality;
+            const still = Math.abs(wristVelocityY) <= 0.008
+                && (AppState.reactionIdleAnchorY === null || Math.abs(wristY - AppState.reactionIdleAnchorY) <= 0.025);
+            if (!poseReady || !still || gap < 0 || gap > 250) {
+                AppState.reactionIdleSinceMs = null;
+                AppState.reactionIdleAnchorY = wristY;
+                updateReactionTrainingUi(poseReady ? '構えて静止' : '右肩・肘・手首を映してください');
+                return;
+            }
+            if (AppState.reactionIdleSinceMs === null) {
+                AppState.reactionIdleSinceMs = frameTimeMs;
+                AppState.reactionIdleAnchorY = wristY;
+                updateReactionTrainingUi('構えて静止');
+            }
+            if (frameTimeMs - AppState.reactionIdleSinceMs < Params.reactionStillDurationMs) return;
+            AppState.swingState = 'SIGNAL_WAIT';
+            AppState.reactionFalseStartCandidateFrames = 0;
+            updateStateUI('SIGNAL_WAIT');
+            const minDelay = Math.max(500, Number(Params.reactionDelayMinMs || 1500));
+            const maxDelay = Math.max(minDelay, Number(Params.reactionDelayMaxMs || 3500));
+            updateReactionTrainingUi('合図を待つ');
+            AppState.signalTimer = setTimeout(issueReactionSignal, minDelay + Math.random() * (maxDelay - minDelay));
         }
 
         function setPracticeFocus(enabled) {
@@ -16089,6 +16286,9 @@ service cloud.firestore {
             }
             
             if (!results.poseLandmarks) {
+                if (Params.signalMode && !AppState.reactionSoundTesting) {
+                    pauseReactionTrial('右肩・肘・手首を映してください');
+                }
                 AppState.currentViewQuality = 0;
                 AppState.currentTapeDetected = false;
                 AppState.currentShinaiDetected = false;
@@ -16285,23 +16485,7 @@ service cloud.firestore {
                 
                 if(Params.signalMode) {
                     if (AppState.swingState === 'IDLE') {
-                        if (Math.abs(vel) < 0.005) {
-                            AppState.idleTimer++;
-                            if (AppState.idleTimer > 30) { 
-                                AppState.swingState = 'SIGNAL_WAIT';
-                                AppState.reactionFalseStartCandidateFrames = 0;
-                                updateStateUI('SIGNAL_WAIT');
-                                const minDelay = Math.max(500, Number(Params.reactionDelayMinMs || 1500));
-                                const maxDelay = Math.max(minDelay, Number(Params.reactionDelayMaxMs || 3500));
-                                const delay = minDelay + Math.random() * (maxDelay - minDelay);
-                                updateReactionTrainingUi('音を待つ');
-                                AppState.signalTimer = setTimeout(() => {
-	                                    issueReactionSignal();
-                                }, delay);
-                            }
-                        } else {
-                            AppState.idleTimer = 0; 
-                        }
+                        updateReactionIdle(now, wristY, vel);
                     } else if (AppState.swingState === 'SIGNAL_WAIT') {
                         const falseStartMotion = AppState.currentWristVisibility >= 0.55
                             && AppState.currentViewQuality >= Params.minViewQuality
@@ -16963,6 +17147,8 @@ service cloud.firestore {
 
         function stopCameraStream() {
             AppState.frameLoopRunning = false;
+            AppState.isCameraRunning = false;
+            if (Params.signalMode) pauseReactionTrial('カメラ待機');
             const readyLamp = document.getElementById('measurementReadyLamp');
             if (readyLamp) {
                 readyLamp.style.background = '#64748b';
@@ -17332,6 +17518,8 @@ service cloud.firestore {
             setTimingStatus('待機', '---', '---');
             updateCameraRuntimeStatus();
             refreshCameraDevices().then(updateCameraRuntimeStatus).catch(() => {});
+            AppState.isCameraRunning = true;
+            updateRealtimeMeasurementModeUi(!!Params.signalMode);
             scheduleVideoFrame();
         }
 
@@ -23831,9 +24019,10 @@ service cloud.firestore {
 
         document.getElementById('startBtn').addEventListener('click', async () => {
             const btn = document.getElementById('startBtn'); btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 起動中...'; btn.disabled = true;
-            if(AppState.enableMic && !AppState.analyser) await initMicrophone();
             try {
+                // カメラやマイクの許可待ちより先に、クリックの権限で音声を有効化する。
                 if (Params.signalMode) await ensureReactionAudioReady();
+                if(AppState.enableMic && !AppState.analyser) await initMicrophone();
                 await startCameraStream();
                 AppState.isCameraRunning = true; 
                 updateRealtimeMeasurementModeUi(!!Params.signalMode);
@@ -23862,8 +24051,9 @@ service cloud.firestore {
                 btn.style.backgroundColor = Params.signalMode ? '#c026d3' : '#2563eb';
                 btn.disabled = false;
                 updateRealtimeMeasurementModeUi(!!Params.signalMode);
-                document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-red-500"></span> カメラエラー`;
-                showToast(cameraErrorText(e), 'red');
+                const audioError = e?.code === 'REACTION_AUDIO_UNAVAILABLE';
+                document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-red-500"></span> ${audioError ? '音声の確認が必要です' : 'カメラエラー'}`;
+                showToast(audioError ? e.message : cameraErrorText(e), 'red');
             }
         });
 
@@ -23916,6 +24106,12 @@ service cloud.firestore {
 
         const reactionSoundTestBtn = document.getElementById('reactionSoundTestBtn');
         if (reactionSoundTestBtn) reactionSoundTestBtn.addEventListener('click', testReactionSound);
+        document.getElementById('reactionLiveSoundTestBtn')?.addEventListener('click', testReactionSound);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden || !Params.signalMode) return;
+            AppState.reactionAudioBlocked = true;
+            pauseReactionTrial('合図を確認してください');
+        });
 
         const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
         if (reactionTrainingToggleBtn) reactionTrainingToggleBtn.addEventListener('click', async () => {
