@@ -7698,11 +7698,14 @@ service cloud.firestore {
 
 <div id="toastContainer" class="fixed bottom-4 right-4 flex flex-col gap-2 z-50"></div>
 
-<script src="./video-editor-runtime.js?v=20260913"></script>
+<script src="./video-editor-runtime.js?v=20261005"></script>
 <script>
-    (function(){
+    (async function(){
         "use strict";
 
+        if (!window.KendoVideoEditorRuntime) {
+            await loadScriptAsset('./video-editor-runtime.js?v=20261005', () => !!window.KendoVideoEditorRuntime, 15000);
+        }
         const VideoEditorRuntime = window.KendoVideoEditorRuntime;
         if (!VideoEditorRuntime) throw new Error('動画編集ランタイムを読み込めません');
         const exactVideoFrameRenderer = new VideoEditorRuntime.ExactFrameRenderer({ maxCache: 12 });
@@ -8359,6 +8362,7 @@ service cloud.firestore {
         }
 
         function updateVideoContextAction(step = document.body.dataset.videoStep || 'load') {
+            if (AppState.videoAnalysisBusy) step = 'analyze';
             const textEl = document.getElementById('videoContextActionText');
             const button = document.getElementById('videoContextNextBtn');
             if (!textEl || !button) return;
@@ -8440,7 +8444,19 @@ service cloud.firestore {
                     : '<i class="fa-solid fa-magnifying-glass-chart mr-1"></i> 解析開始';
             }
             if (progressText && isBusy) progressText.textContent = '0%';
+            if (isBusy) switchVideoStep('analyze');
             updateVideoContextAction(isBusy ? 'analyze' : (document.body.dataset.videoStep || 'load'));
+        }
+
+        function setVideoAnalysisProgress(percent, label) {
+            const value = clamp(Math.round(percent), 0, 100);
+            const progress = document.getElementById('videoAnalysisProgress');
+            if (progress) progress.value = value;
+            safeText('videoAnalysisProgressText', `${value}%`);
+            if (label) safeText('videoAnalysisStatus', label);
+            if (AppState.videoAnalysisBusy) {
+                safeText('videoContextActionText', `${label || '動画を解析しています'} (${value}%)`);
+            }
         }
         // タブ移動はAIやカメラ初期化に依存させない。後段で何か失敗してもUI確認を続けられるよう即時公開する。
         window.switchTab = switchTab;
@@ -22816,10 +22832,8 @@ service cloud.firestore {
                 }, Params.officialSpeedSource).value;
                 fineFrames.push(fine);
             }, (completed, total) => {
-                const percent = clamp(Math.round((completed / Math.max(1, total)) * 100), 0, 100);
-                if (progress) progress.value = percent;
-                if (progressText) progressText.textContent = `${percent}%`;
-                safeText('videoAnalysisStatus', `全コマ竹刀解析 ${completed}/${total}`);
+                const percent = 40 + clamp(Math.round((completed / Math.max(1, total)) * 50), 0, 50);
+                setVideoAnalysisProgress(percent, `全フレーム解析 ${completed}/${total}`);
             });
 
             fineFrames.sort((a, b) => a.rawTimeMs - b.rawTimeMs || a.ptsUs - b.ptsUs);
@@ -23323,9 +23337,7 @@ service cloud.firestore {
                     viewQuality: frameViewQuality
                 });
                 if (frame % 8 === 0) {
-                    progress.value = Math.round((frame / totalFrames) * 100);
-                    if (progressText) progressText.textContent = `${progress.value}%`;
-                    safeText('videoAnalysisStatus', useManualTiming ? `手動範囲解析中 ${frame}/${totalFrames}` : `解析中 ${frame}/${totalFrames}`);
+                    setVideoAnalysisProgress((frame / totalFrames) * 40, `姿勢解析 ${frame}/${totalFrames}`);
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }
@@ -23343,8 +23355,7 @@ service cloud.firestore {
                     }
                 });
             }
-            progress.value = 100;
-            if (progressText) progressText.textContent = '100%';
+            setVideoAnalysisProgress(40, '打突候補を確認中');
             if (AppState.videoAnalysisUrl && AppState.videoAnalysisUrl !== url && AppState.videoAnalysisUrlRevocable) URL.revokeObjectURL(AppState.videoAnalysisUrl);
             AppState.videoAnalysisUrl = url;
             AppState.videoAnalysisUrlRevocable = !!source.revocable;
@@ -23452,8 +23463,7 @@ service cloud.firestore {
                     console.warn('WebCodecs二次解析に失敗したため一次解析結果を使用します', refinementError);
                 }
             }
-            if (progress) progress.value = 100;
-            if (progressText) progressText.textContent = '100%';
+            setVideoAnalysisProgress(95, '結果を準備中');
             const shouldUseDetectedStrike = !manualRange && AppState.videoAnalysis.strikes.length && (
                 AppState.videoStrikeMode === 'multi' ||
                 AppState.videoAnalysis.strikes.length > 1 ||
@@ -23553,6 +23563,7 @@ service cloud.firestore {
             drawVideoCorrectionGraphs(startFrame ?? peakFrame ?? 0);
             await drawVideoAnalysisFrame(startFrame ?? peakFrame ?? 0);
             openVideoEditorWorkspace({ frameIndex: startFrame ?? peakFrame ?? 0, zoom: 1.75, tool: 'select' });
+            setVideoAnalysisProgress(100, '解析完了');
             showToast(AppState.videoCorrectionDraftRestored ? '前回の補正内容を復元しました' : '編集ワークスペースを開きました', AppState.videoCorrectionDraftRestored ? 'green' : 'blue');
         }
 
@@ -24197,6 +24208,7 @@ service cloud.firestore {
             resetVideoManualMarkers();
             video.removeAttribute('crossorigin');
             video.onloadedmetadata = () => {
+                video.onloadedmetadata = null;
                 const fps = clamp(Params.targetFps || 60, 30, 240);
                 const duration = Math.min(video.duration || 0, 12);
                 updateVideoDiagnostics({
@@ -24211,7 +24223,7 @@ service cloud.firestore {
                     actualFpsUnknown: true
                 });
                 updateVideoManualRangeUi();
-                switchVideoStep('mark');
+                if (!AppState.videoAnalysisBusy) switchVideoStep('mark');
                 updateVideoNativeFpsEstimate(tempUrl);
             };
             video.onerror = () => {
@@ -25392,7 +25404,7 @@ service cloud.firestore {
         window.addEventListener('error', event => {
             const message = event?.message || '画面初期化エラー';
             if (String(message).includes('ResizeObserver')) return;
-            reportRuntimeIssue(`起動時エラー: ${message}`, 'yellow');
+            reportRuntimeIssue(`操作中のエラー: ${message}`, 'yellow');
         });
         window.addEventListener('unhandledrejection', event => {
             const reason = event?.reason;
@@ -25527,7 +25539,24 @@ service cloud.firestore {
         registerServiceWorker();
         
         // グラフは分析・研究データを開いた時だけ読み込む。
-    })();
+    })().catch(error => {
+        console.error('Kendo startup failed', error);
+        const panel = document.createElement('section');
+        panel.id = 'kendoStartupFailure';
+        panel.setAttribute('role', 'alert');
+        panel.style.cssText = 'position:fixed;inset:12px 12px auto;z-index:10000;background:#fff;color:#991b1b;border:2px solid #dc2626;border-radius:8px;padding:20px;box-shadow:0 4px 24px #0002';
+        const message = document.createElement('p');
+        message.textContent = 'アプリを起動できませんでした。通信を確認して再読み込みしてください。保存済みの記録は削除されません。';
+        const detail = document.createElement('small');
+        detail.textContent = String(error?.message || error);
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.textContent = '再読み込み';
+        retry.style.cssText = 'display:block;margin-top:12px;min-height:44px;padding:8px 16px;background:#1d4ed8;color:white;border:0;border-radius:6px';
+        retry.addEventListener('click', () => location.reload());
+        panel.append(message, detail, retry);
+        document.body.append(panel);
+    });
 
 </script>
 </body>

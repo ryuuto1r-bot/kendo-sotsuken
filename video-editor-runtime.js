@@ -92,14 +92,18 @@
         const target = Math.max(0, Number(timeSec) || 0);
         const timeoutMs = Math.max(250, Number(options.timeoutMs) || 8000);
         const tolerance = Math.max(0.0001, Number(options.tolerance) || 0.0005);
-        if (video.readyState >= 1 && Math.abs(Number(video.currentTime || 0) - target) <= tolerance) {
+        const frameReady = () => video.readyState >= 2 && !video.seeking
+            && Math.abs(Number(video.currentTime || 0) - target) <= tolerance;
+        if (frameReady()) {
             return new Promise(resolve => global.requestAnimationFrame(() => resolve(true)));
         }
         return new Promise((resolve, reject) => {
             let settled = false;
             const cleanup = () => {
                 global.clearTimeout(timer);
-                video.removeEventListener('seeked', onSeeked);
+                video.removeEventListener('seeked', onReady);
+                video.removeEventListener('loadeddata', onReady);
+                video.removeEventListener('canplay', onReady);
                 video.removeEventListener('error', onError);
             };
             const finish = (error = null) => {
@@ -108,13 +112,17 @@
                 cleanup();
                 error ? reject(error) : resolve(true);
             };
-            const onSeeked = () => finish();
+            const onReady = () => { if (frameReady()) finish(); };
             const onError = () => finish(new Error(video.error?.message || 'video seek error'));
             const timer = global.setTimeout(() => finish(new Error('seek timeout')), timeoutMs);
-            video.addEventListener('seeked', onSeeked, { once: true });
+            video.addEventListener('seeked', onReady);
+            video.addEventListener('loadeddata', onReady);
+            video.addEventListener('canplay', onReady);
             video.addEventListener('error', onError, { once: true });
             try {
-                video.currentTime = target;
+                if (Math.abs(Number(video.currentTime || 0) - target) > tolerance) video.currentTime = target;
+                if (video.error) onError();
+                else onReady();
             } catch (error) {
                 finish(error);
             }
