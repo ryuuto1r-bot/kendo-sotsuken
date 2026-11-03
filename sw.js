@@ -11,6 +11,7 @@ const APP_SHELL = [
   './icon.svg',
   './assets/app-tailwind.css?v=162',
   './video-editor-runtime.js?v=20261005',
+  './video-editor.css?v=20261103',
   './vendor/fontawesome/css/all.min.css',
   './vendor/mp4box/mp4box.all.mjs',
   './vendor/mp4box/rolldown-runtime-w6R9maHv.mjs',

@@ -5533,7 +5533,8 @@
                 padding: 34px 18px;
             }
         }
-        </style>
+    </style>
+    <link rel="stylesheet" href="./video-editor.css?v=20261103">
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui measurement-simple">
 
@@ -6908,292 +6909,144 @@ service cloud.firestore {
                     <button type="button" data-kendo-action="switch-video-step" data-value="report" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded text-sm font-bold">保存する</button>
                 </div>
                 </div>
-                <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen space-y-3" data-fullscreen-mode="edit">
-                    <div class="official-flow-card rounded-xl border p-3 text-xs leading-relaxed">
-                        <div class="font-black mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i>正式測定の補正画面</div>
-                        <p><strong>開始</strong> 振り下ろし / <strong>終了</strong> 減速・停止</p>
-                    </div>
-	                    <div class="video-correction-framebar rounded-xl border border-blue-100 bg-white p-3">
-	                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
-	                            <span class="font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>全フレーム移動</span>
-	                            <span id="videoCorrectionFrameHint" class="font-bold text-slate-500">左右キーでも1コマ移動できます</span>
-	                        </div>
-	                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full">
-	                    </div>
-                    <div class="video-fullscreen-entry-card">
-	                        <div>
-	                            <div class="text-sm font-black text-slate-900"><i class="fa-solid fa-up-right-and-down-left-from-center text-blue-600 mr-1"></i>大画面で補正編集</div>
-	                            <div class="text-[11px] text-slate-500 mt-1">動画を大きく表示し、開始・終了・分割・統合を同じ画面で操作します。</div>
-	                        </div>
-                        <div class="video-fullscreen-mode-tabs" aria-label="全画面編集モード">
-                            <button type="button" data-video-fullscreen-mode="edit" data-kendo-action="fullscreen-mode" data-value="edit" class="active"><i class="fa-solid fa-clapperboard mr-1"></i>映像編集</button>
-                            <button type="button" data-video-fullscreen-mode="detail" data-kendo-action="fullscreen-mode" data-value="detail"><i class="fa-solid fa-ruler-horizontal mr-1"></i>詳細スケール</button>
-                            <button type="button" data-video-fullscreen-mode="strikes" data-kendo-action="fullscreen-mode" data-value="strikes"><i class="fa-solid fa-list-ol mr-1"></i>打突一覧</button>
-                        </div>
-                        <div id="videoFullscreenActiveStrip" class="video-fullscreen-active-strip" aria-live="polite">
-                            <button type="button" class="video-fullscreen-chip-btn" data-kendo-action="adjacent-strike" data-value="-1" title="前の打突へ"><i class="fa-solid fa-chevron-left"></i></button>
-                            <div class="video-fullscreen-active-info">
-                                <span>選択中</span>
-                                <strong id="videoFullscreenActiveStrikeTitle">打突未選択</strong>
-                                <small id="videoFullscreenActiveStrikeMeta">解析後に #1 / #2 へ移動できます</small>
-                                <div class="video-fullscreen-mini-timeline" aria-hidden="true">
-                                    <span id="videoFullscreenMiniRange"></span>
-                                    <i id="videoFullscreenMiniPeak"></i>
+                <div id="videoStep-correct" class="video-step-panel video-analysis-fullscreen video-editor-v2" data-fullscreen-mode="edit">
+                    <div class="ve-shell">
+                        <header class="ve-header">
+                            <button type="button" class="ve-icon" data-kendo-action="switch-video-step" data-value="result" title="結果一覧に戻る" aria-label="結果一覧に戻る"><i class="fa-solid fa-arrow-left"></i></button>
+                            <div id="videoFullscreenActiveStrip" class="ve-strike-switch">
+                                <button type="button" class="ve-icon" data-kendo-action="adjacent-strike" data-value="-1" title="前の打突" aria-label="前の打突"><i class="fa-solid fa-chevron-left"></i></button>
+                                <div class="ve-strike-title"><strong id="videoFullscreenActiveStrikeTitle">打突未選択</strong><small id="videoFullscreenActiveStrikeMeta">---</small></div>
+                                <button type="button" class="ve-icon" data-kendo-action="adjacent-strike" data-value="1" title="次の打突" aria-label="次の打突"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <div class="ve-header-actions">
+                                <button type="button" class="ve-icon" data-kendo-action="undo-edit" title="補正を元に戻す" aria-label="補正を元に戻す"><i class="fa-solid fa-rotate-left"></i></button>
+                                <button type="button" class="ve-icon" data-kendo-action="redo-edit" title="補正をやり直す" aria-label="補正をやり直す"><i class="fa-solid fa-rotate-right"></i></button>
+                                <button type="button" data-kendo-action="open-current-3d" title="現在の姿勢を3Dで確認"><i class="fa-solid fa-person-rays"></i><span>3D</span></button>
+                                <button id="videoCorrectionFullscreenTopBtn" type="button" class="ve-icon" title="全画面にする" aria-label="全画面にする"><i class="fa-solid fa-expand"></i></button>
+                                <button id="videoExitFullscreenBtn" type="button" class="ve-icon" title="全画面を閉じる" aria-label="全画面を閉じる"><i class="fa-solid fa-compress"></i></button>
+                            </div>
+                        </header>
+                        <div class="ve-layout">
+                            <section class="ve-viewer" aria-label="姿勢推定プレビュー">
+                                <div class="ve-overlays">
+                                    <label><input id="videoSkeletonToggle" type="checkbox" checked>骨格</label>
+                                    <label><input id="videoAngleOverlayToggle" type="checkbox" checked>角度</label>
+                                    <label><input id="videoShinaiOverlayToggle" type="checkbox" checked>竹刀・軌跡</label>
+                                    <span id="videoEditorRenderStatus" role="status">---</span>
                                 </div>
-                            </div>
-                            <button type="button" class="video-fullscreen-chip-btn" data-kendo-action="adjacent-strike" data-value="1" title="次の打突へ"><i class="fa-solid fa-chevron-right"></i></button>
-                            <button type="button" class="video-fullscreen-chip-btn start" data-kendo-action="jump-fullscreen-marker" data-value="start">開始</button>
-                            <button type="button" class="video-fullscreen-chip-btn peak" data-kendo-action="jump-fullscreen-marker" data-value="peak">最高速</button>
-                            <button type="button" class="video-fullscreen-chip-btn end" data-kendo-action="jump-fullscreen-marker" data-value="end">終了</button>
-                        </div>
-                        <div class="video-fullscreen-entry-actions">
-                            <button type="button" class="video-fullscreen-model-btn" data-kendo-action="open-current-3d"><i class="fa-solid fa-person-rays mr-1"></i>3D角度</button>
-                            <button id="videoCorrectionFullscreenTopBtn" type="button" class="video-fullscreen-primary-btn"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
-                            <button id="videoExitFullscreenBtn" type="button" class="video-fullscreen-exit-btn"><i class="fa-solid fa-compress mr-1"></i>全画面を閉じる</button>
-                        </div>
-	                    </div>
-	                    <div id="videoCorrectionEditDock" class="video-correction-edit-dock">
-	                        <div class="video-correction-dock-head">
-	                            <div><i class="fa-solid fa-sliders mr-1"></i>補正操作</div>
-	                            <span id="videoCorrectionAutosaveStatus">自動保存待機</span>
-	                        </div>
-	                        <div class="video-correction-dock-metrics">
-	                            <div class="video-correction-dock-card current"><span>現在コマ</span><strong id="videoCorrectionDockCurrentFrame" class="font-mono-num">#---</strong><small id="videoCorrectionDockCurrentTime">--- ms</small></div>
-	                            <div class="video-correction-dock-card"><span>開始</span><strong id="videoCorrectionDockStart" class="font-mono-num">#---</strong></div>
-	                            <div class="video-correction-dock-card peak"><span>最高速</span><strong id="videoCorrectionDockPeak" class="font-mono-num">#---</strong></div>
-	                            <div class="video-correction-dock-card end"><span>終了</span><strong id="videoCorrectionDockEnd" class="font-mono-num">#---</strong></div>
-	                            <div class="video-correction-dock-card duration"><span>補正後</span><strong id="videoCorrectionDockDuration" class="font-mono-num">---</strong><small id="videoCorrectionDockStatus">未確定</small></div>
-	                        </div>
-	                        <div class="video-correction-dock-actions">
-	                            <button id="videoCorrectionDockPlayBtn" type="button" class="dock-btn range" data-kendo-action="toggle-range-play"><i class="fa-solid fa-play"></i><span>範囲再生</span></button>
-		                            <button type="button" class="dock-btn neutral dock-speed-shortcut" data-kendo-action="set-video-rate" data-value="0.25"><i class="fa-solid fa-gauge-low"></i><span>0.25x</span></button>
-	                            <button type="button" class="dock-btn neutral" data-kendo-action="step-frame" data-value="-1"><i class="fa-solid fa-backward-step"></i><span>1コマ戻る</span></button>
-	                            <button type="button" class="dock-btn neutral" data-kendo-action="step-frame" data-value="1"><span>1コマ進む</span><i class="fa-solid fa-forward-step"></i></button>
-	                            <button type="button" class="dock-btn start" data-kendo-action="mark-frame" data-value="start"><i class="fa-solid fa-flag"></i><span>開始にする</span></button>
-	                            <button type="button" class="dock-btn end" data-kendo-action="mark-frame" data-value="end"><i class="fa-solid fa-flag-checkered"></i><span>終了にする</span></button>
-	                            <button type="button" class="dock-btn confirm" data-kendo-action="confirm-timing"><i class="fa-solid fa-circle-check"></i><span>確定</span></button>
-	                            <button type="button" class="dock-btn save" data-kendo-action="switch-video-step" data-value="report"><i class="fa-solid fa-floppy-disk"></i><span>保存へ</span></button>
-	                        </div>
-	                        <div class="video-speed-chip-group light video-correction-speed-strip" aria-label="全画面補正の再生速度">
-	                            <span>再生速度</span>
-	                            <button type="button" data-video-speed-rate="0.1" data-kendo-action="set-video-rate" data-value="0.1">0.1x</button>
-	                            <button type="button" data-video-speed-rate="0.25" data-kendo-action="set-video-rate" data-value="0.25">0.25x</button>
-	                            <button type="button" data-video-speed-rate="0.5" data-kendo-action="set-video-rate" data-value="0.5">0.5x</button>
-	                            <button type="button" data-video-speed-rate="1" data-kendo-action="set-video-rate" data-value="1">1.0x</button>
-	                        </div>
-	                        <div class="video-correction-key-hints">
-	                            <span><kbd>←</kbd><kbd>→</kbd>1コマ</span>
-	                            <span><kbd>Shift</kbd>10コマ</span>
-	                            <span><kbd>I</kbd>開始</span>
-	                            <span><kbd>O</kbd>終了</span>
-	                            <span><kbd>Space</kbd>範囲再生</span>
-	                        </div>
-	                    </div>
-	                    <details id="videoStrikeDetailPanel" class="video-strike-detail-panel text-xs">
-                        <summary><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作の詳細スケール</summary>
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <div>
-                                <div class="font-black text-indigo-900"><i class="fa-solid fa-magnifying-glass-location mr-1"></i>打突動作だけを詳細コマ解析</div>
-                                <div id="videoStrikeDetailRangeLabel" class="text-indigo-700 font-bold mt-1">範囲拡大</div>
-                            </div>
-                            <div id="videoStrikeDetailCurrentLabel" class="font-black font-mono-num text-indigo-900">#---</div>
-                        </div>
-                        <input id="videoStrikeDetailFrameSlider" type="range" min="0" max="0" step="1" value="0" class="video-frame-master-slider w-full accent-indigo-600">
-                        <div id="videoStrikeDetailScale" class="video-editor-timeline video-strike-detail-scale mt-3" aria-label="打突動作の詳細スケール">
-                            <div class="video-editor-timebar">
-                                <span><i class="fa-solid fa-ruler-horizontal mr-1"></i>詳細スケール</span>
-                                <span id="videoStrikeDetailScaleTimeLabel" class="font-mono-num">---</span>
-                            </div>
-                            <div id="videoStrikeDetailScaleTrack" class="video-editor-track" role="slider" tabindex="0" aria-label="打突動作の詳細コマ移動" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
-                                <div id="videoStrikeDetailScaleRange" class="video-editor-range"></div>
-                                <div id="videoStrikeDetailScaleTicks" class="video-editor-ticks"></div>
-                                <button id="videoStrikeDetailScaleStartMarker" type="button" class="video-editor-marker start" data-label="開始" hidden="" title="開始マーカーをドラッグ"></button>
-                                <button id="videoStrikeDetailScalePeakMarker" type="button" class="video-editor-marker peak" data-label="最高速" hidden="" title="最高速フレームへ移動"></button>
-                                <button id="videoStrikeDetailScaleEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden="" title="終了マーカーをドラッグ"></button>
-                                <div id="videoStrikeDetailScalePlayhead" class="video-editor-playhead"></div>
-                            </div>
-                            <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">クリック / ドラッグ</p>
-                        </div>
-                        <div class="video-detail-edit-toolbar mt-3">
-                            <div class="video-detail-edit-group">
-                                <div class="video-detail-edit-title">コマ送り</div>
-                                <div class="video-detail-edit-buttons four">
-                                    <button id="videoDetailPrev5FrameBtn" type="button" class="video-detail-edit-btn">-5</button>
-                                    <button id="videoDetailPrevFrameBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-backward-step mr-1"></i>-1</button>
-                                    <button id="videoDetailNextFrameBtn" type="button" class="video-detail-edit-btn">+1<i class="fa-solid fa-forward-step ml-1"></i></button>
-                                    <button id="videoDetailNext5FrameBtn" type="button" class="video-detail-edit-btn">+5</button>
+                                <div class="ve-preview">
+                                    <video id="videoCorrectionElement" muted playsinline preload="auto"></video>
+                                    <canvas id="videoCorrectionCanvas" aria-label="映像と姿勢推定の重ね合わせ"></canvas>
+                                    <div id="videoCorrectionEmpty" class="ve-empty">動画未選択</div>
+                                    <div id="videoEditorLoading" class="ve-loading" hidden>コマ読込中</div>
                                 </div>
-                            </div>
-                            <div class="video-detail-edit-group">
-                                <div class="video-detail-edit-title">マーカーへ移動</div>
-                                <div class="video-detail-edit-buttons three">
-                                    <button id="videoDetailJumpStartBtn" type="button" class="video-detail-edit-btn start">開始へ</button>
-                                    <button id="videoDetailJumpPeakBtn" type="button" class="video-detail-edit-btn peak">最高速へ</button>
-                                    <button id="videoDetailJumpEndBtn" type="button" class="video-detail-edit-btn end">終了へ</button>
-                                </div>
-                            </div>
-                            <div class="video-detail-edit-group">
-                                <div class="video-detail-edit-title">現在コマを正式マーカーにする</div>
-                                <div class="video-detail-edit-buttons">
-                                    <button id="videoDetailMarkStartBtn" type="button" class="video-detail-edit-btn start">このコマを開始</button>
-                                    <button id="videoDetailMarkEndBtn" type="button" class="video-detail-edit-btn end">このコマを終了</button>
-                                </div>
-                            </div>
-                            <div class="video-detail-edit-group">
-                                <div class="video-detail-edit-title">打突の分割・統合 / 戻す</div>
-                                <div class="video-detail-edit-buttons five">
-                                    <button id="videoDetailSplitStrikeBtn" type="button" class="video-detail-edit-btn peak">分割</button>
-                                    <button id="videoDetailMergePrevStrikeBtn" type="button" class="video-detail-edit-btn">前と統合</button>
-                                    <button id="videoDetailMergeNextStrikeBtn" type="button" class="video-detail-edit-btn">次と統合</button>
-                                    <button id="videoDetailUndoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-left"></i> Undo</button>
-                                    <button id="videoDetailRedoEditBtn" type="button" class="video-detail-edit-btn"><i class="fa-solid fa-rotate-right"></i> Redo</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-center">
-                            <div class="bg-white/80 border border-indigo-100 rounded p-2"><span class="text-indigo-500">区間内時刻</span><div id="videoStrikeDetailOffset" class="font-black font-mono-num text-indigo-900">---</div></div>
-                            <div class="bg-white/80 border border-cyan-100 rounded p-2"><span class="text-cyan-600">現在時刻</span><div id="videoStrikeDetailSpeed" class="font-black font-mono-num text-cyan-800">---</div></div>
-                            <div class="bg-white/80 border border-purple-100 rounded p-2"><span class="text-purple-600">右肘</span><div id="videoStrikeDetailRightElbow" class="font-black font-mono-num text-purple-800">---</div></div>
-                            <div class="bg-white/80 border border-emerald-100 rounded p-2"><span class="text-emerald-600">体幹</span><div id="videoStrikeDetailTorso" class="font-black font-mono-num text-emerald-800">---</div></div>
-                            <div class="bg-white/80 border border-amber-100 rounded p-2"><span class="text-amber-600">刃筋</span><div id="videoStrikeDetailHasuji" class="font-black font-mono-num text-amber-800">---</div></div>
-                        </div>
-                        <p class="mt-2 text-[11px] text-indigo-700 leading-relaxed">選択した打突範囲だけを拡大して確認します。</p>
-                    </details>
-                    <div id="videoFullscreenStrikePanel" class="video-fullscreen-strike-panel">
-                        <div class="video-fullscreen-strike-head">
-                            <div>
-                                <h3><i class="fa-solid fa-list-ol mr-1"></i>打突ごとの編集</h3>
-                                <p>選択した1本へ移動し、その場で分割・統合・補正できます。</p>
-                            </div>
-                            <button type="button" class="video-fullscreen-small-btn" data-kendo-action="fullscreen-mode" data-value="edit"><i class="fa-solid fa-clapperboard mr-1"></i>映像へ戻る</button>
-                        </div>
-                        <div id="videoFullscreenStrikeNav" class="video-quick-strike-nav" data-strike-nav-mode="fullscreen">
-                            <div class="video-quick-strike-head">
-                                <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
-                                <span>未解析</span>
-                            </div>
-                            <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
-                        </div>
-                        <div class="video-fullscreen-strike-actions">
-                            <button type="button" class="video-detail-edit-btn start" data-kendo-action="mark-frame" data-value="start"><i class="fa-solid fa-flag mr-1"></i>現在を開始</button>
-                            <button type="button" class="video-detail-edit-btn end" data-kendo-action="mark-frame" data-value="end"><i class="fa-solid fa-flag-checkered mr-1"></i>現在を終了</button>
-                            <button type="button" class="video-detail-edit-btn peak" data-kendo-action="split-strike"><i class="fa-solid fa-scissors mr-1"></i>ここで分割</button>
-                            <button type="button" class="video-detail-edit-btn" data-kendo-action="merge-strike" data-value="prev"><i class="fa-solid fa-object-group mr-1"></i>前と統合</button>
-                            <button type="button" class="video-detail-edit-btn" data-kendo-action="merge-strike" data-value="next"><i class="fa-solid fa-object-group mr-1"></i>次と統合</button>
-                            <button type="button" class="video-detail-edit-btn" data-kendo-action="undo-edit"><i class="fa-solid fa-rotate-left mr-1"></i>Undo</button>
-                            <button type="button" class="video-detail-edit-btn" data-kendo-action="redo-edit"><i class="fa-solid fa-rotate-right mr-1"></i>Redo</button>
-                            <button type="button" class="video-detail-edit-btn start" data-kendo-action="play-corrected-range"><i class="fa-solid fa-play mr-1"></i>範囲再生</button>
-                            <button type="button" class="video-detail-edit-btn end" data-kendo-action="confirm-timing"><i class="fa-solid fa-circle-check mr-1"></i>確定</button>
-                        </div>
-                        <div class="video-fullscreen-strike-tip">
-                            <i class="fa-solid fa-circle-info mr-1"></i>打突が分かれすぎる場合は「前/次と統合」、1本が長すぎる場合は打突中のコマで「ここで分割」を使います。
-                        </div>
-                    </div>
-	                    <div class="video-correction-workspace grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_360px] gap-3 items-start">
-	                        <div class="video-correction-preview border border-slate-800">
-	                            <video id="videoCorrectionElement" muted="" playsinline="" controls=""></video>
-	                            <canvas id="videoCorrectionCanvas" class="w-full aspect-video object-contain"></canvas>
-	                            <div id="videoCorrectionEmpty" class="video-correction-empty">動画プレビュー</div>
-	                            <div class="video-correction-hud">
-	                                <span><b id="videoCorrectionHudFrame">#---</b><small id="videoCorrectionHudTime">--- ms</small></span>
-	                                <span id="videoCorrectionHudRange">開始/終了未設定</span>
-	                                <span id="videoCorrectionHudAngle">右肘 --- / 体幹 --- / 刃筋 ---</span>
-	                            </div>
-	                        </div>
-                        <div class="video-correction-controls control-color-soft bg-white border border-slate-200 rounded-xl p-3 space-y-3 xl:sticky xl:top-20">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <h3 class="text-sm font-black text-slate-700"><i class="fa-solid fa-sliders text-indigo-500 mr-1"></i>補正操作</h3>
-                                <span id="videoCorrectionModelStatus" class="text-[11px] font-bold text-indigo-700">3D連動待機</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <button id="videoSlowPlayBtn" type="button" class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i> スロー再生</button>
-                                <button id="videoPlayCorrectedRangeBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-play mr-1"></i>開始〜終了だけ再生</button>
-                                <select id="videoSlowRateSelect" class="col-span-2 border border-slate-200 rounded px-2 py-2 bg-white font-bold">
-                                    <option value="0.1">0.1x</option>
-                                    <option value="0.125">0.125x</option>
-                                    <option value="0.25">0.25x</option>
-                                    <option value="0.5" selected="">0.5x</option>
-                                    <option value="1">1x</option>
-                                </select>
-                                <select id="videoPlaybackScopeSelect" class="col-span-2 border border-slate-200 rounded px-2 py-2 bg-white font-bold">
-                                    <option value="full">動画全体を再生</option>
-                                    <option value="strike" selected="">開始〜終了だけ再生</option>
-                                </select>
-                                <div id="videoCorrectionStrikeNav" class="video-quick-strike-nav col-span-2" data-strike-nav-mode="correct">
-                                    <div class="video-quick-strike-head">
-                                        <span><i class="fa-solid fa-list-ol mr-1"></i>打突移動</span>
-                                        <span>未解析</span>
+                                <div class="ve-transport">
+                                    <div class="ve-play-group">
+                                        <button type="button" class="ve-icon" data-kendo-action="step-frame" data-value="-1" title="1コマ戻る" aria-label="1コマ戻る"><i class="fa-solid fa-backward-step"></i></button>
+                                        <button id="videoCorrectionDockPlayBtn" type="button" class="ve-icon ve-play" data-kendo-action="toggle-editor-play" title="再生" aria-label="再生"><i class="fa-solid fa-play"></i></button>
+                                        <button type="button" class="ve-icon" data-kendo-action="step-frame" data-value="1" title="1コマ進む" aria-label="1コマ進む"><i class="fa-solid fa-forward-step"></i></button>
                                     </div>
-                                    <div class="text-[11px] font-bold text-slate-500">解析後に #1 / #2 / #3 へ移動できます</div>
+                                    <div class="ve-position"><strong id="videoCorrectionDockCurrentFrame">#---</strong><small id="videoCorrectionDockCurrentTime">--- ms</small></div>
+                                    <label class="ve-rate"><select id="videoSlowRateSelect" aria-label="動画の再生速度">
+                                        <option value="0.1">0.1x</option><option value="0.125">0.125x</option><option value="0.25">0.25x</option><option value="0.5" selected>0.5x</option><option value="1">1x</option>
+                                    </select></label>
+                                    <label class="ve-loop" title="繰り返し再生"><input id="videoEditorLoopToggle" type="checkbox"><i class="fa-solid fa-repeat"></i><span>ループ</span></label>
                                 </div>
-                                <button id="videoPrevFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-backward-step"></i> 戻る</button>
-                                <button id="videoNextFrameBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded font-bold">進む <i class="fa-solid fa-forward-step"></i></button>
-                                <button id="videoJumpStartBtn" type="button" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded font-bold">開始へ</button>
-                                <button id="videoJumpPeakBtn" type="button" class="bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-2 rounded font-bold">最高速へ</button>
-                                <button id="videoJumpEndBtn" type="button" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded font-bold">終了へ</button>
-                                <button id="videoOpen3DFrameBtn" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded font-bold"><i class="fa-solid fa-person-rays mr-1"></i>3D</button>
-                                <button id="markStartFrameBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold">現在を開始</button>
-                                <button id="markEndFrameBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-bold">現在を終了</button>
-                                <button id="confirmVideoTimingBtn" type="button" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-circle-check mr-1"></i>この開始/終了で確定</button>
-                                <button id="videoCorrectionFullscreenBtn" type="button" class="control-fullscreen col-span-2 bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded font-bold"><i class="fa-solid fa-expand mr-1"></i>大画面で編集する</button>
-                            </div>
-                            <div class="grid grid-cols-1 gap-2 text-xs">
-                                <label class="flex items-center gap-2"><input id="videoSkeletonToggle" type="checkbox" checked=""> 骨格表示</label>
-                                <label class="flex items-center gap-2"><input id="videoAngleOverlayToggle" type="checkbox" checked=""> 角度表示</label>
-                                <label class="flex items-center gap-2"><input id="videoHasujiOverlayToggle" type="checkbox" checked=""> 推定刃筋を表示</label>
-                                <select id="videoAngleOverlaySelect" class="border border-slate-200 rounded px-2 py-2 bg-white">
-                                    <option value="rightElbow" selected="">右肘角のみ</option>
-                                    <option value="torso">体幹軸のみ</option>
-                                    <option value="hasuji">刃筋のみ</option>
-                                    <option value="all">角度すべて（薄く）</option>
-                                </select>
-                                <span id="videoOfficialMeasurementBadge" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded font-bold">補正後の値を正式記録へ保存</span>
-                            </div>
-                            <details id="videoCorrectionSupportDetails" class="video-correction-support-details text-xs">
-                                <summary><i class="fa-solid fa-chart-line mr-1"></i>補助グラフ・確認表示</summary>
-                                <div class="space-y-2 mt-3">
-                                <div class="rounded-lg border border-cyan-100 bg-cyan-50/50 p-2">
-                                    <div class="text-[11px] font-black text-cyan-700 mb-1">ピーク検出（参考）</div>
-                                    <canvas id="videoCorrectionSpeedGraphCanvas" class="w-full h-24"></canvas>
+                                <div class="ve-timeline">
+                                    <div class="ve-timeline-head">
+                                        <select id="videoPlaybackScopeSelect" aria-label="再生範囲"><option value="strike" selected>打突区間</option><option value="full">動画全体</option></select>
+                                        <label><input id="videoEditorZoomToggle" type="checkbox" checked>区間を拡大</label>
+                                        <span id="videoCorrectionFrameHint"></span>
+                                    </div>
+                                    <div class="ve-timeline-track">
+                                        <div id="videoEditorSelectedRange" class="ve-selected-range"></div>
+                                        <input id="videoFrameSlider" type="range" min="0" max="0" step="1" value="0" aria-label="現在のフレーム">
+                                        <i id="videoEditorPeakTick" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="ve-jump-markers">
+                                        <button type="button" class="ve-start" data-kendo-action="jump-fullscreen-marker" data-value="start"><i class="fa-solid fa-flag"></i>開始</button>
+                                        <button type="button" class="ve-peak" data-kendo-action="jump-fullscreen-marker" data-value="peak"><i class="fa-solid fa-bolt"></i>最高速</button>
+                                        <button type="button" class="ve-end" data-kendo-action="jump-fullscreen-marker" data-value="end"><i class="fa-solid fa-flag-checkered"></i>終了</button>
+                                    </div>
                                 </div>
-                                <div class="rounded-lg border border-purple-100 bg-purple-50/50 p-2">
-                                    <div class="text-[11px] font-black text-purple-700 mb-1">右肘角</div>
-                                    <canvas id="videoCorrectionElbowGraphCanvas" class="w-full h-24"></canvas>
+                                <div class="ve-live-metrics">
+                                    <span>右肘 <b id="videoEditorRightAngle">---</b></span>
+                                    <span>体幹 <b id="videoEditorTorsoAngle">---</b></span>
+                                    <span>推定刃筋 <b id="videoEditorHasujiAngle">---</b></span>
+                                    <small id="videoEditorPoseStatus"></small>
                                 </div>
-                                <div class="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2">
-                                    <div class="text-[11px] font-black text-emerald-700 mb-1">体幹軸 / 刃筋</div>
-                                    <canvas id="videoCorrectionAxisGraphCanvas" class="w-full h-24"></canvas>
+                            </section>
+                            <aside id="videoCorrectionEditDock" class="ve-inspector" aria-label="打突時間の補正">
+                                <h3>打突時間</h3>
+                                <div class="ve-duration"><strong id="videoCorrectionDockDuration">---</strong><span id="videoCorrectionDockStatus">未確定</span></div>
+                                <div class="ve-boundaries">
+                                    <div class="ve-boundary ve-start">
+                                        <button type="button" class="ve-marker" data-kendo-action="jump-fullscreen-marker" data-value="start" title="開始フレームへ"><span>開始</span><strong id="videoCorrectionDockStart">#---</strong></button>
+                                        <button type="button" data-kendo-action="mark-frame" data-value="start"><i class="fa-solid fa-flag"></i>現在を開始に</button>
+                                    </div>
+                                    <div class="ve-boundary ve-peak">
+                                        <button type="button" class="ve-marker" data-kendo-action="jump-fullscreen-marker" data-value="peak" title="最高速フレームへ"><span>最高速</span><strong id="videoCorrectionDockPeak">#---</strong></button>
+                                        <small>区間内の速度ピーク</small>
+                                    </div>
+                                    <div class="ve-boundary ve-end">
+                                        <button type="button" class="ve-marker" data-kendo-action="jump-fullscreen-marker" data-value="end" title="終了フレームへ"><span>終了</span><strong id="videoCorrectionDockEnd">#---</strong></button>
+                                        <button type="button" data-kendo-action="mark-frame" data-value="end"><i class="fa-solid fa-flag-checkered"></i>現在を終了に</button>
+                                    </div>
                                 </div>
-                                <span class="block bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[11px] text-slate-600">青=開始 / 黄=最高速 / 赤=終了。グラフクリックでもフレーム移動できます。</span>
+                                <div class="ve-save-actions">
+                                    <button type="button" class="ve-confirm" data-kendo-action="confirm-timing"><i class="fa-solid fa-check"></i>この区間で確定</button>
+                                    <button type="button" data-kendo-action="switch-video-step" data-value="report"><i class="fa-solid fa-floppy-disk"></i>保存へ</button>
                                 </div>
-                            </details>
+                                <div id="videoCorrectionAutosaveStatus" class="ve-autosave" role="status">自動保存待機</div>
+                                <details class="ve-settings">
+                                    <summary>表示設定</summary>
+                                    <label>表示する角度<select id="videoAngleOverlaySelect"><option value="rightElbow" selected>右肘角度</option><option value="torso">体幹軸</option><option value="hasuji">推定刃筋</option><option value="all">すべて</option></select></label>
+                                    <label><input id="videoHasujiOverlayToggle" type="checkbox" checked>推定刃筋を表示</label>
+                                </details>
+                            </aside>
                         </div>
-                    </div>
-                    <details id="videoCorrectionAdvancedPanel" class="video-correction-advanced-panel">
-                    <summary><span><i class="fa-solid fa-sliders mr-1"></i>詳細オプション</span><small>マーカー位置と全数値</small></summary>
-                    <div class="video-correction-advanced-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 border rounded-lg p-3">
-                        <label class="text-xs font-bold text-blue-700">開始フレーム補正
-                            <input id="videoStartFrameSlider" type="range" min="0" max="0" step="1" value="0" class="w-full accent-blue-600 mt-1">
-                        </label>
-                        <label class="text-xs font-bold text-red-700">終了フレーム補正
-                            <input id="videoEndFrameSlider" type="range" min="0" max="0" step="1" value="0" class="w-full accent-red-600 mt-1">
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">現在フレーム</span><div id="videoCurrentFrameLabel" class="font-bold font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">開始フレーム</span><div id="videoStartFrameLabel" class="font-bold font-mono-num">---</div></div>
-                        <div class="bg-amber-50 border border-amber-100 rounded p-2"><span class="text-amber-700">最高速フレーム</span><div id="videoPeakFrameLabel" class="font-bold font-mono-num text-amber-800">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">終了フレーム</span><div id="videoEndFrameLabel" class="font-bold font-mono-num">---</div></div>
-                        <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">現在時刻</span><div id="videoCurrentSpeedLabel" class="font-bold font-mono-num">---</div></div>
-                        <div class="bg-blue-50 border border-blue-100 rounded p-2"><span class="text-blue-700">開始から</span><div id="videoCurrentElapsedLabel" class="font-bold font-mono-num text-blue-800">---</div></div>
-                        <div class="bg-emerald-50 border border-emerald-100 rounded p-2"><span class="text-emerald-700">補正後打突時間</span><div id="videoCorrectedDurationLabel" class="font-bold font-mono-num text-emerald-800">---</div></div>
-                    </div>
-                    </div>
-                    </details>
-                    <div class="flex flex-wrap justify-between gap-2">
-                        <button type="button" data-kendo-action="switch-video-step" data-value="result" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2 rounded text-sm font-bold">結果に戻る</button>
-                        <button type="button" data-kendo-action="switch-video-step" data-value="report" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">保存へ</button>
+                        <details id="videoCorrectionSupportDetails" class="ve-details">
+                            <summary><i class="fa-solid fa-chart-line"></i>同期グラフ</summary>
+                            <div class="ve-graphs">
+                                <div><h4>速度（ピーク検出）</h4><canvas id="videoCorrectionSpeedGraphCanvas"></canvas></div>
+                                <div><h4>右肘角度</h4><canvas id="videoCorrectionElbowGraphCanvas"></canvas></div>
+                                <div><h4>体幹・推定刃筋</h4><canvas id="videoCorrectionAxisGraphCanvas"></canvas></div>
+                            </div>
+                        </details>
+                        <details id="videoStrikeDetailPanel" class="ve-details">
+                            <summary><i class="fa-solid fa-ruler-horizontal"></i>詳細タイムライン</summary>
+                            <div class="ve-detail-body">
+                                <div class="ve-detail-caption"><span id="videoStrikeDetailRangeLabel"></span><span id="videoStrikeDetailScaleTimeLabel"></span></div>
+                                <div id="videoStrikeDetailScale" class="video-editor-timeline">
+                                    <div id="videoStrikeDetailScaleTrack" class="video-editor-track" role="slider" tabindex="0" aria-label="打突動作の詳細コマ移動" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                                        <div id="videoStrikeDetailScaleRange" class="video-editor-range"></div>
+                                        <div id="videoStrikeDetailScaleTicks" class="video-editor-ticks"></div>
+                                        <button id="videoStrikeDetailScaleStartMarker" type="button" class="video-editor-marker start" data-label="開始" hidden title="開始マーカーをドラッグ"></button>
+                                        <button id="videoStrikeDetailScalePeakMarker" type="button" class="video-editor-marker peak" data-label="最高速" hidden title="最高速フレームへ"></button>
+                                        <button id="videoStrikeDetailScaleEndMarker" type="button" class="video-editor-marker end" data-label="終了" hidden title="終了マーカーをドラッグ"></button>
+                                        <div id="videoStrikeDetailScalePlayhead" class="video-editor-playhead"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                        <details id="videoFullscreenStrikePanel" class="ve-details">
+                            <summary><i class="fa-solid fa-list-ol"></i>打突一覧・分割と統合</summary>
+                            <div class="ve-detail-body">
+                                <div id="videoFullscreenStrikeNav" class="video-quick-strike-nav" data-strike-nav-mode="fullscreen"></div>
+                                <div class="ve-extra-actions">
+                                    <button type="button" data-kendo-action="split-strike"><i class="fa-solid fa-scissors"></i>現在位置で分割</button>
+                                    <button type="button" data-kendo-action="merge-strike" data-value="prev"><i class="fa-solid fa-object-group"></i>前と統合</button>
+                                    <button type="button" data-kendo-action="merge-strike" data-value="next"><i class="fa-solid fa-object-group"></i>次と統合</button>
+                                </div>
+                            </div>
+                        </details>
+                        <details id="videoCorrectionAdvancedPanel" class="ve-details">
+                            <summary><i class="fa-solid fa-sliders"></i>開始・終了の詳細調整</summary>
+                            <div class="ve-detail-body ve-boundary-sliders">
+                                <label>開始フレーム<input id="videoStartFrameSlider" type="range" min="0" max="0" step="1" value="0"></label>
+                                <label>終了フレーム<input id="videoEndFrameSlider" type="range" min="0" max="0" step="1" value="0"></label>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 <div id="videoStep-report" class="video-step-panel space-y-3">
@@ -8203,6 +8056,8 @@ service cloud.firestore {
 
         function switchVideoStep(step) {
             const activeStep = ['load', 'mark', 'analyze', 'result', 'correct', 'report'].includes(step) ? step : 'load';
+            if (document.body.dataset.videoStep !== activeStep) stopVideoSlowPlayback();
+            if (activeStep !== 'correct' && document.getElementById('videoStep-correct')?.matches(':fullscreen, .fullscreen-fallback')) exitVideoFullscreen();
             document.body.dataset.activeTab = 'video';
             document.body.dataset.videoStep = activeStep;
             document.querySelectorAll('.video-step-panel').forEach(panel => panel.classList.remove('active'));
@@ -8238,6 +8093,7 @@ service cloud.firestore {
                 updateVideoAnalysisLabels();
                 drawVideoCorrectionGraphs(frameIndex);
                 if (AppState.videoAnalysis?.frames?.length) setVideoAnalysisFrame(frameIndex);
+                if (panel && !isVideoFullscreenActive()) requestAnimationFrame(() => panel.scrollIntoView({ block: 'start' }));
             }
         }
 
@@ -10366,7 +10222,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v188-timing4-20261103',
+                appVersion: 'v189-editor2-20261103',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -18294,47 +18150,72 @@ service cloud.firestore {
                 : upper;
         }
 
-        function syncVideoPreviewTimeToAnalysis(video) {
-            if (!video || !AppState.videoAnalysis?.frames?.length) return;
-            // ここから追加: 補正操作で発生したseekedを、手動シークとして逆流させない。
-            if (!video._kendoPreviewUserControlled || video.seeking || AppState.videoSlowPlaying) return;
-            const frameIndex = videoFrameIndexFromSourceSecond(video.currentTime);
+        function syncVideoPreviewTimeToAnalysis(video, mediaTime = video?.currentTime) {
+            if (!video?._kendoPreviewUserControlled || video.seeking || !AppState.videoAnalysis?.frames?.length) return;
+            const frameIndex = videoFrameIndexFromSourceSecond(mediaTime);
             if (!Number.isFinite(frameIndex)) return;
-            const current = Number(document.getElementById('videoFrameSlider')?.value || 0);
-            if (Math.abs(current - frameIndex) < 1) return;
-            setVideoAnalysisFrame(frameIndex, { nativeVideo: video });
+            video._kendoPresentedTime = mediaTime;
+            drawVideoAnalysisFrame(frameIndex, { nativeVideo: video });
+        }
+
+        function cancelNativePreviewFrameSync(video) {
+            if (!video) return;
+            video._kendoFrameSyncActive = false;
+            video._kendoFrameSyncToken = (video._kendoFrameSyncToken || 0) + 1;
+            if (video._kendoFrameCallback != null) {
+                if (video.cancelVideoFrameCallback) video.cancelVideoFrameCallback(video._kendoFrameCallback);
+                else clearTimeout(video._kendoFrameCallback);
+            }
+            video._kendoFrameCallback = null;
         }
 
         function beginNativeVideoPreviewControl(video) {
             if (!video) return;
-            if (AppState.videoSlowTimer) clearTimeout(AppState.videoSlowTimer);
-            AppState.videoSlowTimer = null;
-            AppState.videoSlowPlaying = false;
-            setVideoSlowButtonsPlaying(false);
+            AppState.videoDrawToken++;
             ['videoResultElement', 'videoCorrectionElement'].forEach(id => {
                 const preview = document.getElementById(id);
                 if (!preview) return;
                 preview._kendoPreviewUserControlled = preview === video;
-                if (preview !== video && !preview.paused) preview.pause();
+                if (preview !== video) {
+                    cancelNativePreviewFrameSync(preview);
+                    if (!preview.paused) preview.pause();
+                }
             });
+            AppState.videoSlowPlaying = !video.paused;
+            setVideoSlowButtonsPlaying(AppState.videoSlowPlaying);
         }
 
         function startNativePreviewFrameSync(video) {
             if (!video || video._kendoFrameSyncActive) return;
             video._kendoFrameSyncActive = true;
-            const tick = () => {
-                if (!video || video.paused || video.ended || !video._kendoPreviewUserControlled) {
-                    if (video) video._kendoFrameSyncActive = false;
+            const token = video._kendoFrameSyncToken = (video._kendoFrameSyncToken || 0) + 1;
+            const schedule = () => {
+                video._kendoFrameCallback = video.requestVideoFrameCallback
+                    ? video.requestVideoFrameCallback(tick)
+                    : setTimeout(() => tick(performance.now(), { mediaTime: video.currentTime }), 33);
+            };
+            const tick = (_now, metadata) => {
+                if (token !== video._kendoFrameSyncToken || video.paused || video.ended || !video._kendoPreviewUserControlled) {
+                    if (token === video._kendoFrameSyncToken) video._kendoFrameSyncActive = false;
                     return;
                 }
-                syncVideoPreviewTimeToAnalysis(video);
-                if (video.requestVideoFrameCallback) {
-                    video.requestVideoFrameCallback(tick);
+                const time = metadata.mediaTime;
+                const range = video._kendoPlaybackRange;
+                const data = AppState.videoAnalysis;
+                if (!video.seeking && range && data?.frames?.length && time >= videoSourceSecondForFrame(data, data.frames[range.end]) - 0.000001) {
+                    if (document.getElementById('videoEditorLoopToggle')?.checked) {
+                        video.currentTime = videoSourceSecondForFrame(data, data.frames[range.start]);
+                    } else {
+                        stopVideoSlowPlayback();
+                        setVideoAnalysisFrame(range.end);
+                        return;
+                    }
                 } else {
-                    setTimeout(tick, 50);
+                    syncVideoPreviewTimeToAnalysis(video, time);
                 }
+                schedule();
             };
-            tick();
+            schedule();
         }
 
         function jumpVideoTimelineStrike(index, options = {}) {
@@ -18671,7 +18552,7 @@ service cloud.firestore {
             recomputeVideoAnalysisResult();
             syncVideoAnalysisSliders(Number(data.startFrame || 0));
             setVideoAnalysisFrame(Number(data.startFrame || 0));
-            showToast('補正後の開始/終了を正式候補として確定しました', 'green');
+            if (!document.getElementById('videoStep-correct')?.classList.contains('active')) showToast('補正後の開始/終了を正式候補として確定しました', 'green');
         }
 
         function playCorrectedStrikeRange() {
@@ -18749,10 +18630,13 @@ service cloud.firestore {
 
         function drawAngleLabel(ctx, text, x, y, color) {
             ctx.save();
-            ctx.font = 'bold 13px sans-serif';
+            const size = Math.max(14, Math.round(ctx.canvas.width * 0.035));
+            ctx.font = `bold ${size}px sans-serif`;
             const metrics = ctx.measureText(text);
+            x = clamp(x, 8, Math.max(8, ctx.canvas.width - metrics.width - 8));
+            y = clamp(y, size + 8, ctx.canvas.height - 8);
             ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
-            ctx.fillRect(x - 6, y - 17, metrics.width + 12, 22);
+            ctx.fillRect(x - 6, y - size, metrics.width + 12, size * 1.35);
             ctx.fillStyle = color;
             ctx.fillText(text, x, y);
             ctx.restore();
@@ -19135,7 +19019,8 @@ service cloud.firestore {
             const data = AppState.videoAnalysis;
             const maxFrame = data?.frames?.length ? data.frames.length - 1 : 0;
             const correctionActive = document.getElementById('videoStep-correct')?.classList.contains('active');
-            const range = correctionActive ? currentVideoStrikeDetailRange(data) : null;
+            const zoomed = document.getElementById('videoEditorZoomToggle')?.checked !== false;
+            const range = correctionActive && zoomed ? currentVideoStrikeDetailRange(data) : null;
             return range ? { min: range.start, max: range.end } : { min: 0, max: maxFrame };
         }
 
@@ -19163,7 +19048,7 @@ service cloud.firestore {
                 updateVideoStrikeDetailScale(null, null);
                 return;
             }
-            const current = clamp(Math.round(Number(currentIndex ?? document.getElementById('videoFrameSlider')?.value ?? range.start)), range.start, range.end);
+            const current = clamp(Math.round(Number(currentIndex ?? document.getElementById('videoFrameSlider')?.value ?? range.start)), 0, data.frames.length - 1);
             const frame = data.frames[current];
             if (slider) {
                 slider.disabled = false;
@@ -19273,6 +19158,7 @@ service cloud.firestore {
         function setVideoAnalysisFrame(index, options = {}) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return Promise.resolve(false);
+            if (!options.nativeVideo && AppState.videoSlowPlaying) stopVideoSlowPlayback();
             const bounds = activeVideoFrameBounds();
             const frameIndex = clamp(Math.round(index || 0), bounds.min, bounds.max);
             syncVideoAnalysisSliders(frameIndex);
@@ -19283,8 +19169,6 @@ service cloud.firestore {
                 const seekSec = Math.min(sourceStartSec + videoRawMsFromFrame(frame) / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
                 // 合成キャンバスの完成を待たず、背面の動画を先に該当コマへ移動する。
                 syncCorrectionVideoSource(seekSec, options.nativeVideo);
-                const correctionCanvas = document.getElementById('videoCorrectionCanvas');
-                if (correctionCanvas) correctionCanvas.style.opacity = '0';
             }
             return drawVideoAnalysisFrame(frameIndex, options);
         }
@@ -19300,6 +19184,8 @@ service cloud.firestore {
             ctx.clearRect(0, 0, target.width, target.height);
             ctx.drawImage(sourceCanvas, 0, 0);
             target.style.opacity = '1';
+            target.dataset.frameIndex = String(frameIndex);
+            target.dataset.renderMode = sourceCanvas.dataset.renderMode || '';
             const empty = document.getElementById('videoCorrectionEmpty');
             if (empty) empty.classList.add('hidden');
             safeText('videoCorrectionModelStatus', AppState.videoAnalysis?.frames?.length ? `3D連動 #${Math.round(frameIndex || 0)}` : '3D連動待機');
@@ -19309,6 +19195,7 @@ service cloud.firestore {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             stopVideoSlowPlayback();
+            if (isVideoFullscreenActive()) exitVideoFullscreen();
             const frameIndex = Number(document.getElementById('videoFrameSlider')?.value || data.startFrame || 0);
             await setModelVideoFrame(frameIndex);
             switchTab('model');
@@ -19340,14 +19227,17 @@ service cloud.firestore {
             const dockBtn = document.getElementById('videoCorrectionDockPlayBtn');
             if (resultBtn) resultBtn.innerHTML = html;
             if (correctionBtn) correctionBtn.innerHTML = correctionHtml;
-            if (dockBtn) dockBtn.innerHTML = isPlaying
-                ? '<i class="fa-solid fa-pause"></i><span>停止</span>'
-                : '<i class="fa-solid fa-play"></i><span>範囲再生</span>';
+            if (dockBtn) {
+                dockBtn.innerHTML = `<i class="fa-solid fa-${isPlaying ? 'pause' : 'play'}"></i>`;
+                dockBtn.title = isPlaying ? '一時停止' : '再生';
+                dockBtn.setAttribute('aria-label', dockBtn.title);
+                dockBtn.setAttribute('aria-pressed', String(isPlaying));
+            }
             syncVideoEditorCommandButtons();
         }
 
         function toggleVideoCorrectedRangePlayback() {
-            if (AppState.videoSlowPlaying) stopVideoSlowPlayback();
+            if (AppState.videoSlowPlaying) stopVideoSlowPlayback({ redraw: true });
             else playCorrectedStrikeRange();
         }
 
@@ -19386,7 +19276,7 @@ service cloud.firestore {
             });
             updateVideoSpeedChips(Number(value));
             applyVideoPreviewPlaybackRate(Number(value));
-            if (restart && AppState.videoSlowPlaying) startVideoSlowPlayback();
+            // Native playback applies the new rate without seeking back to the interval start.
         }
 
         function syncVideoSlowRate(sourceId) {
@@ -19414,6 +19304,8 @@ service cloud.firestore {
         function syncVideoPlaybackScope(sourceId) {
             const source = document.getElementById(sourceId);
             if (!source) return;
+            const zoom = document.getElementById('videoEditorZoomToggle');
+            if (zoom && source.value === 'full') zoom.checked = false;
             ['videoPlaybackScopeSelect', 'videoResultPlaybackScopeSelect'].forEach(id => {
                 const target = document.getElementById(id);
                 if (target && target !== source) target.value = source.value;
@@ -19477,6 +19369,12 @@ service cloud.firestore {
             const selected = currentVideoStrikeRef();
             const pos = selected ? refs.findIndex(item => item.rejected === selected.rejected && item.index === selected.index) : -1;
             const noSelection = !selected;
+            document.querySelectorAll('#videoStep-correct [data-kendo-action="undo-edit"]').forEach(btn => btn.disabled = undoDisabled);
+            document.querySelectorAll('#videoStep-correct [data-kendo-action="redo-edit"]').forEach(btn => btn.disabled = redoDisabled);
+            document.querySelectorAll('#videoStep-correct [data-kendo-action="split-strike"]').forEach(btn => btn.disabled = noSelection);
+            document.querySelectorAll('#videoStep-correct [data-kendo-action="merge-strike"]').forEach(btn => {
+                btn.disabled = btn.dataset.value === 'prev' ? pos <= 0 : pos < 0 || pos >= refs.length - 1;
+            });
             ['videoUndoEditBtn', 'videoDetailUndoEditBtn', 'videoResultUndoEditBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = undoDisabled;
@@ -19554,6 +19452,9 @@ service cloud.firestore {
         function markVideoCurrentFrame(kind) {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
+            const requested = Number(document.getElementById('videoFrameSlider')?.value || 0);
+            const displayed = Number(document.getElementById('videoCorrectionCanvas')?.dataset.frameIndex);
+            if (requested !== displayed) return showToast('コマの表示が完了してから補正してください', 'yellow');
             stopVideoSlowPlayback();
             pushVideoEditUndo(kind === 'start' ? '開始フレーム変更' : '終了フレーム変更');
             const current = clamp(
@@ -19577,79 +19478,58 @@ service cloud.firestore {
             updateSelectedVideoStrikeFromCurrent();
             syncVideoAnalysisSliders(current);
             setVideoAnalysisFrame(current);
-            showToast(kind === 'start' ? '現在フレームを開始にしました' : '現在フレームを終了にしました', 'blue');
+            if (!document.getElementById('videoStep-correct')?.classList.contains('active')) showToast(kind === 'start' ? '現在フレームを開始にしました' : '現在フレームを終了にしました', 'blue');
         }
 
-        function stopVideoSlowPlayback() {
-            if (AppState.videoSlowTimer) {
-                clearTimeout(AppState.videoSlowTimer);
-                AppState.videoSlowTimer = null;
-            }
+        function stopVideoSlowPlayback(options = {}) {
+            const current = Number(document.getElementById('videoFrameSlider')?.value || 0);
+            AppState.videoPlaybackGeneration = (AppState.videoPlaybackGeneration || 0) + 1;
+            if (AppState.videoSlowTimer) clearTimeout(AppState.videoSlowTimer);
+            AppState.videoSlowTimer = null;
             ['analysisVideoElement', 'videoResultElement', 'videoCorrectionElement'].forEach(id => {
                 const video = document.getElementById(id);
-                if (video) video._kendoPreviewUserControlled = false;
-                if (video && !video.paused) video.pause();
+                if (!video) return;
+                video._kendoPreviewUserControlled = false;
+                video._kendoPlaybackRange = null;
+                cancelNativePreviewFrameSync(video);
+                if (!video.paused) video.pause();
             });
             AppState.videoSlowPlaying = false;
             setVideoSlowButtonsPlaying(false);
+            if (options.redraw) setVideoAnalysisFrame(current);
         }
 
-        function startVideoSlowPlayback() {
+        async function startVideoSlowPlayback() {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             stopVideoSlowPlayback();
+            const generation = AppState.videoPlaybackGeneration;
+            const correctionActive = document.getElementById('videoStep-correct')?.classList.contains('active');
+            const video = document.getElementById(correctionActive ? 'videoCorrectionElement' : 'videoResultElement');
+            if (!video) return;
+            const scope = getVideoPlaybackScope();
+            const start = scope === 'strike' ? clamp(data.startFrame ?? 0, 0, data.frames.length - 1) : 0;
+            const end = scope === 'strike' ? clamp(data.endFrame ?? data.frames.length - 1, start, data.frames.length - 1) : data.frames.length - 1;
+            let current = Number(document.getElementById('videoFrameSlider')?.value ?? start);
+            if (current < start || current >= end) current = start;
+            syncCorrectionVideoSource(videoSourceSecondForFrame(data, data.frames[current]));
+            video._kendoPlaybackRange = { start, end };
+            video.playbackRate = getVideoSlowRate();
+            video._kendoPresentedTime = videoSourceSecondForFrame(data, data.frames[current]);
+            AppState.videoDrawToken++;
             AppState.videoSlowPlaying = true;
             setVideoSlowButtonsPlaying(true);
-            const rate = getVideoSlowRate();
-            const scope = getVideoPlaybackScope();
-            const playStart = scope === 'strike' ? clamp(data.startFrame ?? 0, 0, data.frames.length - 1) : 0;
-            const playUntil = scope === 'strike' && Number.isFinite(data.endFrame) && data.endFrame !== null
-                ? clamp(data.endFrame, playStart, data.frames.length - 1)
-                : data.frames.length - 1;
-            const slider = document.getElementById('videoFrameSlider');
-            let current = clamp(Number(slider?.value || playStart), playStart, playUntil);
-            let originFrame = current;
-            let originFrameMs = Number(data.frames[originFrame]?.timeMs || 0);
-            let originWallMs = performance.now();
-            const endMs = Number(data.frames[playUntil]?.timeMs || originFrameMs);
-            const frameAtTime = targetMs => {
-                let low = playStart;
-                let high = playUntil;
-                while (low < high) {
-                    const mid = Math.floor((low + high) / 2);
-                    if (Number(data.frames[mid]?.timeMs || 0) < targetMs) low = mid + 1;
-                    else high = mid;
-                }
-                if (low > playStart) {
-                    const before = low - 1;
-                    const beforeDiff = Math.abs(Number(data.frames[before]?.timeMs || 0) - targetMs);
-                    const afterDiff = Math.abs(Number(data.frames[low]?.timeMs || 0) - targetMs);
-                    if (beforeDiff <= afterDiff) return before;
-                }
-                return low;
-            };
-            const tick = () => {
-                if (!AppState.videoSlowPlaying) return;
-                const now = performance.now();
-                const targetMs = originFrameMs + (now - originWallMs) * Math.max(rate, 0.05);
-                if (targetMs >= endMs || current >= playUntil) {
-                    current = playStart;
-                    originFrame = playStart;
-                    originFrameMs = Number(data.frames[playStart]?.timeMs || 0);
-                    originWallMs = now;
-                    setVideoAnalysisFrame(playStart);
-                } else {
-                    const next = frameAtTime(targetMs);
-                    if (next !== current) {
-                        current = next;
-                        // 240fpsでも再生時間を正しく保つため、表示能力を超える分は
-                        // 再生時だけ飛ばす。1コマ送りでは全フレームを利用できる。
-                        setVideoAnalysisFrame(next);
-                    }
-                }
-                AppState.videoSlowTimer = setTimeout(tick, 16);
-            };
-            tick();
+            try {
+                // Keep play() in the user gesture, including on iPhone.
+                await video.play();
+                if (generation !== AppState.videoPlaybackGeneration) return;
+                beginNativeVideoPreviewControl(video);
+                startNativePreviewFrameSync(video);
+            } catch (error) {
+                if (generation !== AppState.videoPlaybackGeneration) return;
+                stopVideoSlowPlayback({ redraw: true });
+                showToast('動画を再生できませんでした。再生ボタンをもう一度押してください', 'yellow');
+            }
         }
 
         function stopModelPlayback() {
@@ -21038,6 +20918,7 @@ service cloud.firestore {
             const rejected = !!options.rejected;
             const strike = rejected ? data?.rejectedStrikes?.[index] : data?.strikes?.[index];
             if (!data || !strike) return;
+            stopVideoSlowPlayback();
             AppState.videoSelectedStrikeIndex = index;
             AppState.videoSelectedStrikeRejected = rejected;
             data.startFrame = strike.startFrame;
@@ -21363,15 +21244,28 @@ service cloud.firestore {
             const viewStart = detailRange ? detailRange.start : 0;
             const viewEnd = detailRange ? detailRange.end : fullFrames.length - 1;
             const frames = fullFrames.slice(viewStart, viewEnd + 1);
-            const pad = { left: compact ? 40 : 52, right: 20, top: 22, bottom: compact ? 28 : 34 };
+            const pad = { left: compact ? 40 : 52, right: 20, top: 22, bottom: 48 };
             const plotW = width - pad.left - pad.right;
             const plotH = height - pad.top - pad.bottom;
-            const maxSpeed = Math.max(1, ...frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0));
+            const timeStart = Number(frames[0].timeMs);
+            const timeSpan = Math.max(1, Number(frames[frames.length - 1].timeMs) - timeStart);
+            const xFor = frame => pad.left + clamp((Number(frame.timeMs) - timeStart) / timeSpan, 0, 1) * plotW;
+            const speedValues = frames.map(frame => {
+                if (Params.officialSpeedSource === 'tape' && Object.prototype.hasOwnProperty.call(frame, 'tapeTimingSpeed')) {
+                    return Number.isFinite(frame.tapeTimingSpeed) ? frame.tapeTimingSpeed : NaN;
+                }
+                return videoFrameSpeed(frame, Params.officialSpeedSource).value;
+            });
+            const maxSpeed = Math.max(1, ...speedValues.filter(Number.isFinite));
+            const angleKeys = (visibleKeys || []).filter(key => key !== 'speed');
+            const fields = { right: 'rightAng', torso: 'torsoAng', hasuji: 'hasuji' };
+            const angleMax = !visibleKeys || angleKeys.includes('right') ? 180 : Math.max(10, Math.ceil(Math.max(0, ...frames.flatMap(f => angleKeys.map(key => Math.abs(f[fields[key]]) || 0))) / 10) * 10);
+            const angleValues = key => frames.map(f => Number.isFinite(f[key]) ? Math.abs(f[key]) / angleMax : NaN);
             let series = [
-                { key: 'speed', color: '#0891b2', values: frames.map(frame => (videoFrameSpeed(frame, Params.officialSpeedSource).value || 0) / maxSpeed), label: 'ピーク' },
-                { key: 'right', color: '#7c3aed', values: frames.map(frame => clamp(Number(frame.rightAng || 0) / 180, 0, 1)), label: '右肘' },
-                { key: 'torso', color: '#059669', values: frames.map(frame => clamp(Math.abs(Number(frame.torsoAng || 0)) / 35, 0, 1)), label: '体幹' },
-                { key: 'hasuji', color: '#d97706', values: frames.map(frame => clamp(Math.abs(Number(frame.hasuji || 0)) / 45, 0, 1)), label: '刃筋' }
+                { key: 'speed', color: '#0891b2', values: speedValues.map(value => value / maxSpeed), label: '相対速度' },
+                { key: 'right', color: '#7c3aed', values: angleValues('rightAng'), label: '右肘' },
+                { key: 'torso', color: '#059669', values: angleValues('torsoAng'), label: '体幹' },
+                { key: 'hasuji', color: '#d97706', values: angleValues('hasuji'), label: '刃筋' }
             ];
             if (Array.isArray(visibleKeys) && visibleKeys.length) {
                 series = series.filter(s => visibleKeys.includes(s.key));
@@ -21387,17 +21281,20 @@ service cloud.firestore {
             }
             ctx.fillStyle = '#64748b';
             ctx.font = '700 10px system-ui, sans-serif';
-            if (!compact) {
-                ctx.fillText('100', 14, pad.top + 4);
-                ctx.fillText('50', 20, pad.top + plotH / 2 + 4);
-                ctx.fillText('0', 26, pad.top + plotH + 4);
-            } else if (detailRange) {
-                ctx.fillText(`${Math.round(detailRange.durationMs)}ms`, 10, pad.top + 4);
-            }
+            const onlyAngles = series.every(s => s.key !== 'speed');
+            const axisMax = onlyAngles ? angleMax : 100;
+            const unit = onlyAngles ? '°' : '%';
+            ctx.fillText(`${axisMax}${unit}`, 2, pad.top + 4);
+            ctx.fillText(`${axisMax / 2}`, 10, pad.top + plotH / 2 + 4);
+            ctx.fillText('0', 20, pad.top + plotH + 4);
+            [0, 0.5, 1].forEach(ratio => {
+                const text = `${Math.round(timeStart + timeSpan * ratio)}`;
+                ctx.fillText(text, clamp(pad.left + plotW * ratio - ctx.measureText(text).width / 2, pad.left, width - pad.right - ctx.measureText(text).width), pad.top + plotH + 16);
+            });
             data.strikes?.forEach(strike => {
                 if (strike.endFrame < viewStart || strike.startFrame > viewEnd) return;
-                const x1 = pad.left + ((clamp(strike.startFrame, viewStart, viewEnd) - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
-                const x2 = pad.left + ((clamp(strike.endFrame, viewStart, viewEnd) - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
+                const x1 = xFor(fullFrames[clamp(strike.startFrame, viewStart, viewEnd)]);
+                const x2 = xFor(fullFrames[clamp(strike.endFrame, viewStart, viewEnd)]);
                 ctx.fillStyle = 'rgba(251, 191, 36, 0.13)';
                 ctx.fillRect(x1, pad.top, Math.max(2, x2 - x1), plotH);
             });
@@ -21410,24 +21307,20 @@ service cloud.firestore {
                 ctx.lineJoin = 'round';
                 ctx.lineCap = 'round';
                 ctx.beginPath();
+                let connected = false;
                 s.values.forEach((value, index) => {
-                    const x = pad.left + (index / Math.max(1, frames.length - 1)) * plotW;
+                    if (!Number.isFinite(value)) { connected = false; return; }
+                    const x = xFor(frames[index]);
                     const y = pad.top + plotH - clamp(value, 0, 1) * plotH;
-                    if (index === 0) ctx.moveTo(x, y);
+                    if (!connected) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
+                    connected = true;
                 });
                 ctx.stroke();
-                if (!compact && series.length === 1) {
-                    ctx.lineTo(pad.left + plotW, pad.top + plotH);
-                    ctx.lineTo(pad.left, pad.top + plotH);
-                    ctx.closePath();
-                    ctx.fillStyle = grad;
-                    ctx.fill();
-                }
             });
             getVideoFrameMarkers(data).forEach((marker, order) => {
                 if (marker.index < viewStart || marker.index > viewEnd) return;
-                const x = pad.left + ((marker.index - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
+                const x = xFor(fullFrames[marker.index]);
                 ctx.save();
                 ctx.strokeStyle = marker.color;
                 ctx.lineWidth = compact ? 2 : 2.5;
@@ -21443,7 +21336,7 @@ service cloud.firestore {
                 ctx.restore();
             });
             const currentGlobal = clamp(currentIndex, viewStart, viewEnd);
-            const currentX = pad.left + ((currentGlobal - viewStart) / Math.max(1, viewEnd - viewStart)) * plotW;
+            const currentX = xFor(fullFrames[currentGlobal]);
             ctx.strokeStyle = '#111827';
             ctx.lineWidth = compact ? 2 : 3;
             ctx.beginPath();
@@ -21461,11 +21354,11 @@ service cloud.firestore {
             const pillW = Math.min(width - pad.left - pad.right, ctx.measureText(info).width + 18);
             ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
             ctx.beginPath();
-            if (ctx.roundRect) ctx.roundRect(pad.left, height - pad.bottom + 6, pillW, 22, 11);
-            else ctx.rect(pad.left, height - pad.bottom + 6, pillW, 22);
+            if (ctx.roundRect) ctx.roundRect(pad.left, height - 24, pillW, 22, 4);
+            else ctx.rect(pad.left, height - 24, pillW, 22);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(info, pad.left + 9, height - pad.bottom + 21);
+            ctx.fillText(info, pad.left + 9, height - 9);
             const legendX = Math.max(pad.left + 120, width - series.length * 58 - 12);
             series.forEach((s, i) => {
                 ctx.fillStyle = s.color;
@@ -21633,7 +21526,7 @@ service cloud.firestore {
 
         function toggleVideoEditorPlayback() {
             if (!AppState.videoAnalysis?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
-            if (AppState.videoSlowPlaying) stopVideoSlowPlayback();
+            if (AppState.videoSlowPlaying) stopVideoSlowPlayback({ redraw: true });
             else startVideoSlowPlayback();
         }
 
@@ -22019,169 +21912,173 @@ service cloud.firestore {
             drawVideoCorrectionGraphs(graphFrameIndex);
         }
 
-        async function drawVideoAnalysisFrame(index, options = {}) {
+        function drawVideoPreviewOverlays(ctx, data, frameIndex, w, h) {
+            const frame = data.frames[frameIndex];
+            if (document.getElementById('videoSkeletonToggle')?.checked) {
+                drawNormalizedSkeleton(ctx, frame.landmarks, w, h);
+            }
+            if (document.getElementById('videoAngleOverlayToggle')?.checked) {
+                drawVideoAngleOverlay(ctx, frame, w, h);
+            }
+            if (!document.getElementById('videoShinaiOverlayToggle')?.checked) return;
+            // Trace only observed consecutive points; never bridge a lost detection.
+            const trailStartMs = Number(frame.timeMs) - 400;
+            const tapePoint = f => f?.tapePoint && Number.isFinite(f.tapePoint.x) && Number.isFinite(f.tapePoint.y) ? f.tapePoint : null;
+            ctx.save();
+            ctx.lineWidth = Math.max(3, w * 0.004);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            let segments = 0;
+            for (let i = frameIndex; i > 0 && Number(data.frames[i - 1].timeMs) >= trailStartMs; i--) {
+                const a = data.frames[i - 1], b = data.frames[i];
+                const p = tapePoint(a), q = tapePoint(b);
+                if (!p || !q || b.timeMs - a.timeMs > 25
+                    || a.decodeWindowIndex !== b.decodeWindowIndex
+                    || (a.shinaiSource || p.source) !== (b.shinaiSource || q.source)) continue;
+                ctx.strokeStyle = 'rgba(250, 222, 62, 0.85)';
+                ctx.beginPath();
+                ctx.moveTo(p.x * w, p.y * h);
+                ctx.lineTo(q.x * w, q.y * h);
+                ctx.stroke();
+                segments++;
+            }
+            const tip = tapePoint(frame);
+            if (tip) {
+                const wrist = frame.landmarks?.[16];
+                if (wrist && visibilityOf(wrist) >= Params.minAngleVisibility) {
+                    ctx.strokeStyle = 'rgba(255, 247, 167, 0.8)';
+                    ctx.setLineDash([w * 0.008, w * 0.006]);
+                    ctx.beginPath();
+                    ctx.moveTo(wrist.x * w, wrist.y * h);
+                    ctx.lineTo(tip.x * w, tip.y * h);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                ctx.fillStyle = '#ffdf38';
+                ctx.strokeStyle = '#172025';
+                ctx.lineWidth = Math.max(2, w * 0.002);
+                ctx.beginPath();
+                ctx.arc(tip.x * w, tip.y * h, Math.max(6, w * 0.009), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            ctx.restore();
+            ctx.canvas.dataset.tapeSegments = String(segments);
+        }
+
+        function presentVideoAnalysisFrame(sourceCanvas, frameIndex, mode) {
             const data = AppState.videoAnalysis;
             const canvas = document.getElementById('videoAnalysisCanvas');
-            const video = document.getElementById('analysisVideoElement');
-            if (!data || !canvas || !video) return;
-            const drawToken = ++AppState.videoDrawToken;
-            const frameIndex = clamp(index, 0, data.frames.length - 1);
-            const frame = data.frames[frameIndex];
-            setVideoModelSnapshotFromFrame(frame, frameIndex);
-            syncModelFrameControls(frameIndex);
-            const ctx = canvas.getContext('2d');
-            const previewRect = canvas.getBoundingClientRect();
-            const sourceW = Math.max(1, video.videoWidth || 640);
-            const sourceH = Math.max(1, video.videoHeight || 360);
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            const previewPanel = document.getElementById('videoResultPreviewPanel');
-            const fullscreenPreview = document.fullscreenElement === previewPanel || document.webkitFullscreenElement === previewPanel;
-            const targetCssW = Math.max(previewRect.width || 0, fullscreenPreview ? 1200 : 760);
-	            const w = Math.round(clamp(targetCssW * dpr, 720, Math.min(2560, Math.max(sourceW, 1280))));
-            const h = Math.max(360, Math.round(w * sourceH / sourceW));
-            if (canvas.width !== w || canvas.height !== h) {
-                canvas.width = w;
-                canvas.height = h;
-            }
-		            const sourceStartSec = Number(data.sourceStartSec || 0);
-            const sourceEndSec = Number(data.sourceEndSec || sourceStartSec + data.duration || 0);
-            const seekSec = Math.min(sourceStartSec + videoRawMsFromFrame(frame) / 1000, Math.max(sourceStartSec, sourceEndSec - 0.001));
-            syncCorrectionVideoSource(seekSec, options.nativeVideo);
-		            ctx.clearRect(0, 0, w, h);
-		            ctx.imageSmoothingEnabled = true;
-		            ctx.imageSmoothingQuality = 'high';
-            let exactFrameDrawn = false;
-            if (AppState.webCodecsContext && Number.isFinite(Number(frame?.ptsUs))) {
-                exactFrameDrawn = await exactVideoFrameRenderer.draw(
-                    AppState.webCodecsContext,
-                    Number(frame.ptsUs),
-                    ctx,
-                    w,
-                    h
-                );
-            }
-            if (drawToken !== AppState.videoDrawToken) return false;
-            if (!exactFrameDrawn) {
-                await seekVideoTo(video, seekSec).catch(() => {});
-                if (drawToken !== AppState.videoDrawToken) return false;
-		                try {
-                    ctx.drawImage(video, 0, 0, w, h);
-                } catch (err) {
-                    ctx.fillStyle = 'rgba(2, 6, 23, 0.18)';
-                    ctx.fillRect(0, 0, w, h);
+            if (!data || !canvas) return;
+            if (sourceCanvas !== canvas) {
+                if (canvas.width !== sourceCanvas.width || canvas.height !== sourceCanvas.height) {
+                    canvas.width = sourceCanvas.width;
+                    canvas.height = sourceCanvas.height;
                 }
+                canvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
             }
-            data.exactPreviewMode = exactFrameDrawn ? 'webcodecs-frame' : 'video-seek';
-            if (document.getElementById('videoSkeletonToggle')?.checked) drawNormalizedSkeleton(ctx, frame.landmarks, w, h);
-            if (frame.landmarks?.[16]) {
-                const trailStart = Math.max(0, frameIndex - 18);
-                ctx.save();
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
-                for (let i = trailStart + 1; i <= frameIndex; i++) {
-                    if (Number.isFinite(data.frames[i - 1]?.decodeWindowIndex)
-                        && data.frames[i - 1].decodeWindowIndex !== data.frames[i]?.decodeWindowIndex) continue;
-                    const prev = data.frames[i - 1]?.landmarks?.[16];
-                    const curr = data.frames[i]?.landmarks?.[16];
-                    if (!prev || !curr) continue;
-                    const speed = videoFrameSpeed(data.frames[i], Params.officialSpeedSource).value;
-                    const hue = clamp(210 - speed * 18, 15, 210);
-                    ctx.strokeStyle = `hsla(${hue}, 92%, 58%, 0.82)`;
-                    ctx.beginPath();
-                    ctx.moveTo(prev.x * w, prev.y * h);
-                    ctx.lineTo(curr.x * w, curr.y * h);
-                    ctx.stroke();
-                }
-                ctx.restore();
-            }
-            if (document.getElementById('videoAngleOverlayToggle')?.checked) drawVideoAngleOverlay(ctx, frame, w, h);
-            if (Params.tapeRoiVisible && frame.landmarks?.[14] && frame.landmarks?.[16]) {
-                const roi = shinaiRoiCenter(frame.landmarks, w, h);
-                const radius = frame.tapeRoi?.radius
-                    ? clamp(frame.tapeRoi.radius * Math.max(w, h), 18, 110)
-                    : (roi ? clamp(roi.shoulderPx * Params.tipRoiRatio, 18, 90) : 0);
-                if (roi && radius > 0) {
-                    const tapePoint = frame.tapePoint ? normalizedToCanvas(frame.tapePoint, w, h) : null;
-                    const quality = Number(frame.tapeConfidence || 0);
-                    const detectionSource = frame.shinaiSource || frame.tapePoint?.source || 'none';
-                    const isShaft = detectionSource === 'shaft';
-                    ctx.save();
-                    ctx.strokeStyle = tapePoint ? (isShaft ? 'rgba(34, 211, 238, 0.96)' : 'rgba(250, 204, 21, 0.95)') : 'rgba(148, 163, 184, 0.62)';
-                    ctx.fillStyle = tapePoint ? (isShaft ? 'rgba(34, 211, 238, 0.08)' : 'rgba(250, 204, 21, 0.12)') : 'rgba(148, 163, 184, 0.08)';
-                    ctx.setLineDash([7, 6]);
-                    ctx.lineWidth = tapePoint ? 3 : 2;
-                    if (!isShaft) {
-                        ctx.beginPath();
-                        ctx.arc(roi.x, roi.y, radius, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
-                    }
-                    ctx.setLineDash([]);
-                    ctx.strokeStyle = isShaft ? 'rgba(34, 211, 238, 0.82)' : 'rgba(245, 158, 11, 0.72)';
-                    ctx.beginPath();
-                    ctx.moveTo(roi.start.x, roi.start.y);
-                    ctx.lineTo(tapePoint?.x ?? roi.x, tapePoint?.y ?? roi.y);
-                    ctx.stroke();
-                    if (tapePoint) {
-                        ctx.fillStyle = isShaft ? 'rgba(34, 211, 238, 0.98)' : 'rgba(250, 204, 21, 0.95)';
-                        ctx.beginPath();
-                        ctx.arc(tapePoint.x, tapePoint.y, 7, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                    ctx.fillStyle = tapePoint ? (isShaft ? '#cffafe' : '#fef3c7') : '#e2e8f0';
-                    ctx.font = `${Math.max(12, w * 0.012)}px sans-serif`;
-                    ctx.fillText(
-                        tapePoint ? `${isShaft ? '竹刀本体' : 'テープ'} ${Math.round(quality * 100)}%` : `竹刀探索 / ${roi.source}`,
-                        Math.min(w - 180, (tapePoint?.x ?? roi.x) + 12),
-                        Math.max(18, (tapePoint?.y ?? roi.y) - 8)
-                    );
-                    ctx.restore();
-                }
-            }
-            ctx.fillStyle = 'rgba(2, 6, 23, 0.78)';
-            ctx.fillRect(10, 10, Math.min(560, w - 20), 128);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px sans-serif';
-            const slowFactor = Number(data.slowMotionFactor || 1);
-		            ctx.fillText(`frame ${frameIndex} / ${frame.timeMs.toFixed(1)}ms${slowFactor > 1.001 ? ` 実時間（動画上${videoRawMsFromFrame(frame).toFixed(1)}ms）` : ''}${exactFrameDrawn ? ' / 正確コマ' : ''}`, 22, 34);
-            ctx.fillText('正式ピーク時刻: 内部信号から算出', 22, 56);
-            if (frame.rightAng || frame.hasuji || frame.torsoAng) {
-                ctx.fillStyle = 'rgba(255,255,255,0.92)';
-                ctx.fillText(`肘 ${frame.rightAng ? frame.rightAng.toFixed(1) : '--'}° / 刃筋 ${frame.hasuji ? frame.hasuji.toFixed(1) : '--'}° / 体幹 ${frame.torsoAng ? frame.torsoAng.toFixed(1) : '--'}°`, 22, 76);
-            }
-            const startFrameForElapsed = data.startFrame !== null ? data.frames[data.startFrame] : null;
-            const endFrameForElapsed = data.endFrame !== null ? data.frames[data.endFrame] : null;
-            const elapsedMs = startFrameForElapsed ? Number(frame.timeMs || 0) - Number(startFrameForElapsed.timeMs || 0) : NaN;
-            const durationMs = startFrameForElapsed && endFrameForElapsed && data.endFrame > data.startFrame
-                ? Number(endFrameForElapsed.timeMs || 0) - Number(startFrameForElapsed.timeMs || 0)
-                : NaN;
-            ctx.fillStyle = '#bfdbfe';
-            ctx.fillText(`開始から ${Number.isFinite(elapsedMs) ? Math.round(elapsedMs) + 'ms' : '---'} / 補正後打突 ${Number.isFinite(durationMs) ? Math.round(durationMs) + 'ms' : '---'}`, 22, 98);
-            const activeMarker = getVideoFrameMarkers(data).find(marker => marker.index === frameIndex);
-            if (activeMarker) {
-                ctx.fillStyle = activeMarker.color;
-                ctx.font = 'bold 18px sans-serif';
-                ctx.fillText(activeMarker.label, 22, 122);
-            }
-            const activeStrike = data.strikes?.find(strike => frameIndex >= strike.startFrame && frameIndex <= strike.endFrame);
-            if (activeStrike) {
-                ctx.fillStyle = 'rgba(251, 191, 36, 0.92)';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.fillText(`Strike #${activeStrike.number}`, Math.min(430, w - 150), 122);
-            }
-            drawVideoFrameMarkers(ctx, data, frameIndex, w, h);
-            updateVideoAnalysisLabels();
-            syncVideoAnalysisSliders(frameIndex);
-            updateVideoResultTimeline(frameIndex);
-            drawVideoResultGraphs(frameIndex);
-            drawVideoCorrectionGraphs(frameIndex);
+            canvas.dataset.frameIndex = String(frameIndex);
+            canvas.dataset.renderMode = mode;
+            data.exactPreviewMode = mode;
             copyVideoPreviewToCorrection(canvas, frameIndex);
+            syncVideoAnalysisSliders(frameIndex);
+            safeText('videoEditorRenderStatus', mode === 'webcodecs-frame' ? '正確コマ' : mode === 'native-playback' ? '再生中' : '動画コマ');
+            const loading = document.getElementById('videoEditorLoading');
+            if (loading) loading.hidden = true;
+            const frame = data.frames[frameIndex];
+            safeText('videoEditorRightAngle', videoDegreeText(frame.rightAng));
+            safeText('videoEditorTorsoAngle', videoDegreeText(frame.torsoAng));
+            safeText('videoEditorHasujiAngle', AppState.showHasujiOverlay === false ? 'OFF' : videoDegreeText(frame.hasuji));
+            safeText('videoEditorPoseStatus', !frame.landmarks ? '骨格未検出' : frame.poseInterpolated ? '骨格：時刻補間' : '骨格：推定値');
+            document.querySelector('#videoCorrectionEditDock .ve-duration')?.classList.toggle('is-confirmed', isVideoTimingConfirmed(data));
+            const slider = document.getElementById('videoFrameSlider');
+            const low = Number(slider?.min || 0), span = Math.max(1, Number(slider?.max || 0) - low);
+            const startPct = clamp((data.startFrame - low) / span * 100, 0, 100);
+            const endPct = clamp((data.endFrame - low) / span * 100, startPct, 100);
+            const selectedRange = document.getElementById('videoEditorSelectedRange');
+            if (selectedRange) { selectedRange.style.left = startPct + '%'; selectedRange.style.width = (endPct - startPct) + '%'; }
+            const peakTick = document.getElementById('videoEditorPeakTick');
+            if (peakTick) peakTick.style.left = clamp((data.peakFrame - low) / span * 100, 0, 100) + '%';
+            const now = performance.now();
+            if (mode !== 'native-playback' || now - (AppState.videoGraphLastDraw || 0) >= 100) {
+                AppState.videoGraphLastDraw = now;
+                if (document.getElementById('videoStep-result')?.classList.contains('active')) drawVideoResultGraphs(frameIndex);
+                if (document.getElementById('videoCorrectionSupportDetails')?.open) drawVideoCorrectionGraphs(frameIndex);
+            }
             if (document.getElementById('tab-model')?.classList.contains('active') && AppState.modelSourceMode === 'video') {
+                setVideoModelSnapshotFromFrame(frame, frameIndex);
+                syncModelFrameControls(frameIndex);
                 drawModelVideoFramePreview(frameIndex);
                 updateModelAnalysisLabels();
                 renderAngleModel();
             }
-            return true;
+        }
+
+        async function drawVideoAnalysisFrame(index, options = {}) {
+            const data = AppState.videoAnalysis;
+            const canvas = document.getElementById('videoAnalysisCanvas');
+            const source = document.getElementById('analysisVideoElement');
+            if (!data?.frames?.length || !canvas || !source) return false;
+            const nativeVideo = options.nativeVideo || ['videoCorrectionElement', 'videoResultElement']
+                .map(id => document.getElementById(id)).find(v => v?._kendoPreviewUserControlled && !v.paused);
+            const drawToken = ++AppState.videoDrawToken;
+            let frameIndex = clamp(Math.round(index || 0), 0, data.frames.length - 1);
+            if (nativeVideo && !nativeVideo.paused && !options.nativeVideo) {
+                frameIndex = videoFrameIndexFromSourceSecond(nativeVideo._kendoPresentedTime ?? nativeVideo.currentTime) ?? frameIndex;
+            }
+            const frame = data.frames[frameIndex];
+            const sourceW = Math.max(1, source.videoWidth || 640);
+            const sourceH = Math.max(1, source.videoHeight || 360);
+            const w = Math.min(sourceW, 1280);
+            const h = Math.round(w * sourceH / sourceW);
+            if (nativeVideo && nativeVideo.readyState >= 2) {
+                // Playback uses the frame already decoded by the video element, never a seek loop.
+                if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(nativeVideo, 0, 0, w, h);
+                drawVideoPreviewOverlays(ctx, data, frameIndex, w, h);
+                presentVideoAnalysisFrame(canvas, frameIndex, 'native-playback');
+                return true;
+            }
+            const loading = document.getElementById('videoEditorLoading');
+            if (loading) loading.hidden = false;
+            safeText('videoEditorRenderStatus', 'コマ読込中');
+            // Only one paused-frame decode runs at a time. Fast scrubbing keeps the latest request.
+            const previous = AppState.videoStillPreviewJob || Promise.resolve();
+            const job = previous.catch(() => {}).then(async () => {
+                if (drawToken !== AppState.videoDrawToken) return false;
+                const staging = document.createElement('canvas');
+                staging.width = w; staging.height = h;
+                const ctx = staging.getContext('2d');
+                const seekSec = videoSourceSecondForFrame(data, frame);
+                syncCorrectionVideoSource(seekSec);
+                let exact = false;
+                try {
+                    if (AppState.webCodecsContext && Number.isFinite(Number(frame.ptsUs))) {
+                        exact = await exactVideoFrameRenderer.draw(AppState.webCodecsContext, Number(frame.ptsUs), ctx, w, h);
+                    }
+                    if (drawToken !== AppState.videoDrawToken) return false;
+                    if (!exact) {
+                        await seekVideoTo(source, seekSec);
+                        if (drawToken !== AppState.videoDrawToken) return false;
+                        ctx.drawImage(source, 0, 0, w, h);
+                    }
+                    drawVideoPreviewOverlays(ctx, data, frameIndex, w, h);
+                    presentVideoAnalysisFrame(staging, frameIndex, exact ? 'webcodecs-frame' : 'video-seek');
+                    return true;
+                } catch (error) {
+                    if (drawToken === AppState.videoDrawToken) {
+                        if (loading) loading.hidden = true;
+                        safeText('videoEditorRenderStatus', 'コマ読込失敗');
+                        showToast('映像を読み込めませんでした。動画を再選択してください', 'yellow');
+                    }
+                    return false;
+                } finally {
+                    staging.width = 1; staging.height = 1;
+                }
+            });
+            AppState.videoStillPreviewJob = job;
+            return job;
         }
 
         function isYouTubeUrl(value) {
@@ -24330,11 +24227,32 @@ service cloud.firestore {
             const previewVideo = document.getElementById(id);
             if (!previewVideo) return;
             ['pointerdown', 'keydown'].forEach(eventName => {
-                previewVideo.addEventListener(eventName, () => beginNativeVideoPreviewControl(previewVideo));
+                previewVideo.addEventListener(eventName, () => {
+                    previewVideo._kendoPlaybackRange = null;
+                    beginNativeVideoPreviewControl(previewVideo);
+                });
             });
             previewVideo.addEventListener('play', () => {
+                if (previewVideo.paused) return;
                 beginNativeVideoPreviewControl(previewVideo);
                 startNativePreviewFrameSync(previewVideo);
+            });
+            previewVideo.addEventListener('pause', () => {
+                if (!previewVideo._kendoPreviewUserControlled || previewVideo.ended) return;
+                const current = videoFrameIndexFromSourceSecond(previewVideo._kendoPresentedTime ?? previewVideo.currentTime);
+                stopVideoSlowPlayback();
+                if (Number.isFinite(current)) setVideoAnalysisFrame(current);
+            });
+            previewVideo.addEventListener('ended', () => {
+                if (!previewVideo._kendoPreviewUserControlled) return;
+                const end = previewVideo._kendoPlaybackRange?.end ?? videoFrameIndexFromSourceSecond(previewVideo.currentTime);
+                if (document.getElementById('videoEditorLoopToggle')?.checked && previewVideo._kendoPlaybackRange) {
+                    syncVideoAnalysisSliders(previewVideo._kendoPlaybackRange.start);
+                    startVideoSlowPlayback();
+                } else {
+                    stopVideoSlowPlayback();
+                    if (Number.isFinite(end)) setVideoAnalysisFrame(end);
+                }
             });
             ['seeked', 'timeupdate'].forEach(eventName => {
                 previewVideo.addEventListener(eventName, () => {
@@ -24563,12 +24481,12 @@ service cloud.firestore {
         const videoSlowRateSelect = document.getElementById('videoSlowRateSelect');
         if (videoSlowRateSelect) videoSlowRateSelect.addEventListener('change', () => {
             syncVideoSlowRate('videoSlowRateSelect');
-            if (AppState.videoSlowPlaying) startVideoSlowPlayback();
         });
         const videoPlaybackScopeSelect = document.getElementById('videoPlaybackScopeSelect');
         if (videoPlaybackScopeSelect) videoPlaybackScopeSelect.addEventListener('change', () => {
             syncVideoPlaybackScope('videoPlaybackScopeSelect');
             if (AppState.videoSlowPlaying) startVideoSlowPlayback();
+            else syncVideoAnalysisSliders(currentVideoGraphFrameIndex());
         });
         const videoPrevFrameBtn = document.getElementById('videoPrevFrameBtn');
         if (videoPrevFrameBtn) videoPrevFrameBtn.addEventListener('click', () => stepVideoAnalysisFrame(-1));
@@ -24632,7 +24550,8 @@ service cloud.firestore {
             'fullscreen-mode': ({ value }) => setVideoFullscreenMode(value),
             'adjacent-strike': ({ number }) => selectAdjacentVideoStrike(number),
             'jump-fullscreen-marker': ({ value }) => jumpFullscreenSelectedMarker(value),
-            'open-current-3d': () => document.getElementById('videoOpen3DFrameBtn')?.click(),
+            'open-current-3d': () => openCurrentVideoFrameInModel(),
+            'toggle-editor-play': () => toggleVideoEditorPlayback(),
             'toggle-range-play': () => toggleVideoCorrectedRangePlayback(),
             'step-frame': ({ number }) => stepVideoAnalysisFrame(number),
             'mark-frame': ({ value }) => markVideoCurrentFrame(value),
@@ -24667,7 +24586,6 @@ service cloud.firestore {
         const videoResultSlowRateSelect = document.getElementById('videoResultSlowRateSelect');
         if (videoResultSlowRateSelect) videoResultSlowRateSelect.addEventListener('change', () => {
             syncVideoSlowRate('videoResultSlowRateSelect');
-            if (AppState.videoSlowPlaying) startVideoSlowPlayback();
         });
         const videoResultPlaybackScopeSelect = document.getElementById('videoResultPlaybackScopeSelect');
         if (videoResultPlaybackScopeSelect) videoResultPlaybackScopeSelect.addEventListener('change', () => {
@@ -24782,6 +24700,17 @@ service cloud.firestore {
             markVideoCurrentFrame('end');
         });
         const videoSkeletonToggle = document.getElementById('videoSkeletonToggle');
+        document.getElementById('videoShinaiOverlayToggle')?.addEventListener('change', () => drawVideoAnalysisFrame(currentVideoGraphFrameIndex()));
+        document.getElementById('videoEditorZoomToggle')?.addEventListener('change', () => {
+            stopVideoSlowPlayback();
+            setVideoAnalysisFrame(currentVideoGraphFrameIndex());
+        });
+        document.getElementById('videoCorrectionSupportDetails')?.addEventListener('toggle', event => {
+            if (event.target.open) drawVideoCorrectionGraphs(currentVideoGraphFrameIndex());
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && AppState.videoSlowPlaying) stopVideoSlowPlayback({ redraw: true });
+        });
         if (videoSkeletonToggle) videoSkeletonToggle.addEventListener('change', () => drawVideoAnalysisFrame(Number(document.getElementById('videoFrameSlider')?.value || 0)));
         const videoAngleOverlayToggle = document.getElementById('videoAngleOverlayToggle');
         if (videoAngleOverlayToggle) videoAngleOverlayToggle.addEventListener('change', e => {
@@ -25055,11 +24984,16 @@ service cloud.firestore {
                 const data = AppState.videoAnalysis;
                 if (!data?.frames?.length) return;
                 const rect = canvas.getBoundingClientRect();
-                const ratio = clamp((e.clientX - rect.left - 40) / Math.max(1, rect.width - 58), 0, 1);
+                const padLeft = canvasId.includes('Correction') ? 40 : 52;
+                const ratio = clamp((e.clientX - rect.left - padLeft) / Math.max(1, rect.width - padLeft - 20), 0, 1);
                 const range = canvasId.includes('Correction') ? currentVideoStrikeDetailRange(data) : null;
                 const start = range ? range.start : 0;
                 const end = range ? range.end : data.frames.length - 1;
-                const frameIndex = Math.round(start + ratio * Math.max(1, end - start));
+                const targetMs = data.frames[start].timeMs + ratio * (data.frames[end].timeMs - data.frames[start].timeMs);
+                let frameIndex = start;
+                for (let i = start + 1; i <= end; i++) {
+                    if (Math.abs(data.frames[i].timeMs - targetMs) < Math.abs(data.frames[frameIndex].timeMs - targetMs)) frameIndex = i;
+                }
                 stopVideoSlowPlayback();
                 setVideoAnalysisFrame(frameIndex);
             });

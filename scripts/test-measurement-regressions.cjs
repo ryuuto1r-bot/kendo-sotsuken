@@ -100,10 +100,10 @@ const previews = {
 context.document = { getElementById: id => id === 'videoFrameSlider' ? { value: '523' } : previews[id] };
 Object.assign(context, {
     videoFrameIndexFromSourceSecond: t => Math.round(t * 30),
-    setVideoAnalysisFrame: (...args) => selectedCalls.push(args),
+    drawVideoAnalysisFrame: (...args) => selectedCalls.push(args),
     setVideoSlowButtonsPlaying: () => {}, clearTimeout
 });
-vm.runInContext(['syncVideoPreviewTimeToAnalysis', 'beginNativeVideoPreviewControl'].map(declaration).join('\n'), context);
+vm.runInContext(['cancelNativePreviewFrameSync', 'syncVideoPreviewTimeToAnalysis', 'beginNativeVideoPreviewControl'].map(declaration).join('\n'), context);
 context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
 assert.equal(selectedCalls.length, 0, 'late hidden-video seek cannot undo a frame edit');
 context.beginNativeVideoPreviewControl(previews.videoResultElement);
@@ -116,7 +116,7 @@ assert.equal(selectedCalls[0][0], 270, 'user native scrub still updates analysis
 assert.equal(selectedCalls[0][1].nativeVideo, previews.videoResultElement);
 context.AppState.videoSlowPlaying = true;
 context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
-assert.equal(selectedCalls.length, 1, 'range playback owns the frame while active');
+assert.equal(selectedCalls.length, 2, 'native range playback continues rendering the presented frame');
 context.AppState.videoSlowPlaying = false;
 const src = 'blob:qa-video';
 Object.values(previews).forEach(video => Object.assign(video, { src, readyState: 4 }));
@@ -129,7 +129,7 @@ context.syncCorrectionVideoSource();
 assert.equal(previews.videoResultElement.currentTime, 17.433, 'selected frame wins over stale source time');
 assert.equal(previews.videoResultElement._kendoPreviewUserControlled, false);
 context.syncVideoPreviewTimeToAnalysis(previews.videoResultElement);
-assert.equal(selectedCalls.length, 1, 'programmatic seek echoes stay ignored');
+assert.equal(selectedCalls.length, 2, 'programmatic seek echoes stay ignored');
 previews.videoCorrectionElement.currentTime = 17.6;
 previews.videoCorrectionElement._kendoPreviewUserControlled = true;
 context.syncCorrectionVideoSource(17.633, previews.videoCorrectionElement);
