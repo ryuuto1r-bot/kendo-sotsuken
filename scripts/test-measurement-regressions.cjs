@@ -70,7 +70,7 @@ Object.assign(context, {
     updateVideoCorrectionAutosaveStatus: () => {},
     VideoEditorRuntime: { correctionDrafts: { load: () => ({ context: { version: 'old' } }), clear: () => { throw new Error('must preserve old draft'); } } }
 });
-vm.runInContext("const VIDEO_CORRECTION_DRAFT_VERSION = 'timing-v3-20260906';\n" +
+vm.runInContext(html.match(/const VIDEO_CORRECTION_DRAFT_VERSION = '[^']+';/)[0] + '\n' +
     ['videoCorrectionDraftContext', 'videoCorrectionDraftContextMatches', 'videoCorrectionDraftSignature', 'restoreVideoCorrectionDraft'].map(declaration).join('\n'), context);
 context.AppState.videoSource = {};
 assert.equal(context.restoreVideoCorrectionDraft({ frames: [{}] }), false);

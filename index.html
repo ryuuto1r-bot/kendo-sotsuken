@@ -10366,7 +10366,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v188',
+                appVersion: 'v188-timing4-20261103',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -13065,6 +13065,67 @@ service cloud.firestore {
             return detectTapeInCanvas(scanCtx, canvasElement.width, canvasElement.height, centerX, centerY, radius, color);
         }
 
+        function detectVideoTapeInCanvas(ctx, width, height, landmarks, previous, timeMs) {
+            const pixels = ctx.getImageData(0, 0, width, height).data;
+            const mask = new Uint8Array(width * height);
+            const queue = new Int32Array(mask.length);
+            const scale = Math.max(width, height) / 745;
+            const areaScale = scale * scale;
+            const hue = getTapeHue(Params.tapeColor);
+            const tolerance = clamp(Number(Params.tapeHueTolerance || 24), 8, 60);
+            const saturation = Math.max(0.55, Number(Params.tapeSaturationMin || 0));
+            const brightness = Math.max(0.65, Number(Params.tapeValueMin || 0));
+            for (let i = 0; i < mask.length; i++) {
+                const hsv = hsvFromRgb(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]);
+                if (hsv.s >= saturation && hsv.v >= brightness && hueDistance(hsv.h, hue) <= tolerance) mask[i] = 1;
+            }
+            const fresh = previous?.source === 'tape' && Number.isFinite(previous.timeMs)
+                && timeMs > previous.timeMs && timeMs - previous.timeMs <= 65;
+            const dt = fresh ? timeMs - previous.timeMs : 0;
+            const predictedX = fresh ? previous.x + Number(previous.vx || 0) * dt : 0;
+            const predictedY = fresh ? previous.y + Number(previous.vy || 0) * dt : 0;
+            const wrist = landmarks?.[16];
+            const candidates = [];
+            // 背景の同色画素とテープを一括平均せず、連結した色領域ごとに評価する。
+            for (let i = 0; i < mask.length; i++) {
+                if (!mask[i]) continue;
+                let head = 0, tail = 1, count = 0, sx = 0, sy = 0;
+                let x0 = width, y0 = height, x1 = 0, y1 = 0;
+                queue[0] = i; mask[i] = 0;
+                while (head < tail) {
+                    const n = queue[head++], y = Math.floor(n / width), x = n - y * width;
+                    count++; sx += x; sy += y;
+                    x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+                    y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nx = x + dx, ny = y + dy;
+                            if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                            const k = ny * width + nx;
+                            if (mask[k]) { mask[k] = 0; queue[tail++] = k; }
+                        }
+                    }
+                }
+                if (count < Math.max(3, Number(Params.tapeMinPixels || 8) * areaScale)
+                    || count > 1200 * areaScale || x1 - x0 > 70 * scale || y1 - y0 > 70 * scale
+                    || x0 === 0 || y0 === 0 || x1 === width - 1 || y1 === height - 1) continue;
+                const x = sx / count, y = sy / count;
+                if (wrist && Math.hypot(x - wrist.x * width, y - wrist.y * height) > Math.max(width, height) * 0.85) continue;
+                const distance = fresh ? Math.hypot(x - predictedX, y - predictedY) : 0;
+                if (fresh && distance > Math.max(35, dt * 2.88) * scale) continue;
+                candidates.push({ x, y, count, quality: Math.min(1, count / (60 * areaScale)),
+                    score: Math.min(count / areaScale, 150) - distance * 3 / scale });
+            }
+            candidates.sort((a, b) => b.score - a.score);
+            const best = candidates[0];
+            if (!best) return null;
+            // 再捕捉時に似た色領域が複数あれば、どちらかを勝手に採用しない。
+            if (!fresh && candidates[1] && candidates[1].score >= best.score * 0.8) return null;
+            return { x: best.x, y: best.y, count: best.count, quality: best.quality,
+                vx: fresh ? (best.x - previous.x) / dt : 0,
+                vy: fresh ? (best.y - previous.y) / dt : 0, source: 'tape', timeMs };
+        }
+
         function normalizeShinaiTrackingMode(mode = Params.shinaiTrackingMode) {
             return ['auto', 'tape', 'shaft'].includes(mode) ? mode : 'auto';
         }
@@ -13354,7 +13415,9 @@ service cloud.firestore {
             const previousFresh = previous
                 && (!frameTimeMs || !previous.timeMs || frameTimeMs - Number(previous.timeMs || 0) <= 65);
             if (trackingModeUsesTape(mode)) {
-                const tapeHit = detectTapeInCanvas(scanCtx, w, h, roi.x, roi.y, radius, Params.tapeColor);
+                const tapeHit = options.videoTracking
+                    ? detectVideoTapeInCanvas(scanCtx, w, h, landmarks, previous, frameTimeMs)
+                    : detectTapeInCanvas(scanCtx, w, h, roi.x, roi.y, radius, Params.tapeColor);
                 if (tapeHit && Number(tapeHit.quality || 0) >= Number(Params.minTapeConfidence || 0.18)) {
                     const jump = previousFresh ? Math.hypot(tapeHit.x - previous.x, tapeHit.y - previous.y) : 0;
                     if (!(previous?.source === 'shaft' && previousFresh && jump > shoulderPx * 1.2 && Number(tapeHit.quality || 0) < 0.70)) {
@@ -14606,7 +14669,7 @@ service cloud.firestore {
 
         // 補正下書きは解析定義と検出元が同じ場合だけ復元する。
         // 古い自動候補が新しい高精度解析を上書きしないよう、互換版を明示する。
-        const VIDEO_CORRECTION_DRAFT_VERSION = 'timing-v3-20260906';
+        const VIDEO_CORRECTION_DRAFT_VERSION = 'timing-v4-20261103';
 
         function videoCorrectionDraftContext(data = AppState.videoAnalysis) {
             return {
@@ -19748,6 +19811,7 @@ service cloud.firestore {
                 number,
                 startFrame,
                 peakFrame: officialPeakFrame,
+                timingSignalSource: Params.officialSpeedSource === 'tape' ? data.tapeTiming?.source || null : null,
                 endFrame,
                 startTimeMs: start.timeMs,
                 peakTimeMs: peak.timeMs,
@@ -19812,6 +19876,7 @@ service cloud.firestore {
 
         function validateVideoStrikeSummary(summary, data) {
             if (!summary) return { ok: false, reason: '要約不可' };
+            if (summary.timingIssue && !summary.manualAdjusted) return { ok: false, reason: summary.timingIssue };
             if (!data?.frames?.[summary.startFrame]?.landmarks || !data?.frames?.[summary.peakFrame]?.landmarks || !data?.frames?.[summary.endFrame]?.landmarks) {
                 return { ok: false, reason: '骨格不足' };
             }
@@ -19892,35 +19957,64 @@ service cloud.firestore {
             const fps = videoEffectiveTimingFps(data, data?.fps || Params.targetFps || 60);
             const minConfidence = Number(Params.minTapeConfidence || 0.18);
             const preferredSource = data?.preferredShinaiSource || null;
-            const values = frames.map(frame => (
-                frame?.tapePoint
-                && (!preferredSource || (frame.shinaiSource || frame.tapePoint?.source) === preferredSource)
-                && Number(frame.tapeConfidence || 0) >= minConfidence
-                && Number.isFinite(Number(frame.tapeSpeed))
-                    ? Math.max(0, Number(frame.tapeSpeed))
-                    : NaN
-            ));
-            const validIndices = values
-                .map((value, index) => Number.isFinite(value) ? index : -1)
+            const width = Number(data?.diagnostics?.width || data?.width || 0);
+            const height = Number(data?.diagnostics?.height || data?.height || 0);
+            const aspect = width > 0 && height > 0 ? height / width : 1;
+            const observed = frames.map(frame => !!frame?.tapePoint
+                && Number.isFinite(frame.tapePoint.x) && Number.isFinite(frame.tapePoint.y)
+                && Number.isFinite(frame.timeMs)
+                && (!preferredSource || (frame.shinaiSource || frame.tapePoint.source) === preferredSource)
+                && Number(frame.tapeConfidence || 0) >= minConfidence);
+            const points = frames.map((frame, i) => observed[i]
+                ? { x: frame.tapePoint.x, y: frame.tapePoint.y * aspect,
+                    source: frame.shinaiSource || frame.tapePoint.source || 'tape' } : null);
+            const validIndices = points
+                .map((point, index) => point ? index : -1)
                 .filter(index => index >= 0);
-            const maxGapFrames = Math.max(2, Math.round(fps * 0.025));
+            const frameMs = 1000 / fps;
             for (let cursor = 0; cursor < validIndices.length - 1; cursor++) {
                 const left = validIndices[cursor];
                 const right = validIndices[cursor + 1];
                 const gap = right - left - 1;
-                if (gap <= 0 || gap > maxGapFrames) continue;
-                for (let offset = 1; offset <= gap; offset++) {
-                    const ratio = offset / (gap + 1);
-                    values[left + offset] = values[left] + (values[right] - values[left]) * ratio;
+                const dt = frames[right].timeMs - frames[left].timeMs;
+                if (gap <= 0 || dt <= 0 || dt - frameMs > 25.01 || points[left].source !== points[right].source) continue;
+                for (let i = left + 1; i < right; i++) {
+                    const ratio = (frames[i].timeMs - frames[left].timeMs) / dt;
+                    if (!(ratio > 0 && ratio < 1)) continue;
+                    points[i] = { x: points[left].x + (points[right].x - points[left].x) * ratio,
+                        y: points[left].y + (points[right].y - points[left].y) * ratio, source: points[left].source };
                 }
             }
-            const speeds = smoothVideoScalarSeries(values.map(value => Number.isFinite(value) ? value : 0), 2);
+            // 計時は表示用速度の上限に依存させない。画像座標の変位を固定尺度で微分する。
+            const shoulderWidths = frames.filter(frame => landmarkQuality(frame?.landmarks?.[11], frame?.landmarks?.[12]) >= 0.45)
+                .map(frame => videoShoulderWidthRatio(frame)).filter(value => value >= 0.02);
+            const scale = Number(Params.referenceShoulderMeters || 0.42) / Math.max(0.02, percentile(shoulderWidths, 0.5) || 0.2);
+            const values = points.map((point, i) => {
+                const previous = points[i - 1];
+                const dt = i ? frames[i].timeMs - frames[i - 1].timeMs : 0;
+                if (!point || !previous || point.source !== previous.source || dt <= 0 || dt > Math.max(50, frameMs * 1.75)) return NaN;
+                return Math.hypot(point.x - previous.x, point.y - previous.y) * scale * 1000 / dt;
+            });
+            // 欠落は0（停止）に置き換えず、連続して取得できた区間だけ平滑化する。
+            const speeds = values.slice();
+            for (let start = 0; start < values.length;) {
+                if (!Number.isFinite(values[start])) { start++; continue; }
+                let end = start + 1;
+                while (end < values.length && Number.isFinite(values[end])) end++;
+                const segment = smoothVideoScalarSeries(values.slice(start, end), 2);
+                for (let i = start; i < end; i++) speeds[i] = segment[i - start];
+                start = end;
+            }
             const validCount = validIndices.length;
             const hitRate = frames.length ? validCount / frames.length : 0;
             const minFrames = Math.max(6, Math.ceil(fps * 0.06));
             const reliable = validCount >= minFrames && hitRate >= Number(Params.minTapeHitRate || 0.08);
             return {
                 speeds,
+                points,
+                observed,
+                source: 'tape-displacement',
+                aspect,
                 validCount,
                 hitRate,
                 reliable,
@@ -20196,55 +20290,6 @@ service cloud.firestore {
             };
         }
 
-        // 「振り下ろし」モードでは、振りかぶり頂点の静止ではなく、
-        // 竹刀先端が下方向へ連続して動き始めた最初のコマを開始にする。
-        function refineTapeDownswingStart(data, window, speeds = []) {
-            const frames = data?.frames || [];
-            if (!frames.length || !window || !Number.isInteger(window.peakFrame)) return window;
-            const fps = videoEffectiveTimingFps(data, data.fps || Params.targetFps || 60);
-            const peakFrame = clamp(Number(window.peakFrame), 1, frames.length - 1);
-            let topFrame = Number.isInteger(window.topFrame) ? Number(window.topFrame) : -1;
-            if (topFrame < 0 || topFrame >= peakFrame) {
-                const topSearchStart = Math.max(0, peakFrame - Math.max(12, Math.round(fps * 0.60)));
-                const topSearchEnd = Math.max(topSearchStart, peakFrame - Math.max(2, Math.round(fps * 0.025)));
-                let topY = Infinity;
-                for (let i = topSearchStart; i <= topSearchEnd; i++) {
-                    const y = videoTapeYNear(frames, i, 2);
-                    if (Number.isFinite(y) && y <= topY) {
-                        topY = y;
-                        topFrame = i;
-                    }
-                }
-            }
-            if (topFrame < 0 || topFrame >= peakFrame) return window;
-
-            const localPeakSpeed = Math.max(0.001, ...speeds.slice(topFrame, peakFrame + 1).map(value => Number(value) || 0));
-            const activeThreshold = Math.max(0.14, localPeakSpeed * 0.055);
-            const span = Math.max(2, Math.round(fps * 0.014));
-            const minDownwardTravel = Math.max(0.0025, Number(videoShoulderWidthRatio(frames[peakFrame]) || 0) * 0.014);
-            let startFrame = topFrame;
-            for (let i = topFrame; i <= peakFrame - span; i++) {
-                const y0 = videoTapeYNear(frames, i, 2);
-                const y1 = videoTapeYNear(frames, i + span, 2);
-                if (!Number.isFinite(y0) || !Number.isFinite(y1) || y1 - y0 < minDownwardTravel) continue;
-                let activeFrames = 0;
-                for (let j = i; j <= i + span; j++) {
-                    if (Number(speeds[j] || 0) >= activeThreshold) activeFrames += 1;
-                }
-                if (activeFrames >= Math.max(2, Math.ceil((span + 1) * 0.5))) {
-                    startFrame = i;
-                    break;
-                }
-            }
-            return {
-                ...window,
-                startFrame: clamp(startFrame, 0, peakFrame - 1),
-                topFrame,
-                downwardStartFrame: clamp(startFrame, 0, peakFrame - 1),
-                startDetection: 'downswing-tip-motion'
-            };
-        }
-
         function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, referencePeak) {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
@@ -20277,35 +20322,33 @@ service cloud.firestore {
             const fps = videoEffectiveTimingFps(data, data.fps || Params.targetFps || 60);
             const peakSpeed = Math.max(0, Number(speeds[peakFrame] || 0));
             const maxBack = Math.max(12, Math.round(fps * 1.8));
-            const maxForward = Math.max(8, Math.round(fps * 0.42));
-            const quietFramesNeeded = Math.max(2, Math.round(fps * 0.018));
-            const minLeadFrames = Math.max(2, Math.round(fps * 0.045));
-            const minAfterFrames = Math.max(2, Math.round(fps * 0.045));
-            const baselineStart = Math.max(0, peakFrame - maxBack);
-            const baselineEnd = Math.max(baselineStart, peakFrame - minLeadFrames);
+            const maxForward = Math.max(8, Math.round(fps * 0.75));
+            const quietFramesNeeded = Math.max(2, Math.ceil(fps * 0.025 - 1e-6));
+            const minLeadFrames = Math.max(2, Math.round(fps * 0.025));
+            const minAfterFrames = Math.max(2, Math.round(fps * 0.025));
+            const baselineStart = Math.max(0, Number(data.timingSearchStartFrame || 0), peakFrame - maxBack);
+            const endLimit = Math.min(frames.length - 1, Number(data.timingSearchEndFrame ?? frames.length - 1), peakFrame + maxForward);
+            // 動作の途中から始まる動画にも対応するため、前後の低速区間から雑音床を推定する。
             const baselineValues = speeds
-                .slice(baselineStart, baselineEnd + 1)
+                .slice(baselineStart, endLimit + 1)
                 .map(Number)
                 .filter(Number.isFinite)
                 .sort((a, b) => a - b);
-            const baseline = baselineValues.length ? baselineValues[Math.floor(baselineValues.length * 0.35)] : 0;
-            const startThreshold = Math.max(
-                Number(sensitivity.minSpeed || 0) * 0.55,
-                baseline + Math.max(0.12, (peakSpeed - baseline) * Math.max(0.10, sensitivity.startSpeedRatio * 0.55))
-            );
-            const endThreshold = Math.max(
-                baseline + 0.10,
-                peakSpeed * Math.max(0.20, sensitivity.endSpeedRatio * 0.72)
-            );
+            const quietValues = baselineValues.slice(0, Math.max(1, Math.ceil(baselineValues.length * 0.1)));
+            const baseline = percentile(quietValues, 0.5);
+            const noise = percentile(quietValues.map(value => Math.abs(value - baseline)), 0.5);
+            // 速度ピークの約27%では減速途中に終了する。低速側の雑音と継続で決める。
+            const startThreshold = Math.max(0.08, baseline + noise * 4, peakSpeed * 0.03);
+            const endThreshold = Math.max(0.08, baseline + noise * 4, peakSpeed * 0.025);
 
             // 振りかぶり頂点では速度がいったん落ちるため、ピーク直前だけを
             // 逆探索すると頂点を開始と誤認する。活動区間を分け、下降区間の
             // ひとつ前にある振り上げ区間まで含めて開始を決める。
-            const activeFramesNeeded = Math.max(2, Math.round(fps * 0.015));
+            const activeFramesNeeded = Math.max(2, Math.ceil(fps * 0.015 - 1e-6));
             const activeRuns = [];
             let activeStart = null;
             for (let i = baselineStart; i <= peakFrame; i++) {
-                if (Number(speeds[i] || 0) >= startThreshold) {
+                if (Number.isFinite(speeds[i]) && speeds[i] >= startThreshold) {
                     if (activeStart === null) activeStart = i;
                 } else if (activeStart !== null) {
                     if (i - activeStart >= activeFramesNeeded) activeRuns.push({ start: activeStart, end: i - 1 });
@@ -20315,26 +20358,37 @@ service cloud.firestore {
             if (activeStart !== null && peakFrame - activeStart + 1 >= activeFramesNeeded) {
                 activeRuns.push({ start: activeStart, end: peakFrame });
             }
-            let startFrame = Math.max(0, peakFrame - minLeadFrames);
+            let startFrame = Math.max(baselineStart, peakFrame - minLeadFrames);
             const peakRunIndex = activeRuns.findIndex(run => run.start <= peakFrame && run.end >= peakFrame);
             const peakRun = peakRunIndex >= 0 ? activeRuns[peakRunIndex] : activeRuns[activeRuns.length - 1];
             if (peakRun) {
                 startFrame = peakRun.start;
                 const raisingRun = peakRunIndex > 0 ? activeRuns[peakRunIndex - 1] : null;
                 const maxTopPauseFrames = Math.max(3, Math.round(fps * 0.45));
-                if (raisingRun && peakRun.start - raisingRun.end <= maxTopPauseFrames) {
+                if (strikeTimingModeOf(data) === 'full-motion' && raisingRun
+                    && peakRun.start - raisingRun.end <= maxTopPauseFrames
+                    && speeds.slice(raisingRun.end, peakRun.start + 1).every(Number.isFinite)) {
                     startFrame = raisingRun.start;
                 }
             }
 
+            const beforeStart = speeds.slice(Math.max(baselineStart, startFrame - activeFramesNeeded), startFrame);
+            let timingIssue = !peakRun || beforeStart.length < activeFramesNeeded || !beforeStart.every(Number.isFinite)
+                ? '開始前の動きを確認できません' : '';
+
             let endFrame = Math.min(frames.length - 1, peakFrame + minAfterFrames);
             let settleFrames = 0;
-            const endLimit = Math.min(frames.length - 1, peakFrame + maxForward);
+            let endConfirmed = false;
             for (let i = peakFrame + minAfterFrames; i <= endLimit; i++) {
-                if (Number(speeds[i] || 0) <= endThreshold) {
+                if (!Number.isFinite(speeds[i])) {
+                    timingIssue = '終了付近の竹刀検出が不足しています';
+                    break;
+                }
+                if (speeds[i] <= endThreshold) {
                     settleFrames += 1;
                     if (settleFrames >= quietFramesNeeded) {
                         endFrame = Math.max(peakFrame + 1, i - quietFramesNeeded + 1);
+                        endConfirmed = true;
                         break;
                     }
                 } else {
@@ -20343,11 +20397,13 @@ service cloud.firestore {
                 }
             }
 
+            if (!endConfirmed && !timingIssue) timingIssue = '終了の低速継続を確認できません';
+            if (speeds.slice(startFrame, endFrame + 1).some(value => !Number.isFinite(value))) timingIssue ||= '区間内の竹刀検出が不足しています';
+
             if (endFrame <= startFrame) endFrame = Math.min(frames.length - 1, startFrame + 1);
-            const refined = refineTapeStrikeWindowByAngle(data, { startFrame, peakFrame, endFrame }, speeds);
-            return strikeTimingModeOf(data) === 'downswing'
-                ? refineTapeDownswingStart(data, refined, speeds)
-                : refined;
+            // 画像上の最高点・垂直通過点で開始を上書きしない。
+            return { startFrame, peakFrame, endFrame, timingIssue,
+                startDetection: 'sustained-tip-motion', startThreshold, endThreshold };
         }
 
         function resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity) {
@@ -20601,6 +20657,7 @@ service cloud.firestore {
             const timingFps = videoEffectiveTimingFps(data, fps);
             const tapeSignal = Params.officialSpeedSource === 'tape' ? buildTapeTimingSeries(data) : null;
             data.tapeTiming = tapeSignal;
+            frames.forEach((frame, i) => { frame.tapeTimingSpeed = tapeSignal ? tapeSignal.speeds[i] : null; });
             if (tapeSignal && !tapeSignal.reliable) {
                 data.strikes = [];
                 data.rejectedStrikes = [];
@@ -20611,7 +20668,7 @@ service cloud.firestore {
                 ? tapeSignal.speeds
                 : frames.map(frame => videoFrameSpeed(frame, Params.officialSpeedSource).value || 0);
             const speeds = tapeSignal ? rawSpeeds : smoothVideoScalarSeries(rawSpeeds, 2);
-            const globalPeak = Math.max(...speeds);
+            const globalPeak = speeds.reduce((maximum, value) => Number.isFinite(value) ? Math.max(maximum, value) : maximum, 0);
             if (!Number.isFinite(globalPeak) || globalPeak <= 0) {
                 data.strikes = [];
                 data.rejectedStrikes = [];
@@ -20629,6 +20686,7 @@ service cloud.firestore {
             const minGap = Math.max(6, Math.round(timingFps * sensitivity.minGapSec));
             const candidates = [];
             for (let i = 2; i < speeds.length - 2; i++) {
+                if (!speeds.slice(i - 2, i + 3).every(Number.isFinite)) continue;
                 if (speeds[i] < threshold) continue;
                 if (speeds[i] < speeds[i - 1] || speeds[i] < speeds[i + 1]) continue;
                 if (speeds[i] < speeds[i - 2] || speeds[i] < speeds[i + 2]) continue;
@@ -20648,14 +20706,28 @@ service cloud.firestore {
             candidates.sort((a, b) => Number(a.peakFrame || 0) - Number(b.peakFrame || 0));
             const segments = [];
             const rejections = [];
-            const pushRejection = (startFrame, peakFrame, endFrame, reason) => {
+            const pushRejection = (startFrame, peakFrame, endFrame, reason, timing = {}) => {
                 const rejected = buildRejectedVideoStrike(data, startFrame, peakFrame, endFrame, reason, rejections.length + 1);
-                if (rejected) rejections.push(rejected);
-                else rejections.push({ startFrame, peakFrame, endFrame, reason, validationReason: reason, rejected: true, number: rejections.length + 1 });
+                if (rejected) rejections.push({ ...rejected, ...timing });
+                else rejections.push({ startFrame, peakFrame, endFrame, reason, validationReason: reason, rejected: true, number: rejections.length + 1, ...timing });
             };
             candidates.forEach((candidate, idx) => {
                 const peakFrame = candidate.peakFrame;
-                const { startFrame, endFrame } = resolveVideoStrikeWindow(data, peakFrame, speeds, sensitivity);
+                const searchData = tapeSignal ? { ...data,
+                    timingSearchStartFrame: idx ? candidates[idx - 1].peakFrame + 1 : 0,
+                    timingSearchEndFrame: candidates[idx + 1] ? candidates[idx + 1].peakFrame - 1 : frames.length - 1
+                } : data;
+                const window = resolveVideoStrikeWindow(searchData, peakFrame, speeds, sensitivity);
+                const { startFrame, endFrame } = window;
+                const timing = tapeSignal ? {
+                    timingIssue: window.timingIssue || '',
+                    startDetection: window.startDetection,
+                    timingThresholds: { start: window.startThreshold, end: window.endThreshold }
+                } : {};
+                if (timing.timingIssue) {
+                    pushRejection(startFrame, peakFrame, endFrame, timing.timingIssue, timing);
+                    return;
+                }
                 const duration = frames[endFrame].timeMs - frames[startFrame].timeMs;
                 const overlaps = segments.some(segment => startFrame <= segment.endFrame && endFrame >= segment.startFrame);
                 if (overlaps) {
@@ -20667,37 +20739,10 @@ service cloud.firestore {
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
-                if (summary) summary.strikeTimingMode = timingMode;
+                if (summary) Object.assign(summary, timing, { strikeTimingMode: timingMode });
                 const validation = validateVideoStrikeSummary(summary, data);
                 if (validation.ok) {
-                    let acceptedSummary = summary;
-                    if (Params.officialSpeedSource === 'tape' && timingMode === 'full-motion') {
-                        const lowerGuard = refineTapeStrikeStartByTipHeight(
-                            data,
-                            { startFrame: summary.startFrame, peakFrame: summary.peakFrame, endFrame: summary.endFrame },
-                            speeds
-                        );
-                        const previousEnd = segments.length ? Number(segments[segments.length - 1].endFrame || -1) : -1;
-                        const refinedStart = lowerGuard
-                            ? Math.max(previousEnd + 1, Number(lowerGuard.startFrame))
-                            : Number(summary.startFrame);
-                        if (refinedStart >= 0 && refinedStart < summary.startFrame) {
-                            const refined = summarizeVideoStrike(data, refinedStart, summary.peakFrame, summary.endFrame, idx + 1);
-                            if (refined && refined.durationMs <= videoFormalMaxDurationMs()) {
-                                acceptedSummary = {
-                                    ...refined,
-                                    // 候補判定済みの振り下ろしピークは維持する。
-                                    peakFrame: summary.peakFrame,
-                                    peakTimeMs: summary.peakTimeMs,
-                                    downwardStartFrame: summary.startFrame,
-                                    startDetection: 'lower-guard-tip-height',
-                                    // 全動作の時間と、振り下ろし区間の検出品質を分離して保持する。
-                                    timingCoreSummary: summary
-                                };
-                            }
-                        }
-                    }
-                    segments.push({ ...acceptedSummary, strikeTimingMode: timingMode });
+                    segments.push({ ...summary, strikeTimingMode: timingMode });
                 } else {
                     pushRejection(startFrame, peakFrame, endFrame, validation.reason);
                 }
@@ -21728,7 +21773,17 @@ service cloud.firestore {
                 .filter(sample => sample.position && Number(sample.speedMps) >= 0);
             const metrics = analyzeSwingSamples(samples, source);
             if (!metrics) return null;
-            const peakSample = samples[Math.min(samples.length - 1, Number(metrics.peakIndex || 0) + 1)] || samples[0];
+            let peakSample = samples[Math.min(samples.length - 1, Number(metrics.peakIndex || 0) + 1)] || samples[0];
+            if (source === 'tape') {
+                const timingPeak = frames.reduce((best, frame, i) => Number.isFinite(frame.tapeTimingSpeed)
+                    && (best < 0 || frame.tapeTimingSpeed > frames[best].tapeTimingSpeed) ? i : best, -1);
+                if (timingPeak >= 0) {
+                    peakSample = { timeMs: frames[timingPeak].timeMs, frameOffset: timingPeak };
+                    metrics.peakTimeMs = peakSample.timeMs;
+                    metrics.peakOffsetMs = Math.round(peakSample.timeMs - frames[0].timeMs);
+                    metrics.timingSignalSource = 'tape-displacement';
+                }
+            }
             const decelSample = samples[Math.min(samples.length - 1, Number(metrics.maxDecelIndex || 0) + 1)] || peakSample;
             return {
                 ...metrics,
@@ -22710,7 +22765,9 @@ service cloud.firestore {
             const localFrames = fineFrames.slice(startFrame, endFrame + 1);
             const localSignal = buildTapeTimingSeries({ ...data, frames: localFrames, fps: data.fps });
             if (localSignal.reliable && localSignal.speeds.length) {
-                const localPeak = localSignal.speeds.reduce((best, value, index, values) => value > values[best] ? index : best, 0);
+                const localPeak = localSignal.speeds.reduce((best, value, index, values) =>
+                    Number.isFinite(value) && (best < 0 || value > values[best]) ? index : best, -1);
+                if (localPeak < 0) return null;
                 const localWindow = resolveTapeStrikeWindow(
                     { ...data, frames: localFrames, fps: data.fps },
                     localPeak,
@@ -22781,6 +22838,7 @@ service cloud.firestore {
                 drawDecodedVideoFrame(ctx, videoFrame, canvas.width, canvas.height, context.rotation);
                 if (fine.landmarks?.[11] && fine.landmarks?.[12] && fine.landmarks?.[14] && fine.landmarks?.[16]) {
                     const detection = detectShinaiPointInCanvas(ctx, canvas.width, canvas.height, fine.landmarks, {
+                        videoTracking: true,
                         mode: data.preferredShinaiSource && data.preferredShinaiSource !== 'none'
                             ? data.preferredShinaiSource
                             : Params.shinaiTrackingMode,
@@ -23185,6 +23243,7 @@ service cloud.firestore {
                                 videoScanCanvas.height,
                                 lm,
                                 {
+                                    videoTracking: true,
                                     // 正式解析ではテープを一度検出した後に本体座標へ混ぜない。
                                     // 異なる座標系列の切替による偽の速度ピークを防ぐ。
                                     mode: requestedShinaiTrackingMode === 'auto' && videoAutoPreferredSource === 'tape'
@@ -23435,7 +23494,7 @@ service cloud.firestore {
             AppState.videoEditUndoStack = [];
             AppState.videoEditRedoStack = [];
             AppState.videoAnalysis.strikes = detectVideoStrikes(AppState.videoAnalysis);
-            if (webCodecsContext && (AppState.videoAnalysis.strikes.length || AppState.videoAnalysis.rejectedStrikes?.length || manualRange)) {
+            if (webCodecsContext) {
                 try {
                     const refined = await refineVideoAnalysisWithWebCodecs(
                         webCodecsContext,
@@ -23505,9 +23564,13 @@ service cloud.firestore {
                 AppState.videoSelectedStrikeRejected = false;
                 if (startFrame !== null && endFrame !== null && endFrame > startFrame) {
                     const singleSummary = summarizeVideoStrike(AppState.videoAnalysis, startFrame, peakFrame, endFrame, 1);
+                    const timingIssue = !manualRange && Params.officialSpeedSource === 'tape'
+                        ? '竹刀の開始・終了を確認できません' : '';
+                    if (singleSummary && timingIssue) singleSummary.timingIssue = timingIssue;
                     const singleValidation = validateVideoStrikeSummary(singleSummary, AppState.videoAnalysis);
                     if (!singleValidation.ok) {
                         const rejectedSingle = buildRejectedVideoStrike(AppState.videoAnalysis, startFrame, peakFrame, endFrame, singleValidation.reason, 1);
+                        if (rejectedSingle && timingIssue) rejectedSingle.timingIssue = timingIssue;
                         if (rejectedSingle) AppState.videoAnalysis.rejectedStrikes = [...(AppState.videoAnalysis.rejectedStrikes || []), rejectedSingle];
                         AppState.videoAnalysis.exclusionReason = singleValidation.reason;
                         AppState.videoAnalysis.autoExclusionReason = singleValidation.reason;
