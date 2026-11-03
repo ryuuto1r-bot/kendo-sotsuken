@@ -5297,6 +5297,18 @@
             box-shadow: 0 8px 24px rgba(15, 23, 42, .24);
             backdrop-filter: blur(10px);
         }
+        .camera-controls {
+            position: absolute; top: 8px; right: 8px; z-index: 50;
+            display: flex; gap: 6px;
+        }
+        .camera-controls .camera-flip-floating {
+            position: static; min-height: 44px; border-radius: 6px;
+        }
+        #stopCameraBtn { background: #fff; border-color: #fca5a5; color: #b91c1c; }
+        #stopCameraBtn[hidden] { display: none; }
+        @media (min-width: 821px) {
+            #videoContainer #canvasOverlayData { top: 64px; }
+        }
         body[data-active-tab="video"][data-video-step="load"] .video-workflow-main-head,
         body[data-active-tab="video"][data-video-step="load"] #videoNextActionBanner,
         body[data-active-tab="video"][data-video-step="load"] #videoStepHint,
@@ -5651,9 +5663,14 @@
                         <span id="measurementReadyLamp" class="rounded-full" style="width:8px;height:8px;background:#64748b;box-shadow:none" aria-label="測定準備状態"></span>
                         <span id="measurementUnifiedStatusText">カメラ待機</span>
                     </div>
-                    <button id="flipCameraBtn" type="button" class="camera-flip-floating" aria-label="カメラ映像を左右反転">
-                        <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
-                    </button>
+                    <div class="camera-controls">
+                        <button id="stopCameraBtn" type="button" class="camera-flip-floating" title="カメラと測定を停止" hidden>
+                            <i class="fa-solid fa-stop mr-1" aria-hidden="true"></i>停止
+                        </button>
+                        <button id="flipCameraBtn" type="button" class="camera-flip-floating" aria-label="カメラ映像を左右反転" aria-pressed="false">
+                            <i class="fa-solid fa-right-left mr-1"></i>反転 OFF
+                        </button>
+                    </div>
 
                     <div id="flashOverlay" aria-hidden="true"><strong>打突</strong></div>
                     <div id="reactionLiveTools" class="reaction-live-tools" hidden>
@@ -5685,7 +5702,7 @@
 	                                </span>
 	                                <input id="handSwingModeToggle" type="checkbox" class="h-5 w-5 shrink-0 accent-emerald-500" aria-label="竹刀なしの手の素振り測定を切り替える">
 	                            </label>
-	                            <p id="realtimeMeasurementSourceHelp" class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。</p>
+	                            <p id="realtimeMeasurementSourceHelp" class="mt-2 text-xs font-bold text-amber-200"><i class="fa-solid fa-crosshairs mr-1"></i>竹刀全体を映してください。先端の黄色テープ、または竹刀本体を追跡します。</p>
 	                        </div>
                         <p id="startModePrompt" class="mb-3 max-w-sm text-center text-xs font-bold leading-relaxed text-slate-200">通常の打突時間を測定します。</p>
                         <div class="reaction-overlay-actions">
@@ -7610,6 +7627,7 @@ service cloud.firestore {
             enableAudio: false,
             enableMic: false,
             micStream: null,
+            microphoneRequestId: 0,
             audioContext: null,
             reactionAudioBlocked: true,
             reactionSoundTesting: false,
@@ -7675,6 +7693,17 @@ service cloud.firestore {
             legacyPoseCreatedAt: 0,
             frameLoopRunning: false,
             processingFrame: false,
+            cameraSession: 0,
+            cameraStarting: false,
+            cameraFrameCallbackId: null,
+            cameraFrameCallbackType: '',
+            cameraLastMediaTime: NaN,
+            cameraFrameClock: null,
+            cameraWatchdog: null,
+            cameraMetadataCancel: null,
+            livePoseRequest: null,
+            realtimeEpoch: 0,
+            lastLiveFrameAt: 0,
             currentFrameTimeMs: 0,
             currentFramePerformanceMs: 0,
             lastFrameTimeMs: 0,
@@ -8002,6 +8031,9 @@ service cloud.firestore {
         }
 
         function switchTab(tab) {
+            if (tab !== 'measure' && (AppState.isCameraRunning || AppState.cameraStarting)) {
+                stopCameraStream({ message: '測定を停止しました' });
+            }
             document.body.dataset.activeTab = tab;
             if (tab !== 'measure' && Params.signalMode) {
                 AppState.reactionAudioBlocked = true;
@@ -8374,8 +8406,8 @@ service cloud.firestore {
         }
 
         function frameClockAtPerformanceTime(performanceTimeMs) {
-            const frameTimeMs = Number(AppState.currentFrameTimeMs);
-            const framePerformanceMs = Number(AppState.currentFramePerformanceMs);
+            const frameTimeMs = Number(AppState.cameraFrameClock?.timeMs ?? AppState.currentFrameTimeMs);
+            const framePerformanceMs = Number(AppState.cameraFrameClock?.performanceMs ?? AppState.currentFramePerformanceMs);
             if (Number.isFinite(frameTimeMs) && Number.isFinite(framePerformanceMs) && framePerformanceMs > 0) {
                 return frameTimeMs + (performanceTimeMs - framePerformanceMs);
             }
@@ -8443,7 +8475,8 @@ service cloud.firestore {
         }
 
         function reactionMsLabel(value) {
-            return Number.isFinite(Number(value)) ? `${Math.round(Number(value))} ms` : '---';
+            const time = toFiniteOrNull(value);
+            return time !== null ? `${Math.round(time)} ms` : '---';
         }
 
         function updateRealtimeMeasurementModeUi(enabled) {
@@ -8563,7 +8596,8 @@ service cloud.firestore {
             Params.signalMode = next;
             if (next) setStrikeTimingMode('full-motion', { notify: false });
             if (options.persist !== false) safeStorageSet('kendoReactionTrainingMode', next ? '1' : '0');
-            resetReactionTrialClock();
+            if (AppState.isCameraRunning) resetRealtimeTracking();
+            else resetReactionTrialClock();
             AppState.idleTimer = 0;
             if (['SIGNAL_WAIT', 'SIGNAL_GO'].includes(AppState.swingState)) {
                 AppState.swingState = 'IDLE';
@@ -8870,7 +8904,7 @@ service cloud.firestore {
             updatePrecisionPanel();
             if (options.restart && AppState.isCameraRunning) {
                 startCameraStream()
-                    .then(() => showToast(`${profile.label}モードに切り替えました`, 'green'))
+                    .then(started => { if (started) showToast(`${profile.label}モードに切り替えました`, 'green'); })
                     .catch(err => {
                         console.error('処理モード切替エラー', err);
                         showToast(cameraErrorText(err), 'red');
@@ -8902,15 +8936,35 @@ service cloud.firestore {
             canvasCtx.restore();
         }
 
+        function stopMicrophone() {
+            AppState.microphoneRequestId = Number(AppState.microphoneRequestId || 0) + 1;
+            AppState.micStream?.getTracks().forEach(track => track.stop());
+            AppState.micStream = null;
+            AppState.analyser = null;
+            AppState.enableMic = false;
+            const btn = document.getElementById('micRequestBtn');
+            if (btn) {
+                btn.className = 'bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs items-center gap-2 transition border border-slate-600';
+                btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> マイクOFF';
+            }
+        }
+
         async function initMicrophone() {
             const btn = document.getElementById('micRequestBtn');
+            const requestId = AppState.microphoneRequestId = Number(AppState.microphoneRequestId || 0) + 1;
+            let stream = null;
             try {
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('microphone unavailable');
-                if (!AppState.audioContext) AppState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!AppState.audioContext || AppState.audioContext.state === 'closed') AppState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 if (AppState.audioContext.state === 'suspended') await AppState.audioContext.resume();
+                if (requestId !== AppState.microphoneRequestId || !AppState.enableMic || document.hidden) return false;
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (requestId !== AppState.microphoneRequestId || !AppState.enableMic || document.hidden) {
+                    stream.getTracks().forEach(track => track.stop());
+                    return false;
+                }
                 if (AppState.micStream) AppState.micStream.getTracks().forEach(t => t.stop());
-
-                AppState.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                AppState.micStream = stream;
                 const source = AppState.audioContext.createMediaStreamSource(AppState.micStream);
                 AppState.analyser = AppState.audioContext.createAnalyser();
                 AppState.analyser.fftSize = 256;
@@ -8921,14 +8975,13 @@ service cloud.firestore {
                 btn.className = "bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 transition";
                 btn.innerHTML = '<i class="fa-solid fa-microphone"></i> マイクON';
                 showToast('マイクを有効にしました', 'green');
+                return true;
             } catch(e) {
-                AppState.enableMic = false;
-                AppState.analyser = null;
-                if (btn) {
-                    btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600";
-                    btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> マイクOFF';
-                }
+                stream?.getTracks().forEach(track => track.stop());
+                if (requestId !== AppState.microphoneRequestId) return false;
+                stopMicrophone();
                 showToast('マイクを起動できませんでした', 'red');
+                return false;
             }
         }
 
@@ -9159,7 +9212,7 @@ service cloud.firestore {
 
             safeText('realtimeMeasurementSourceHelp', enabled
                 ? '竹刀は不要です。右肩・右肘・右手首がすべて映るようにしてください。'
-                : '竹刀全体を映してください。最高精度は先端の黄色テープ、テープなしでも本体を追跡します。');
+                : '竹刀全体を映してください。先端の黄色テープ、または竹刀本体を追跡します。');
             const realtimeStart = document.getElementById('realtimeTimingStartDefinition');
             const realtimeEnd = document.getElementById('realtimeTimingEndDefinition');
             const realtimeSource = document.getElementById('realtimeTimingSourceDefinition');
@@ -9195,11 +9248,7 @@ service cloud.firestore {
             Params.officialSpeedSource = next ? 'wrist' : 'tape';
             if (options.persist !== false) safeStorageSet('kendoHandSwingMode', next ? '1' : '0');
             if (changed && AppState.isCameraRunning) {
-                AppState.swingState = 'IDLE';
-                resetSwingTracking();
-                resetFullMotionStart();
-                setTimingStatus('待機', '---', '---');
-                updateStateUI('IDLE');
+                resetRealtimeTracking();
             }
             if (changed) resetWristMotionBaseline();
             syncHandSwingModeUi();
@@ -10222,7 +10271,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v189-editor2-20261103',
+                appVersion: 'v190-live-session-20261103',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -12234,7 +12283,7 @@ service cloud.firestore {
         function cloudPayloadToLocalRecord(payload, fallbackType) {
             const type = payload.recordType === 'formal' || payload.recordType === 'realtime' ? payload.recordType : fallbackType;
             return normalizeRecordMeta({
-                id: AppState.records.length + 1,
+                id: nextRecordId(),
                 recordType: type,
                 source: payload.source || (type === 'formal' ? 'firebase-video' : 'firebase-realtime'),
                 recordedAt: payload.recordedAt || new Date().toISOString(),
@@ -12369,6 +12418,13 @@ service cloud.firestore {
             safeStorageSet('kendoRecords', JSON.stringify(compact));
             if (options.skipSync) return;
             scheduleResearchExcelAutoUpdate();
+        }
+
+        function nextRecordId() {
+            return (AppState.records || []).reduce((max, record) => {
+                const id = Number(record.id);
+                return Number.isSafeInteger(id) && id > max ? id : max;
+            }, 0) + 1;
         }
 
         function setTimingStatus(start = AppState.timingStartStatus, peak = AppState.timingPeakStatus, end = AppState.timingEndStatus) {
@@ -13419,7 +13475,9 @@ service cloud.firestore {
             safeText('precisionDroppedFrames', `${AppState.droppedCameraFrames || 0} / ${AppState.skippedAnalysisFrames || 0}`);
             safeText('precisionTimingUncertainty', timingQuality.uncertaintyMs ? `${timingQuality.uncertaintyMs} ms` : '---');
             safeText('precisionInferenceLatency', inferenceP90 ? `${inferenceP90.toFixed(1)} ms` : '---');
-            const validationReady = measuredCameraFps >= 50 && measuredAiFps >= 30 && AppState.currentViewQuality >= Params.minViewQuality && AppState.currentAngleQuality >= Params.minAngleVisibility;
+            const validationReady = AppState.isCameraRunning && AppState.currentPoseSnapshot
+                && now - AppState.lastPoseResultAt < 500 && measuredCameraFps >= 50 && measuredAiFps >= 30
+                && AppState.currentViewQuality >= Params.minViewQuality && AppState.currentAngleQuality >= Params.minAngleVisibility;
             safeText('precisionValidationState', validationReady ? '検証可能' : (AppState.isCameraRunning ? '条件調整中' : '待機'));
             safeText('precisionVisibility', AppState.currentWristVisibility ? `${Math.round(AppState.currentWristVisibility * 100)}%` : '---');
             safeText('precisionAngleQuality', AppState.currentAngleQuality ? `${Math.round(AppState.currentAngleQuality * 100)}%` : '---');
@@ -13429,7 +13487,7 @@ service cloud.firestore {
             safeText('precisionLandmarkerDiag', AppState.landmarkerDiag || '未確認');
             if (AppState.cameraSettings) {
                 const settings = AppState.cameraSettings;
-                safeText('precisionCameraStatus', `${AppState.cameraLabel || 'カメラ'} / ${settings.width || '-'}x${settings.height || '-'} / ${(AppState.frameFps || settings.frameRate || 0).toFixed(1)}fps`);
+                safeText('precisionCameraStatus', `${AppState.cameraLabel || 'カメラ'} / ${settings.width || '-'}x${settings.height || '-'} / ${measuredCameraFps.toFixed(1)}fps`);
             }
             safeText('overlaySpeed3d', speedLabel(AppState.currentSpeed3d, AppState.currentSpeedUnit));
             safeText('overlayTipSpeed', speedLabel(AppState.currentEstimatedTipSpeed, AppState.currentEstimatedTipUnit));
@@ -13445,7 +13503,7 @@ service cloud.firestore {
             const settings = AppState.cameraSettings || {};
             const width = Number(settings.width || canvasElement.width || videoElement.videoWidth || 0);
             const height = Number(settings.height || canvasElement.height || videoElement.videoHeight || 0);
-            const fps = Number(AppState.frameFps || settings.frameRate || 0);
+            const fps = rollingFrameRate(AppState.cameraFrameTimes);
             const upper = upperBodyVisibility(AppState.currentPoseSnapshot);
             const angleQuality = Number(AppState.currentAngleQuality || 0);
             const viewQuality = Number(AppState.currentViewQuality || 0);
@@ -13474,7 +13532,8 @@ service cloud.firestore {
                 const wristReady = Number(AppState.currentWristVisibility || 0) >= 0.55
                     && Number(AppState.currentViewQuality || 0) >= Math.max(0.3, Number(Params.minViewQuality || 0.42) - 0.1);
                 const sourceReady = handOnly ? wristReady : tapeReady;
-                const ready = AppState.isCameraRunning && tone === 'good' && sourceReady;
+                const ready = AppState.isCameraRunning && AppState.currentPoseSnapshot
+                    && performance.now() - AppState.lastPoseResultAt < 500 && tone === 'good' && sourceReady;
                 readyLamp.style.background = ready ? '#22c55e' : '#64748b';
                 readyLamp.style.boxShadow = ready ? '0 0 7px rgba(34,197,94,.95)' : 'none';
                 readyLamp.setAttribute('aria-label', ready
@@ -15803,17 +15862,15 @@ service cloud.firestore {
             AppState.lastRealtimeRecordAt = recordNow;
             let comment = "", shortLabel = "";
             const handOnly = isHandSwingMode();
-            const normalizedHasuji = Number.isFinite(Number(hasujiAngle)) ? Number(hasujiAngle) : null;
-            const normalizedRightAng = Number.isFinite(Number(rightAng)) ? Number(rightAng) : null;
-            const normalizedTorsoAng = Number.isFinite(Number(torsoAng)) ? Number(torsoAng) : null;
-            const hasujiAbs = Math.abs(Number(normalizedHasuji || 0));
+            const normalizedHasuji = toFiniteOrNull(hasujiAngle);
+            const normalizedRightAng = toFiniteOrNull(rightAng);
+            const normalizedTorsoAng = toFiniteOrNull(torsoAng);
             
-            if (normalizedRightAng === null || normalizedTorsoAng === null || (!handOnly && normalizedHasuji === null)) { comment = "角度の検出が不安定でした。姿勢が画面内に入る位置で再測定してください。"; shortLabel = "検出確認"; }
-            else if (Math.abs(normalizedTorsoAng) > 15) { comment = "体幹軸が傾いています。上半身の軸を立てて振り下ろしましょう。"; shortLabel = "姿勢注意"; }
-            else if (normalizedRightAng < 150) { comment = "肘が曲がっています。剣先に力を伝えるよう腕を伸ばしましょう。"; shortLabel = "肘曲がり"; }
-            else if (!handOnly && hasujiAbs > 30) { comment = `刃筋角度が大きいです(${hasujiAbs.toFixed(1)}°)。両手首と竹刀方向を打突方向にそろえましょう。`; shortLabel = "刃筋確認"; }
-            else if (timeMs > 350) { comment = "振り下ろしに時間がかかっています。開始から終了までを短くしましょう。"; shortLabel = "時間超過"; }
-            else { comment = "上半身の打突動作は良好です。打突時間・角度・ピーク時刻の基準を維持しましょう。"; shortLabel = "良好"; }
+            comment = `打突時間 ${timeMs} ms`;
+            if (normalizedRightAng !== null) comment += ` / 終了時の右肘 ${normalizedRightAng.toFixed(1)}°`;
+            if (normalizedTorsoAng !== null) comment += ` / 体幹 ${normalizedTorsoAng.toFixed(1)}°`;
+            if (normalizedRightAng === null || normalizedTorsoAng === null) comment += ' / 角度は検出不足';
+            shortLabel = '記録しました';
 
             document.getElementById('aiComment').innerText = comment;
             if(AppState.enableAudio) {
@@ -15831,10 +15888,12 @@ service cloud.firestore {
             const peakTimeMs = Number(metrics.peakTimeMs || AppState.swingPeakFrameTimeMs || 0);
             const endTimeMs = Number(metrics.endTimeMs || AppState.swingEndFrameTimeMs || 0);
             const reactionMode = !!Params.signalMode;
-            const reactionTimeMs = reactionMode && Number.isFinite(Number(AppState.currentReactionTimeMs))
-                ? Math.round(Number(AppState.currentReactionTimeMs))
+            const measuredReactionTimeMs = toFiniteOrNull(AppState.currentReactionTimeMs);
+            const reactionTimeMs = reactionMode && measuredReactionTimeMs !== null
+                ? Math.round(measuredReactionTimeMs)
                 : null;
-            const totalResponseTimeMs = reactionMode && Number.isFinite(Number(AppState.signalTime)) && endTimeMs > Number(AppState.signalTime)
+            const totalResponseTimeMs = reactionMode && Number(AppState.signalPerformanceTimeMs) > 0
+                && Number.isFinite(Number(AppState.signalTime)) && endTimeMs > Number(AppState.signalTime)
                 ? Math.round(endTimeMs - Number(AppState.signalTime))
                 : (Number.isFinite(reactionTimeMs) ? Math.round(reactionTimeMs + Number(timeMs || 0)) : null);
             const reactionValid = reactionMode
@@ -15857,7 +15916,7 @@ service cloud.firestore {
             });
 
             const record = {
-                id: AppState.records.length + 1,
+                id: nextRecordId(),
                 ...researchRecordMetadata(),
                 recordType: 'realtime',
                 source: 'realtime',
@@ -15980,7 +16039,9 @@ service cloud.firestore {
             AppState.swingState = 'ZANSHIN';
             resetSwingEndCandidate();
             updateStateUI('IDLE');
+            const session = AppState.cameraSession;
             AppState.zanshinTimer = setTimeout(() => {
+                if (session !== AppState.cameraSession || !AppState.isCameraRunning) return;
                 document.getElementById('zanshinIndicator')?.classList.add('hidden');
                 AppState.swingState = 'IDLE';
                 updateStateUI('IDLE');
@@ -16187,7 +16248,13 @@ service cloud.firestore {
         }
 
         function onResults(results) {
-            const frameTimeMs = results.frameTimeMs || AppState.currentFrameTimeMs || performance.now();
+            const request = results.liveRequest;
+            if (!isCurrentLivePoseRequest(request)) return;
+            const frameTimeMs = request.frameTimeMs;
+            const gapMs = AppState.lastFrameTimeMs ? frameTimeMs - AppState.lastFrameTimeMs : 0;
+            if (gapMs > 160) resetRealtimeTracking('映像の間隔が空いたため測定待機');
+            AppState.currentPresentedFrame = request.presentedFrame;
+            AppState.currentFramePerformanceMs = request.performanceMs;
             AppState.lastPoseResultAt = performance.now();
             if (AppState.lastFrameTimeMs && frameTimeMs > AppState.lastFrameTimeMs) {
                 AppState.frameDtMs = frameTimeMs - AppState.lastFrameTimeMs;
@@ -16220,7 +16287,8 @@ service cloud.firestore {
                 }
             }
             
-            if (!results.poseLandmarks) {
+            if (!results.poseLandmarks || visibilityOf(results.poseLandmarks[16]) < 0.35) {
+                resetRealtimeTracking('人体を検出中');
                 if (Params.signalMode && !AppState.reactionSoundTesting) {
                     pauseReactionTrial('右肩・肘・手首を映してください');
                 }
@@ -16378,9 +16446,6 @@ service cloud.firestore {
                 safeText('overlayRightAng', rightAng.toFixed(1) + '°');
                 safeText('overlayHasuji', measureHasuji && Number.isFinite(hasuji) ? hasuji.toFixed(1) + '°' : '対象外');
                 safeText('overlayTorsoAng', torsoAng.toFixed(1) + '°');
-                safeText('latestRightAng', rightAng > 0 ? rightAng.toFixed(1) + '°' : '検出中');
-                safeText('latestHasuji', measureHasuji ? (Number.isFinite(hasuji) ? hasuji.toFixed(1) + '°' : '検出中') : '対象外');
-                safeText('latestTorso', Number.isFinite(torsoAng) ? torsoAng.toFixed(1) + '°' : '検出中');
                 const hasujiEl = document.getElementById('overlayHasuji');
                 if (hasujiEl) hasujiEl.className = `font-mono font-bold ${measureHasuji && hasuji > 30 ? 'text-red-400' : 'text-yellow-300'}`;
             }
@@ -16411,8 +16476,8 @@ service cloud.firestore {
             if(rWrist && visibilityOf(rWrist) > 0.35) {
                 const now = frameTimeMs;
                 const wristY = rWrist.y;
-                const vel = wristY - AppState.previousWristY;
-                const elbowVel = rightAng - AppState.previousRightAngle;
+                const vel = AppState.previousWristY > 0 ? wristY - AppState.previousWristY : 0;
+                const elbowVel = AppState.previousRightAngle > 0 ? rightAng - AppState.previousRightAngle : 0;
                 updateIdleWristNoiseSample(AppState.currentSpeed3d, vel);
                 
                 AppState.velHistory.push(vel); 
@@ -16772,7 +16837,7 @@ service cloud.firestore {
 
         function drawStablePoseOverlay(message = '') {
             const lm = AppState.currentPoseSnapshot;
-            const fresh = lm && (!AppState.lastPoseFrameTimeMs || AppState.currentFrameTimeMs - AppState.lastPoseFrameTimeMs <= Params.overlayHoldMs);
+            const fresh = lm && performance.now() - Number(AppState.lastPoseResultAt || 0) <= 250;
             if (fresh) {
                 drawConnectors(canvasCtx, lm, POSE_CONNECTIONS, {color: 'rgba(226,232,240,0.58)', lineWidth: Math.max(2, canvasElement.width * 0.002)});
                 drawLandmarks(canvasCtx, lm, {color: '#38bdf8', lineWidth: 1, radius: Math.max(2.5, canvasElement.width * 0.0028)});
@@ -16831,17 +16896,19 @@ service cloud.firestore {
             const lightweightLegacy = ios || AppState.cameraPerformanceMode === 'stable';
             const modelComplexity = lightweightLegacy ? 0 : 1;
             await ensureLegacyPoseLibrary();
-            pose = new Pose({locateFile: (file) => `./vendor/mediapipe/pose/${file}`});
-            pose.setOptions({ 
+            const instance = new Pose({locateFile: (file) => `./vendor/mediapipe/pose/${file}`});
+            pose = instance;
+            instance.setOptions({
                 modelComplexity,
                 smoothLandmarks: true, 
                 minDetectionConfidence: lightweightLegacy ? 0.4 : 0.6, 
                 minTrackingConfidence: lightweightLegacy ? 0.4 : 0.6,
                 selfieMode: AppState.isFlipped 
             });
-            pose.onResults((results) => {
-                results.frameTimeMs = AppState.currentFrameTimeMs || performance.now();
-                onResults(results);
+            instance.onResults((results) => {
+                const request = instance._kendoLiveRequest;
+                if (pose !== instance || !isCurrentLivePoseRequest(request)) return;
+                onResults({ ...results, liveRequest: request });
             });
             AppState.legacyPoseCreatedAt = performance.now();
             AppState.poseEngine = legacyPoseModelLabel(modelComplexity);
@@ -17080,10 +17147,137 @@ service cloud.firestore {
             return poseReadyPromise;
         }
 
-        function stopCameraStream() {
+        function resetRealtimeTracking(message = '待機') {
+            AppState.realtimeEpoch = Number(AppState.realtimeEpoch || 0) + 1;
+            clearTimeout(AppState.zanshinTimer);
+            AppState.zanshinTimer = null;
+            if (!AppState.reactionSoundTesting) resetReactionTrialClock();
+            AppState.swingState = 'IDLE';
+            AppState.swingStartTime = 0;
+            resetSwingTracking();
+            resetFullMotionStart();
+            resetWristMotionBaseline();
+            AppState.idleTimer = 0;
+            AppState.previousWristY = 0;
+            AppState.previousRightAngle = 0;
+            AppState.previousSignalFrameTimeMs = 0;
+            AppState.previousDownVelocityMps = 0;
+            AppState.previousTapeTipSpeed = 0;
+            AppState.previousTapeSignalTimeMs = 0;
+            AppState.velHistory = [];
+            AppState.wristTrace = [];
+            AppState.swingPxToMeters = 0;
+            AppState.currentPoseSnapshot = null;
+            AppState.lastPoseFrameTimeMs = 0;
+            AppState.currentWristVisibility = 0;
+            AppState.currentAngleQuality = 0;
+            AppState.currentViewQuality = 0;
+            AppState.currentSpeed3d = 0;
+            AppState.currentDownVelocityMps = 0;
+            AppState.currentEstimatedTipSpeed = 0;
+            AppState.currentTapeTipSpeed = 0;
+            AppState.currentWrist3d = null;
+            AppState.currentWristVelocity3d = { x: 0, y: 0, z: 0 };
+            AppState.currentEstimatedTip3d = null;
+            AppState.currentTapeDetected = false;
+            AppState.currentShinaiDetected = false;
+            AppState.currentShinaiSource = 'none';
+            AppState.lastTapePoint = null;
+            AppState.lastShinaiPoint = null;
+            AppState.lastShinaiDetection = null;
+            AppState.lastShaftDetection = null;
+            AppState.lastShinaiQuality = 0;
+            AppState.lastTapeQuality = 0;
+            AppState.currentHasujiAngle = null;
+            AppState.currentHasujiSource = 'none';
+            AppState.currentHasujiQuality = 0;
+            AppState.liveOverlayValues = {};
+            AppState.angleFilters = {};
+            AppState.shinaiDetectionWindow = [];
+            AppState.wristFilter3d = null;
+            AppState.tipFilter3d = null;
+            AppState.tapeFilter3d = null;
+            AppState.tapeFilterSource = 'none';
+            ['overlayRightAng', 'overlayTorsoAng', 'overlayHasuji', 'overlayVisibility'].forEach(id => safeText(id, '---'));
+            setTimingStatus(message, '---', '---');
+            updateStateUI('IDLE');
+            if (Params.signalMode && !AppState.reactionSoundTesting) updateReactionTrainingUi(message);
+        }
+
+        function isCurrentLivePoseRequest(request) {
+            return !!request && request === AppState.livePoseRequest
+                && request.session === AppState.cameraSession
+                && request.epoch === AppState.realtimeEpoch
+                && AppState.frameLoopRunning && !document.hidden;
+        }
+
+        function updateCameraControls(message = '') {
+            const running = !!AppState.isCameraRunning;
+            const starting = !!AppState.cameraStarting;
+            const stop = document.getElementById('stopCameraBtn');
+            if (stop) stop.hidden = !running && !starting;
+            const overlay = document.getElementById('startOverlay');
+            if (overlay) overlay.style.display = running ? 'none' : '';
+            document.getElementById('handSwingModeSideControl')?.classList.toggle('hidden', !running);
+            document.getElementById('handSwingModeSideControl')?.classList.toggle('flex', running);
+            document.getElementById('stateIndicator')?.classList.toggle('hidden', !running);
+            document.getElementById('canvasOverlayData')?.classList.toggle('hidden', !running);
+            document.getElementById('canvasOverlayData')?.classList.toggle('flex', running);
+            const start = document.getElementById('startBtn');
+            if (start) start.disabled = starting;
+            updateRealtimeMeasurementModeUi(!!Params.signalMode);
+            if (starting && start) start.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 起動中...';
+            if (message) {
+                safeText('cameraQuickStatus', message);
+                safeText('cameraDeviceStatus', message);
+                safeText('systemStatus', message);
+            }
+        }
+
+        function cancelCameraFrame() {
+            const id = AppState.cameraFrameCallbackId;
+            if (id !== null && id !== undefined) {
+                if (AppState.cameraFrameCallbackType === 'video') videoElement.cancelVideoFrameCallback?.(id);
+                else cancelAnimationFrame(id);
+            }
+            AppState.cameraFrameCallbackId = null;
+        }
+
+        function checkCameraHealth(session, now = performance.now()) {
+            if (session !== AppState.cameraSession || !AppState.frameLoopRunning) return;
+            const timerGap = now - Number(AppState.cameraHealthCheckedAt || now);
+            AppState.cameraHealthCheckedAt = now;
+            // AI初回読み込みなどでメインスレッドが遅れた場合は、次の映像更新を待つ。
+            if (timerGap > 1500) {
+                AppState.cameraStallSince = 0;
+                return;
+            }
+            if (now - AppState.lastLiveFrameAt > 2000) {
+                if (!AppState.cameraStallSince) AppState.cameraStallSince = now;
+                else if (now - AppState.cameraStallSince >= 500) {
+                    stopCameraStream({ message: 'カメラ映像が停止しました。接続を確認して再開してください' });
+                }
+            } else {
+                AppState.cameraStallSince = 0;
+            }
+            if (AppState.currentPoseSnapshot && now - AppState.lastPoseResultAt > 500) {
+                resetRealtimeTracking('人体を検出中');
+                updatePrecisionPanel(true);
+            }
+        }
+
+        function stopCameraStream(options = {}) {
+            AppState.cameraSession = Number(AppState.cameraSession || 0) + 1;
             AppState.frameLoopRunning = false;
             AppState.isCameraRunning = false;
-            if (Params.signalMode) pauseReactionTrial('カメラ待機');
+            AppState.cameraStarting = false;
+            cancelCameraFrame();
+            AppState.cameraMetadataCancel?.();
+            AppState.cameraMetadataCancel = null;
+            clearInterval(AppState.cameraWatchdog);
+            AppState.cameraWatchdog = null;
+            resetReactionTrialClock();
+            resetRealtimeTracking();
             const readyLamp = document.getElementById('measurementReadyLamp');
             if (readyLamp) {
                 readyLamp.style.background = '#64748b';
@@ -17098,6 +17292,17 @@ service cloud.firestore {
             }
             if (camera && camera.stop) camera.stop();
             camera = null;
+            videoElement.pause();
+            videoElement.srcObject = null;
+            if (!options.keepMicrophone) stopMicrophone();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            AppState.cameraFrameClock = null;
+            AppState.frameFps = 0;
+            AppState.frameDtMs = 0;
+            AppState.cameraFrameTimes = [];
+            AppState.aiFrameTimes = [];
+            updateCameraControls(options.message || 'カメラ待機');
+            updatePrecisionPanel(true);
         }
 
         function cameraSelectElements() {
@@ -17204,7 +17409,7 @@ service cloud.firestore {
                 showToast('iPhoneカメラが一覧にありません。連係カメラの設定を確認してください', 'yellow');
                 return false;
             }
-            if (AppState.isCameraRunning) await startCameraStream();
+            if (AppState.isCameraRunning && !await startCameraStream()) return false;
             showToast(`${selected.label || 'iPhoneカメラ'}を選択しました`, 'green');
             return true;
         }
@@ -17215,7 +17420,7 @@ service cloud.firestore {
             AppState.cameraSettings = settings || null;
             AppState.cameraCapabilities = track?.getCapabilities?.() || null;
             AppState.cameraLabel = track?.label || document.getElementById('cameraDeviceSelect')?.selectedOptions?.[0]?.textContent || '自動選択';
-            const fps = AppState.frameFps || settings.frameRate || 0;
+            const fps = rollingFrameRate(AppState.cameraFrameTimes) || settings.frameRate || 0;
             const capabilityMaxFps = Number(AppState.cameraCapabilities?.frameRate?.max || 0);
             const capabilityText = capabilityMaxFps && capabilityMaxFps > fps + 1 ? ` / 上限${capabilityMaxFps.toFixed(0)}fps` : '';
             const modeLabel = cameraPerformanceProfile(AppState.cameraPerformanceMode).label;
@@ -17262,7 +17467,7 @@ service cloud.firestore {
             }
         }
 
-        async function requestCameraStreamWithFallback(primaryConstraints) {
+        async function requestCameraStreamWithFallback(primaryConstraints, session = AppState.cameraSession) {
             const desiredFps = Math.max(1, Number(Params.cameraStableFps || 30));
             const desiredMaxFps = Math.max(desiredFps, Number(Params.cameraMaxFps || desiredFps));
             const strictHighFps = desiredFps > 60;
@@ -17295,7 +17500,7 @@ service cloud.firestore {
                     }));
                 }
             }
-            highFpsSizes.forEach(([width, height]) => {
+            if (!AppState.selectedCameraId) highFpsSizes.forEach(([width, height]) => {
                 candidates.push(buildCameraVideoConstraints({
                     facingMode,
                     width,
@@ -17305,7 +17510,7 @@ service cloud.firestore {
                     requireMinFps: strictHighFps
                 }));
             });
-            if (desiredFps > 60) {
+            if (!AppState.selectedCameraId && desiredFps > 60) {
                 candidates.push(buildCameraVideoConstraints({
                     facingMode,
                     width: 1280,
@@ -17314,15 +17519,16 @@ service cloud.firestore {
                     maxFps: 60
                 }));
             }
-            candidates.push({ audio: false, video: true });
+            candidates.push({ audio: false, video: AppState.selectedCameraId ? { deviceId: { exact: AppState.selectedCameraId } } : true });
             let lastError = null;
             for (const constraints of candidates) {
+                if (session !== AppState.cameraSession) throw new DOMException('Camera request cancelled', 'AbortError');
                 let requestExpired = false;
                 try {
                     const streamRequest = navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-                        if (requestExpired) {
+                        if (requestExpired || session !== AppState.cameraSession) {
                             stream.getTracks?.().forEach(track => track.stop());
-                            throw new Error('camera request expired');
+                            throw new DOMException('Camera request cancelled', 'AbortError');
                         }
                         return stream;
                     });
@@ -17333,6 +17539,7 @@ service cloud.firestore {
                     );
                 } catch (err) {
                     lastError = err;
+                    if (session !== AppState.cameraSession || ['AbortError', 'NotAllowedError', 'PermissionDeniedError', 'SecurityError', 'NotReadableError'].includes(err?.name)) throw err;
                     if (String(err?.message || '').includes('camera permission timeout')) {
                         requestExpired = true;
                         throw err;
@@ -17345,7 +17552,7 @@ service cloud.firestore {
 
         function cameraErrorText(error) {
             const name = error?.name || '';
-            if (!window.isSecureContext && location.protocol !== 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
                 return 'カメラはlocalhostまたはHTTPSで開く必要があります';
             }
             if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'カメラ許可が拒否されています。ブラウザのカメラ許可をONにしてください';
@@ -17357,9 +17564,13 @@ service cloud.firestore {
         }
 
         async function startCameraStream() {
-            stopCameraStream();
+            stopCameraStream({ keepMicrophone: true });
+            const session = AppState.cameraSession;
+            AppState.cameraStarting = true;
+            updateCameraControls('カメラを起動中');
             applyCalibrationInputs();
             if (!navigator.mediaDevices?.getUserMedia) {
+                stopCameraStream({ message: 'HTTPSでカメラ対応ブラウザを開いてください' });
                 throw new Error('このブラウザはカメラ取得に対応していません');
             }
             const videoConstraints = AppState.selectedCameraId ? {
@@ -17377,100 +17588,161 @@ service cloud.firestore {
                 audio: false,
                 video: videoConstraints
             };
-            AppState.videoStream = await requestCameraStreamWithFallback(constraints);
-            const activeTrack = AppState.videoStream.getVideoTracks?.()[0];
-            await tryRaiseCameraFrameRate(activeTrack);
-            videoElement.srcObject = AppState.videoStream;
-            videoElement.muted = true;
-            videoElement.playsInline = true;
-            videoElement.autoplay = true;
-            updateVideoElementMirror();
-            await new Promise((resolve, reject) => {
-                const timer = setTimeout(() => {
-                    if (videoElement.videoWidth || videoElement.readyState >= 2) resolve();
-                    else reject(new Error('camera metadata timeout'));
-                }, 7000);
-                if (videoElement.readyState >= 2) {
-                    clearTimeout(timer);
-                    resolve();
-                } else {
-                    videoElement.onloadedmetadata = () => {
-                        clearTimeout(timer);
-                        resolve();
-                    };
+            let stream = null;
+            try {
+                stream = await requestCameraStreamWithFallback(constraints, session);
+                if (session !== AppState.cameraSession) {
+                    stream.getTracks().forEach(track => track.stop());
+                    return false;
                 }
-            });
-            await videoElement.play();
-            canvasElement.width = videoElement.videoWidth || 1280;
-            canvasElement.height = videoElement.videoHeight || 720;
-            drawCameraFrameOnly('カメラ起動中 / 解析準備中');
-            AppState.frameSyncMode = videoElement.requestVideoFrameCallback ? 'rVFC' : (isIOSLikeBrowser() ? 'RAF/iPhone' : 'RAF');
-            AppState.frameLoopRunning = true;
-            AppState.lastFrameTimeMs = 0;
-            AppState.lastAnalysisFrameTimeMs = 0;
-            AppState.analysisScheduleNextMs = 0;
-            AppState.analysisScheduleTargetFps = 0;
-            AppState.lastPoseAttemptAt = 0;
-            AppState.lastPoseResultAt = 0;
-            AppState.skippedAnalysisFrames = 0;
-            AppState.cameraFrameCount = 0;
-            AppState.aiFrameCount = 0;
-            AppState.cameraFrameTimes = [];
-            AppState.aiFrameTimes = [];
-            AppState.poseInferenceDurations = [];
-            AppState.frameTimestampSource = '';
-            AppState.lastCameraTimestampMs = NaN;
-            AppState.frameTimestampFallbacks = 0;
-            AppState.currentPresentedFrame = 0;
-            AppState.lastPresentedFrame = 0;
-            AppState.droppedCameraFrames = 0;
-            AppState.angleFilters = {};
-            AppState.currentAngleQuality = 0;
-            AppState.currentViewQuality = 0;
-            AppState.currentHasujiAngle = null;
-            AppState.currentHasujiSource = 'none';
-            AppState.currentHasujiQuality = 0;
-            AppState.realtimeShoulderWidthSamples = [];
-            AppState.realtimePxToMeters = 0;
-            AppState.swingPxToMeters = 0;
-            AppState.currentWristVelocity3d = { x: 0, y: 0, z: 0 };
-            AppState.currentDownVelocityMps = 0;
-            AppState.previousDownVelocityMps = 0;
-            AppState.previousSignalFrameTimeMs = 0;
-            resetWristMotionBaseline();
-            resetSwingStartCandidate();
-            resetSwingEndCandidate();
-            if (AppState.wristFilter3d) AppState.wristFilter3d.reset();
-            AppState.wristFilter3d = new VisibilityAdaptiveFilter3D(Math.min(12, Params.maxReasonableSpeedMps));
-            AppState.tipFilter3d = new VisibilityAdaptiveFilter3D(Params.maxReasonableSpeedMps);
-            AppState.tapeFilter3d = new VisibilityAdaptiveFilter3D(35);
-            AppState.replayFrames = [];
-            AppState.replayLastCaptureTimeMs = 0;
-            AppState.replayClip = [];
-            AppState.lastPrecisionUiUpdateMs = 0;
-            AppState.lastLiveMetricsUiUpdateMs = 0;
-            AppState.shinaiDetectionWindow = [];
-            setTimingStatus('待機', '---', '---');
-            updateCameraRuntimeStatus();
-            refreshCameraDevices().then(updateCameraRuntimeStatus).catch(() => {});
-            AppState.isCameraRunning = true;
-            updateRealtimeMeasurementModeUi(!!Params.signalMode);
-            scheduleVideoFrame();
-        }
-
-        function scheduleVideoFrame() {
-            if (!AppState.frameLoopRunning) return;
-            if (videoElement.requestVideoFrameCallback) {
-                videoElement.requestVideoFrameCallback(processVideoFrame);
-            } else {
-                requestAnimationFrame((now) => processVideoFrame(now, { expectedDisplayTime: now }));
+                AppState.videoStream = stream;
+                const activeTrack = stream.getVideoTracks?.()[0];
+                activeTrack?.addEventListener('ended', () => {
+                    if (session !== AppState.cameraSession) return;
+                    stopCameraStream({ message: 'カメラが切断されました。再接続して開始してください' });
+                }, { once: true });
+                activeTrack?.addEventListener('mute', () => {
+                    if (session !== AppState.cameraSession) return;
+                    resetRealtimeTracking('カメラ映像の復帰待ち');
+                    updatePrecisionPanel(true);
+                });
+                await tryRaiseCameraFrameRate(activeTrack);
+                if (session !== AppState.cameraSession) return false;
+                videoElement.srcObject = AppState.videoStream;
+                videoElement.muted = true;
+                videoElement.playsInline = true;
+                videoElement.autoplay = true;
+                updateVideoElementMirror();
+                await new Promise((resolve, reject) => {
+                    const cleanup = () => {
+                        clearTimeout(timer);
+                        videoElement.removeEventListener('loadeddata', ready);
+                        videoElement.removeEventListener('error', failed);
+                        if (AppState.cameraMetadataCancel === cancel) AppState.cameraMetadataCancel = null;
+                    };
+                    const finish = error => { cleanup(); error ? reject(error) : resolve(); };
+                    const ready = () => { if (videoElement.readyState >= 2 && videoElement.videoWidth) finish(); };
+                    const failed = () => finish(new Error('camera video error'));
+                    const cancel = () => finish(new DOMException('Camera request cancelled', 'AbortError'));
+                    const timer = setTimeout(() => {
+                        if (videoElement.videoWidth && videoElement.readyState >= 2) finish();
+                        else finish(new Error('camera metadata timeout'));
+                    }, 7000);
+                    AppState.cameraMetadataCancel = cancel;
+                    videoElement.addEventListener('loadeddata', ready);
+                    videoElement.addEventListener('error', failed);
+                    ready();
+                });
+                await videoElement.play();
+                if (session !== AppState.cameraSession) return false;
+                canvasElement.width = videoElement.videoWidth || 1280;
+                canvasElement.height = videoElement.videoHeight || 720;
+                drawCameraFrameOnly('カメラ起動中 / 解析準備中');
+                AppState.frameSyncMode = videoElement.requestVideoFrameCallback ? 'rVFC' : (isIOSLikeBrowser() ? 'RAF/iPhone' : 'RAF');
+                AppState.frameLoopRunning = true;
+                AppState.lastFrameTimeMs = 0;
+                AppState.lastAnalysisFrameTimeMs = 0;
+                AppState.analysisScheduleNextMs = 0;
+                AppState.analysisScheduleTargetFps = 0;
+                AppState.lastPoseAttemptAt = 0;
+                AppState.lastPoseResultAt = 0;
+                AppState.skippedAnalysisFrames = 0;
+                AppState.cameraFrameCount = 0;
+                AppState.aiFrameCount = 0;
+                AppState.cameraFrameTimes = [];
+                AppState.aiFrameTimes = [];
+                AppState.poseInferenceDurations = [];
+                AppState.frameTimestampSource = '';
+                AppState.lastCameraTimestampMs = NaN;
+                AppState.cameraLastMediaTime = NaN;
+                AppState.lastLiveFrameAt = performance.now();
+                AppState.frameTimestampFallbacks = 0;
+                AppState.currentPresentedFrame = 0;
+                AppState.lastPresentedFrame = 0;
+                AppState.droppedCameraFrames = 0;
+                AppState.angleFilters = {};
+                AppState.currentAngleQuality = 0;
+                AppState.currentViewQuality = 0;
+                AppState.currentHasujiAngle = null;
+                AppState.currentHasujiSource = 'none';
+                AppState.currentHasujiQuality = 0;
+                AppState.realtimeShoulderWidthSamples = [];
+                AppState.realtimePxToMeters = 0;
+                AppState.swingPxToMeters = 0;
+                AppState.currentWristVelocity3d = { x: 0, y: 0, z: 0 };
+                AppState.currentDownVelocityMps = 0;
+                AppState.previousDownVelocityMps = 0;
+                AppState.previousSignalFrameTimeMs = 0;
+                resetWristMotionBaseline();
+                resetSwingStartCandidate();
+                resetSwingEndCandidate();
+                if (AppState.wristFilter3d) AppState.wristFilter3d.reset();
+                AppState.wristFilter3d = new VisibilityAdaptiveFilter3D(Math.min(12, Params.maxReasonableSpeedMps));
+                AppState.tipFilter3d = new VisibilityAdaptiveFilter3D(Params.maxReasonableSpeedMps);
+                AppState.tapeFilter3d = new VisibilityAdaptiveFilter3D(35);
+                AppState.replayFrames = [];
+                AppState.replayLastCaptureTimeMs = 0;
+                AppState.replayClip = [];
+                AppState.lastPrecisionUiUpdateMs = 0;
+                AppState.lastLiveMetricsUiUpdateMs = 0;
+                AppState.shinaiDetectionWindow = [];
+                setTimingStatus('待機', '---', '---');
+                updateCameraRuntimeStatus();
+                refreshCameraDevices().then(updateCameraRuntimeStatus).catch(() => {});
+                AppState.isCameraRunning = true;
+                AppState.cameraStarting = false;
+                updateCameraControls();
+                AppState.cameraHealthCheckedAt = performance.now();
+                AppState.cameraStallSince = 0;
+                AppState.cameraWatchdog = setInterval(() => checkCameraHealth(session), 500);
+                scheduleVideoFrame();
+                return true;
+            } catch (error) {
+                if (session !== AppState.cameraSession) return false;
+                stopCameraStream({ message: cameraErrorText(error) });
+                throw error;
             }
         }
 
-        async function processVideoFrame(now, metadata) {
-            if (!AppState.frameLoopRunning) return;
+        function scheduleVideoFrame() {
+            if (!AppState.frameLoopRunning || AppState.cameraFrameCallbackId != null) return;
+            const session = AppState.cameraSession;
+            const tick = (now, metadata = {}) => {
+                if (session !== AppState.cameraSession) return;
+                AppState.cameraFrameCallbackId = null;
+                processVideoFrame(now, metadata, session).catch(error => {
+                    if (session !== AppState.cameraSession) return;
+                    console.warn('カメラ処理を停止しました', error);
+                    stopCameraStream({ message: '解析を停止しました。もう一度開始してください' });
+                });
+            };
+            if (videoElement.requestVideoFrameCallback) {
+                AppState.cameraFrameCallbackType = 'video';
+                AppState.cameraFrameCallbackId = videoElement.requestVideoFrameCallback(tick);
+            } else {
+                AppState.cameraFrameCallbackType = 'raf';
+                AppState.cameraFrameCallbackId = requestAnimationFrame(now => tick(now, { mediaTime: videoElement.currentTime }));
+            }
+        }
+
+        async function processVideoFrame(now, metadata = {}, session = AppState.cameraSession) {
+            if (!AppState.frameLoopRunning || session !== AppState.cameraSession || document.hidden) return;
+            scheduleVideoFrame();
+            const mediaTime = Number(metadata.mediaTime ?? videoElement.currentTime);
+            if (videoElement.readyState < 2 || !Number.isFinite(mediaTime) || mediaTime === AppState.cameraLastMediaTime) return;
+            if (Number.isFinite(AppState.cameraLastMediaTime) && mediaTime < AppState.cameraLastMediaTime) {
+                resetRealtimeTracking('映像時刻の切替');
+                AppState.lastFrameTimeMs = 0;
+                AppState.lastCameraTimestampMs = NaN;
+                AppState.frameTimestampSource = '';
+                AppState.cameraFrameTimes = [];
+                AppState.aiFrameTimes = [];
+            }
+            AppState.cameraLastMediaTime = mediaTime;
+            AppState.lastLiveFrameAt = performance.now();
             const frameTimeMs = getFrameTimestampMs(now, metadata);
-            AppState.currentFramePerformanceMs = Number.isFinite(Number(now)) ? Number(now) : performance.now();
+            const performanceMs = Number.isFinite(Number(now)) ? Number(now) : performance.now();
+            AppState.cameraFrameClock = { timeMs: frameTimeMs, performanceMs };
             AppState.cameraFrameCount += 1;
             trackRollingFrameTime(AppState.cameraFrameTimes, frameTimeMs);
             const presentedFrame = Number(metadata?.presentedFrames || 0);
@@ -17478,25 +17750,30 @@ service cloud.firestore {
                 if (AppState.lastPresentedFrame > 0 && presentedFrame > AppState.lastPresentedFrame + 1) {
                     AppState.droppedCameraFrames += presentedFrame - AppState.lastPresentedFrame - 1;
                 }
-                AppState.currentPresentedFrame = presentedFrame;
                 AppState.lastPresentedFrame = presentedFrame;
-            } else {
-                AppState.currentPresentedFrame = AppState.cameraFrameCount;
             }
-            scheduleVideoFrame();
+            drawCameraFrameOnly();
             if (AppState.processingFrame) {
                 AppState.skippedAnalysisFrames += 1;
+                updatePrecisionPanel();
                 return;
             }
+            const request = { session, epoch: AppState.realtimeEpoch, frameTimeMs, performanceMs,
+                presentedFrame: presentedFrame || AppState.cameraFrameCount };
             AppState.processingFrame = true;
+            AppState.livePoseRequest = request;
             try {
-                await runPoseFrame(frameTimeMs);
+                await runPoseFrame(frameTimeMs, request);
             } finally {
-                AppState.processingFrame = false;
+                if (AppState.livePoseRequest === request) {
+                    AppState.livePoseRequest = null;
+                    AppState.processingFrame = false;
+                }
             }
         }
 
-        async function runPoseFrame(frameTimeMs) {
+        async function runPoseFrame(frameTimeMs, request) {
+            if (!isCurrentLivePoseRequest(request)) return;
             if (!videoElement.videoWidth || !videoElement.videoHeight) return;
             if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
                 canvasElement.width = videoElement.videoWidth;
@@ -17504,7 +17781,7 @@ service cloud.firestore {
             }
             AppState.currentFrameTimeMs = frameTimeMs;
             const aiReady = AppState.poseLandmarker || pose;
-                    drawCameraFrameOnly(aiReady ? '' : '解析準備中 / カメラ映像のみ表示');
+            drawCameraFrameOnly(aiReady ? '' : '解析準備中 / カメラ映像のみ表示');
             if (aiReady) AppState.lastPoseAttemptAt = performance.now();
             if (aiReady && !shouldAnalyzePoseFrame(frameTimeMs)) {
                 AppState.skippedAnalysisFrames += 1;
@@ -17516,26 +17793,31 @@ service cloud.firestore {
                 if (AppState.poseLandmarker) {
                     inferenceStartedAt = performance.now();
                     const taskResult = AppState.poseLandmarker.detectForVideo(videoElement, nextPoseInferenceTimestamp(frameTimeMs));
-                    onResults(convertTaskPoseResult(taskResult, frameTimeMs));
+                    onResults({ ...convertTaskPoseResult(taskResult, frameTimeMs), liveRequest: request });
                 } else if (pose) {
                     inferenceStartedAt = performance.now();
+                    const instance = pose;
+                    instance._kendoLiveRequest = request;
                     const legacyAgeMs = performance.now() - (AppState.legacyPoseCreatedAt || 0);
                     const legacyTimeoutMs = legacyAgeMs < 20000 ? 16000 : (isIOSLikeBrowser() || !window.crossOriginIsolated ? 7000 : 5000);
-                    await withTimeout(pose.send({ image: videoElement }), legacyTimeoutMs, 'Legacy Pose frame');
+                    await withTimeout(instance.send({ image: videoElement }), legacyTimeoutMs, 'Legacy Pose frame');
                 } else {
                     updatePrecisionPanel();
                 }
             } catch (err) {
-                const now = performance.now();
-                const isLegacyWarmupTimeout = pose
-                    && String(err && (err.message || err)).includes('Legacy Pose frame timeout')
-                    && now - (AppState.legacyPoseCreatedAt || 0) < 32000;
-                if (isLegacyWarmupTimeout) {
-                    safeText('cameraDeviceStatus', '解析準備中 / 映像表示OK');
-                    drawCameraFrameOnly('解析準備中 / カメラ映像のみ表示');
-                    updatePrecisionPanel();
+                if (String(err?.message || '').includes('Legacy Pose frame timeout')) {
+                    const instance = request && pose?._kendoLiveRequest === request ? pose : null;
+                    if (instance) {
+                        pose = null;
+                        Promise.resolve(instance.close?.()).catch(() => {});
+                    }
+                    if (request.session === AppState.cameraSession) {
+                        stopCameraStream({ message: '姿勢推定が応答しませんでした。もう一度開始してください' });
+                    }
                     return;
                 }
+                if (!isCurrentLivePoseRequest(request)) return;
+                const now = performance.now();
                 if (!AppState.lastRuntimePoseErrorAt || now - AppState.lastRuntimePoseErrorAt > 2500) {
                     AppState.lastRuntimePoseErrorAt = now;
                     console.warn('リアルタイム解析を一時スキップしました', err);
@@ -17544,7 +17826,7 @@ service cloud.firestore {
                 drawCameraFrameOnly('解析準備中 / カメラ映像のみ表示');
                 updatePrecisionPanel();
             } finally {
-                if (inferenceStartedAt) {
+                if (inferenceStartedAt && request.session === AppState.cameraSession) {
                     trackRollingMetric(AppState.poseInferenceDurations, performance.now() - inferenceStartedAt);
                 }
             }
@@ -23696,7 +23978,7 @@ service cloud.firestore {
             const torsoAng = toFiniteOrNull(endFrame.torsoAng);
             const hasuji = toFiniteOrNull(endFrame.hasuji);
             const record = {
-	                id: AppState.records.length + 1,
+	                id: nextRecordId(),
                     ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
@@ -23801,7 +24083,7 @@ service cloud.firestore {
             const numberLabel = strike.number ? ` #${strike.number}` : '';
             const timingSource = strike.manualAdjusted ? 'manual-correction' : 'automatic-detection';
             return {
-	                id: AppState.records.length + 1,
+	                id: nextRecordId(),
                     ...researchRecordMetadata(),
                     recordType: 'formal',
                     recordedAt: new Date().toISOString(),
@@ -23956,18 +24238,35 @@ service cloud.firestore {
             showToast(`${savedCount}本を保存しました${breakdown ? `（${breakdown}）` : ''}`, 'green');
         }
 
-	        function exportCSV() {
-                const records = analysisRecords();
-	            if(records.length === 0) return showToast('表示中の記録がありません', 'red');
-	            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-		            csvContent += "No.,記録種別,測定対象,記録日時,時間(ms),反応時間(ms),音から終了(ms),反応測定,反応有効,反応除外理由,音声出力遅延(ms),正式ピーク時刻(ms),動画fps実測/推定,実測カメラfps,解析fps,姿勢解析fps,竹刀追跡fps,刃筋(deg),右肘(deg),体幹(deg),姿勢信頼度,右腕分離品質,角度信頼度,未処理フレーム,フレーム欠落,未処理率,検証状態,検証理由,開始フレーム,ピークフレーム,終了フレーム,開始時刻(ms),ピーク時刻(ms),終了時刻(ms),開始基準,測定方式,フレーム同期,AI方式,メモ,打突時間定義\n";
-		            records.forEach(r => {
-		                csvContent += `${r.id},${recordTypeLabel(r)},${recordMeasurementLabel(r)},${formatRecordDate(r)},${r.timeMs},${r.reactionTimeMs ?? ''},${r.totalResponseTimeMs ?? ''},${r.reactionMode ? 'あり' : ''},${r.reactionMode ? (r.reactionValid ? '有効' : '要確認') : ''},${JSON.stringify(r.reactionReason || '')},${r.reactionAudioLatencyMs ?? ''},${recordPeakOffsetMs(r, 'official') ?? ''},${r.videoFpsEstimate||''},${r.realtimeCameraFps||''},${r.analysisFps||''},${r.poseAnalysisFps||''},${r.swordAnalysisFps||''},${r.hasujiAngle},${r.rightAng},${r.torsoAng||''},${r.avgVisibility||0},${r.viewQuality||''},${r.angleQuality||''},${r.missedFrames||0},${r.droppedFrames||0},${r.unprocessedRatio||0},${r.realtimeValidationStatus||''},${JSON.stringify(Array.isArray(r.realtimeValidationReasons)?r.realtimeValidationReasons.join(' / '):(r.realtimeValidationReasons||''))},${r.startFrameIndex ?? ''},${r.peakFrameIndex ?? ''},${r.endFrameIndex ?? ''},${r.startTimeMs||''},${r.peakTimeMs||''},${r.endTimeMs||''},${JSON.stringify(strikeTimingModeLabel(r.strikeTimingMode))},${JSON.stringify(r.measurementMethod||'')},${r.frameSyncMode||''},${r.poseEngine||''},${JSON.stringify(r.memo||'')},${r.timingDefinition||''}\n`;
-		            });
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `kendo_${AppState.recordFilter || 'formal'}_${new Date().getTime()}.csv`);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        function buildRecordsCsv(records) {
+            const labels = ['No.', '記録種別', '測定対象', '記録日時', '時間(ms)', '反応時間(ms)', '音から終了(ms)',
+                '反応測定', '反応有効', '反応除外理由', '音声出力遅延(ms)', '正式ピーク時刻(ms)', '動画fps実測/推定',
+                '実測カメラfps', '解析fps', '姿勢解析fps', '竹刀追跡fps', '刃筋(deg)', '右肘(deg)', '体幹(deg)',
+                '姿勢信頼度', '右腕分離品質', '角度信頼度', '未処理フレーム', 'フレーム欠落', '未処理率', '検証状態',
+                '検証理由', '開始フレーム', 'ピークフレーム', '終了フレーム', '開始時刻(ms)', 'ピーク時刻(ms)',
+                '終了時刻(ms)', '開始基準', '測定方式', 'フレーム同期', 'AI方式', 'メモ', '打突時間定義'];
+            const rows = records.map(r => [r.id, recordTypeLabel(r), recordMeasurementLabel(r), formatRecordDate(r), r.timeMs,
+                r.reactionTimeMs, r.totalResponseTimeMs, r.reactionMode ? 'あり' : '', r.reactionMode ? (r.reactionValid ? '有効' : '要確認') : '',
+                r.reactionReason, r.reactionAudioLatencyMs, recordPeakOffsetMs(r, 'official'), r.videoFpsEstimate, r.realtimeCameraFps,
+                r.analysisFps, r.poseAnalysisFps, r.swordAnalysisFps, r.hasujiAngle, r.rightAng, r.torsoAng, r.avgVisibility,
+                r.viewQuality, r.angleQuality, r.missedFrames, r.droppedFrames, r.unprocessedRatio, r.realtimeValidationStatus,
+                Array.isArray(r.realtimeValidationReasons) ? r.realtimeValidationReasons.join(' / ') : r.realtimeValidationReasons,
+                r.startFrameIndex, r.peakFrameIndex, r.endFrameIndex, r.startTimeMs, r.peakTimeMs, r.endTimeMs,
+                strikeTimingModeLabel(r.strikeTimingMode), r.measurementMethod, r.frameSyncMode, r.poseEngine, r.memo, r.timingDefinition]);
+            return '\uFEFF' + [labels, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+        }
+
+        function exportCSV() {
+            const records = analysisRecords();
+            if (!records.length) return showToast('表示中の記録がありません', 'red');
+            const blob = new Blob([buildRecordsCsv(records)], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `kendo_${AppState.recordFilter || 'formal'}_${Date.now()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
             showToast('CSVを出力しました', 'green');
         }
 
@@ -23989,13 +24288,19 @@ service cloud.firestore {
         }
 
         document.getElementById('startBtn').addEventListener('click', async () => {
+            let launchSession = AppState.cameraSession;
+            AppState.cameraStarting = true;
+            updateCameraControls();
             const btn = document.getElementById('startBtn'); btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 起動中...'; btn.disabled = true;
             try {
                 // カメラやマイクの許可待ちより先に、クリックの権限で音声を有効化する。
                 if (Params.signalMode) await ensureReactionAudioReady();
                 if(AppState.enableMic && !AppState.analyser) await initMicrophone();
-                await startCameraStream();
-                AppState.isCameraRunning = true; 
+                if (launchSession !== AppState.cameraSession || document.hidden) return;
+                const starting = startCameraStream();
+                launchSession = AppState.cameraSession;
+                if (!await starting) return;
+                const session = AppState.cameraSession;
                 updateRealtimeMeasurementModeUi(!!Params.signalMode);
                 document.getElementById('startOverlay').style.display = 'none'; 
                 document.getElementById('handSwingModeSideControl')?.classList.replace('hidden', 'flex');
@@ -24006,14 +24311,16 @@ service cloud.firestore {
                 updatePrecisionPanel();
                 poseReadyPromise = ensurePoseReady({ purpose: 'realtime' });
                 Promise.resolve(poseReadyPromise).then(() => {
+                    if (session !== AppState.cameraSession || !AppState.isCameraRunning) return;
                     document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-green-500"></span> 計測中 / ${AppState.poseEngine}`;
                     updatePrecisionPanel();
                 }).catch(err => {
-                    console.warn('AI初期化に失敗しましたがカメラ表示を継続します', err);
-                    document.getElementById('systemStatus').innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> カメラON / 解析準備中`;
-                    showToast('解析準備中です。映像は先に表示します', 'yellow');
+                    if (session !== AppState.cameraSession) return;
+                    console.warn('AI初期化に失敗しました', err);
+                    stopCameraStream({ message: '姿勢推定を起動できませんでした。接続を確認して再開してください' });
                 });
             } catch(e) {
+                if (launchSession !== AppState.cameraSession && (AppState.isCameraRunning || AppState.cameraStarting)) return;
                 console.error('カメラ起動エラー', e);
                 stopCameraStream();
                 btn.innerHTML = Params.signalMode
@@ -24028,8 +24335,14 @@ service cloud.firestore {
             }
         });
 
+        document.getElementById('stopCameraBtn').addEventListener('click', () => {
+            stopCameraStream({ message: '測定を停止しました。記録は保持しています' });
+        });
+
         document.getElementById('flipCameraBtn').addEventListener('click', function(){
             AppState.isFlipped = !AppState.isFlipped;
+            this.setAttribute('aria-pressed', String(AppState.isFlipped));
+            if (AppState.isCameraRunning) resetRealtimeTracking('反転後の姿勢を検出中');
             updateVideoElementMirror();
             if (pose && !AppState.poseLandmarker) pose.setOptions({ selfieMode: AppState.isFlipped });
             if(AppState.isFlipped) {
@@ -24079,9 +24392,15 @@ service cloud.firestore {
         if (reactionSoundTestBtn) reactionSoundTestBtn.addEventListener('click', testReactionSound);
         document.getElementById('reactionLiveSoundTestBtn')?.addEventListener('click', testReactionSound);
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden || !Params.signalMode) return;
-            AppState.reactionAudioBlocked = true;
-            pauseReactionTrial('合図を確認してください');
+            if (!document.hidden) return;
+            if (AppState.isCameraRunning || AppState.cameraStarting || AppState.enableMic) stopCameraStream({ message: '画面が隠れたため停止しました。開始ボタンで再開できます' });
+            if (Params.signalMode) {
+                AppState.reactionAudioBlocked = true;
+                pauseReactionTrial('合図を確認してください');
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (AppState.isCameraRunning || AppState.cameraStarting || AppState.enableMic) stopCameraStream();
         });
 
         const reactionTrainingToggleBtn = document.getElementById('reactionTrainingToggleBtn');
@@ -24099,9 +24418,7 @@ service cloud.firestore {
             if(AppState.enableMic) {
                 await initMicrophone();
             } else {
-                if(AppState.micStream) AppState.micStream.getTracks().forEach(t=>t.stop());
-                this.className = "bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 transition border border-slate-600";
-                this.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> マイクOFF';
+                stopMicrophone();
             }
         });
 
@@ -24124,6 +24441,7 @@ service cloud.firestore {
         function startVideoAnalysisFromButton() {
             const analyzeVideoBtn = document.getElementById('analyzeVideoBtn');
             if (!analyzeVideoBtn || analyzeVideoBtn.disabled) return;
+            if (AppState.isCameraRunning || AppState.cameraStarting) stopCameraStream();
             setVideoAnalysisBusy(true);
             analyzeUploadedVideo()
                 .catch(err => {
@@ -25112,8 +25430,7 @@ service cloud.firestore {
             safeText('cameraDeviceStatus', `選択: ${e.target.selectedOptions[0]?.textContent || '自動選択'}`);
             safeText('cameraQuickStatus', `選択: ${e.target.selectedOptions[0]?.textContent || '自動選択'}`);
             if (AppState.isCameraRunning) {
-                await startCameraStream();
-                showToast('カメラを切り替えました', 'green');
+                if (await startCameraStream()) showToast('カメラを切り替えました', 'green');
             }
         }
         cameraSelectElements().forEach(select => select.addEventListener('change', e => {
