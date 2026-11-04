@@ -58,7 +58,7 @@ const names = ['resetSwingStartCandidate', 'resetSwingEndCandidate', 'resetFullM
     'resetSwingTracking', 'resetRealtimeTracking', 'isCurrentLivePoseRequest', 'updateCameraControls', 'cancelCameraFrame',
     'stopCameraStream', 'stopMicrophone', 'initMicrophone', 'checkCameraHealth', 'scheduleVideoFrame', 'processVideoFrame', 'getFrameTimestampMs', 'trackRollingFrameTime',
     'requestCameraStreamWithFallback', 'cameraFrameRateConstraint', 'buildCameraVideoConstraints', 'nextRecordId',
-    'toFiniteOrNull', 'reactionMsLabel', 'setReactionTrainingMode', 'scheduleRealtimeRearm', 'saveRecord', 'csvCell', 'buildRecordsCsv', 'onResults', 'visibilityOf'];
+    'toFiniteOrNull', 'cloneModelTapePoint', 'reactionMsLabel', 'setReactionTrainingMode', 'scheduleRealtimeRearm', 'saveRecord', 'csvCell', 'buildRecordsCsv', 'onResults', 'visibilityOf'];
 vm.runInContext(names.map(declaration).join('\n'), context);
 
 async function main() {
@@ -96,6 +96,7 @@ async function main() {
     assert.equal(state.swingState, 'IDLE');
     assert.equal(state.swingStartTime, 0);
     assert.equal(state.currentPoseSnapshot, null);
+    assert.equal(state.modelTapePointSnapshot, null, 'stop clears tape snapshot with pose');
     assert.equal(state.currentWristVisibility, 0);
     assert.equal(state.records[0].timeMs, 300, 'stop preserves records');
     assert.equal(state.zanshinTimer, null);
@@ -176,7 +177,8 @@ async function main() {
     assert.equal(state.audioContext.state, 'running', 'stopping microphone does not close cue audio output');
 
     Object.assign(state, { records: [{ id: 1 }, { id: 3 }], replayFrames: [], swingAngleSamples: [], lastRealtimeRecordAt: 0,
-        isCameraRunning: true, frameLoopRunning: true });
+        isCameraRunning: true, frameLoopRunning: true,
+        modelTapePointSnapshot: { x: .7, y: .2, quality: .9, source: 'tape' } });
     for (let i = 0; i < 3; i++) {
         now += 1000;
         assert.equal(context.saveRecord(300, 0, 0, null, '', 0, 0, 0, 0), true);
@@ -186,6 +188,9 @@ async function main() {
     }
     assert.deepEqual(state.records.map(r => r.id), [1, 3, 4, 5, 6], 'deletion gaps do not duplicate record IDs');
     const last = state.records.at(-1);
+    assert.equal(last.modelTapePoint.x, .7, 'live record keeps normalized tape snapshot');
+    state.modelTapePointSnapshot.x = .3;
+    assert.equal(last.modelTapePoint.x, .7, 'next detection cannot mutate saved tape');
     assert.equal(last.hasujiAngle, '', 'missing blade angle is not 0 degrees');
     assert.equal(last.rightAng, '', 'missing elbow angle is not 0 degrees');
     assert.equal(last.torsoAng, 0, 'real zero remains zero');

@@ -18,7 +18,7 @@ const node = id => {
 const state = { records: [], modelSourceMode: 'video', modelViewPreset: 'front', modelViewZoom: 1 };
 const noop = () => {};
 const context = vm.createContext({
-    AppState: state, document: { getElementById: node, querySelectorAll: () => [] },
+    AppState: state, Params: { minTapeConfidence: .18 }, document: { getElementById: node, querySelectorAll: () => [] },
     visibilityOf: p => p?.visibility ?? 1,
     clamp: (n, lo, hi) => Math.max(lo, Math.min(hi, n)),
     renderAngleModel: noop, safeText: noop, showToast: noop, clearTimeout, console,
@@ -27,7 +27,7 @@ const context = vm.createContext({
     MODEL_PIVOT_LABELS: { center: 'center' }, MODEL_CAMERA_DIRECTION_YAW: { front: 0 },
     videoSourceSecondForFrame: (data, f) => f.rawTimeMs / 1000 + (data.sourceStartSec || 0)
 });
-const names = ['clonePoseSnapshot', 'neutralPoseSnapshot', 'modelPoseSource', 'getRawModelLandmarkPoint',
+const names = ['clonePoseSnapshot', 'cloneModelTapePoint', 'modelTapeImageScale', 'modelShinaiGeometry', 'neutralPoseSnapshot', 'modelPoseSource', 'getRawModelLandmarkPoint',
     'getModelPoseTransform', 'rotateModelPointAroundY', 'getModelLandmarkPoint', 'modelAngleValuesForDisplay',
     'modelMeasurementIsHand', 'modelValueText', 'rateText', 'videoFrameAngleValue', 'setVideoModelSnapshotFromFrame',
     'getModelViewState', 'syncModelViewControls', 'setModelViewPreset', 'setModelViewZoom',
@@ -74,6 +74,64 @@ async function main() {
     state.modelPoseSnapshot = pose;
     state.modelAngleValues = { rightAng: 91 };
     assert.equal(context.modelAngleValuesForDisplay().rightAng, 91, 'live never borrows record angles');
+
+    const imagePose = Array.from({ length: 33 }, () => ({ x: .5, y: .5, visibility: .95 }));
+    imagePose[11] = { x: .35, y: .3, visibility: .95 };
+    imagePose[12] = { x: .65, y: .3, visibility: .95 };
+    imagePose[23] = { x: .4, y: .65, visibility: .95 };
+    imagePose[24] = { x: .6, y: .65, visibility: .95 };
+    imagePose[16] = { x: .6, y: .4, visibility: .95 };
+    const aspect = .5;
+    const modelPose = imagePose.map(p => ({ ...p, x: (p.x - .5) * aspect * 2, y: (p.y - .5) * 2, z: .15 }));
+    modelPose.modelSpace = 'world'; modelPose.modelAspect = aspect;
+    const tapePoint = { x: .2, y: .15, quality: .9, source: 'tape' };
+    const tapeSource = { pose: modelPose, imagePose, tapePoint, kind: 'video', hasPose: true, hasWorld: true };
+    state.modelCameraDirection = 'front';
+    const inputBefore = JSON.stringify(tapeSource);
+    const sword = context.modelShinaiGeometry(tapeSource, THREE);
+    assert.equal(sword.mode, 'tape-wrist-plane');
+    assert.equal(sword.end.z, sword.start.z, 'depth is explicitly held at wrist, not fabricated');
+    assert.ok(Math.abs(sword.end.x - sword.start.x - (tapePoint.x - imagePose[16].x) * aspect * 3.2) < 1e-12);
+    assert.ok(Math.abs(sword.end.y - sword.start.y + (tapePoint.y - imagePose[16].y) * 3.2) < 1e-12);
+    const moved = context.modelShinaiGeometry({ ...tapeSource, tapePoint: { ...tapePoint, x: .8 } }, THREE);
+    assert.ok(moved.end.x > sword.end.x, 'actual tape movement drives the sword independently of the wrists');
+    assert.equal(JSON.stringify(tapeSource), inputBefore, 'display does not modify measurements');
+    for (const bad of [null, { ...tapePoint, quality: 0 }, { ...tapePoint, source: 'shaft' },
+        { ...tapePoint, x: NaN }, { ...tapePoint, x: 1.1 }]) {
+        assert.equal(context.modelShinaiGeometry({ ...tapeSource, tapePoint: bad }, THREE).end, undefined, 'no inferred wrist substitute');
+    }
+    const occluded = imagePose.map(p => ({ ...p })); occluded[16].visibility = .1;
+    assert.equal(context.modelShinaiGeometry({ ...tapeSource, imagePose: occluded }, THREE).end, undefined);
+    const noScale = modelPose.map(p => ({ ...p, visibility: .1 })); noScale[16].visibility = .95;
+    noScale.modelSpace = 'world'; noScale.modelAspect = aspect;
+    assert.equal(context.modelShinaiGeometry({ ...tapeSource, pose: noScale }, THREE).end, undefined, 'no arbitrary scale when torso is missing');
+    const flatPose = imagePose.map(p => ({ ...p, z: 0 })); flatPose.modelSpace = 'image'; flatPose.modelAspect = aspect;
+    const flatSword = context.modelShinaiGeometry({ ...tapeSource, pose: flatPose, hasWorld: false }, THREE);
+    assert.equal(flatSword.end.z, 0);
+    assert.ok(Math.abs(flatSword.end.x - (tapePoint.x - .5) * 3.2 * aspect) < 1e-12);
+    state.modelCameraDirection = 'auto';
+    const rotatedPose = modelPose.map((p, i) => ({ ...p, z: i === 11 ? -.2 : i === 12 ? .2 : p.z }));
+    rotatedPose.modelSpace = 'world'; rotatedPose.modelAspect = aspect;
+    const rotatedSword = context.modelShinaiGeometry({ ...tapeSource, pose: rotatedPose }, THREE);
+    assert.ok(rotatedSword.start.distanceTo(context.getModelLandmarkPoint(rotatedPose, 16, THREE)) < 1e-12, 'same camera transform as skeleton');
+    state.modelCameraDirection = 'front';
+    const normalized = context.cloneModelTapePoint({ ...tapePoint, x: 100, y: 200 }, 1000, 2000);
+    assert.equal(normalized.x, .1); assert.equal(normalized.y, .1);
+    assert.equal(context.cloneModelTapePoint(tapePoint, 0, 2000), null);
+    state.modelTapePointSnapshot = { ...tapePoint };
+    state.records = [{ id: 9, modelPose: imagePose, modelWorldPose: modelPose, modelAspect: aspect,
+        modelTapePoint: JSON.parse(JSON.stringify(normalized)) }];
+    state.modelSourceMode = 'latest';
+    assert.equal(context.modelPoseSource().tapePoint.x, .1, 'saved point survives JSON roundtrip');
+    delete state.records[0].modelTapePoint;
+    assert.equal(context.modelPoseSource().tapePoint, undefined, 'old records never borrow live tape');
+    state.modelSourceMode = 'video';
+    frame.landmarks = imagePose; frame.worldLandmarks = modelPose; frame.tapePoint = { ...tapePoint };
+    assert.equal(context.modelPoseSource().tapePoint.x, tapePoint.x);
+    frame.tapePoint = null;
+    assert.equal(context.modelPoseSource().tapePoint, null, 'missing video tape never borrows live or record point');
+    state.modelSourceMode = 'live';
+    assert.equal(context.modelPoseSource().tapePoint.x, tapePoint.x);
 
     context.setModelViewPreset('side');
     assert.equal(state.modelViewYaw, -Math.PI / 2);
@@ -123,6 +181,6 @@ async function main() {
     pending[0](true);
     assert.equal(await first, false);
     assert.equal(state.videoModelAngleValues.frameIndex, 1, 'late scrub cannot overwrite newer frame');
-    console.log('PASS: model world geometry, missing values, source isolation, view controls, pinch, native clock, seek race and syntax');
+    console.log('PASS: model world/tape geometry, aspect, depth assumption, missing detection, source isolation, view controls, native clock, seek race and syntax');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

@@ -2229,6 +2229,7 @@
         #tab-model .model-angle-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 0; }
         #tab-model .model-angle-badges > div { background: #fff; border-color: #d4dce0; padding: 8px; color: #202b31; }
         #tab-model .model-angle-badges span, #modelOrientationStatus { color: #36454e; }
+        #modelShinaiStatus { padding: 8px 12px; border-bottom: 1px solid #d4dce0; color: #52616b; font-size: 12px; overflow-wrap: anywhere; }
         #tab-model .model-side-panel { display: flex; flex-direction: column; gap: 12px; }
         #tab-model .model-side-panel > div { margin: 0; border: 0; border-bottom: 1px solid #d4dce0; border-radius: 0; box-shadow: none; padding: 12px 0; }
         #tab-model .model-frame-card { order: -1; }
@@ -7353,7 +7354,7 @@ service cloud.firestore {
 		                    <option value="center" selected>中心: 全身</option>
 		                </select>
 		                <label><input type="checkbox" id="modelBodyToggle"> 人体の輪郭</label>
-		                <label><input type="checkbox" id="modelShinaiToggle"> 推定竹刀方向</label>
+		                <label><input type="checkbox" id="modelShinaiToggle" checked> 竹刀（テープ連動）</label>
 		                </div></details>
 		                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded px-3 py-2">
 		                    拡大
@@ -7382,6 +7383,7 @@ service cloud.firestore {
 		                        <div id="modelOrientationStatus" class="font-bold text-violet-200">正面</div>
 		                    </div>
                         </div>
+		                    <div id="modelShinaiStatus" role="status">竹刀：テープ位置なし</div>
 		                    <div class="model-angle-badges text-[11px]">
 	                        <div class="bg-slate-950/80 border border-violet-400/40 text-violet-100 rounded px-3 py-2 backdrop-blur"><span class="block text-violet-300">右肘</span><b id="modelBadgeRightElbow" class="font-mono-num text-sm">---</b></div>
 	                        <div class="bg-slate-950/80 border border-emerald-400/40 text-emerald-100 rounded px-3 py-2 backdrop-blur"><span class="block text-emerald-300">体幹傾斜</span><b id="modelBadgeTorso" class="font-mono-num text-sm">---</b></div>
@@ -7877,6 +7879,7 @@ service cloud.firestore {
             currentPoseSnapshot: null,
             modelPoseSnapshot: null,
             modelWorldPoseSnapshot: null,
+            modelTapePointSnapshot: null,
             modelAngleValues: null,
             angleModelTarget: 'rightElbow',
             modelSourceMode: 'auto',
@@ -7884,7 +7887,7 @@ service cloud.firestore {
             modelPivotMode: 'center',
             modelViewPreset: 'front',
             modelBodyVisible: false,
-            modelShinaiVisible: false,
+            modelShinaiVisible: true,
             modelViewYaw: 0,
             modelViewPitch: 0,
             modelViewZoom: 1,
@@ -10325,7 +10328,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v191-model-world-20261105',
+                appVersion: 'v192-model-tape-20261105',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -13940,7 +13943,7 @@ service cloud.firestore {
                 title: '推定刃筋',
                 color: '#facc15',
                 points: [15, 16],
-                labels: ['左手首', '右手首', '両手首→推定剣先の方向'],
+                labels: ['右手首', 'テープの検出位置', '奥行きは右手首と同じと仮定'],
                 valueKey: 'hasuji',
                 definition: '竹刀先端を直接検出できた場合は右手首から剣先方向を使います。直接検出できないフレームだけ、角度表示では両手首または前腕方向を参考表示します。打突時間は直接検出フレームのみで測定します。'
             }
@@ -13957,6 +13960,61 @@ service cloud.firestore {
 
         function clonePoseSnapshot(pose) {
             return pose ? pose.map(point => point ? ({ x: point.x, y: point.y, z: point.z || 0, visibility: point.visibility ?? 1 }) : null) : null;
+        }
+
+        function cloneModelTapePoint(point, width = 1, height = 1) {
+            if (!point || point.source !== 'tape' || ![point.x, point.y, width, height].every(Number.isFinite)
+                || width <= 0 || height <= 0) return null;
+            const x = point.x / width, y = point.y / height;
+            if (x < 0 || x > 1 || y < 0 || y > 1) return null;
+            const quality = Number.isFinite(point.quality) ? point.quality : point.visibility;
+            if (!Number.isFinite(quality)) return null;
+            return { x, y, quality, source: 'tape' };
+        }
+
+        function modelTapeImageScale(imagePose, worldPose, aspect) {
+            // Median of torso spans: display scale only, not a distance calibration.
+            const ratios = [];
+            for (const [a, b] of [[11, 12], [23, 24], [11, 23], [12, 24], [11, 24], [12, 23]]) {
+                const ia = imagePose?.[a], ib = imagePose?.[b], wa = worldPose?.[a], wb = worldPose?.[b];
+                if (![ia, ib, wa, wb].every(p => p && Number.isFinite(p.x) && Number.isFinite(p.y) && visibilityOf(p) >= 0.5)) continue;
+                const imageSpan = Math.hypot((ia.x - ib.x) * aspect, ia.y - ib.y);
+                const worldSpan = Math.hypot(wa.x - wb.x, wa.y - wb.y);
+                if (imageSpan < 0.025 || worldSpan < 0.035) continue;
+                ratios.push(worldSpan * 1.6 / imageSpan);
+            }
+            if (ratios.length < 3) return null;
+            ratios.sort((a, b) => a - b);
+            const mid = Math.floor(ratios.length / 2);
+            return ratios.length % 2 ? ratios[mid] : (ratios[mid - 1] + ratios[mid]) / 2;
+        }
+
+        function modelShinaiGeometry(source, THREE) {
+            const { pose, imagePose } = source;
+            const tape = cloneModelTapePoint(source.tapePoint);
+            if (!source.hasPose) return { reason: '姿勢データなし' };
+            if (!tape) return { reason: source.kind === 'latest' ? '保存データにテープ位置なし' : 'テープ未検出' };
+            if (tape.quality < Number(Params.minTapeConfidence || 0.18)) return { reason: 'テープ検出不確か' };
+            const wrist = imagePose?.[16];
+            const rawStart = getRawModelLandmarkPoint(pose, 16, THREE);
+            if (!wrist || ![wrist.x, wrist.y].every(Number.isFinite) || visibilityOf(wrist) < 0.5
+                || visibilityOf(pose[16]) < 0.5 || !rawStart) return { reason: '右手首未検出' };
+            const scale = source.hasWorld ? modelTapeImageScale(imagePose, pose, pose.modelAspect) : 3.2;
+            if (!Number.isFinite(scale) || scale <= 0) return { reason: '表示尺度を取得できません' };
+            // One view cannot resolve tip depth. Preserve the detected 2D direction at wrist depth.
+            const rawEnd = rawStart.clone().add(new THREE.Vector3(
+                (tape.x - wrist.x) * pose.modelAspect * scale, -(tape.y - wrist.y) * scale, 0
+            ));
+            const length = rawStart.distanceTo(rawEnd);
+            if (!Number.isFinite(length) || length < 0.015 || length > 3.2) return { reason: '竹刀位置を確認してください' };
+            const transform = getModelPoseTransform(pose, THREE);
+            return {
+                start: rotateModelPointAroundY(THREE, rawStart, transform.pivot, transform.yaw),
+                end: rotateModelPointAroundY(THREE, rawEnd, transform.pivot, transform.yaw),
+                mode: source.hasWorld ? 'tape-wrist-plane' : 'tape-image-plane',
+                reason: source.hasWorld ? 'テープ連動 / 奥行きは手元と同じと仮定' : 'テープ連動 / 2D参考',
+                tapePoint: tape
+            };
         }
 
         function neutralPoseSnapshot() {
@@ -14006,8 +14064,10 @@ service cloud.firestore {
             // Display coordinates never modify stored landmarks or measured values.
             pose.modelSpace = hasWorld ? 'world' : hasPose ? 'image' : 'sample';
             const video = document.getElementById(kind === 'video' ? 'analysisVideoElement' : 'videoElement');
-            pose.modelAspect = kind === 'latest' ? (latest?.modelAspect || 1)
-                : (video?.videoWidth && video?.videoHeight ? video.videoWidth / video.videoHeight : 1);
+            const diagnosticAspect = kind === 'video' ? AppState.videoAnalysis?.diagnostics?.width / AppState.videoAnalysis?.diagnostics?.height : NaN;
+            const aspect = kind === 'latest' ? latest?.modelAspect
+                : (video?.videoWidth && video?.videoHeight ? video.videoWidth / video.videoHeight : diagnosticAspect);
+            pose.modelAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
             if (hasWorld) pose.forEach((p, i) => {
                 if (p && imagePose?.[i]) p.visibility = Math.min(p.visibility, imagePose[i].visibility ?? 1);
             });
@@ -14016,7 +14076,8 @@ service cloud.firestore {
                 : AppState.modelAngleValues || {};
             const label = !hasPose ? (sourceMode === 'auto' ? 'サンプル姿勢' : '姿勢データなし / サンプル姿勢')
                 : kind === 'video' ? AppState.videoModelFrameLabel : kind === 'latest' ? `最新記録 #${latest.id}` : '現在姿勢';
-            return { pose, values, kind, hasPose, hasWorld, label, record: kind === 'latest' ? latest : null };
+            const tapePoint = kind === 'video' ? frame?.tapePoint : kind === 'latest' ? latest?.modelTapePoint : AppState.modelTapePointSnapshot;
+            return { pose, imagePose, tapePoint, values, kind, hasPose, hasWorld, label, record: kind === 'latest' ? latest : null };
         }
 
         const MODEL_CAMERA_DIRECTION_LABELS = {
@@ -14506,7 +14567,7 @@ service cloud.firestore {
             const shinaiMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.018, 1, 14), shinaiMaterial);
             shinaiMesh.castShadow = true;
             group.add(shinaiMesh);
-            const shinaiTip = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16, 16), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35, metalness: 0.15, transparent: true, opacity: 0.82 }));
+            const shinaiTip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35, metalness: 0.15 }));
             group.add(shinaiTip);
 
             const modelParts = {};
@@ -15230,7 +15291,7 @@ service cloud.firestore {
             return true;
         }
 
-        function updateModelAnalyticSegments(model, pose, values) {
+        function updateModelAnalyticSegments(model, pose, values, shinai) {
             const { THREE, analysisSegments, analysisJoints, analysisLabels } = model;
             if (!analysisSegments || !analysisJoints || !analysisLabels) return;
             Object.values(analysisSegments).forEach(mesh => { if (mesh) mesh.visible = false; });
@@ -15241,7 +15302,6 @@ service cloud.firestore {
             const rElbow = getModelLandmarkPoint(pose, 14, THREE);
             const rWrist = getModelLandmarkPoint(pose, 16, THREE);
             const lShoulder = getModelLandmarkPoint(pose, 11, THREE);
-            const lWrist = getModelLandmarkPoint(pose, 15, THREE);
             const shoulderMid = getModelLandmarkPoint(pose, 'shoulderMid', THREE);
             const hipMid = getModelLandmarkPoint(pose, 'hipMid', THREE);
 
@@ -15272,18 +15332,11 @@ service cloud.firestore {
                 label.position.copy(shoulderMid.clone().add(new THREE.Vector3(-0.46, 0.16, 0)));
             }
 
-            if (AppState.modelShinaiVisible && !modelMeasurementIsHand() && (lWrist || rElbow) && rWrist) {
-                const axisStart = lWrist && lWrist.distanceTo(rWrist) > 0.025 ? lWrist : rElbow;
-                const dir = axisStart ? rWrist.clone().sub(axisStart) : null;
-                if (dir && dir.length() > 0.02) {
-                    const guideEnd = rWrist.clone().add(dir.clone().normalize().multiplyScalar(0.7));
-                    alignModelSegment(THREE, analysisSegments.hasuji, axisStart, rWrist, 0.02);
-                    alignModelSegment(THREE, analysisSegments.hasujiGuide, rWrist, guideEnd, 0.0);
-                    const label = analysisLabels.hasuji;
-                    setModelTextSprite(label, '推定方向', '#facc15');
-                    label.visible = AppState.angleModelTarget === 'hasuji';
-                    label.position.copy(guideEnd.clone().add(new THREE.Vector3(0.24, 0.12, 0)));
-                }
+            if (shinai?.end) {
+                const label = analysisLabels.hasuji;
+                setModelTextSprite(label, 'テープ位置', '#b47b00');
+                label.visible = AppState.angleModelTarget === 'hasuji';
+                label.position.copy(shinai.end.clone().add(new THREE.Vector3(0, 0.18, 0)));
             }
 
             if (lShoulder && rShoulder) {
@@ -15413,32 +15466,22 @@ service cloud.firestore {
             if (!AppState.modelBodyVisible) {
                 [torsoMesh, hakamaMesh, headMesh, ...Object.values(model.modelParts).flat()].forEach(mesh => { if (mesh) mesh.visible = false; });
             }
-            const rElbowPoint = getModelLandmarkPoint(pose, 14, THREE);
-            const rWristPoint = getModelLandmarkPoint(pose, 16, THREE);
-            const lWristPoint = getModelLandmarkPoint(pose, 15, THREE);
-            if (AppState.modelShinaiVisible && !modelMeasurementIsHand() && (lWristPoint || rElbowPoint) && rWristPoint && shinaiMesh && shinaiTip) {
-                const axisStart = lWristPoint && lWristPoint.distanceTo(rWristPoint) > 0.025 ? lWristPoint : rElbowPoint;
-                const dir = axisStart ? rWristPoint.clone().sub(axisStart) : null;
-                if (!dir) {
-                    shinaiMesh.visible = false;
-                    shinaiTip.visible = false;
-                } else if (dir.length() > 0.02) {
-                    const tipPoint = rWristPoint.clone().add(dir.clone().normalize().multiplyScalar(1.05));
-                    alignModelSegment(THREE, shinaiMesh, rWristPoint, tipPoint, 0.0);
-                    shinaiTip.visible = true;
-                    shinaiTip.position.copy(tipPoint);
-                    shinaiTip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-                } else {
-                    shinaiMesh.visible = false;
-                    shinaiTip.visible = false;
-                }
+            const shinai = modelMeasurementIsHand() ? { reason: '手の素振り / 対象外' }
+                : !AppState.modelShinaiVisible ? { reason: '非表示' } : modelShinaiGeometry(source, THREE);
+            model.shinaiDisplay = shinai;
+            safeText('modelShinaiStatus', `竹刀：${shinai.reason}`);
+            renderer.domElement.dataset.shinaiSource = shinai.mode || 'none';
+            if (shinai.end && shinaiMesh && shinaiTip) {
+                alignModelSegment(THREE, shinaiMesh, shinai.start, shinai.end, 0);
+                shinaiTip.visible = true;
+                shinaiTip.position.copy(shinai.end);
             } else {
                 if (shinaiMesh) shinaiMesh.visible = false;
                 if (shinaiTip) shinaiTip.visible = false;
             }
 
             const valuesForModel = modelAngleValuesForDisplay();
-            updateModelAnalyticSegments(model, pose, valuesForModel);
+            updateModelAnalyticSegments(model, pose, valuesForModel, shinai);
             safeText('modelBadgeRightElbow', modelValueText(valuesForModel.rightAng));
             safeText('modelBadgeTorso', modelValueText(valuesForModel.torsoAng));
             safeText('modelBadgeHasuji', modelMeasurementIsHand() ? '対象外' : modelValueText(valuesForModel.hasuji));
@@ -15462,9 +15505,10 @@ service cloud.firestore {
             });
             refLine.visible = false;
 
-            const targetAvailable = !(target === 'hasuji' && (modelMeasurementIsHand() || !AppState.modelShinaiVisible));
+            const targetAvailable = target !== 'hasuji' || !!shinai.end;
             model.arcLine.visible = false;
-            const points = targetAvailable ? def.points.map(key => getModelLandmarkPoint(pose, key, THREE)) : [];
+            const points = !targetAvailable ? [] : target === 'hasuji' ? [shinai.start, shinai.end]
+                : def.points.map(key => getModelLandmarkPoint(pose, key, THREE));
             if (points.length === 3) {
                 alignModelSegment(THREE, highlightSegments[0], points[0], points[1], 0.03);
                 alignModelSegment(THREE, highlightSegments[1], points[1], points[2], 0.03);
@@ -15517,6 +15561,7 @@ service cloud.firestore {
                 model.fitRadius = 1.65;
             }
             const pointsForFit = pose.map((_, i) => getModelLandmarkPoint(pose, i, THREE)).filter(Boolean);
+            if (shinai.end) pointsForFit.push(shinai.end);
             const origin = pivot || new THREE.Vector3();
             const radius = pointsForFit.reduce((r, p) => Math.max(r, p.distanceTo(origin) * group.scale.x + 0.35), 1.65);
             model.fitRadius = Math.max(model.fitRadius, radius);
@@ -15544,7 +15589,7 @@ service cloud.firestore {
             safeText('modelAngleTitle', def.title);
             safeText('modelAngleValue', targetAvailable ? modelValueText(value) : '対象外');
             safeText('modelAngleDefinition', !targetAvailable ? '手の素振り：対象外' : target === 'hasuji'
-                ? '数値は画像上の推定刃筋。3Dの線は手首・前腕から推定した方向で、竹刀の実測3D軌跡ではありません。' : def.definition);
+                ? '数値は画像上の推定刃筋。3D竹刀は右手首と同じコマのテープ位置を結び、奥行きは手元と同じと仮定します。実測3D座標や実際の竹刀長ではありません。' : def.definition);
             const pointsBox = document.getElementById('modelAnglePoints');
             if (pointsBox) {
                 pointsBox.innerHTML = def.labels.map((label, index) => `<div class="flex items-center gap-2 bg-slate-50 border rounded p-2"><span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:${def.color}">${index + 1}</span><span class="font-bold text-slate-700">${label}</span></div>`).join('');
@@ -16151,6 +16196,7 @@ service cloud.firestore {
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
                 modelWorldPose: clonePoseSnapshot(AppState.modelWorldPoseSnapshot),
+                modelTapePoint: handOnly ? null : cloneModelTapePoint(AppState.modelTapePointSnapshot),
                 modelAspect: videoElement.videoWidth / (videoElement.videoHeight || 1),
                 modelAngleValues: { rightAng: normalizedRightAng, torsoAng: normalizedTorsoAng, hasuji: handOnly ? null : normalizedHasuji },
                 strikeTimingMode: strikeTimingModeOf(),
@@ -16610,6 +16656,7 @@ service cloud.firestore {
             AppState.currentHasujiQuality = hasujiQuality;
             AppState.modelPoseSnapshot = clonePoseSnapshot(lm);
             AppState.modelWorldPoseSnapshot = worldLm.length ? clonePoseSnapshot(worldLm) : null;
+            AppState.modelTapePointSnapshot = cloneModelTapePoint(tapeHit, canvasElement.width, canvasElement.height);
             AppState.modelAngleValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
             AppState.liveOverlayValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
             if (frameTimeMs - Number(AppState.lastLiveMetricsUiUpdateMs || 0) >= 100) {
@@ -17341,6 +17388,7 @@ service cloud.firestore {
             AppState.currentPoseSnapshot = null;
             AppState.modelPoseSnapshot = null;
             AppState.modelWorldPoseSnapshot = null;
+            AppState.modelTapePointSnapshot = null;
             AppState.modelAngleValues = null;
             AppState.lastPoseFrameTimeMs = 0;
             AppState.currentWristVisibility = 0;
@@ -19012,6 +19060,7 @@ service cloud.firestore {
             }
             markVideoTimingManual(data, 'confirm-button');
             recomputeVideoAnalysisResult();
+            updateSelectedVideoStrikeFromCurrent();
             syncVideoAnalysisSliders(Number(data.startFrame || 0));
             setVideoAnalysisFrame(Number(data.startFrame || 0));
             if (!document.getElementById('videoStep-correct')?.classList.contains('active')) showToast('補正後の開始/終了を正式候補として確定しました', 'green');
@@ -24206,6 +24255,7 @@ service cloud.firestore {
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelWorldPose: clonePoseSnapshot(endFrame.worldLandmarks),
+                modelTapePoint: isHandSwingMode() ? null : cloneModelTapePoint(endFrame.tapePoint),
                 modelAspect: document.getElementById('analysisVideoElement')?.videoWidth / (document.getElementById('analysisVideoElement')?.videoHeight || 1),
                 modelAngleValues: {
                     rightAng,
@@ -24315,6 +24365,7 @@ service cloud.firestore {
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
                 modelWorldPose: clonePoseSnapshot(endFrame.worldLandmarks),
+                modelTapePoint: isHandSwingMode() ? null : cloneModelTapePoint(endFrame.tapePoint),
                 modelAspect: document.getElementById('analysisVideoElement')?.videoWidth / (document.getElementById('analysisVideoElement')?.videoHeight || 1),
                 modelAngleValues: {
                     rightAng,

@@ -91,4 +91,24 @@ assert.equal((editorHtml.match(/id="videoCorrectionDockPlayBtn"/g) || []).length
 for (const id of ['videoSkeletonToggle', 'videoAngleOverlayToggle', 'videoShinaiOverlayToggle', 'videoHasujiOverlayToggle', 'videoCorrectionSupportDetails']) {
     assert.ok(editorHtml.includes(`id="${id}"`), id);
 }
-console.log('PASS: native playback PTS, variable frame times, single callback chain, stop/loop, stale callbacks, whole-video navigation, overlay controls');
+const confirmData = { frames, startFrame: 2, endFrame: 8, strikes: [{ manualAdjusted: false }] };
+const confirmOrder = [];
+const confirmContext = vm.createContext({
+    AppState: { videoAnalysis: confirmData },
+    showToast() {}, document: { getElementById: () => ({ classList: { contains: () => true } }) },
+    markVideoTimingManual(d) { d.manualTimingConfirmed = true; confirmOrder.push('confirm'); },
+    recomputeVideoAnalysisResult() { confirmData.peakFrame = 5; confirmOrder.push('recompute'); },
+    updateSelectedVideoStrikeFromCurrent() {
+        confirmData.strikes[0].manualAdjusted = true;
+        confirmData.strikes[0].peakFrame = confirmData.peakFrame;
+        confirmOrder.push('strike');
+    },
+    syncVideoAnalysisSliders() {}, setVideoAnalysisFrame() {}
+});
+vm.runInContext(declaration('confirmVideoTimingCorrection'), confirmContext);
+confirmContext.confirmVideoTimingCorrection();
+assert.deepEqual(confirmOrder, ['confirm', 'recompute', 'strike']);
+assert.equal(confirmData.strikes[0].manualAdjusted, true, 'confirm without moving a marker enables saving selected strike');
+assert.equal(confirmData.strikes[0].peakFrame, 5, 'selected strike keeps recomputed peak');
+assert.equal(confirmData.startFrame, 2); assert.equal(confirmData.endFrame, 8);
+console.log('PASS: native playback PTS, stop/loop, stale callbacks, whole-video navigation, overlay controls, unchanged-range confirmation');
