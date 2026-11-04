@@ -2211,6 +2211,51 @@
             border-radius: 10px;
             border: 1px solid #1e293b;
         }
+        #tab-model { color: #202b31; }
+        #tab-model > div:first-child { padding: 12px 0; border: 0; box-shadow: none; border-radius: 0; }
+        #tab-model select, #tab-model button, .model-view-options summary { min-height: 44px; }
+        #tab-model select { max-width: 100%; }
+        #tab-model .model-analysis-grid { gap: 20px; }
+        #tab-model .model-analysis-grid > div:first-child { background: #f3f6f7; border: 0; border-radius: 0; box-shadow: none; align-self: start; }
+        #tab-model .model-analysis-grid > div:first-child > div:not(#angleModelViewport) { background: white; border-color: #d4dce0; color: #36454e; }
+        #tab-model .model-analysis-grid > div:first-child > div:not(#angleModelViewport) :is(h3, span) { color: #36454e; }
+        #tab-model .model-analysis-grid button, #modelFrameLabel { color: #36454e; }
+        #tab-model .model-analysis-grid > div:first-child button { padding: 8px 12px; border: 1px solid #c7d2d9; background: #fff; border-radius: 5px; }
+        #tab-model button:disabled, #tab-model select:disabled { opacity: .45; cursor: not-allowed; }
+        #tab-model button:focus-visible, #tab-model select:focus-visible, #tab-model input:focus-visible { outline: 3px solid #1685cf; outline-offset: 2px; }
+        #angleModelViewport { height: 560px; min-height: 0 !important; overflow: hidden; }
+        #angleModelViewport > canvas { position: absolute; inset: 0; }
+        #angleModelViewport > div { background: #ffffffed; border: 1px solid #d4dce0; color: #36454e; border-radius: 4px; }
+        #tab-model .model-angle-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 0; }
+        #tab-model .model-angle-badges > div { background: #fff; border-color: #d4dce0; padding: 8px; color: #202b31; }
+        #tab-model .model-angle-badges span, #modelOrientationStatus { color: #36454e; }
+        #tab-model .model-side-panel { display: flex; flex-direction: column; gap: 12px; }
+        #tab-model .model-side-panel > div { margin: 0; border: 0; border-bottom: 1px solid #d4dce0; border-radius: 0; box-shadow: none; padding: 12px 0; }
+        #tab-model .model-frame-card { order: -1; }
+        #tab-model .model-preview-canvas { border-radius: 4px; border-color: #d4dce0; }
+        #modelVideoFrameCanvas { max-height: 360px; object-fit: contain; }
+        #modelAngleTitle { font-size: 18px; }
+        #modelAngleValue { font-size: 30px; }
+        .model-view-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 0; border-bottom: 1px solid #d4dce0; }
+        .model-view-presets button { padding: 8px 14px; border: 1px solid #bccbd3; border-radius: 4px; background: white; }
+        .model-view-presets button[aria-pressed="true"] { background: #116ab0; color: white; border-color: #116ab0; }
+        #modelCoordinateStatus { font-size: 12px; margin-left: auto; color: #51606a; }
+        .model-view-options { position: relative; }
+        .model-view-options summary { display: flex; align-items: center; padding: 8px 12px; border: 1px solid #c7d2d9; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .model-options-content { position: absolute; z-index: 40; right: 0; top: 48px; width: 240px; display: grid; gap: 12px; padding: 14px; background: white; border: 1px solid #c7d2d9; border-radius: 6px; box-shadow: 0 8px 24px #20334222; }
+        .model-options-content label, .model-loop-label { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; }
+        #tab-model .model-measurement-details summary { padding: 12px 0; font-size: 14px; font-weight: 700; cursor: pointer; }
+        #tab-model .model-measurement-details > div { border: 0; border-radius: 0; box-shadow: none; padding: 12px 0; }
+        #tab-model .model-analysis-grid > div:first-child > div:not(#angleModelViewport) .text-slate-200 { color: #36454e; }
+        #tab-model #modelPlayBtn { background: #116ab0; border-color: #116ab0; color: #fff; }
+        #tab-model input[type="range"] { accent-color: #116ab0; }
+        @media (min-width: 980px) { #tab-model .model-analysis-grid { grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); } }
+        @media (max-width: 600px) {
+            #angleModelViewport { height: 360px; }
+            #tab-model .model-view-presets button { flex: 1; padding: 8px; font-size: 13px; white-space: nowrap; }
+            #modelCoordinateStatus { width: 100%; margin-left: 0; }
+            #tab-model .model-options-content { right: auto; left: 0; }
+        }
         .report-sheet { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
         .report-sheet table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .report-sheet th, .report-sheet td { border-bottom: 1px solid #e2e8f0; padding: 7px 6px; text-align: left; }
@@ -7275,8 +7320,8 @@ service cloud.firestore {
     <div id="tab-model" class="tab-content">
         <div class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-person-rays text-violet-500 mr-2"></i>詳細分析 / 人体モデル</h2>
-                <p class="text-xs text-slate-500 mt-1">練習後に、どの点と線から角度を計算しているかを3Dモデル上で確認します。</p>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-person-rays text-violet-500 mr-2"></i>3D骨格</h2>
+                <p class="text-xs text-slate-500 mt-1">単眼映像からの推定表示</p>
             </div>
 	            <div class="flex flex-wrap items-center gap-2">
 	                <select id="modelSourceSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white">
@@ -7287,59 +7332,61 @@ service cloud.firestore {
 	                </select>
 		                <select id="modelAngleSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white">
 		                    <option value="rightElbow" selected="">右肘角</option>
-		                    <option value="torso">体幹軸</option>
-		                    <option value="hasuji">刃筋</option>
+		                    <option value="torso">体幹傾斜</option>
+		                    <option value="hasuji">推定刃筋</option>
 		                </select>
-		                <select id="modelCameraDirectionSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="撮影方向を補正">
-		                    <option value="auto">撮影: 自動補正</option>
-		                    <option value="front">撮影: 正面</option>
-		                    <option value="left45">撮影: 左斜め45°</option>
-		                    <option value="right45" selected="">撮影: 右斜め45°（標準）</option>
-		                    <option value="leftSide">撮影: 左側面</option>
-		                    <option value="rightSide">撮影: 右側面</option>
-		                    <option value="back">撮影: 背面</option>
+		                <details class="model-view-options"><summary>表示設定</summary><div class="model-options-content">
+		                <select id="modelCameraDirectionSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" aria-label="基準方向">
+		                    <option value="front" selected>基準: カメラ方向</option>
+		                    <option value="auto">基準: 肩方向</option>
+		                    <option value="left45">基準: 左45°回転</option>
+		                    <option value="right45">基準: 右45°回転</option>
+		                    <option value="leftSide">基準: 左90°回転</option>
+		                    <option value="rightSide">基準: 右90°回転</option>
+		                    <option value="back">基準: 180°回転</option>
 		                </select>
 		                <select id="modelPivotSelect" class="border border-slate-200 rounded px-3 py-2 text-sm bg-white" title="3D回転の中心">
-		                    <option value="auto" selected="">ピボット: 角度中心</option>
+		                    <option value="auto">中心: 選択角度</option>
 		                    <option value="shoulder">ピボット: 肩</option>
 		                    <option value="hip">ピボット: 腰</option>
 		                    <option value="rightWrist">ピボット: 右手首</option>
-		                    <option value="center">ピボット: 体中心</option>
+		                    <option value="center" selected>中心: 全身</option>
 		                </select>
+		                <label><input type="checkbox" id="modelBodyToggle"> 人体の輪郭</label>
+		                <label><input type="checkbox" id="modelShinaiToggle"> 推定竹刀方向</label>
+		                </div></details>
 		                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded px-3 py-2">
 		                    拡大
 		                    <input id="modelViewZoomSlider" type="range" min="0.65" max="2.4" step="0.05" value="1" class="w-24 accent-violet-600">
 		                    <span id="modelViewZoomValue" class="font-mono-num text-slate-800">1.00x</span>
 		                </label>
-		                <button id="modelResetViewBtn" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded text-sm font-bold">視点リセット</button>
-		                <select id="modelPlayRateSelect" class="border border-slate-200 rounded px-2 py-2 text-sm bg-white">
-		                    <option value="0.1">0.1x</option>
-		                    <option value="0.25">0.25x</option>
-	                    <option value="0.5" selected="">0.5x</option>
-	                    <option value="1">1x</option>
-	                </select>
-	                <button id="modelPlayBtn" type="button" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-play mr-1"></i> 3D再生</button>
-	                <button data-kendo-action="switch-tab" data-value="measure" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">練習に戻る</button>
+		                <button id="modelResetViewBtn" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded text-sm font-bold" title="視点をリセット" aria-label="視点をリセット"><i class="fa-solid fa-rotate-left"></i></button>
 	            </div>
         </div>
 
+        <div class="model-view-presets" role="group" aria-label="3Dの視点">
+            <button type="button" data-model-view="front" aria-pressed="true" title="撮影カメラ側から見る">正面</button>
+            <button type="button" data-model-view="side" aria-pressed="false">横</button>
+            <button type="button" data-model-view="back" aria-pressed="false">背面</button>
+            <button type="button" data-model-view="free" aria-pressed="false"><i class="fa-solid fa-arrows-rotate"></i> 自由回転</button>
+            <span id="modelCoordinateStatus">サンプル姿勢</span>
+        </div>
         <div class="model-analysis-grid grid gap-6">
 	            <div class="bg-slate-950 rounded-xl shadow-sm border border-slate-800 overflow-hidden min-w-0">
 	                <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center">
-	                    <h3 class="font-bold text-sm text-slate-100">3D人体モデル</h3>
+	                    <h3 class="font-bold text-sm text-slate-100">骨格と角度</h3>
 	                    <span id="modelSourceLabel" class="text-xs text-slate-400">待機姿勢</span>
 	                </div>
-		                <div id="angleModelViewport" class="relative min-h-[440px] md:min-h-[560px]">
+		                <div id="angleModelViewport" class="relative min-h-[440px] md:min-h-[560px]" role="img" aria-label="推定3D骨格。ドラッグで回転、2本指で拡大">
 		                    <div class="absolute right-3 top-3 z-10 max-w-[240px] rounded bg-slate-950/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 backdrop-blur pointer-events-none">
-		                        <div id="modelOrientationStatus" class="font-bold text-violet-200">撮影補正: 自動</div>
-		                        <div class="text-slate-400 mt-1">ドラッグ回転 / Shift移動 / ホイール拡大</div>
+		                        <div id="modelOrientationStatus" class="font-bold text-violet-200">正面</div>
 		                    </div>
-		                    <div class="absolute left-3 bottom-3 z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pointer-events-none">
-	                        <div class="bg-slate-950/80 border border-violet-400/40 text-violet-100 rounded px-3 py-2 backdrop-blur"><span class="block text-violet-300">右肘</span><b id="modelBadgeRightElbow" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
-	                        <div class="bg-slate-950/80 border border-emerald-400/40 text-emerald-100 rounded px-3 py-2 backdrop-blur"><span class="block text-emerald-300">体幹軸</span><b id="modelBadgeTorso" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
-	                        <div class="bg-slate-950/80 border border-amber-400/40 text-amber-100 rounded px-3 py-2 backdrop-blur"><span class="block text-amber-300">刃筋</span><b id="modelBadgeHasuji" class="font-mono-num text-sm">0.0° / 0.0°/s</b></div>
+                        </div>
+		                    <div class="model-angle-badges text-[11px]">
+	                        <div class="bg-slate-950/80 border border-violet-400/40 text-violet-100 rounded px-3 py-2 backdrop-blur"><span class="block text-violet-300">右肘</span><b id="modelBadgeRightElbow" class="font-mono-num text-sm">---</b></div>
+	                        <div class="bg-slate-950/80 border border-emerald-400/40 text-emerald-100 rounded px-3 py-2 backdrop-blur"><span class="block text-emerald-300">体幹傾斜</span><b id="modelBadgeTorso" class="font-mono-num text-sm">---</b></div>
+	                        <div class="bg-slate-950/80 border border-amber-400/40 text-amber-100 rounded px-3 py-2 backdrop-blur"><span class="block text-amber-300">推定刃筋</span><b id="modelBadgeHasuji" class="font-mono-num text-sm">---</b></div>
 	                    </div>
-	                </div>
 	                <div class="border-t border-slate-800 bg-slate-900 p-3">
 	                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
 	                        <div class="text-xs font-black text-slate-200"><i class="fa-solid fa-film mr-1"></i>動画フレーム連動</div>
@@ -7347,9 +7394,17 @@ service cloud.firestore {
 	                    </div>
 	                    <input id="modelFrameSlider" type="range" min="0" max="0" step="1" value="0" disabled="" class="w-full accent-violet-500">
 	                    <div class="flex flex-wrap gap-2 mt-2">
+                            <button id="modelPlayBtn" type="button" class="px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-play mr-1"></i> 再生</button>
+                            <select id="modelPlayRateSelect" class="border border-slate-200 rounded px-2 py-2 text-sm bg-white" aria-label="動画の再生倍率">
+                                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                                <option value="0.5" selected>0.5x</option><option value="1">1x</option>
+                            </select>
+                            <button id="modelStepBackBtn" type="button" title="1コマ戻る" aria-label="1コマ戻る"><i class="fa-solid fa-backward-step"></i></button>
+                            <button id="modelStepForwardBtn" type="button" title="1コマ進む" aria-label="1コマ進む"><i class="fa-solid fa-forward-step"></i></button>
 	                        <button id="modelJumpStartBtn" type="button" class="bg-blue-500/15 hover:bg-blue-500/25 text-blue-100 border border-blue-400/30 px-3 py-1 rounded text-xs font-bold">開始</button>
 	                        <button id="modelJumpPeakBtn" type="button" class="bg-amber-500/15 hover:bg-amber-500/25 text-amber-100 border border-amber-400/30 px-3 py-1 rounded text-xs font-bold">最高速</button>
 	                        <button id="modelJumpEndBtn" type="button" class="bg-red-500/15 hover:bg-red-500/25 text-red-100 border border-red-400/30 px-3 py-1 rounded text-xs font-bold">終了</button>
+                            <label class="model-loop-label"><input type="checkbox" id="modelLoopToggle"> 繰り返し</label>
 	                    </div>
 	                </div>
 	            </div>
@@ -7368,7 +7423,6 @@ service cloud.firestore {
                         <span id="modelVideoFrameStatus" class="text-[11px] font-bold text-slate-500">動画解析後に表示</span>
                     </div>
                     <canvas id="modelVideoFrameCanvas" class="model-preview-canvas"></canvas>
-                    <p class="text-[11px] text-slate-500 mt-2">3Dモデルと同じフレームの実映像です。開始・最高速・終了フレームの確認に使います。</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-xl shadow-sm border">
@@ -7377,16 +7431,16 @@ service cloud.firestore {
                         <span id="modelAngleTimelineStatus" class="text-[11px] font-bold text-slate-500">動画解析後に表示</span>
                     </div>
                     <canvas id="modelAngleTimelineCanvas" class="model-preview-canvas !aspect-[5/2]"></canvas>
-                    <p class="text-[11px] text-slate-500 mt-2">縦線が現在フレーム、青=開始、黄=最高速、赤=終了です。</p>
                 </div>
 
+                <details class="model-measurement-details"><summary>測定の詳細</summary>
                 <div class="bg-white p-4 rounded-xl shadow-sm border">
                     <h3 class="text-sm font-bold text-slate-700 mb-3">計算に使う点</h3>
                     <div id="modelAnglePoints" class="grid grid-cols-1 gap-2 text-sm"><div class="flex items-center gap-2 bg-slate-50 border rounded p-2"><span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:#a78bfa">1</span><span class="font-bold text-slate-700">右肩</span></div><div class="flex items-center gap-2 bg-slate-50 border rounded p-2"><span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:#a78bfa">2</span><span class="font-bold text-slate-700">右肘（中心）</span></div><div class="flex items-center gap-2 bg-slate-50 border rounded p-2"><span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:#a78bfa">3</span><span class="font-bold text-slate-700">右手首</span></div></div>
                 </div>
 
                 <div class="bg-white p-4 rounded-xl shadow-sm border">
-                    <h3 class="text-sm font-bold text-slate-700 mb-3">最新打突の詳細</h3>
+                    <h3 class="text-sm font-bold text-slate-700 mb-3">選択中の打突</h3>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">打突時間</span><div id="modelLatestTime" class="font-black text-blue-700 font-mono-num">---</div></div>
                         <div class="bg-slate-50 border rounded p-2"><span class="text-slate-500">ピーク時刻</span><div id="modelLatestSpeed" class="font-black text-cyan-700 font-mono-num">---</div></div>
@@ -7395,11 +7449,7 @@ service cloud.firestore {
 	                        <div class="bg-violet-50 border border-violet-100 rounded p-2 col-span-2"><span class="text-violet-700">選択角度の変化率</span><div id="modelAngleRate" class="font-black text-violet-800 font-mono-num">動画解析フレームで表示</div></div>
 	                    </div>
                 </div>
-
-                <div class="bg-violet-50 p-4 rounded-xl border border-violet-100">
-                    <h3 class="text-sm font-bold text-violet-900 mb-2">見方</h3>
-	                    <p class="text-xs text-violet-800 leading-relaxed">紫=右肘、緑=体幹軸、黄=推定刃筋です。3D上に同時表示し、右側の選択項目だけ太く強調します。動画解析でフレームを動かした場合は、そのフレームの姿勢を反映します。</p>
-                </div>
+                </details>
             </div>
         </div>
     </div>
@@ -7826,11 +7876,15 @@ service cloud.firestore {
             shinaiDetectionWindow: [],
             currentPoseSnapshot: null,
             modelPoseSnapshot: null,
+            modelWorldPoseSnapshot: null,
             modelAngleValues: null,
             angleModelTarget: 'rightElbow',
             modelSourceMode: 'auto',
-            modelCameraDirection: 'right45',
-            modelPivotMode: 'auto',
+            modelCameraDirection: 'front',
+            modelPivotMode: 'center',
+            modelViewPreset: 'front',
+            modelBodyVisible: false,
+            modelShinaiVisible: false,
             modelViewYaw: 0,
             modelViewPitch: 0,
             modelViewZoom: 1,
@@ -10271,7 +10325,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v190-live-session-20261103',
+                appVersion: 'v191-model-world-20261105',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -13875,7 +13929,7 @@ service cloud.firestore {
                 definition: '右肩・右肘・右手首の3点で、右肘を中心に測ります。面打ちで腕が伸びているかを見る基本角度です。'
             },
             torso: {
-                title: '体幹軸',
+                title: '体幹傾斜',
                 color: '#34d399',
                 points: ['shoulderMid', 'hipMid'],
                 labels: ['左右肩の中点', '左右腰の中点', '垂直基準線'],
@@ -13883,7 +13937,7 @@ service cloud.firestore {
                 definition: '左右肩の中点と左右腰の中点を結んだ線が、垂直からどれだけ傾いているかを測ります。前傾・横ブレの確認に使います。'
             },
             hasuji: {
-                title: '刃筋',
+                title: '推定刃筋',
                 color: '#facc15',
                 points: [15, 16],
                 labels: ['左手首', '右手首', '両手首→推定剣先の方向'],
@@ -13937,27 +13991,36 @@ service cloud.firestore {
         function modelPoseSource() {
             const latest = AppState.records[AppState.records.length - 1];
             const sourceMode = AppState.modelSourceMode || document.getElementById('modelSourceSelect')?.value || 'auto';
-            if (sourceMode === 'video' && AppState.videoModelPoseSnapshot) {
-                return { pose: clonePoseSnapshot(AppState.videoModelPoseSnapshot), label: AppState.videoModelFrameLabel || '動画解析フレーム' };
-            }
-            if (sourceMode === 'latest') {
-                if (latest?.modelPose) return { pose: clonePoseSnapshot(latest.modelPose), label: `最新記録 #${latest.id}` };
-                return { pose: neutralPoseSnapshot(), label: '最新記録なし' };
-            }
-            if (sourceMode === 'live') {
-                if (AppState.modelPoseSnapshot) return { pose: clonePoseSnapshot(AppState.modelPoseSnapshot), label: '現在姿勢' };
-                if (AppState.currentPoseSnapshot) return { pose: clonePoseSnapshot(AppState.currentPoseSnapshot), label: '現在姿勢' };
-                return { pose: neutralPoseSnapshot(), label: '現在姿勢なし' };
-            }
-            if (latest?.modelPose) return { pose: clonePoseSnapshot(latest.modelPose), label: `最新記録 #${latest.id}` };
-            if (AppState.modelPoseSnapshot) return { pose: clonePoseSnapshot(AppState.modelPoseSnapshot), label: '現在姿勢' };
-            if (AppState.currentPoseSnapshot) return { pose: clonePoseSnapshot(AppState.currentPoseSnapshot), label: '現在姿勢' };
-            if (AppState.videoModelPoseSnapshot) return { pose: clonePoseSnapshot(AppState.videoModelPoseSnapshot), label: AppState.videoModelFrameLabel || '動画解析フレーム' };
-            return { pose: neutralPoseSnapshot(), label: '待機姿勢' };
+            let kind = sourceMode;
+            if (kind === 'auto') kind = latest?.modelPose ? 'latest'
+                : (AppState.modelPoseSnapshot || AppState.currentPoseSnapshot) ? 'live' : 'video';
+            const frame = AppState.videoAnalysis?.frames?.[AppState.videoModelAngleValues?.frameIndex];
+            const imagePose = kind === 'video' ? frame?.landmarks : kind === 'latest' ? latest?.modelPose
+                : AppState.modelPoseSnapshot || AppState.currentPoseSnapshot;
+            const worldPose = kind === 'video' ? frame?.worldLandmarks : kind === 'latest' ? latest?.modelWorldPose
+                : AppState.modelWorldPoseSnapshot;
+            const validPoint = p => p && [p.x, p.y, p.z].every(Number.isFinite);
+            const hasWorld = worldPose?.filter(validPoint).length >= 8;
+            const hasPose = hasWorld || imagePose?.some(p => p && Number.isFinite(p.x) && Number.isFinite(p.y));
+            const pose = hasPose ? clonePoseSnapshot(hasWorld ? worldPose.map(p => validPoint(p) ? p : null) : imagePose) : neutralPoseSnapshot();
+            // Display coordinates never modify stored landmarks or measured values.
+            pose.modelSpace = hasWorld ? 'world' : hasPose ? 'image' : 'sample';
+            const video = document.getElementById(kind === 'video' ? 'analysisVideoElement' : 'videoElement');
+            pose.modelAspect = kind === 'latest' ? (latest?.modelAspect || 1)
+                : (video?.videoWidth && video?.videoHeight ? video.videoWidth / video.videoHeight : 1);
+            if (hasWorld) pose.forEach((p, i) => {
+                if (p && imagePose?.[i]) p.visibility = Math.min(p.visibility, imagePose[i].visibility ?? 1);
+            });
+            const values = !hasPose ? {} : kind === 'video' ? AppState.videoModelAngleValues || {}
+                : kind === 'latest' ? latest?.modelAngleValues || { ...latest, hasuji: latest?.hasujiAngle }
+                : AppState.modelAngleValues || {};
+            const label = !hasPose ? (sourceMode === 'auto' ? 'サンプル姿勢' : '姿勢データなし / サンプル姿勢')
+                : kind === 'video' ? AppState.videoModelFrameLabel : kind === 'latest' ? `最新記録 #${latest.id}` : '現在姿勢';
+            return { pose, values, kind, hasPose, hasWorld, label, record: kind === 'latest' ? latest : null };
         }
 
         const MODEL_CAMERA_DIRECTION_LABELS = {
-            auto: '自動補正',
+            auto: '肩方向を基準',
             front: '正面',
             left45: '左斜め45°',
             right45: '右斜め45°',
@@ -14001,8 +14064,13 @@ service cloud.firestore {
                 return shoulderMid || hipMid || null;
             }
             const lm = pose?.[key];
-            if (!lm || visibilityOf(lm) < 0.2) return null;
-            return new THREE.Vector3((lm.x - 0.5) * 3.2, (0.82 - lm.y) * 3.2, -(lm.z || 0) * 2.0);
+            if (!lm || !Number.isFinite(lm.x) || !Number.isFinite(lm.y) || visibilityOf(lm) < 0.2) return null;
+            if (pose.modelSpace === 'world') {
+                if (!Number.isFinite(lm.z)) return null;
+                return new THREE.Vector3(lm.x, -lm.y, -lm.z).multiplyScalar(1.6);
+            }
+            // Old records have no world coordinates: keep them flat, not fabricated 3D.
+            return new THREE.Vector3((lm.x - 0.5) * 3.2 * (pose.modelAspect || 1), (0.82 - lm.y) * 3.2, 0);
         }
 
         function getModelPoseTransform(pose, THREE) {
@@ -14065,6 +14133,22 @@ service cloud.firestore {
             const slider = document.getElementById('modelViewZoomSlider');
             if (slider && Number(slider.value) !== view.zoom) slider.value = view.zoom;
             safeText('modelViewZoomValue', `${view.zoom.toFixed(2)}x`);
+            document.querySelectorAll('[data-model-view]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.modelView === AppState.modelViewPreset));
+            });
+        }
+
+        function setModelViewPreset(preset) {
+            const yaw = { front: 0, side: -Math.PI / 2, back: Math.PI };
+            AppState.modelViewPreset = Object.hasOwn(yaw, preset) ? preset : 'free';
+            if (AppState.modelViewPreset !== 'free') {
+                AppState.modelViewYaw = yaw[preset];
+                AppState.modelViewPitch = 0;
+                AppState.modelViewPanX = 0;
+                AppState.modelViewPanY = 0;
+            }
+            syncModelViewControls();
+            renderAngleModel();
         }
 
         function getModelViewPivotPoint(pose, THREE) {
@@ -14072,7 +14156,10 @@ service cloud.firestore {
             if (mode === 'shoulder') return getModelLandmarkPoint(pose, 'shoulderMid', THREE);
             if (mode === 'hip') return getModelLandmarkPoint(pose, 'hipMid', THREE);
             if (mode === 'rightWrist') return getModelLandmarkPoint(pose, 16, THREE);
-            if (mode === 'center') return getModelLandmarkPoint(pose, 'center', THREE);
+            if (mode === 'center') {
+                const points = pose.map((_, i) => getModelLandmarkPoint(pose, i, THREE)).filter(Boolean);
+                return points.length ? new THREE.Box3().setFromPoints(points).getCenter(new THREE.Vector3()) : null;
+            }
             const target = AppState.angleModelTarget || 'rightElbow';
             if (target === 'rightElbow') return getModelLandmarkPoint(pose, 14, THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
             if (target === 'leftElbow') return getModelLandmarkPoint(pose, 13, THREE) || getModelLandmarkPoint(pose, 'shoulderMid', THREE);
@@ -14101,6 +14188,9 @@ service cloud.firestore {
         }
 
         function resetAngleModelView() {
+            AppState.modelViewPreset = 'front';
+            AppState.modelCameraDirection = 'front';
+            AppState.modelPivotMode = 'center';
             AppState.modelViewYaw = 0;
             AppState.modelViewPitch = 0;
             AppState.modelViewZoom = 1;
@@ -14113,6 +14203,8 @@ service cloud.firestore {
         function beginAngleModelViewDrag(event) {
             if (event.button !== undefined && event.button !== 0) return;
             event.preventDefault();
+            const pointers = AppState.modelViewPointers ||= new Map();
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
             const view = getModelViewState();
             AppState.modelViewDrag = {
                 pointerId: event.pointerId,
@@ -14124,14 +14216,26 @@ service cloud.firestore {
                 panY: view.panY,
                 pan: !!(event.shiftKey || event.altKey || event.metaKey)
             };
+            if (pointers.size === 2) {
+                const [a, b] = [...pointers.values()];
+                AppState.modelViewDrag.pinchDistance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+                AppState.modelViewDrag.zoom = view.zoom;
+            }
             event.currentTarget?.setPointerCapture?.(event.pointerId);
             if (event.currentTarget) event.currentTarget.style.cursor = 'grabbing';
         }
 
         function handleAngleModelViewPointerMove(event) {
             const drag = AppState.modelViewDrag;
-            if (!drag) return;
+            const pointers = AppState.modelViewPointers;
+            if (!drag || !pointers?.has(event.pointerId)) return;
             event.preventDefault?.();
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (pointers.size >= 2 && drag.pinchDistance) {
+                const [a, b] = [...pointers.values()];
+                setModelViewZoom(drag.zoom * Math.hypot(a.x - b.x, a.y - b.y) / drag.pinchDistance);
+                return;
+            }
             const dx = event.clientX - drag.startX;
             const dy = event.clientY - drag.startY;
             const usePan = drag.pan || event.shiftKey || event.altKey || event.metaKey;
@@ -14140,6 +14244,7 @@ service cloud.firestore {
                 AppState.modelViewPanX = clamp(drag.panX + dx / (300 * zoom), -1.8, 1.8);
                 AppState.modelViewPanY = clamp(drag.panY - dy / (300 * zoom), -1.5, 1.5);
             } else {
+                AppState.modelViewPreset = 'free';
                 AppState.modelViewYaw = drag.yaw + dx * 0.008;
                 AppState.modelViewPitch = clamp(drag.pitch + dy * 0.006, -0.9, 0.9);
             }
@@ -14147,8 +14252,17 @@ service cloud.firestore {
             renderAngleModel();
         }
 
-        function stopAngleModelViewDrag() {
+        function stopAngleModelViewDrag(event) {
             if (!AppState.modelViewDrag) return;
+            const pointers = AppState.modelViewPointers;
+            if (event?.pointerId != null) pointers?.delete(event.pointerId);
+            else pointers?.clear();
+            if (pointers?.size === 1) {
+                const [pointerId, point] = [...pointers.entries()][0];
+                const view = getModelViewState();
+                AppState.modelViewDrag = { pointerId, startX: point.x, startY: point.y, yaw: view.yaw, pitch: view.pitch, panX: view.panX, panY: view.panY, pan: false };
+                return;
+            }
             AppState.modelViewDrag = null;
             const canvas = AppState.angleModel3d?.renderer?.domElement;
             if (canvas) canvas.style.cursor = 'grab';
@@ -14227,10 +14341,22 @@ service cloud.firestore {
         }
 
         function modelValueText(value, suffix = '°') {
-            return Number.isFinite(Number(value)) && Number(value) >= 0 ? `${Number(value).toFixed(1)}${suffix}` : '---';
+            return value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0 ? `${Number(value).toFixed(1)}${suffix}` : '---';
         }
 
         async function initAngleModelView() {
+            if (AppState.angleModel3d?.initialized) return AppState.angleModel3d;
+            if (!AppState.modelInitPromise) {
+                AppState.modelInitPromise = createAngleModelView().catch(error => {
+                    console.warn('3D表示の初期化に失敗', error);
+                    safeText('modelSourceLabel', '3Dを読み込めませんでした。再度3D画面を開いてください');
+                    return null;
+                }).finally(() => { AppState.modelInitPromise = null; });
+            }
+            return AppState.modelInitPromise;
+        }
+
+        async function createAngleModelView() {
             const container = document.getElementById('angleModelViewport');
             if (!container) return null;
             if (AppState.angleModel3d?.initialized) return AppState.angleModel3d;
@@ -14249,7 +14375,7 @@ service cloud.firestore {
             container.insertBefore(renderer.domElement, container.firstChild);
 
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x020617);
+            scene.background = new THREE.Color(0xf3f6f7);
             const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
             camera.position.set(0, 0.25, 5.8);
             camera.lookAt(0, 0.12, 0);
@@ -14259,7 +14385,7 @@ service cloud.firestore {
             group.scale.setScalar(0.86);
             viewGroup.add(group);
 
-            scene.add(new THREE.AmbientLight(0x7dd3fc, 0.35));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.85));
             const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
             keyLight.position.set(2.4, 4, 3);
             keyLight.castShadow = true;
@@ -14268,21 +14394,21 @@ service cloud.firestore {
             rimLight.position.set(-3, 1.5, -2);
             scene.add(rimLight);
 
-            const grid = new THREE.GridHelper(5, 10, 0x334155, 0x1e293b);
+            const grid = new THREE.GridHelper(5, 10, 0xa9bbc5, 0xd4dee3);
             grid.position.y = -1.25;
             scene.add(grid);
 
             const floor = new THREE.Mesh(
                 new THREE.PlaneGeometry(5.2, 5.2),
-                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, metalness: 0.0, transparent: true, opacity: 0.72 })
+                new THREE.MeshStandardMaterial({ color: 0xe4e9ec, roughness: 0.8, metalness: 0.0, transparent: true, opacity: 0.35 })
             );
             floor.rotation.x = -Math.PI / 2;
             floor.position.y = -1.27;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            const boneMaterial = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.46, metalness: 0.08, transparent: true, opacity: 0.38 });
-            const jointMaterial = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.08, transparent: true, opacity: 0.68 });
+            const boneMaterial = new THREE.MeshStandardMaterial({ color: 0x1972a4, roughness: 0.65 });
+            const jointMaterial = new THREE.MeshStandardMaterial({ color: 0x38515f, roughness: 0.65 });
             const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xa78bfa, roughness: 0.3, metalness: 0.18, emissive: 0x28124d, emissiveIntensity: 0.55 });
             const refMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0, transparent: true, opacity: 0.42 });
             const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, roughness: 0.74, metalness: 0.0, transparent: true, opacity: 0.24 });
@@ -14297,7 +14423,7 @@ service cloud.firestore {
 
             const bones = {};
             MODEL_BONE_PAIRS.forEach(pair => {
-                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 1, 14), boneMaterial);
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1, 12), boneMaterial);
                 mesh.castShadow = true;
                 group.add(mesh);
                 bones[pair.join('_')] = mesh;
@@ -14306,7 +14432,7 @@ service cloud.firestore {
             const jointIndices = [...new Set(MODEL_BONE_PAIRS.flat().concat([0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24]))];
             const joints = {};
             jointIndices.forEach(index => {
-                const radius = [11, 12, 23, 24].includes(index) ? 0.07 : ([13, 14, 15, 16].includes(index) ? 0.055 : 0.045);
+                const radius = [11, 12, 23, 24].includes(index) ? 0.045 : 0.034;
                 const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 18), jointMaterial);
                 mesh.castShadow = true;
                 group.add(mesh);
@@ -14345,12 +14471,13 @@ service cloud.firestore {
                 hasujiGuide: makeAnalysisSegment(analysisMaterials.hasuji, 0.032),
                 shoulders: makeAnalysisSegment(analysisMaterials.shoulders, 0.048)
             };
+            Object.values(analysisSegments).forEach(mesh => { mesh.userData.radiusScale = 0.5; });
             analysisSegments.hasujiGuide.material = analysisMaterials.hasuji.clone();
             analysisSegments.hasujiGuide.material.opacity = 0.38;
             const analysisJoints = {};
             ['rightElbow', 'rightWrist', 'shoulderMid', 'hipMid'].forEach(key => {
                 const color = key === 'rightElbow' || key === 'rightWrist' ? 0xa78bfa : 0x34d399;
-                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.095, 22, 22), makeAnalysisMaterial(color));
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 18), makeAnalysisMaterial(color));
                 mesh.visible = false;
                 mesh.castShadow = true;
                 group.add(mesh);
@@ -14429,12 +14556,12 @@ service cloud.firestore {
             });
 
             const highlightSegments = [0, 1, 2].map(() => {
-                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 1, 18), highlightMaterial.clone());
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 14), highlightMaterial.clone());
                 group.add(mesh);
                 return mesh;
             });
             const highlightJoints = [0, 1, 2].map(() => {
-                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.085, 20, 20), highlightMaterial.clone());
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.052, 18, 18), highlightMaterial.clone());
                 group.add(mesh);
                 return mesh;
             });
@@ -14461,7 +14588,21 @@ service cloud.firestore {
             renderer.domElement.addEventListener('pointerdown', beginAngleModelViewDrag, { passive: false });
             renderer.domElement.addEventListener('wheel', handleAngleModelWheel, { passive: false });
 
-            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, viewGroup, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, pivotMarker, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, modelParts, container };
+            AppState.angleModel3d = { initialized: true, THREE, scene, camera, renderer, viewGroup, group, bones, joints, analysisSegments, analysisJoints, analysisLabels, highlightSegments, highlightJoints, arcLine, refLine, pivotMarker, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, modelParts, container, grid, floor };
+            renderer.domElement.addEventListener('webglcontextlost', event => {
+                event.preventDefault();
+                AppState.angleModel3d.contextLost = true;
+                stopModelPlayback();
+                safeText('modelSourceLabel', '3D表示の復帰待ち');
+            });
+            renderer.domElement.addEventListener('webglcontextrestored', () => {
+                AppState.angleModel3d.contextLost = false;
+                renderAngleModel();
+            });
+            if (typeof ResizeObserver !== 'undefined') {
+                AppState.angleModel3d.resizeObserver = new ResizeObserver(() => renderAngleModel());
+                AppState.angleModel3d.resizeObserver.observe(container);
+            }
             syncModelViewControls();
             return AppState.angleModel3d;
         }
@@ -14498,29 +14639,20 @@ service cloud.firestore {
         }
 
         function modelAngleValuesForDisplay() {
-            const latest = AppState.records[AppState.records.length - 1];
-            const useVideo = (AppState.modelSourceMode || 'auto') === 'video';
-            const values = useVideo ? (AppState.videoModelAngleValues || {}) : (latest?.modelAngleValues || AppState.modelAngleValues || {});
-            return {
-                rightAng: Number(values.rightAng ?? latest?.rightAng ?? 0),
-                leftAng: Number(values.leftAng ?? latest?.leftAng ?? 0),
-                torsoAng: Number(values.torsoAng ?? latest?.torsoAng ?? 0),
-                hasuji: Number(values.hasuji ?? latest?.hasujiAngle ?? 0),
-                shoulderLineAng: Number(values.shoulderLineAng ?? latest?.shoulderLineAng ?? 0)
-            };
+            const { values } = modelPoseSource();
+            return Object.fromEntries(['rightAng', 'leftAng', 'torsoAng', 'hasuji', 'shoulderLineAng'].map(key =>
+                [key, values[key] != null && values[key] !== '' && Number.isFinite(Number(values[key])) ? Number(values[key]) : null]));
         }
 
         function modelMeasurementIsHand() {
-            const sourceMode = AppState.modelSourceMode || 'auto';
-            if (sourceMode === 'video') return AppState.videoAnalysis?.handSwingMode === true;
-            if (sourceMode === 'live') return isHandSwingMode();
-            const latest = AppState.records[AppState.records.length - 1];
-            if (latest) return recordMeasurementKind(latest) === 'hand';
+            const source = modelPoseSource();
+            if (source.kind === 'video') return AppState.videoAnalysis?.handSwingMode === true;
+            if (source.record) return recordMeasurementKind(source.record) === 'hand';
             return isHandSwingMode();
         }
 
         function videoFrameAngleValue(frame, key) {
-            if (!frame) return NaN;
+            if (!frame || (!frame.landmarks && !frame.worldLandmarks)) return NaN;
             const map = {
                 rightAng: frame.rightAng,
                 leftAng: frame.leftAng,
@@ -14528,7 +14660,7 @@ service cloud.firestore {
                 hasuji: frame.hasuji,
                 shoulderLineAng: frame.shoulderLineAng
             };
-            return Number(map[key]);
+            return map[key] != null && map[key] !== '' ? Number(map[key]) : NaN;
         }
 
         function videoAngleRateDegPerSec(frameIndex, valueKey) {
@@ -14548,7 +14680,7 @@ service cloud.firestore {
         }
 
         function rateText(rate) {
-            if (!Number.isFinite(Number(rate))) return '---';
+            if (rate == null || rate === '' || !Number.isFinite(Number(rate))) return '---';
             const sign = rate > 0 ? '+' : '';
             return `${sign}${Number(rate).toFixed(1)}°/s`;
         }
@@ -14971,22 +15103,28 @@ service cloud.firestore {
             const plotH = height - pad.top - pad.bottom;
             ctx.strokeStyle = '#cbd5e1';
             ctx.lineWidth = 1;
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = '#51606a';
+            ctx.fillText('°', 8, 12);
             for (let i = 0; i <= 3; i++) {
                 const y = pad.top + plotH * i / 3;
                 ctx.beginPath();
                 ctx.moveTo(pad.left, y);
                 ctx.lineTo(width - pad.right, y);
                 ctx.stroke();
+                ctx.fillText((min + span * (1 - i / 3)).toFixed(0), 3, y + 3);
             }
             ctx.strokeStyle = def.color;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
+            let connected = false;
             values.forEach((value, index) => {
-                if (!Number.isFinite(value)) return;
+                if (!Number.isFinite(value)) { connected = false; return; }
                 const x = pad.left + (index / Math.max(1, data.frames.length - 1)) * plotW;
                 const y = pad.top + plotH - ((value - min) / span) * plotH;
-                if (index === 0) ctx.moveTo(x, y);
+                if (!connected) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
+                connected = true;
             });
             ctx.stroke();
             getVideoFrameMarkers(data).forEach(marker => {
@@ -15012,7 +15150,11 @@ service cloud.firestore {
             const currentValue = values[current];
             ctx.fillStyle = '#0f172a';
             ctx.font = '11px sans-serif';
-            ctx.fillText(`${def.title} ${Number.isFinite(currentValue) ? currentValue.toFixed(1) + '°' : '---'}`, pad.left, height - 7);
+            ctx.fillText('#0', pad.left, height - 7);
+            ctx.fillText('コマ', width / 2 - 12, height - 7);
+            ctx.textAlign = 'right';
+            ctx.fillText(`#${data.frames.length - 1}`, width - pad.right, height - 7);
+            ctx.textAlign = 'left';
             const rate = videoAngleRateDegPerSec(current, def.valueKey);
             safeText('modelAngleTimelineStatus', `${Number.isFinite(currentValue) ? currentValue.toFixed(1) + '°' : '---'} / ${rateText(rate)}`);
         }
@@ -15025,14 +15167,15 @@ service cloud.firestore {
 
         function setVideoModelSnapshotFromFrame(frame, frameIndex) {
             if (!frame) return false;
+            AppState.modelRequestedFrame = frameIndex;
             AppState.videoModelPoseSnapshot = clonePoseSnapshot(frame.landmarks);
             AppState.videoModelAngleValues = {
                 frameIndex,
-                rightAng: Number(frame.rightAng || 0),
-                leftAng: Number(frame.leftAng || 0),
-                torsoAng: Number(frame.torsoAng || 0),
-                hasuji: Number(frame.hasuji || 0),
-                shoulderLineAng: Number(frame.shoulderLineAng || 0)
+                rightAng: frame.rightAng ?? null,
+                leftAng: frame.leftAng ?? null,
+                torsoAng: frame.torsoAng ?? null,
+                hasuji: frame.hasuji ?? null,
+                shoulderLineAng: frame.shoulderLineAng ?? null
             };
             AppState.videoModelFrameLabel = `動画フレーム #${frameIndex} / ${Number(frame.timeMs || 0).toFixed(1)}ms`;
             return true;
@@ -15043,6 +15186,10 @@ service cloud.firestore {
             const slider = document.getElementById('modelFrameSlider');
             const label = document.getElementById('modelFrameLabel');
             const hasFrames = !!data?.frames?.length;
+            ['modelPlayBtn', 'modelPlayRateSelect', 'modelStepBackBtn', 'modelStepForwardBtn', 'modelJumpStartBtn', 'modelJumpPeakBtn', 'modelJumpEndBtn', 'modelLoopToggle'].forEach(id => {
+                const control = document.getElementById(id);
+                if (control) control.disabled = !hasFrames;
+            });
             const index = hasFrames
                 ? clamp(Math.round(frameIndex ?? AppState.videoModelAngleValues?.frameIndex ?? data.startFrame ?? 0), 0, data.frames.length - 1)
                 : 0;
@@ -15066,12 +15213,15 @@ service cloud.firestore {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return false;
             const frameIndex = clamp(Math.round(index || 0), 0, data.frames.length - 1);
+            const request = AppState.modelFrameRequest = (AppState.modelFrameRequest || 0) + 1;
+            AppState.modelRequestedFrame = frameIndex;
             setModelSourceMode('video');
+            const drawn = await drawVideoAnalysisFrame(frameIndex).catch(() => false);
+            if (!drawn || request !== AppState.modelFrameRequest || data !== AppState.videoAnalysis) return false;
             setVideoModelSnapshotFromFrame(data.frames[frameIndex], frameIndex);
             data.threeDChecked = true;
             syncModelFrameControls(frameIndex);
             updateModelAnalysisLabels();
-            await drawVideoAnalysisFrame(frameIndex).catch(() => false);
             drawModelVideoFramePreview(frameIndex);
             drawModelAngleTimeline(frameIndex);
             updateVideoVerificationChecklist(data);
@@ -15104,7 +15254,7 @@ service cloud.firestore {
                 analysisJoints.rightWrist.position.copy(rWrist);
                 const label = analysisLabels.rightElbow;
                 setModelTextSprite(label, `右肘 ${modelValueText(values.rightAng)}`, '#a78bfa');
-                label.visible = true;
+                label.visible = AppState.angleModelTarget === 'rightElbow' && Number.isFinite(values.rightAng);
                 label.position.copy(rElbow.clone().add(new THREE.Vector3(0.34, 0.18, 0)));
             }
 
@@ -15118,11 +15268,11 @@ service cloud.firestore {
                 analysisJoints.hipMid.position.copy(hipMid);
                 const label = analysisLabels.torso;
                 setModelTextSprite(label, `体幹 ${modelValueText(values.torsoAng)}`, '#34d399');
-                label.visible = true;
+                label.visible = AppState.angleModelTarget === 'torso' && Number.isFinite(values.torsoAng);
                 label.position.copy(shoulderMid.clone().add(new THREE.Vector3(-0.46, 0.16, 0)));
             }
 
-            if (!modelMeasurementIsHand() && (lWrist || rElbow) && rWrist) {
+            if (AppState.modelShinaiVisible && !modelMeasurementIsHand() && (lWrist || rElbow) && rWrist) {
                 const axisStart = lWrist && lWrist.distanceTo(rWrist) > 0.025 ? lWrist : rElbow;
                 const dir = axisStart ? rWrist.clone().sub(axisStart) : null;
                 if (dir && dir.length() > 0.02) {
@@ -15130,8 +15280,8 @@ service cloud.firestore {
                     alignModelSegment(THREE, analysisSegments.hasuji, axisStart, rWrist, 0.02);
                     alignModelSegment(THREE, analysisSegments.hasujiGuide, rWrist, guideEnd, 0.0);
                     const label = analysisLabels.hasuji;
-                    setModelTextSprite(label, `刃筋 ${modelValueText(values.hasuji)}`, '#facc15');
-                    label.visible = true;
+                    setModelTextSprite(label, '推定方向', '#facc15');
+                    label.visible = AppState.angleModelTarget === 'hasuji';
                     label.position.copy(guideEnd.clone().add(new THREE.Vector3(0.24, 0.12, 0)));
                 }
             }
@@ -15219,19 +15369,23 @@ service cloud.firestore {
 
         function renderAngleModel() {
             const model = AppState.angleModel3d;
-            if (!model?.initialized) return;
+            if (!model?.initialized || model.contextLost) return;
             const { THREE, renderer, scene, camera, viewGroup, group, bones, joints, highlightSegments, highlightJoints, refLine, pivotMarker, torsoMesh, hakamaMesh, headMesh, shinaiMesh, shinaiTip, container } = model;
-            const width = Math.max(container.clientWidth || 640, 320);
-            const height = Math.max(container.clientHeight || 440, 360);
+            if (!container.clientWidth || !container.clientHeight) return;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
             if (renderer.domElement.width !== Math.round(width * renderer.getPixelRatio()) || renderer.domElement.height !== Math.round(height * renderer.getPixelRatio())) {
                 renderer.setSize(width, height, false);
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
             }
 
-            const { pose, label } = modelPoseSource();
+            const source = modelPoseSource();
+            const { pose, label } = source;
             safeText('modelSourceLabel', label);
-            const poseTransform = getModelPoseTransform(pose, THREE);
+            safeText('modelCoordinateStatus', source.hasWorld ? '推定3D / world座標' : source.hasPose ? '2D参考 / 奥行きなし' : 'サンプル姿勢 / 未測定');
+            renderer.domElement.dataset.coordinateSpace = pose.modelSpace;
+            renderer.domElement.dataset.frameIndex = source.kind === 'video' ? String(AppState.videoModelAngleValues?.frameIndex ?? '') : '';
             MODEL_BONE_PAIRS.forEach(pair => {
                 alignModelSegment(THREE, bones[pair.join('_')], getModelLandmarkPoint(pose, pair[0], THREE), getModelLandmarkPoint(pose, pair[1], THREE), 0.025);
             });
@@ -15256,10 +15410,13 @@ service cloud.firestore {
             } else if (headMesh) {
                 headMesh.visible = false;
             }
+            if (!AppState.modelBodyVisible) {
+                [torsoMesh, hakamaMesh, headMesh, ...Object.values(model.modelParts).flat()].forEach(mesh => { if (mesh) mesh.visible = false; });
+            }
             const rElbowPoint = getModelLandmarkPoint(pose, 14, THREE);
             const rWristPoint = getModelLandmarkPoint(pose, 16, THREE);
             const lWristPoint = getModelLandmarkPoint(pose, 15, THREE);
-            if ((lWristPoint || rElbowPoint) && rWristPoint && shinaiMesh && shinaiTip) {
+            if (AppState.modelShinaiVisible && !modelMeasurementIsHand() && (lWristPoint || rElbowPoint) && rWristPoint && shinaiMesh && shinaiTip) {
                 const axisStart = lWristPoint && lWristPoint.distanceTo(rWristPoint) > 0.025 ? lWristPoint : rElbowPoint;
                 const dir = axisStart ? rWristPoint.clone().sub(axisStart) : null;
                 if (!dir) {
@@ -15282,13 +15439,9 @@ service cloud.firestore {
 
             const valuesForModel = modelAngleValuesForDisplay();
             updateModelAnalyticSegments(model, pose, valuesForModel);
-            const videoFrameIndex = AppState.modelSourceMode === 'video' ? AppState.videoModelAngleValues?.frameIndex : null;
-            const rightRate = videoAngleRateDegPerSec(videoFrameIndex, 'rightAng');
-            const torsoRate = videoAngleRateDegPerSec(videoFrameIndex, 'torsoAng');
-            const hasujiRate = videoAngleRateDegPerSec(videoFrameIndex, 'hasuji');
-            safeText('modelBadgeRightElbow', `${modelValueText(valuesForModel.rightAng)} / ${rateText(rightRate)}`);
-            safeText('modelBadgeTorso', `${modelValueText(valuesForModel.torsoAng)} / ${rateText(torsoRate)}`);
-            safeText('modelBadgeHasuji', modelMeasurementIsHand() ? '対象外' : `${modelValueText(valuesForModel.hasuji)} / ${rateText(hasujiRate)}`);
+            safeText('modelBadgeRightElbow', modelValueText(valuesForModel.rightAng));
+            safeText('modelBadgeTorso', modelValueText(valuesForModel.torsoAng));
+            safeText('modelBadgeHasuji', modelMeasurementIsHand() ? '対象外' : modelValueText(valuesForModel.hasuji));
 
             const target = AppState.angleModelTarget || 'rightElbow';
             const def = MODEL_ANGLE_DEFS[target] || MODEL_ANGLE_DEFS.rightElbow;
@@ -15296,20 +15449,21 @@ service cloud.firestore {
             highlightSegments.forEach(mesh => {
                 mesh.material.color.set(color);
                 mesh.material.emissive.set(color);
-                mesh.material.emissiveIntensity = 0.9;
-                mesh.userData.radiusScale = 1.65;
+                mesh.material.emissiveIntensity = 0.3;
+                mesh.userData.radiusScale = 1;
                 mesh.visible = false;
             });
             highlightJoints.forEach(mesh => {
                 mesh.material.color.set(color);
                 mesh.material.emissive.set(color);
-                mesh.material.emissiveIntensity = 0.9;
-                mesh.scale.setScalar(1.22);
+                mesh.material.emissiveIntensity = 0.3;
+                mesh.scale.setScalar(1);
                 mesh.visible = false;
             });
             refLine.visible = false;
 
-            const targetAvailable = !(target === 'hasuji' && modelMeasurementIsHand());
+            const targetAvailable = !(target === 'hasuji' && (modelMeasurementIsHand() || !AppState.modelShinaiVisible));
+            model.arcLine.visible = false;
             const points = targetAvailable ? def.points.map(key => getModelLandmarkPoint(pose, key, THREE)) : [];
             if (points.length === 3) {
                 alignModelSegment(THREE, highlightSegments[0], points[0], points[1], 0.03);
@@ -15343,7 +15497,7 @@ service cloud.firestore {
                 const bodyScale = Number(group.scale?.x) || 1;
                 group.position.copy(pivot).multiplyScalar(-bodyScale);
                 if (pivotMarker) {
-                    pivotMarker.visible = true;
+                    pivotMarker.visible = AppState.modelPivotMode !== 'center';
                     pivotMarker.position.copy(pivot);
                 }
             } else {
@@ -15356,31 +15510,41 @@ service cloud.firestore {
                 viewGroup.scale.setScalar(view.zoom);
                 viewGroup.position.set(view.panX, view.panY, 0);
             }
-            const yawDeg = Math.round((poseTransform.yaw * 180 / Math.PI) * 10) / 10;
-            const pivotLabel = MODEL_PIVOT_LABELS[AppState.modelPivotMode || 'auto'] || MODEL_PIVOT_LABELS.auto;
-            safeText('modelOrientationStatus', `撮影補正: ${poseTransform.label} / ${yawDeg}° / ${pivotLabel}`);
+            const fitKey = source.kind === 'video' ? AppState.videoAnalysis : source.record || source.kind;
+            if (model.fitKey !== fitKey || model.fitPivot !== AppState.modelPivotMode) {
+                model.fitKey = fitKey;
+                model.fitPivot = AppState.modelPivotMode;
+                model.fitRadius = 1.65;
+            }
+            const pointsForFit = pose.map((_, i) => getModelLandmarkPoint(pose, i, THREE)).filter(Boolean);
+            const origin = pivot || new THREE.Vector3();
+            const radius = pointsForFit.reduce((r, p) => Math.max(r, p.distanceTo(origin) * group.scale.x + 0.35), 1.65);
+            model.fitRadius = Math.max(model.fitRadius, radius);
+            const halfFov = camera.fov * Math.PI / 360;
+            const halfLimit = Math.min(halfFov, Math.atan(Math.tan(halfFov) * camera.aspect));
+            camera.position.set(0, 0, model.fitRadius / Math.sin(halfLimit));
+            camera.lookAt(0, 0, 0);
+            const bottom = pointsForFit.reduce((y, p) => Math.min(y, (p.y - origin.y) * group.scale.y - 0.14), -1.3);
+            model.grid.position.y = bottom;
+            model.floor.position.y = bottom - 0.02;
+            const presetLabel = { front: '正面', side: '横', back: '背面', free: '自由回転' }[AppState.modelViewPreset] || '自由回転';
+            safeText('modelOrientationStatus', `${presetLabel} / ${view.zoom.toFixed(2)}x`);
             renderer.render(scene, camera);
         }
 
         function updateModelAnalysisLabels() {
             const target = AppState.angleModelTarget || 'rightElbow';
             const def = MODEL_ANGLE_DEFS[target] || MODEL_ANGLE_DEFS.rightElbow;
-            const latest = AppState.records[AppState.records.length - 1];
-            const useVideo = AppState.modelSourceMode === 'video';
-            const values = useVideo ? (AppState.videoModelAngleValues || {}) : (latest?.modelAngleValues || AppState.modelAngleValues || {});
-            const valueFromLive = Number(values[def.valueKey]);
-            const recordValueMap = latest ? {
-                rightAng: Number(latest.rightAng),
-                leftAng: Number(latest.leftAng),
-                torsoAng: Number(latest.torsoAng),
-                hasuji: Number(latest.hasujiAngle),
-                shoulderLineAng: Number(latest.shoulderLineAng)
-            } : {};
-            const value = Number.isFinite(valueFromLive) && valueFromLive > 0 ? valueFromLive : recordValueMap[def.valueKey];
+            const source = modelPoseSource();
+            const latest = source.record;
+            const useVideo = source.kind === 'video';
+            const values = modelAngleValuesForDisplay();
+            const value = values[def.valueKey];
             const targetAvailable = !(target === 'hasuji' && modelMeasurementIsHand());
             safeText('modelAngleTitle', def.title);
-            safeText('modelAngleValue', targetAvailable && Number.isFinite(value) && value > 0 ? `${value.toFixed(1)}°` : (targetAvailable ? '---' : '対象外'));
-            safeText('modelAngleDefinition', targetAvailable ? def.definition : '手の素振り測定では竹刀を使用しないため、刃筋は評価しません。');
+            safeText('modelAngleValue', targetAvailable ? modelValueText(value) : '対象外');
+            safeText('modelAngleDefinition', !targetAvailable ? '手の素振り：対象外' : target === 'hasuji'
+                ? '数値は画像上の推定刃筋。3Dの線は手首・前腕から推定した方向で、竹刀の実測3D軌跡ではありません。' : def.definition);
             const pointsBox = document.getElementById('modelAnglePoints');
             if (pointsBox) {
                 pointsBox.innerHTML = def.labels.map((label, index) => `<div class="flex items-center gap-2 bg-slate-50 border rounded p-2"><span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:${def.color}">${index + 1}</span><span class="font-bold text-slate-700">${label}</span></div>`).join('');
@@ -15389,18 +15553,22 @@ service cloud.firestore {
             safeText('modelAngleRate', targetAvailable
                 ? (Number.isFinite(selectedRate) ? `${rateText(selectedRate)}（動画フレーム差分）` : '動画解析フレームで表示')
                 : '対象外');
-            if (targetAvailable) {
+            if (targetAvailable && useVideo) {
                 drawModelAngleTimeline(AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0);
             } else {
                 const timeline = document.getElementById('modelAngleTimelineCanvas');
                 timeline?.getContext('2d')?.clearRect(0, 0, timeline.width, timeline.height);
-                safeText('modelAngleTimelineStatus', '対象外');
+                safeText('modelAngleTimelineStatus', useVideo ? '対象外' : '動画未選択');
             }
+            document.querySelector('#tab-model .model-frame-card')?.classList.toggle('hidden', !useVideo);
 	            if (useVideo && AppState.videoModelAngleValues) {
 	                const frame = AppState.videoAnalysis?.frames?.[AppState.videoModelAngleValues.frameIndex];
-	                safeText('modelLatestTime', frame ? `${frame.timeMs.toFixed(1)} ms` : '動画フレーム');
+                    const data = AppState.videoAnalysis;
+                    const start = data?.frames?.[data.startFrame]?.timeMs;
+                    const end = data?.frames?.[data.endFrame]?.timeMs;
+	                safeText('modelLatestTime', Number.isFinite(start) && Number.isFinite(end) ? `${(end - start).toFixed(1)} ms` : '---');
 	                safeText('modelLatestSpeed', videoPeakTimeLabel(AppState.videoAnalysis?.metrics));
-	                safeText('modelAngleQuality', frame?.poseConfidence ? `${Math.round(frame.poseConfidence * 100)}%` : (frame?.visibility ? `${Math.round(frame.visibility * 100)}%` : '---'));
+	                safeText('modelAngleQuality', Number.isFinite(frame?.poseConfidence) ? `${Math.round(frame.poseConfidence * 100)}%` : '---');
 	                safeText('modelEndReason', '動画フレーム連動');
 	            } else if (latest) {
 	                safeText('modelLatestTime', `${latest.timeMs} ms`);
@@ -15410,7 +15578,7 @@ service cloud.firestore {
             } else {
                 safeText('modelLatestTime', '---');
                 safeText('modelLatestSpeed', '---');
-                safeText('modelAngleQuality', AppState.currentAngleQuality ? `${Math.round(AppState.currentAngleQuality * 100)}%` : '---');
+                safeText('modelAngleQuality', source.kind === 'live' && source.hasPose && Number.isFinite(AppState.currentAngleQuality) ? `${Math.round(AppState.currentAngleQuality * 100)}%` : '---');
                 safeText('modelEndReason', '---');
             }
         }
@@ -15982,6 +16150,8 @@ service cloud.firestore {
                 measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 開始基準:${strikeTimingModeLabel()}${reactionMode ? ' / 音刺激反応測定' : ''} / 検証:${realtimeValidation.status}`,
                 memo: metrics.memo || '',
                 modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
+                modelWorldPose: clonePoseSnapshot(AppState.modelWorldPoseSnapshot),
+                modelAspect: videoElement.videoWidth / (videoElement.videoHeight || 1),
                 modelAngleValues: { rightAng: normalizedRightAng, torsoAng: normalizedTorsoAng, hasuji: handOnly ? null : normalizedHasuji },
                 strikeTimingMode: strikeTimingModeOf(),
                 timingDefinition: `${reactionMode ? `反応時間=音の出力時刻→${isHandSwingMode() ? '右手首' : '竹刀'}の動作開始。合計時間=音の出力時刻→振り下ろし終了。` : ''}開始基準=${strikeTimingModeDefinition()}。開始・終了は${isHandSwingMode() ? '右手首速度' : '竹刀先端速度'}の連続判定と補間時刻を使用。`
@@ -16439,6 +16609,7 @@ service cloud.firestore {
             AppState.currentHasujiSource = hasujiSource;
             AppState.currentHasujiQuality = hasujiQuality;
             AppState.modelPoseSnapshot = clonePoseSnapshot(lm);
+            AppState.modelWorldPoseSnapshot = worldLm.length ? clonePoseSnapshot(worldLm) : null;
             AppState.modelAngleValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
             AppState.liveOverlayValues = { rightAng, leftAng, torsoAng, hasuji, shoulderLineAng };
             if (frameTimeMs - Number(AppState.lastLiveMetricsUiUpdateMs || 0) >= 100) {
@@ -17168,6 +17339,9 @@ service cloud.firestore {
             AppState.wristTrace = [];
             AppState.swingPxToMeters = 0;
             AppState.currentPoseSnapshot = null;
+            AppState.modelPoseSnapshot = null;
+            AppState.modelWorldPoseSnapshot = null;
+            AppState.modelAngleValues = null;
             AppState.lastPoseFrameTimeMs = 0;
             AppState.currentWristVisibility = 0;
             AppState.currentAngleQuality = 0;
@@ -17202,6 +17376,10 @@ service cloud.firestore {
             setTimingStatus(message, '---', '---');
             updateStateUI('IDLE');
             if (Params.signalMode && !AppState.reactionSoundTesting) updateReactionTrainingUi(message);
+            if (document.getElementById('tab-model')?.classList.contains?.('active')) {
+                updateModelAnalysisLabels();
+                renderAngleModel();
+            }
         }
 
         function isCurrentLivePoseRequest(request) {
@@ -18485,11 +18663,13 @@ service cloud.firestore {
                 const range = video._kendoPlaybackRange;
                 const data = AppState.videoAnalysis;
                 if (!video.seeking && range && data?.frames?.length && time >= videoSourceSecondForFrame(data, data.frames[range.end]) - 0.000001) {
-                    if (document.getElementById('videoEditorLoopToggle')?.checked) {
+                    const modelPlayback = AppState.modelPlaybackPlaying;
+                    if (document.getElementById(modelPlayback ? 'modelLoopToggle' : 'videoEditorLoopToggle')?.checked) {
                         video.currentTime = videoSourceSecondForFrame(data, data.frames[range.start]);
                     } else {
                         stopVideoSlowPlayback();
-                        setVideoAnalysisFrame(range.end);
+                        if (modelPlayback) setModelVideoFrame(range.end);
+                        else setVideoAnalysisFrame(range.end);
                         return;
                     }
                 } else {
@@ -19778,6 +19958,7 @@ service cloud.firestore {
             });
             AppState.videoSlowPlaying = false;
             setVideoSlowButtonsPlaying(false);
+            if (AppState.modelPlaybackPlaying) setModelPlaybackPlaying(false);
             if (options.redraw) setVideoAnalysisFrame(current);
         }
 
@@ -19819,38 +20000,46 @@ service cloud.firestore {
                 clearTimeout(AppState.modelPlaybackTimer);
                 AppState.modelPlaybackTimer = null;
             }
-            AppState.modelPlaybackPlaying = false;
+            if (AppState.modelPlaybackPlaying) stopVideoSlowPlayback();
+            setModelPlaybackPlaying(false);
+        }
+
+        function setModelPlaybackPlaying(playing) {
+            AppState.modelPlaybackPlaying = playing;
             const btn = document.getElementById('modelPlayBtn');
-            if (btn) btn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> 3D再生';
+            if (btn) btn.innerHTML = playing ? '<i class="fa-solid fa-pause mr-1"></i> 一時停止' : '<i class="fa-solid fa-play mr-1"></i> 再生';
         }
 
         async function startModelPlayback() {
             const data = AppState.videoAnalysis;
             if (!data?.frames?.length) return showToast('先に動画解析を実行してください', 'yellow');
             stopModelPlayback();
+            stopVideoSlowPlayback();
             setModelSourceMode('video');
-            AppState.modelPlaybackPlaying = true;
-            const btn = document.getElementById('modelPlayBtn');
-            if (btn) btn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> 停止';
-            const rate = Number(document.getElementById('modelPlayRateSelect')?.value || 0.5);
-            const fps = Math.max(1, data.fps || Params.targetFps || 60);
-            const frameStepMs = videoFrameStepMs(data, fps);
+            const generation = AppState.videoPlaybackGeneration;
+            const video = document.getElementById('videoCorrectionElement');
+            if (!video) return;
             const startIndex = clamp(data.startFrame ?? 0, 0, data.frames.length - 1);
             const endIndex = clamp(data.endFrame ?? data.frames.length - 1, startIndex, data.frames.length - 1);
             let current = clamp(AppState.videoModelAngleValues?.frameIndex ?? startIndex, startIndex, endIndex);
-            const tick = async () => {
-                if (!AppState.modelPlaybackPlaying) return;
-                await setModelVideoFrame(current);
-                const next = current >= endIndex ? startIndex : current + 1;
-                const currentFrame = data.frames[current];
-                const nextFrame = data.frames[next];
-                const frameDeltaMs = currentFrame && nextFrame && next > current
-                    ? Math.max(frameStepMs, Number(nextFrame.timeMs || 0) - Number(currentFrame.timeMs || 0))
-                    : frameStepMs;
-                current = next;
-                AppState.modelPlaybackTimer = setTimeout(tick, clamp(frameDeltaMs / Math.max(rate, 0.05), 22, 1600));
-            };
-            tick();
+            if (current >= endIndex) current = startIndex;
+            syncCorrectionVideoSource(videoSourceSecondForFrame(data, data.frames[current]));
+            video._kendoPlaybackRange = { start: startIndex, end: endIndex };
+            video._kendoPresentedTime = videoSourceSecondForFrame(data, data.frames[current]);
+            video.playbackRate = Number(document.getElementById('modelPlayRateSelect')?.value || 0.5);
+            AppState.videoDrawToken++;
+            setModelPlaybackPlaying(true);
+            try {
+                // Use the file's PTS clock; slow-motion physical time is for measurements only.
+                await video.play();
+                if (generation !== AppState.videoPlaybackGeneration) return;
+                beginNativeVideoPreviewControl(video);
+                startNativePreviewFrameSync(video);
+            } catch (error) {
+                if (generation !== AppState.videoPlaybackGeneration) return;
+                stopModelPlayback();
+                showToast('動画を再生できませんでした。動画を選択し直してください', 'yellow');
+            }
         }
 
         function setVideoStrikeMode(mode) {
@@ -24016,6 +24205,8 @@ service cloud.firestore {
                 memo: '動画解析から正式記録へ保存',
                 source: 'video-analysis',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
+                modelWorldPose: clonePoseSnapshot(endFrame.worldLandmarks),
+                modelAspect: document.getElementById('analysisVideoElement')?.videoWidth / (document.getElementById('analysisVideoElement')?.videoHeight || 1),
                 modelAngleValues: {
                     rightAng,
                     torsoAng,
@@ -24123,6 +24314,8 @@ service cloud.firestore {
 	                memo: `複数打突${numberLabel}を${strike.manualAdjusted ? '補正済み' : '自動測定・未補正'}として保存${validation.ok ? '' : `（要確認: ${validation.reason}）`}`,
                 source: 'video-multi-strike',
                 modelPose: clonePoseSnapshot(endFrame.landmarks),
+                modelWorldPose: clonePoseSnapshot(endFrame.worldLandmarks),
+                modelAspect: document.getElementById('analysisVideoElement')?.videoWidth / (document.getElementById('analysisVideoElement')?.videoHeight || 1),
                 modelAngleValues: {
                     rightAng,
                     torsoAng,
@@ -25621,8 +25814,23 @@ service cloud.firestore {
             else startModelPlayback();
         });
         const modelPlayRateSelect = document.getElementById('modelPlayRateSelect');
-        if (modelPlayRateSelect) modelPlayRateSelect.addEventListener('change', () => {
-            if (AppState.modelPlaybackPlaying) startModelPlayback();
+        if (modelPlayRateSelect) modelPlayRateSelect.addEventListener('change', e => {
+            if (AppState.modelPlaybackPlaying) document.getElementById('videoCorrectionElement').playbackRate = Number(e.target.value);
+        });
+        document.querySelectorAll('[data-model-view]').forEach(button => {
+            button.addEventListener('click', () => setModelViewPreset(button.dataset.modelView));
+        });
+        [['modelBodyToggle', 'modelBodyVisible'], ['modelShinaiToggle', 'modelShinaiVisible']].forEach(([id, key]) => {
+            document.getElementById(id)?.addEventListener('change', event => {
+                AppState[key] = event.target.checked;
+                renderAngleModel();
+            });
+        });
+        [['modelStepBackBtn', -1], ['modelStepForwardBtn', 1]].forEach(([id, step]) => {
+            document.getElementById(id)?.addEventListener('click', () => {
+                stopModelPlayback();
+                setModelVideoFrame(Number(AppState.modelRequestedFrame ?? AppState.videoModelAngleValues?.frameIndex ?? AppState.videoAnalysis?.startFrame ?? 0) + step);
+            });
         });
         const modelFrameSlider = document.getElementById('modelFrameSlider');
         if (modelFrameSlider) modelFrameSlider.addEventListener('input', e => {
