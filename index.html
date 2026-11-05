@@ -2,7 +2,9 @@
 <html lang="ja"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>剣道 非接触打突分析 ver.9</title>
+    <title>剣道卒研</title>
+    <meta name="application-name" content="剣道卒研">
+    <meta name="apple-mobile-web-app-title" content="剣道卒研">
     <meta name="description" content="MediaPipe Poseを使った剣道の非接触打突分析ツール">
     <meta name="theme-color" content="#0f172a">
     <link rel="manifest" href="./manifest.webmanifest">
@@ -5601,7 +5603,7 @@
         <div class="kvc-nav-inner flex items-center justify-between h-16">
             <div class="kvc-nav-brand flex items-center gap-3">
                 <i class="fa-solid fa-helmet-battle text-blue-400 text-2xl"></i>
-                <span class="font-bold text-xl tracking-tight">Kendo Virtual Coach</span>
+                <span class="font-bold text-xl tracking-tight">剣道卒研</span>
 
                 <button id="audioToggleBtn" class="hidden ml-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded-full text-xs items-center gap-2 transition border border-slate-600">
                     <i class="fa-solid fa-volume-xmark" id="audioIcon"></i> 音声OFF
@@ -8892,7 +8894,7 @@ service cloud.firestore {
 
         function reportRuntimeIssue(message, color = 'yellow') {
             const text = String(message || '起動時エラーを検出しました');
-            console.warn('[Kendo Virtual Coach]', text);
+            console.warn('[剣道卒研]', text);
             const status = document.getElementById('systemStatus');
             if (status && !AppState.isCameraRunning) {
                 status.innerHTML = `<span class="h-3 w-3 rounded-full bg-yellow-400"></span> 確認が必要`;
@@ -11194,7 +11196,7 @@ service cloud.firestore {
                 { width: 27 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 18 }, { width: 18 }
             ];
             sheet.mergeCells('A1:H1');
-            sheet.getCell('A1').value = 'Kendo Virtual Coach 研究データ集計';
+            sheet.getCell('A1').value = '剣道卒研 研究データ集計';
             sheet.getCell('A1').font = { name: 'Yu Gothic', size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
             sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
             sheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -11406,8 +11408,8 @@ service cloud.firestore {
                 const existingSheet = workbook.getWorksheet(name);
                 if (existingSheet) workbook.removeWorksheet(existingSheet.id);
             });
-            workbook.creator = 'Kendo Virtual Coach';
-            workbook.lastModifiedBy = 'Kendo Virtual Coach';
+            workbook.creator = '剣道卒研';
+            workbook.lastModifiedBy = '剣道卒研';
             if (!workbook.created) workbook.created = new Date();
             workbook.modified = new Date();
             workbook.calcProperties.fullCalcOnLoad = true;
@@ -16451,7 +16453,7 @@ service cloud.firestore {
             const reactionMeta = record.reactionMode
                 ? `<p>反応時間: ${reactionMsLabel(record.reactionTimeMs)}</p><p>音から終了: ${reactionMsLabel(record.totalResponseTimeMs)}</p>`
                 : '';
-            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Kendo Clip #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>Kendo Clip #${record.id}</h1><p>打突時間: ${record.timeMs}ms</p>${reactionMeta}<p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
+            const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>剣道卒研 クリップ #${record.id}</title><style>body{margin:0;background:#020617;color:#e2e8f0;font-family:sans-serif}.wrap{max-width:920px;margin:0 auto;padding:24px}img{width:100%;display:block;margin:0 0 8px;border:1px solid #334155;border-radius:8px}.meta{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px;margin-bottom:16px}</style></head><body><div class="wrap"><div class="meta"><h1>剣道卒研 クリップ #${record.id}</h1><p>打突時間: ${record.timeMs}ms</p>${reactionMeta}<p>ピーク時刻: ${recordPeakOffsetText(record, 'official')}</p><p>メモ: ${record.memo || ''}</p></div>${images}</div></body></html>`;
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -24161,7 +24163,7 @@ service cloud.firestore {
             panel.innerHTML = `
                 <div class="flex items-start justify-between gap-4 mb-4">
                     <div>
-                        <h2 class="text-xl font-black">Kendo Virtual Coach 動画解析レポート</h2>
+                        <h2 class="text-xl font-black">剣道卒研 動画解析レポート</h2>
                         <p class="text-xs text-slate-500 mt-1">打突時間・ピーク時刻・角度の正式確認用</p>
                     </div>
                     <div class="text-right text-xs text-slate-500">${new Date().toLocaleString('ja-JP')}</div>
@@ -26113,7 +26115,7 @@ service cloud.firestore {
         
         // グラフは分析・研究データを開いた時だけ読み込む。
     })().catch(error => {
-        console.error('Kendo startup failed', error);
+        console.error('剣道卒研 startup failed', error);
         const panel = document.createElement('section');
         panel.id = 'kendoStartupFailure';
         panel.setAttribute('role', 'alert');
