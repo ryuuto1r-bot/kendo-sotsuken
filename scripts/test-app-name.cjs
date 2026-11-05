@@ -18,6 +18,12 @@ assert.ok(html.includes(`>${name}</span>`));
 assert.ok(html.includes(`workbook.creator = '${name}'`));
 assert.ok(!html.includes('Kendo Virtual Coach'));
 assert.ok(html.includes("safeStorageSet('kendoRecords',"), 'existing record key remains unchanged');
+for (const file of ['research/index.html', 'research/history.html']) {
+    const page = fs.readFileSync(path.join(root, file), 'utf8');
+    assert.ok(page.match(/<title>([^<]*)<\/title>/)[1].includes(name));
+    assert.ok(page.includes(`<span>${name}</span>`));
+    assert.ok(!page.includes('Kendo Virtual Coach'));
+}
 for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     if (!/\bsrc\s*=|type=["'](?:module|application\/)/i.test(match[1])) new vm.Script(match[2]);
 }
