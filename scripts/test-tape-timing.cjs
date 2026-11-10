@@ -28,7 +28,7 @@ function loadTimingCore(filename = path.join(__dirname, '..', 'index.html')) {
         'videoFormalMinDurationMs', 'videoFormalMaxDurationMs', 'videoStrikeSensitivityProfile',
         'smoothVideoScalarSeries', 'buildTapeTimingSeries', 'videoShoulderWidthRatio',
         'videoTapeYNear', 'videoTapeDescentRatio', 'videoShinaiProgressAngle',
-        'refineTapeStrikeWindowByAngle', 'resolveTapeStrikeWindow',
+        'refineTapeStrikeWindowByAngle', 'resolveTapeStrikeWindow', 'videoTapeRuleLabel',
         'resolveVideoStrikeWindow', 'videoPeakProminence', 'isVideoDownwardStrikeCandidate',
         'detectVideoStrikes', 'normalizeVideoStrikeBuckets', 'videoStrikeValidationTarget',
         'validateVideoStrikeSummary', 'hasReliableDirectShinaiTiming', 'maxReasonableSpeedForSource',
@@ -37,6 +37,7 @@ function loadTimingCore(filename = path.join(__dirname, '..', 'index.html')) {
         'videoWristDescentRatio', 'dominantShinaiDetectionSource', 'analyzeSwingSamples', 'smoothSavitzkyGolay5', 'distance3d',
         'hsvFromRgb', 'getTapeHue', 'hueDistance', 'detectVideoTapeInCanvas', 'buildWebCodecsFullVideoWindows'];
     vm.runInContext(declaration('const Params = {') + '\nthis.Params = Params;\n' +
+        declaration('const VIDEO_TAPE_RULE = ') + '\n' +
         names.map(name => declaration(`function ${name}(`)).join('\n'), context);
     context.declaration = declaration;
     return context;
@@ -75,6 +76,31 @@ function run() {
     for (let i = 20; i <= 80; i++) raising[i] = 2;
     assert.equal(resolve({ ...data, strikeTimingMode: 'full-motion' }, raising, 180).startFrame, 20);
     assert.equal(resolve(data, raising, 180).startFrame, 100, 'downswing must not merge the raising phase');
+    for (const fps of [30, 60, 120, 240, 240.0024]) {
+        const d = makeData(fps, 96);
+        for (const peak of [1, 16]) {
+            const values = Array(96).fill(0.026 * peak);
+            values.fill(0.03 * peak, 40, 44);
+            values[41] = peak;
+            values.fill(0.025 * peak, 44, 50); // six qualifying frames, then a reset
+            values.fill(0.025 * peak, 51);
+            const r = resolve(d, values, 41);
+            assert.equal(r.timingIssue, '');
+            assert.equal(r.startThreshold, 0.03 * peak);
+            assert.equal(r.endThreshold, 0.025 * peak);
+            assert.equal(r.startFrame, 40);
+            assert.equal(r.endFrame, 51);
+            const immediate = values.slice();
+            immediate.fill(0.025 * peak, 44);
+            assert.equal(resolve(d, immediate, 41).endFrame, 44, 'no extra post-peak wait');
+            const partial = values.slice();
+            partial[43] = 0.026 * peak;
+            partial.fill(0.2 * peak, 27, 33);
+            assert.ok(resolve(d, partial, 41).timingIssue, 'an earlier run cannot qualify a three-frame peak');
+            assert.ok(resolve({...d, timingSearchEndFrame: 56}, values, 41).timingIssue,
+                'six low frames before the search boundary cannot qualify');
+        }
+    }
     for (const fps of [60, 120, 240]) {
         const d = makeData(fps, fps * 2);
         const values = d.frames.map(f => f.timeMs >= 500 && f.timeMs < 1000 ? 10 : 0.01);
@@ -95,6 +121,9 @@ function run() {
     assert.ok(Number.isNaN(signal.speeds[170]), 'long gap remains missing');
     track.frames[220].timeMs = track.frames[219].timeMs;
     assert.ok(Number.isNaN(core.buildTapeTimingSeries(track).speeds[220]), 'duplicate PTS must not create speed');
+    const dropped = makeData();
+    dropped.frames.splice(120, 1);
+    assert.ok(Number.isNaN(core.buildTapeTimingSeries(dropped).speeds[120]), 'a skipped timestamp breaks the run');
     const rejected = { timingIssue: 'missing tape', manualAdjusted: false };
     assert.equal(core.validateVideoStrikeSummary(rejected, data).ok, false);
     const buckets = { ...data, strikes: [], rejectedStrikes: [{ ...rejected, startFrame: 100, peakFrame: 180, endFrame: 250, durationMs: 625 }] };
@@ -115,6 +144,8 @@ function run() {
     assert.equal(found.length, 3, 'all three strokes remain separate');
     assert.ok(found.every(s => s.durationMs >= 400 && s.durationMs <= 510));
     assert.ok(found.every(s => s.timingSignalSource === 'tape-displacement'));
+    assert.match(core.videoTapeRuleLabel(multi), /3%以上×4コマ、終了 2.5%以下×7コマ/);
+    assert.equal(core.videoTapeRuleLabel({}), '', 'previous analyses must not be relabelled');
     const w = 200, h = 200;
     const image = new Uint8ClampedArray(w * h * 4);
     const box = (x, y, size, color) => {

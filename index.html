@@ -6615,9 +6615,9 @@ service cloud.firestore {
                         </div>
                     </div>
                     <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
-	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p id="videoTimingStartDefinition" class="mt-1">検出した竹刀先端の移動速度が基準を超えた最初のフレーム。</p></div>
+	                        <div class="rounded-lg border border-blue-100 bg-blue-50 p-2"><span class="font-black text-blue-700">開始</span><p id="videoTimingStartDefinition" class="mt-1">剣先がその打突の最高速度の3%以上で4コマ続いた区間の先頭。</p></div>
 	                        <div class="rounded-lg border border-amber-100 bg-amber-50 p-2"><span class="font-black text-amber-700">ピーク</span><p id="videoTimingPeakDefinition" class="mt-1">竹刀先端の移動速度が最大になったフレーム。</p></div>
-	                        <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p id="videoTimingEndDefinition" class="mt-1">竹刀先端のピーク後、速度が十分に低下した最初のフレーム。</p></div>
+	                        <div class="rounded-lg border border-red-100 bg-red-50 p-2"><span class="font-black text-red-700">終了</span><p id="videoTimingEndDefinition" class="mt-1">ピーク後、最高速度の2.5%以下が7コマ続いた最初の区間の先頭。</p></div>
                         <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-2"><span class="font-black text-emerald-700">正式値</span><p class="mt-1">開始/終了を1コマ単位で補正し、確定した範囲の時間と角度。</p></div>
                     </div>
                 </div>
@@ -9287,14 +9287,15 @@ service cloud.firestore {
 
             safeText('videoTimingStartDefinition', enabled
                 ? '右手首の移動速度が基準を超えた最初のフレーム。'
-                : '検出した竹刀先端の移動速度が基準を超えた最初のフレーム。');
+                : `剣先がその打突の最高速度の${VIDEO_TAPE_RULE.startRatio * 100}%以上で${VIDEO_TAPE_RULE.startFrames}コマ続いた区間の先頭。`);
             safeText('videoTimingPeakDefinition', enabled
                 ? '右手首の移動速度が最大になったフレーム。'
                 : '竹刀先端の移動速度が最大になったフレーム。');
             safeText('videoTimingEndDefinition', enabled
                 ? '右手首速度のピーク後、速度が十分に低下した最初のフレーム。'
-                : '竹刀先端のピーク後、速度が十分に低下した最初のフレーム。');
+                : `ピーク後、最高速度の${VIDEO_TAPE_RULE.endRatio * 100}%以下が${VIDEO_TAPE_RULE.endFrames}コマ続いた最初の区間の先頭。`);
 
+            updateStrikeTimingModeUi();
             updateRealtimeMeasurementModeUi(!!Params.signalMode);
             updateRealtimeConditionPanel();
             updateVideoTapeQualityStatus();
@@ -9356,6 +9357,18 @@ service cloud.firestore {
                 : `下の構えから${source}が動き始めた時点 → 振り下ろし終了`;
         }
 
+        const VIDEO_TAPE_RULE = Object.freeze({
+            id: 'tip-peak-3x4-2.5x7-v1',
+            startRatio: 0.03, startFrames: 4,
+            endRatio: 0.025, endFrames: 7
+        });
+
+        function videoTapeRuleLabel(data = { videoTapeTimingRule: VIDEO_TAPE_RULE.id }) {
+            if (data?.videoTapeTimingRule !== VIDEO_TAPE_RULE.id) return '';
+            const rule = VIDEO_TAPE_RULE;
+            return `剣先のピーク速度比：開始 ${rule.startRatio * 100}%以上×${rule.startFrames}コマ、終了 ${rule.endRatio * 100}%以下×${rule.endFrames}コマ（各区間の先頭）`;
+        }
+
         function strikeTimingMinimumMs(source = null) {
             return strikeTimingModeOf(source) === 'downswing' ? 60 : 180;
         }
@@ -9380,7 +9393,8 @@ service cloud.firestore {
                 button.classList.toggle('text-slate-700', !active);
             });
             safeText('strikeTimingModeBadge', strikeTimingModeLabel(mode));
-            safeText('strikeTimingModeHelp', strikeTimingModeDefinition(mode));
+            const videoRule = isHandSwingMode() ? '' : `。動画の竹刀判定：${videoTapeRuleLabel()}`;
+            safeText('strikeTimingModeHelp', strikeTimingModeDefinition(mode) + videoRule);
         }
 
         function setStrikeTimingMode(value, options = {}) {
@@ -10330,7 +10344,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v192-model-tape-20261105',
+                appVersion: 'v193-fixed-tape-timing',
                 researchCapturedAt: new Date().toISOString()
             };
         }
@@ -20394,7 +20408,7 @@ service cloud.firestore {
             const values = points.map((point, i) => {
                 const previous = points[i - 1];
                 const dt = i ? frames[i].timeMs - frames[i - 1].timeMs : 0;
-                if (!point || !previous || point.source !== previous.source || dt <= 0 || dt > Math.max(50, frameMs * 1.75)) return NaN;
+                if (!point || !previous || point.source !== previous.source || dt <= 0 || dt > frameMs * 1.75) return NaN;
                 return Math.hypot(point.x - previous.x, point.y - previous.y) * scale * 1000 / dt;
             });
             // 欠落は0（停止）に置き換えず、連続して取得できた区間だけ平滑化する。
@@ -20725,31 +20739,21 @@ service cloud.firestore {
             const peakSpeed = Math.max(0, Number(speeds[peakFrame] || 0));
             const maxBack = Math.max(12, Math.round(fps * 1.8));
             const maxForward = Math.max(8, Math.round(fps * 0.75));
-            const quietFramesNeeded = Math.max(2, Math.ceil(fps * 0.025 - 1e-6));
-            const minLeadFrames = Math.max(2, Math.round(fps * 0.025));
-            const minAfterFrames = Math.max(2, Math.round(fps * 0.025));
             const baselineStart = Math.max(0, Number(data.timingSearchStartFrame || 0), peakFrame - maxBack);
             const endLimit = Math.min(frames.length - 1, Number(data.timingSearchEndFrame ?? frames.length - 1), peakFrame + maxForward);
-            // 動作の途中から始まる動画にも対応するため、前後の低速区間から雑音床を推定する。
-            const baselineValues = speeds
-                .slice(baselineStart, endLimit + 1)
-                .map(Number)
-                .filter(Number.isFinite)
-                .sort((a, b) => a - b);
-            const quietValues = baselineValues.slice(0, Math.max(1, Math.ceil(baselineValues.length * 0.1)));
-            const baseline = percentile(quietValues, 0.5);
-            const noise = percentile(quietValues.map(value => Math.abs(value - baseline)), 0.5);
-            // 速度ピークの約27%では減速途中に終了する。低速側の雑音と継続で決める。
-            const startThreshold = Math.max(0.08, baseline + noise * 4, peakSpeed * 0.03);
-            const endThreshold = Math.max(0.08, baseline + noise * 4, peakSpeed * 0.025);
+            const { startFrames: activeFramesNeeded, endFrames: quietFramesNeeded } = VIDEO_TAPE_RULE;
+            const startThreshold = peakSpeed * VIDEO_TAPE_RULE.startRatio;
+            const endThreshold = peakSpeed * VIDEO_TAPE_RULE.endRatio;
 
             // 振りかぶり頂点では速度がいったん落ちるため、ピーク直前だけを
             // 逆探索すると頂点を開始と誤認する。活動区間を分け、下降区間の
             // ひとつ前にある振り上げ区間まで含めて開始を決める。
-            const activeFramesNeeded = Math.max(2, Math.ceil(fps * 0.015 - 1e-6));
             const activeRuns = [];
             let activeStart = null;
-            for (let i = baselineStart; i <= peakFrame; i++) {
+            // A peak may occur before the fourth frame; count the rest of that run, not a later one.
+            const activeLimit = Math.min(endLimit, peakFrame + activeFramesNeeded - 1);
+            for (let i = baselineStart; i <= activeLimit; i++) {
+                if (i > peakFrame && activeStart === null) break;
                 if (Number.isFinite(speeds[i]) && speeds[i] >= startThreshold) {
                     if (activeStart === null) activeStart = i;
                 } else if (activeStart !== null) {
@@ -20757,12 +20761,12 @@ service cloud.firestore {
                     activeStart = null;
                 }
             }
-            if (activeStart !== null && peakFrame - activeStart + 1 >= activeFramesNeeded) {
-                activeRuns.push({ start: activeStart, end: peakFrame });
+            if (activeStart !== null && activeLimit - activeStart + 1 >= activeFramesNeeded) {
+                activeRuns.push({ start: activeStart, end: activeLimit });
             }
-            let startFrame = Math.max(baselineStart, peakFrame - minLeadFrames);
+            let startFrame = Math.max(baselineStart, peakFrame - 1);
             const peakRunIndex = activeRuns.findIndex(run => run.start <= peakFrame && run.end >= peakFrame);
-            const peakRun = peakRunIndex >= 0 ? activeRuns[peakRunIndex] : activeRuns[activeRuns.length - 1];
+            const peakRun = activeRuns[peakRunIndex];
             if (peakRun) {
                 startFrame = peakRun.start;
                 const raisingRun = peakRunIndex > 0 ? activeRuns[peakRunIndex - 1] : null;
@@ -20774,14 +20778,15 @@ service cloud.firestore {
                 }
             }
 
-            const beforeStart = speeds.slice(Math.max(baselineStart, startFrame - activeFramesNeeded), startFrame);
-            let timingIssue = !peakRun || beforeStart.length < activeFramesNeeded || !beforeStart.every(Number.isFinite)
-                ? '開始前の動きを確認できません' : '';
+            let timingIssue = !Number.isFinite(peakSpeed) || peakSpeed <= 0 || !peakRun
+                ? '開始速度の継続を確認できません'
+                : startFrame === baselineStart || !Number.isFinite(speeds[startFrame - 1])
+                    ? '開始前の動きを確認できません' : '';
 
-            let endFrame = Math.min(frames.length - 1, peakFrame + minAfterFrames);
+            let endFrame = Math.min(frames.length - 1, peakFrame + 1);
             let settleFrames = 0;
             let endConfirmed = false;
-            for (let i = peakFrame + minAfterFrames; i <= endLimit; i++) {
+            for (let i = peakFrame + 1; i <= endLimit; i++) {
                 if (!Number.isFinite(speeds[i])) {
                     timingIssue = '終了付近の竹刀検出が不足しています';
                     break;
@@ -21059,6 +21064,7 @@ service cloud.firestore {
             const timingFps = videoEffectiveTimingFps(data, fps);
             const tapeSignal = Params.officialSpeedSource === 'tape' ? buildTapeTimingSeries(data) : null;
             data.tapeTiming = tapeSignal;
+            data.videoTapeTimingRule = tapeSignal ? VIDEO_TAPE_RULE.id : null;
             frames.forEach((frame, i) => { frame.tapeTimingSpeed = tapeSignal ? tapeSignal.speeds[i] : null; });
             if (tapeSignal && !tapeSignal.reliable) {
                 data.strikes = [];
@@ -24065,6 +24071,7 @@ service cloud.firestore {
             csv += `高fps解析フレーム数,${data.webCodecs?.decodedFrameCount || ''}\n`;
             csv += `角度基準,${(data.angleReference || Params.angleReference) === 'torso' ? '体幹基準' : '画面基準'}\n`;
             csv += `開始基準,${strikeTimingModeLabel(strikeTimingModeOf(data))}\n`;
+            if (videoTapeRuleLabel(data)) csv += `自動判定条件,${videoTapeRuleLabel(data)}\n`;
             csv += `開始フレーム,${data.startFrame ?? ''}\n`;
             csv += `最高速フレーム,${data.peakFrame ?? ''}\n`;
             csv += `終了フレーム,${data.endFrame ?? ''}\n`;
@@ -24153,6 +24160,7 @@ service cloud.firestore {
                 ['推定刃筋', angleText(isHandSwingMode() ? null : end?.hasuji)],
                 ['角度基準', Params.angleReference === 'torso' ? '体幹基準' : '画面基準'],
                 ['開始基準', `${strikeTimingModeLabel(strikeTimingModeOf(data))}（${strikeTimingModeDefinition(strikeTimingModeOf(data))}）`],
+                ...(videoTapeRuleLabel(data) ? [['自動判定条件', videoTapeRuleLabel(data)]] : []),
                 ['測定除外数', `${data.rejectedStrikes?.length || 0}本`],
                 ['除外理由', (data.rejectedStrikes || []).map(item => `frame${item.peakFrame}: ${item.reason}`).join(' / ') || '---'],
                 ['測定メモ', '開始/終了フレームは動画解析タブで手動補正可能。正式値は補正後フレームで再計算し、最高速フレームも補正範囲内で再検出。']
@@ -24265,7 +24273,7 @@ service cloud.firestore {
                     hasuji: isHandSwingMode() ? null : hasuji
                 },
                 clipFrames: [],
-	                timingDefinition: `動画解析: ${strikeTimingModeDefinition(strikeTimingModeOf(data))}。開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
+	                timingDefinition: `動画解析: ${strikeTimingModeDefinition(strikeTimingModeOf(data))}。${videoTapeRuleLabel(data) ? videoTapeRuleLabel(data) + '。' : ''}開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
             };
             record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs, {
                 includeHasuji: !isHandSwingMode()
@@ -24375,7 +24383,7 @@ service cloud.firestore {
                     hasuji: isHandSwingMode() ? null : hasuji
                 },
                 clipFrames: [],
-	                timingDefinition: `動画解析${numberLabel}: ${strikeTimingModeDefinition(strikeTimingModeOf(strike) || strikeTimingModeOf(data))}。開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
+	                timingDefinition: `動画解析${numberLabel}: ${strikeTimingModeDefinition(strikeTimingModeOf(strike) || strikeTimingModeOf(data))}。${videoTapeRuleLabel(data) ? videoTapeRuleLabel(data) + '。' : ''}開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
 	                researchAngles: buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs, {
 	                    includeHasuji: !isHandSwingMode()
 	                }),
