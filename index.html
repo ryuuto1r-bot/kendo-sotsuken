@@ -2268,7 +2268,8 @@
         }
         .kvc-tab-strip {
             min-width: 0;
-            overflow-x: auto;
+            /* The More dropdown extends outside the navigation row. */
+            overflow: visible;
             overscroll-behavior-x: contain;
             scrollbar-width: none;
         }
@@ -5218,6 +5219,9 @@
             }
         }
         /* v174: 初見でも迷わない4導線とスマホ優先の操作面。解析機能自体は維持する。 */
+        .kvc-app-nav {
+            z-index: 70;
+        }
         .kvc-nav-brand {
             min-width: max-content;
         }
@@ -5234,6 +5238,9 @@
         }
         .kvc-more-nav {
             position: relative;
+        }
+        .kvc-more-nav-button {
+            width: 100%;
         }
         .kvc-more-nav > summary {
             list-style: none;
