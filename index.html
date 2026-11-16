@@ -5894,8 +5894,8 @@
 		                <div class="bg-white rounded-xl shadow-sm border p-4 detail-only">
 		                    <div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-stopwatch text-indigo-500"></i><h3 class="font-bold text-slate-700">打突時間の定義</h3></div>
 		                    <div class="space-y-2 text-xs text-slate-700">
-	                        <p id="realtimeTimingStartDefinition"><span class="font-bold text-slate-900">開始:</span> 下の構えで竹刀先端が動き始め、速度閾値を2フレーム続けて超えた時刻</p>
-	                        <p id="realtimeTimingEndDefinition"><span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻</p>
+                        <p id="realtimeTimingStartDefinition"><span class="font-bold text-slate-900">開始:</span> 最高速度の3%以上が4コマ続いた区間の先頭</p>
+                        <p id="realtimeTimingEndDefinition"><span class="font-bold text-slate-900">終了:</span> ピーク後、最高速度の2.5%以下が7コマ続いた区間の先頭</p>
 	                        <div class="grid grid-cols-3 gap-2 text-center">
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">開始</span><div id="timingStartStatus" class="font-bold">待機</div></div>
 	                            <div class="bg-slate-50 rounded border p-2"><span class="text-slate-500">最高速</span><div id="timingPeakStatus" class="font-bold">---</div></div>
@@ -9284,13 +9284,13 @@ service cloud.firestore {
             const realtimeSource = document.getElementById('realtimeTimingSourceDefinition');
             if (realtimeStart) realtimeStart.innerHTML = enabled
                 ? '<span class="font-bold text-slate-900">開始:</span> 下の構えで右手首が動き始め、静止時ノイズから調整した速度閾値を2フレーム続けて超えた時刻'
-                : '<span class="font-bold text-slate-900">開始:</span> 下の構えで竹刀先端が動き始め、速度閾値を2フレーム続けて超えた時刻';
+                : '<span class="font-bold text-slate-900">開始:</span> 最高速度の3%以上が4コマ続いた区間の先頭（計測モードに対応）';
             if (realtimeEnd) realtimeEnd.innerHTML = enabled
                 ? '<span class="font-bold text-slate-900">終了:</span> 右手首速度のピーク後、速度低下を2フレーム確認した最初の時刻'
-                : '<span class="font-bold text-slate-900">終了:</span> 竹刀先端のピーク後、速度低下を2フレーム確認した最初の時刻';
+                : '<span class="font-bold text-slate-900">終了:</span> ピーク後、最高速度の2.5%以下が7コマ続いた区間の先頭';
             if (realtimeSource) realtimeSource.textContent = enabled
                 ? '手の素振りモードでは竹刀検出を行わず、右手首の姿勢信頼度と速度系列を使用します。'
-                : '自動モードは色テープを優先し、ない場合は竹刀本体の連続した直線から剣先を追跡します。どちらも信頼度が不足した場合は、手首へ置き換えず測定不可にします。';
+                : '竹刀先端の位置を記録し、動作後に動画解析と共通の速度波形・判定条件で打突時間を確定します。';
 
             safeText('videoTimingStartDefinition', enabled
                 ? '右手首の移動速度が基準を超えた最初のフレーム。'
@@ -9369,6 +9369,106 @@ service cloud.firestore {
             startRatio: 0.03, startFrames: 4,
             endRatio: 0.025, endFrames: 7
         });
+
+        function usesSharedTapeTiming() {
+            return !isHandSwingMode() && !Params.tsukiMode;
+        }
+
+        function appendRealtimeTapeFrame(timeMs, landmarks = null, worldLandmarks = null, tapePoint = null, values = {}) {
+            if (!usesSharedTapeTiming()) return;
+            const width = canvasElement.width, height = canvasElement.height;
+            const key = [width, height, strikeTimingModeOf(), Params.shinaiTrackingMode, !!Params.signalMode].join(':');
+            if (AppState.realtimeTapeBufferKey !== key) {
+                AppState.realtimeTapeFrames = [];
+                AppState.realtimeTapeBufferKey = key;
+                AppState.realtimeTapeCheckedAt = 0;
+            }
+            const frames = AppState.realtimeTapeFrames || (AppState.realtimeTapeFrames = []);
+            if (!Number.isFinite(timeMs) || (frames.length && timeMs <= frames[frames.length - 1].timeMs)) return;
+            frames.push({
+                timeMs, presentedFrame: AppState.currentPresentedFrame,
+                droppedFrames: Number(AppState.droppedCameraFrames || 0), skippedFrames: Number(AppState.skippedAnalysisFrames || 0),
+                landmarks: clonePoseSnapshot(landmarks), worldLandmarks: clonePoseSnapshot(worldLandmarks),
+                tapePoint: tapePoint ? { ...tapePoint } : null,
+                tapeConfidence: Number(tapePoint?.quality || 0), shinaiSource: tapePoint?.source || 'none',
+                poseConfidence: landmarks ? upperBodyVisibility(landmarks) : 0,
+                viewQuality: landmarks ? AppState.currentViewQuality : 0,
+                position: AppState.currentWrist3d ? { ...AppState.currentWrist3d } : null,
+                tipPosition: AppState.currentEstimatedTip3d ? { ...AppState.currentEstimatedTip3d } : null,
+                speed: AppState.currentSpeed3d || 0, tipSpeed: AppState.currentEstimatedTipSpeed || 0,
+                ...values
+            });
+            while (frames.length > 1440 || (frames.length && timeMs - frames[0].timeMs > 5000)) frames.shift();
+        }
+
+        function confirmedRealtimeTapeStrike(data, afterTimeMs = -Infinity) {
+            const candidates = detectVideoStrikes(data, { timingOnly: true });
+            // Two centered five-point passes need four future samples beyond the confirmation run.
+            const settledTail = VIDEO_TAPE_RULE.endFrames - 1 + 4;
+            return candidates.find(strike => data.frames[strike.startFrame].timeMs > afterTimeMs
+                && strike.endFrame + settledTail < data.frames.length) || null;
+        }
+
+        function processRealtimeTapeTiming(now) {
+            if (!usesSharedTapeTiming() || AppState.swingState === 'ZANSHIN') return;
+            if (Params.signalMode && AppState.swingState !== 'SIGNAL_GO') return;
+            if (now - Number(AppState.realtimeTapeCheckedAt || 0) < 40) return;
+            AppState.realtimeTapeCheckedAt = now;
+            const frames = AppState.realtimeTapeFrames || [];
+            if (frames.length < 16) return;
+            const data = { frames, fps: AppState.frameFps || Params.targetFps, slowMotionFactor: 1,
+                diagnostics: { width: canvasElement.width, height: canvasElement.height },
+                strikeTimingMode: strikeTimingModeOf() };
+            const boundary = Math.max(Number(AppState.realtimeTapeLastEndMs ?? -Infinity),
+                Params.signalMode ? Number(AppState.signalTime || 0) : -Infinity);
+            const strike = confirmedRealtimeTapeStrike(data, boundary);
+            if (!strike) {
+                const pending = data.rejectedStrikes?.find(item => frames[item.peakFrame]?.timeMs > boundary
+                    && now - frames[item.peakFrame].timeMs < 750);
+                if (pending) setTimingStatus('動作確認中', 'ピーク検出', '低速継続を確認中');
+                else setTimingStatus('待機', '---', '---');
+                return;
+            }
+            const start = frames[strike.startFrame], peak = frames[strike.peakFrame], end = frames[strike.endFrame];
+            const samples = frames.slice(strike.startFrame, strike.endFrame + 1);
+            const observed = samples.filter(frame => frame.tapePoint && frame.tapeConfidence >= Params.minTapeConfidence);
+            const hitRate = observed.length / samples.length;
+            if (hitRate < Number(Params.realtimeMinTapeHitRate || 0.55)) return;
+            const elapsed = end.timeMs - start.timeMs;
+            beginSwing(start.timeMs, start.landmarks?.[16]?.y || 0);
+            AppState.swingAngleSamples = samples;
+            AppState.swingStartPresentedFrame = start.presentedFrame;
+            AppState.swingPeakPresentedFrame = peak.presentedFrame;
+            AppState.swingEndPresentedFrame = end.presentedFrame;
+            AppState.swingPeakFrameTimeMs = peak.timeMs;
+            AppState.swingEndFrameTimeMs = end.timeMs;
+            AppState.swingPeakSpeedMps = strike.peakSpeedMps;
+            const wristMetrics = metricsForVideoSource(samples, 'wrist');
+            const tipMetrics = metricsForVideoSource(samples, 'tip');
+            const saved = saveRecord(Math.round(elapsed * 10) / 10, -2, 0, end.hasuji, end.rightAng, end.torsoAng, 0, 0, 0, {
+                ...(wristMetrics || {}),
+                peakTapeSpeedMps: strike.peakSpeedMps, peakTapeOffsetMs: peak.timeMs - start.timeMs,
+                peakTipSpeedMps: tipMetrics?.peakSpeedMps, peakTipOffsetMs: tipMetrics?.peakOffsetMs,
+                startTimeMs: start.timeMs, peakTimeMs: peak.timeMs, endTimeMs: end.timeMs,
+                startConfirmationFrames: VIDEO_TAPE_RULE.startFrames, endConfirmationFrames: VIDEO_TAPE_RULE.endFrames,
+                timingRule: VIDEO_TAPE_RULE.id, timingThresholds: strike.timingThresholds,
+                timingSignalSource: 'tape-displacement', angleCoordinateVersion: 'image-aspect-v1',
+                frameDtMs: videoFrameStepMs(data), tapeHitRate: hitRate, shinaiHitRate: hitRate,
+                missedFrames: Math.max(0, Number(end.skippedFrames || 0) - Number(start.skippedFrames || 0)),
+                droppedFrames: Math.max(0, Number(end.droppedFrames || 0) - Number(start.droppedFrames || 0)),
+                shinaiDetectionSource: peak.shinaiSource, speedUnit: 'm/s*',
+                hasujiQuality: end.hasujiQuality, hasujiSource: end.hasujiSource,
+                angleQuality: end.angleQuality, viewQuality: end.viewQuality,
+                avgVisibility: segmentAverage(samples, 'poseConfidence'),
+                modelPose: end.landmarks, modelWorldPose: end.worldLandmarks, modelTapePoint: end.tapePoint,
+                endReason: '最高速度の2.5%以下を7コマ確認',
+                measurementMethod: `${AppState.frameSyncMode} / 竹刀先端 / 動作後の共通区間判定`
+            });
+            if (saved) {
+                AppState.realtimeTapeLastEndMs = end.timeMs;
+                setTimingStatus('3%以上を4コマ確認', msLabel(peak.timeMs - start.timeMs), '2.5%以下を7コマ確認');
+            }
+        }
 
         function videoTapeRuleLabel(data = { videoTapeTimingRule: VIDEO_TAPE_RULE.id }) {
             if (data?.videoTapeTimingRule !== VIDEO_TAPE_RULE.id) return '';
@@ -10351,12 +10451,13 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v193-fixed-tape-timing',
+                appVersion: 'v194-shared-timing-aspect',
+                angleCoordinateVersion: 'image-aspect-v1',
                 researchCapturedAt: new Date().toISOString()
             };
         }
 
-        function researchAnglesFromLandmarks(landmarks) {
+        function researchAnglesFromLandmarks(landmarks, aspect = imagePlaneAspect(), tapePoint = null) {
             if (!landmarks?.length) return null;
             const rightShoulder = landmarks[12];
             const rightElbow = landmarks[14];
@@ -10365,22 +10466,20 @@ service cloud.firestore {
             const leftHip = landmarks[23];
             const rightHip = landmarks[24];
             if (!rightShoulder || !rightElbow || !rightWrist) return null;
-            const right = calculateJointAngle(rightShoulder, rightElbow, rightWrist);
+            const right = calculateJointAngle(rightShoulder, rightElbow, rightWrist, aspect);
             let torso = null;
             if (leftShoulder && rightShoulder && leftHip && rightHip) {
-                const shoulderMid = { x: (leftShoulder.x + rightShoulder.x) / 2, y: (leftShoulder.y + rightShoulder.y) / 2 };
-                const hipMid = { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 };
-                torso = axisTiltFromVertical(shoulderMid.x - hipMid.x, shoulderMid.y - hipMid.y);
+                torso = calculateTorsoAxis2d(landmarks, aspect);
             }
             const hasuji = Params.angleReference === 'torso'
-                ? calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks)
-                : calculateShinaiHasuji(landmarks);
+                ? calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks, tapePoint, aspect)
+                : calculateShinaiHasuji(landmarks, tapePoint, aspect);
             return { rightElbow: right, torso, hasuji };
         }
 
-        function researchAnglesFromFrame(frame) {
+        function researchAnglesFromFrame(frame, aspect = imagePlaneAspect()) {
             if (!frame) return null;
-            const fromLandmarks = researchAnglesFromLandmarks(frame.landmarks);
+            const fromLandmarks = researchAnglesFromLandmarks(frame.landmarks, aspect, frame.tapePoint);
             const rightElbow = researchNumber(frame.rightAng) ?? fromLandmarks?.rightElbow ?? null;
             const torso = researchNumber(frame.torsoAng) ?? fromLandmarks?.torso ?? null;
             const hasuji = researchNumber(frame.hasuji) ?? researchNumber(frame.hasujiAngle) ?? fromLandmarks?.hasuji ?? null;
@@ -10424,21 +10523,22 @@ service cloud.firestore {
         function buildResearchAngleSummary(frames, startTimeMs, peakTimeMs, endTimeMs, options = {}) {
             if (!frames?.length) return null;
             const includeHasuji = options.includeHasuji !== false;
+            const aspect = options.imageAspect ?? imagePlaneAspect();
             const normalizeAngles = values => values
                 ? { ...values, hasuji: includeHasuji ? values.hasuji : null }
                 : null;
             const startFrame = researchNearestFrame(frames, startTimeMs);
             const peakFrame = researchNearestFrame(frames, peakTimeMs);
             const endFrame = researchNearestFrame(frames, endTimeMs);
-            const start = normalizeAngles(researchAnglesFromFrame(startFrame));
-            const peak = normalizeAngles(researchAnglesFromFrame(peakFrame));
-            const end = normalizeAngles(researchAnglesFromFrame(endFrame));
+            const start = normalizeAngles(researchAnglesFromFrame(startFrame, aspect));
+            const peak = normalizeAngles(researchAnglesFromFrame(peakFrame, aspect));
+            const end = normalizeAngles(researchAnglesFromFrame(endFrame, aspect));
             if (!start && !peak && !end) return null;
             const rangeStart = Number(startTimeMs || frames[0]?.timeMs || 0);
             const rangeEnd = Number(endTimeMs || frames[frames.length - 1]?.timeMs || rangeStart);
             const selected = frames
                 .filter(frame => Number(frame.timeMs || 0) >= rangeStart && Number(frame.timeMs || 0) <= rangeEnd)
-                .map(frame => ({ timeMs: Number(frame.timeMs || 0), values: normalizeAngles(researchAnglesFromFrame(frame)) }))
+                .map(frame => ({ timeMs: Number(frame.timeMs || 0), values: normalizeAngles(researchAnglesFromFrame(frame, aspect)) }))
                 .filter(point => point.values);
             const durationMs = Math.max(0, rangeEnd - rangeStart);
             const metric = key => buildResearchAngleMetric(
@@ -12565,6 +12665,23 @@ service cloud.firestore {
             return Math.hypot((a.x || 0) - (b.x || 0), (a.y || 0) - (b.y || 0));
         }
 
+        function imagePlaneAspect(width, height) {
+            if (width === undefined && typeof canvasElement !== 'undefined') {
+                width = canvasElement.width;
+                height = canvasElement.height;
+            }
+            return width > 0 && height > 0 ? height / width : 1;
+        }
+
+        function imagePlaneDistance(a, b, aspect = imagePlaneAspect()) {
+            if (!a || !b) return 0;
+            return Math.hypot(a.x - b.x, (a.y - b.y) * aspect);
+        }
+
+        function videoImageAspect(data = AppState.videoAnalysis) {
+            return imagePlaneAspect(data?.diagnostics?.width || data?.width || 0, data?.diagnostics?.height || data?.height || 0);
+        }
+
         function distance3d(a, b) {
             if (!a || !b) return 0;
             return Math.hypot((a.x || 0) - (b.x || 0), (a.y || 0) - (b.y || 0), (a.z || 0) - (b.z || 0));
@@ -12679,27 +12796,27 @@ service cloud.firestore {
             }
         }
 
-        function getMetricLandmark(lm, worldLm, landmarks, worldLandmarks) {
+        function getMetricLandmark(lm, worldLm, landmarks, worldLandmarks, aspect = imagePlaneAspect()) {
             if (!lm) return null;
             if (worldLm && Number.isFinite(worldLm.x) && Number.isFinite(worldLm.y) && Number.isFinite(worldLm.z)) {
                 // ここから追加: 画像換算座標と同じ上向き正に統一し、下降判定の逆転を防ぐ。
                 return { x: worldLm.x, y: -worldLm.y, z: worldLm.z || 0, unit: 'm' };
             }
-            const shoulderWidth = distance2d(landmarks[11], landmarks[12]) || 0.22;
+            const shoulderWidth = imagePlaneDistance(landmarks[11], landmarks[12], aspect) || 0.22;
             const scale = Params.referenceShoulderMeters / shoulderWidth;
             return {
                 x: (lm.x - 0.5) * scale,
-                y: (0.5 - lm.y) * scale,
+                y: (0.5 - lm.y) * aspect * scale,
                 z: (lm.z || 0) * scale,
                 unit: 'm-est'
             };
         }
 
-        function estimateShinaiTipMetric(landmarks, worldLandmarks) {
-            const rightWristMetric = getMetricLandmark(landmarks?.[16], worldLandmarks?.[16], landmarks, worldLandmarks);
+        function estimateShinaiTipMetric(landmarks, worldLandmarks, aspect = imagePlaneAspect()) {
+            const rightWristMetric = getMetricLandmark(landmarks?.[16], worldLandmarks?.[16], landmarks, worldLandmarks, aspect);
             if (!rightWristMetric) return null;
-            const leftWristMetric = getMetricLandmark(landmarks?.[15], worldLandmarks?.[15], landmarks, worldLandmarks);
-            const rightElbowMetric = getMetricLandmark(landmarks?.[14], worldLandmarks?.[14], landmarks, worldLandmarks);
+            const leftWristMetric = getMetricLandmark(landmarks?.[15], worldLandmarks?.[15], landmarks, worldLandmarks, aspect);
+            const rightElbowMetric = getMetricLandmark(landmarks?.[14], worldLandmarks?.[14], landmarks, worldLandmarks, aspect);
             let baseMetric = null;
             let sourceMetric = null;
             if (leftWristMetric && visibilityOf(landmarks?.[15]) >= Params.minAngleVisibility && visibilityOf(landmarks?.[16]) >= Params.minAngleVisibility) {
@@ -12740,7 +12857,7 @@ service cloud.firestore {
 
         function metricFromFramePoint(point, landmarks, width, height, scaleOverride = 0) {
             if (!point || !landmarks?.[11] || !landmarks?.[12]) return null;
-            const shoulderWidthPx = Math.max(20, distance2d(landmarks[11], landmarks[12]) * width);
+            const shoulderWidthPx = Math.max(20, imagePlaneDistance(landmarks[11], landmarks[12], imagePlaneAspect(width, height)) * width);
             const pxToMeters = Number(scaleOverride) > 0
                 ? Number(scaleOverride)
                 : Params.referenceShoulderMeters / shoulderWidthPx;
@@ -12752,8 +12869,9 @@ service cloud.firestore {
             };
         }
 
-        function realtimePixelScale(landmarks, width) {
-            const fallbackWidth = Math.max(20, distance2d(landmarks?.[11], landmarks?.[12]) * Math.max(1, width));
+        function realtimePixelScale(landmarks, width, height = canvasElement.height) {
+            const aspect = imagePlaneAspect(width, height);
+            const fallbackWidth = Math.max(20, imagePlaneDistance(landmarks?.[11], landmarks?.[12], aspect) * Math.max(1, width));
             const fallbackScale = Params.referenceShoulderMeters / fallbackWidth;
             if (AppState.swingState === 'SWINGING' && Number(AppState.swingPxToMeters) > 0) {
                 return Number(AppState.swingPxToMeters);
@@ -12761,7 +12879,7 @@ service cloud.firestore {
             if (!landmarks?.[11] || !landmarks?.[12] || landmarkQuality(landmarks[11], landmarks[12]) < 0.45) {
                 return Number(AppState.realtimePxToMeters) > 0 ? Number(AppState.realtimePxToMeters) : fallbackScale;
             }
-            const shoulderWidthPx = distance2d(landmarks[11], landmarks[12]) * Math.max(1, width);
+            const shoulderWidthPx = imagePlaneDistance(landmarks[11], landmarks[12], aspect) * Math.max(1, width);
             if (shoulderWidthPx >= 20) {
                 AppState.realtimeShoulderWidthSamples.push(shoulderWidthPx);
                 if (AppState.realtimeShoulderWidthSamples.length > 90) AppState.realtimeShoulderWidthSamples.shift();
@@ -12774,11 +12892,11 @@ service cloud.firestore {
             return Number(AppState.realtimePxToMeters) > 0 ? Number(AppState.realtimePxToMeters) : fallbackScale;
         }
 
-        function stableVideoPixelScale(frames, width) {
+        function stableVideoPixelScale(frames, width, height = width) {
             const shoulderWidths = (frames || [])
                 .filter(frame => frame?.landmarks?.[11] && frame?.landmarks?.[12])
                 .filter(frame => landmarkQuality(frame.landmarks[11], frame.landmarks[12]) >= 0.45)
-                .map(frame => distance2d(frame.landmarks[11], frame.landmarks[12]) * Math.max(1, width))
+                .map(frame => imagePlaneDistance(frame.landmarks[11], frame.landmarks[12], imagePlaneAspect(width, height)) * Math.max(1, width))
                 .filter(value => Number.isFinite(value) && value >= 20);
             const stableWidthPx = percentile(shoulderWidths, 0.5);
             return Number(stableWidthPx) > 0 ? Params.referenceShoulderMeters / stableWidthPx : 0;
@@ -13656,9 +13774,9 @@ service cloud.firestore {
             return Math.abs(angle);
         }
 
-        function calculateHasuji(rightElbow, rightWrist) {
+        function calculateHasuji(rightElbow, rightWrist, aspect = imagePlaneAspect()) {
             if (!rightElbow || !rightWrist) return 0;
-            return axisTiltFromVertical(rightWrist.x - rightElbow.x, rightWrist.y - rightElbow.y);
+            return axisTiltFromVertical(rightWrist.x - rightElbow.x, (rightWrist.y - rightElbow.y) * aspect);
         }
 
         function angleBetweenVectors2d(ax, ay, bx, by) {
@@ -13708,10 +13826,10 @@ service cloud.firestore {
             return null;
         }
 
-        function calculateShinaiHasuji(landmarks, tapePoint = null) {
+        function calculateShinaiHasuji(landmarks, tapePoint = null, aspect = imagePlaneAspect()) {
             const axis = shinaiAxisFromLandmarks(landmarks, tapePoint);
             if (!axis) return 0;
-            return axisTiltFromVertical(axis.end.x - axis.start.x, axis.end.y - axis.start.y);
+            return axisTiltFromVertical(axis.end.x - axis.start.x, (axis.end.y - axis.start.y) * aspect);
         }
 
         function calculateShinaiAxisQuality(landmarks, tapePoint = null) {
@@ -13767,11 +13885,11 @@ service cloud.firestore {
             };
         }
 
-        function calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks, tapePoint = null) {
+        function calculateBodyReferencedHasuji(rightElbow, rightWrist, landmarks, tapePoint = null, aspect = imagePlaneAspect()) {
             const axis = bodyAxisVector(landmarks);
             const shinaiAxis = shinaiAxisFromLandmarks(landmarks, tapePoint);
-            if (!shinaiAxis || !axis) return calculateHasuji(rightElbow, rightWrist);
-            return angleBetweenVectors2d(shinaiAxis.end.x - shinaiAxis.start.x, shinaiAxis.end.y - shinaiAxis.start.y, axis.x, axis.y);
+            if (!shinaiAxis || !axis) return calculateHasuji(rightElbow, rightWrist, aspect);
+            return angleBetweenVectors2d(shinaiAxis.end.x - shinaiAxis.start.x, (shinaiAxis.end.y - shinaiAxis.start.y) * aspect, axis.x, axis.y * aspect);
         }
 
         function chooseOfficialSpeed(values, preferred = Params.officialSpeedSource) {
@@ -13802,9 +13920,9 @@ service cloud.firestore {
             return { key: preferred || 'tip', metrics: null };
         }
 
-        function calculateJointAngle(a, b, c) {
+        function calculateJointAngle(a, b, c, aspect = imagePlaneAspect()) {
             if (!a || !b || !c) return 0;
-            let angle = Math.abs((Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x)) * 180 / Math.PI);
+            let angle = Math.abs((Math.atan2((c.y - b.y) * aspect, c.x - b.x) - Math.atan2((a.y - b.y) * aspect, a.x - b.x)) * 180 / Math.PI);
             if (angle > 180) angle = 360 - angle;
             return angle;
         }
@@ -13820,9 +13938,14 @@ service cloud.firestore {
             return Math.acos(cosine) * 180 / Math.PI;
         }
 
-        function calculateBestJointAngle(a, b, c, worldA, worldB, worldC) {
+        function calculateBestJointAngle(a, b, c, worldA, worldB, worldC, aspect = imagePlaneAspect()) {
             const angle3d = calculateJointAngle3d(worldA, worldB, worldC);
-            return angle3d > 0 && angle3d <= 180 ? angle3d : calculateJointAngle(a, b, c);
+            return angle3d > 0 && angle3d <= 180 ? angle3d : calculateJointAngle(a, b, c, aspect);
+        }
+
+        function calculateTorsoAxis2d(landmarks, aspect = imagePlaneAspect()) {
+            const axis = bodyAxisVector(landmarks);
+            return axis ? Math.atan2(Math.abs(axis.x), Math.abs(axis.y) * aspect) * 180 / Math.PI : 0;
         }
 
         function calculateTorsoAxis3d(worldLandmarks) {
@@ -13837,20 +13960,20 @@ service cloud.firestore {
             return Math.atan2(Math.hypot(dx, dz), Math.abs(dy)) * 180 / Math.PI;
         }
 
-        function rightArmViewQuality(landmarks) {
+        function rightArmViewQuality(landmarks, aspect = imagePlaneAspect()) {
             const ls = landmarks?.[11], rs = landmarks?.[12], re = landmarks?.[14], rw = landmarks?.[16];
             if (!ls || !rs || !re || !rw) return 0;
-            const shoulderWidth = distance2d(ls, rs);
+            const shoulderWidth = imagePlaneDistance(ls, rs, aspect);
             if (shoulderWidth < 0.015) return 0;
-            const upperRatio = distance2d(rs, re) / shoulderWidth;
-            const lowerRatio = distance2d(re, rw) / shoulderWidth;
+            const upperRatio = imagePlaneDistance(rs, re, aspect) / shoulderWidth;
+            const lowerRatio = imagePlaneDistance(re, rw, aspect) / shoulderWidth;
             const projection = clamp((Math.min(upperRatio, lowerRatio) - 0.08) / 0.34, 0, 1);
             return projection * landmarkQuality(rs, re, rw);
         }
 
-        function calculateLineTilt(a, b) {
+        function calculateLineTilt(a, b, aspect = imagePlaneAspect()) {
             if (!a || !b) return 0;
-            return Math.abs(Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI);
+            return Math.abs(Math.atan2((b.y - a.y) * aspect, b.x - a.x) * 180 / Math.PI);
         }
 
         function pointPx(lm) {
@@ -14800,7 +14923,7 @@ service cloud.firestore {
 
         // 補正下書きは解析定義と検出元が同じ場合だけ復元する。
         // 古い自動候補が新しい高精度解析を上書きしないよう、互換版を明示する。
-        const VIDEO_CORRECTION_DRAFT_VERSION = 'timing-v4-20261103';
+        const VIDEO_CORRECTION_DRAFT_VERSION = 'timing-v5-aspect-20261116';
 
         function videoCorrectionDraftContext(data = AppState.videoAnalysis) {
             return {
@@ -16041,8 +16164,8 @@ service cloud.firestore {
             const shinaiHitRate = clamp(Number(metrics.shinaiHitRate ?? metrics.tapeHitRate ?? 0), 0, 1);
             const handOnly = isHandSwingMode() || shinaiSource === 'wrist';
             const frameSpan = Math.max(1, Number(AppState.swingEndPresentedFrame || AppState.currentPresentedFrame || 0) - Number(AppState.swingStartPresentedFrame || 0));
-            const missedFrames = Math.max(0, Number(AppState.skippedAnalysisFrames || 0) - Number(AppState.swingStartSkippedFrames || 0));
-            const droppedFrames = Math.max(0, Number(AppState.droppedCameraFrames || 0) - Number(AppState.swingStartDroppedFrames || 0));
+            const missedFrames = metrics.missedFrames ?? Math.max(0, Number(AppState.skippedAnalysisFrames || 0) - Number(AppState.swingStartSkippedFrames || 0));
+            const droppedFrames = metrics.droppedFrames ?? Math.max(0, Number(AppState.droppedCameraFrames || 0) - Number(AppState.swingStartDroppedFrames || 0));
             const unprocessedRatio = missedFrames / frameSpan;
             const reasons = [];
             if (AppState.frameSyncMode !== 'rVFC') reasons.push('カメラ同期がrVFCではない');
@@ -16200,8 +16323,12 @@ service cloud.firestore {
                 inferenceLatencyMs: realtimeValidation.inferenceLatencyMs,
                 timestampSource: realtimeValidation.timestampSource,
                 timestampFallbacks: realtimeValidation.timestampFallbacks,
-                startConfirmationFrames: Params.timingStartConsecutiveFrames,
+                startConfirmationFrames: metrics.startConfirmationFrames || Params.timingStartConsecutiveFrames,
                 endConfirmationFrames: metrics.endConfirmationFrames || Params.timingEndConsecutiveFrames,
+                timingRule: metrics.timingRule || null,
+                timingThresholds: metrics.timingThresholds || null,
+                timingSignalSource: metrics.timingSignalSource || null,
+                angleCoordinateVersion: 'image-aspect-v1',
                 frameSyncMode: AppState.frameSyncMode,
                 poseEngine: AppState.poseEngine,
                 roiStatus: AppState.roiStatus,
@@ -16217,13 +16344,13 @@ service cloud.firestore {
                 endReason: metrics.endReason || AppState.swingEndReason || '',
                 measurementMethod: `${metrics.measurementMethod || `${AppState.frameSyncMode} / ${Params.angleReference === 'torso' ? '体幹基準' : '画面基準'}`} / 開始基準:${strikeTimingModeLabel()}${reactionMode ? ' / 音刺激反応測定' : ''} / 検証:${realtimeValidation.status}`,
                 memo: metrics.memo || '',
-                modelPose: clonePoseSnapshot(AppState.modelPoseSnapshot || AppState.currentPoseSnapshot),
-                modelWorldPose: clonePoseSnapshot(AppState.modelWorldPoseSnapshot),
-                modelTapePoint: handOnly ? null : cloneModelTapePoint(AppState.modelTapePointSnapshot),
+                modelPose: clonePoseSnapshot(Object.hasOwn(metrics, 'modelPose') ? metrics.modelPose : (AppState.modelPoseSnapshot || AppState.currentPoseSnapshot)),
+                modelWorldPose: clonePoseSnapshot(Object.hasOwn(metrics, 'modelWorldPose') ? metrics.modelWorldPose : AppState.modelWorldPoseSnapshot),
+                modelTapePoint: handOnly ? null : cloneModelTapePoint(Object.hasOwn(metrics, 'modelTapePoint') ? metrics.modelTapePoint : AppState.modelTapePointSnapshot),
                 modelAspect: videoElement.videoWidth / (videoElement.videoHeight || 1),
                 modelAngleValues: { rightAng: normalizedRightAng, torsoAng: normalizedTorsoAng, hasuji: handOnly ? null : normalizedHasuji },
                 strikeTimingMode: strikeTimingModeOf(),
-                timingDefinition: `${reactionMode ? `反応時間=音の出力時刻→${isHandSwingMode() ? '右手首' : '竹刀'}の動作開始。合計時間=音の出力時刻→振り下ろし終了。` : ''}開始基準=${strikeTimingModeDefinition()}。開始・終了は${isHandSwingMode() ? '右手首速度' : '竹刀先端速度'}の連続判定と補間時刻を使用。`
+                timingDefinition: `${reactionMode ? `反応時間=音の出力時刻→${isHandSwingMode() ? '右手首' : '竹刀'}の動作開始。合計時間=音の出力時刻→振り下ろし終了。` : ''}開始基準=${strikeTimingModeDefinition()}。${metrics.timingRule ? '開始3%以上を4コマ、終了2.5%以下を7コマ確認し、各区間の先頭フレームを採用。' : `開始・終了は${isHandSwingMode() ? '右手首速度' : '竹刀先端速度'}の連続判定と補間時刻を使用。`}`
             };
             const clipFrames = AppState.replayFrames.slice(-Math.max(36, Math.round((AppState.frameFps || Params.targetFps) * 2.4)));
             record.clipFrames = clipFrames;
@@ -16649,7 +16776,7 @@ service cloud.firestore {
                 const midS = {x: (lShoulder.x + rShoulder.x)/2, y: (lShoulder.y + rShoulder.y)/2};
                 const midH = {x: (lHip.x + rHip.x)/2, y: (lHip.y + rHip.y)/2};
                 const torso3d = calculateTorsoAxis3d(worldLm);
-                torsoAng = Number.isFinite(torso3d) ? torso3d : Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
+                torsoAng = Number.isFinite(torso3d) ? torso3d : calculateTorsoAxis2d(lm);
             }
 
             const viewQuality = rightArmViewQuality(lm);
@@ -16677,6 +16804,11 @@ service cloud.firestore {
             AppState.currentHasujiAngle = measureHasuji ? hasuji : null;
             AppState.currentHasujiSource = hasujiSource;
             AppState.currentHasujiQuality = hasujiQuality;
+            appendRealtimeTapeFrame(frameTimeMs, lm, worldLm, previousTapePoint, {
+                rightAng, leftAng, torsoAng, hasuji, shoulderLineAng, hasujiSource, hasujiQuality,
+                angleQuality: rightAngleQuality
+            });
+            processRealtimeTapeTiming(frameTimeMs);
             AppState.modelPoseSnapshot = clonePoseSnapshot(lm);
             AppState.modelWorldPoseSnapshot = worldLm.length ? clonePoseSnapshot(worldLm) : null;
             AppState.modelTapePointSnapshot = cloneModelTapePoint(tapeHit, canvasElement.width, canvasElement.height);
@@ -16762,7 +16894,7 @@ service cloud.firestore {
                             resetReactionTrialClock();
                             updateReactionTrainingUi('時間切れ / もう一度静止');
                             updateStateUI('IDLE');
-                        } else {
+                        } else if (!usesSharedTapeTiming()) {
                             const fullMotionStart = Params.tsukiMode || strikeTimingModeOf() !== 'full-motion'
                                 ? 0
                                 : updateFullMotionStart(now, wristY, vel, rShoulder);
@@ -16774,7 +16906,7 @@ service cloud.firestore {
                         }
 	                    }
                 } 
-                else {
+                else if (!usesSharedTapeTiming()) {
                     if(AppState.swingState === 'IDLE') {
                         if(Params.tsukiMode) {
                             if(elbowVel > 5) {
@@ -16803,7 +16935,7 @@ service cloud.firestore {
                     }
                 }
 
-                if(AppState.swingState === 'SWINGING') {
+                if(AppState.swingState === 'SWINGING' && !usesSharedTapeTiming()) {
                     if(AppState.analyser) {
                         const currentVol = getCurrentVolume();
                         if(currentVol > AppState.peakKiaiVolume) AppState.peakKiaiVolume = currentVol;
@@ -17389,6 +17521,10 @@ service cloud.firestore {
         }
 
         function resetRealtimeTracking(message = '待機') {
+            AppState.realtimeTapeFrames = [];
+            AppState.realtimeTapeBufferKey = '';
+            AppState.realtimeTapeLastEndMs = -Infinity;
+            AppState.realtimeTapeCheckedAt = 0;
             AppState.realtimeEpoch = Number(AppState.realtimeEpoch || 0) + 1;
             clearTimeout(AppState.zanshinTimer);
             AppState.zanshinTimer = null;
@@ -20357,9 +20493,9 @@ service cloud.firestore {
             return Number.isFinite(value) ? value : null;
         }
 
-        function videoShoulderWidthRatio(frame) {
+        function videoShoulderWidthRatio(frame, aspect = 1) {
             if (!frame?.landmarks?.[11] || !frame?.landmarks?.[12]) return 0;
-            return distance2d(frame.landmarks[11], frame.landmarks[12]) || 0;
+            return imagePlaneDistance(frame.landmarks[11], frame.landmarks[12], aspect) || 0;
         }
 
         function smoothVideoScalarSeries(values, passes = 1) {
@@ -20410,7 +20546,7 @@ service cloud.firestore {
             }
             // 計時は表示用速度の上限に依存させない。画像座標の変位を固定尺度で微分する。
             const shoulderWidths = frames.filter(frame => landmarkQuality(frame?.landmarks?.[11], frame?.landmarks?.[12]) >= 0.45)
-                .map(frame => videoShoulderWidthRatio(frame)).filter(value => value >= 0.02);
+                .map(frame => videoShoulderWidthRatio(frame, aspect)).filter(value => value >= 0.02);
             const scale = Number(Params.referenceShoulderMeters || 0.42) / Math.max(0.02, percentile(shoulderWidths, 0.5) || 0.2);
             const values = points.map((point, i) => {
                 const previous = points[i - 1];
@@ -20713,12 +20849,11 @@ service cloud.firestore {
             };
         }
 
-        function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, referencePeak) {
+        function isVideoDownwardStrikeCandidate(frames, speeds, index, sensitivity, referencePeak, usesTape = Params.officialSpeedSource === 'tape') {
             const frame = frames[index];
             if (!frame?.landmarks?.[12] || !frame?.landmarks?.[14] || !frame?.landmarks?.[16]) return false;
             if (Number(frame.poseConfidence || 0) < 0.35) return false;
             const shoulder = Math.max(0.08, videoShoulderWidthRatio(frame));
-            const usesTape = Params.officialSpeedSource === 'tape';
             // 竹刀先端を直接追跡できる場合、腕の重なりは角度品質だけに影響させる。
             if (!usesTape && Number(frame.viewQuality || 0) < Params.minViewQuality) return false;
             if (usesTape && (!frame.tapePoint || Number(frame.tapeConfidence || 0) < Number(Params.minTapeConfidence || 0.18))) return false;
@@ -21055,7 +21190,7 @@ service cloud.firestore {
             return Params.maxReasonableSpeedMps;
         }
 
-        function detectVideoStrikes(data) {
+        function detectVideoStrikes(data, { timingOnly = false } = {}) {
             if (!data?.frames?.length) {
                 if (data) {
                     data.strikes = [];
@@ -21069,7 +21204,7 @@ service cloud.firestore {
             const frames = data.frames;
             const fps = data.fps || Params.targetFps || 60;
             const timingFps = videoEffectiveTimingFps(data, fps);
-            const tapeSignal = Params.officialSpeedSource === 'tape' ? buildTapeTimingSeries(data) : null;
+            const tapeSignal = timingOnly || Params.officialSpeedSource === 'tape' ? buildTapeTimingSeries(data) : null;
             data.tapeTiming = tapeSignal;
             data.videoTapeTimingRule = tapeSignal ? VIDEO_TAPE_RULE.id : null;
             frames.forEach((frame, i) => { frame.tapeTimingSpeed = tapeSignal ? tapeSignal.speeds[i] : null; });
@@ -21105,7 +21240,7 @@ service cloud.firestore {
                 if (speeds[i] < threshold) continue;
                 if (speeds[i] < speeds[i - 1] || speeds[i] < speeds[i + 1]) continue;
                 if (speeds[i] < speeds[i - 2] || speeds[i] < speeds[i + 2]) continue;
-                if (!isVideoDownwardStrikeCandidate(frames, speeds, i, sensitivity, referencePeak)) continue;
+                if (!isVideoDownwardStrikeCandidate(frames, speeds, i, sensitivity, referencePeak, !!tapeSignal)) continue;
                 const tooClose = candidates.some(candidate => Math.abs(candidate.peakFrame - i) < minGap);
                 if (tooClose) {
                     const current = candidates.find(candidate => Math.abs(candidate.peakFrame - i) < minGap);
@@ -21132,7 +21267,8 @@ service cloud.firestore {
                     timingSearchStartFrame: idx ? candidates[idx - 1].peakFrame + 1 : 0,
                     timingSearchEndFrame: candidates[idx + 1] ? candidates[idx + 1].peakFrame - 1 : frames.length - 1
                 } : data;
-                const window = resolveVideoStrikeWindow(searchData, peakFrame, speeds, sensitivity);
+                const window = tapeSignal ? resolveTapeStrikeWindow(searchData, peakFrame, speeds, sensitivity)
+                    : resolveVideoStrikeWindow(searchData, peakFrame, speeds, sensitivity);
                 const { startFrame, endFrame } = window;
                 const timing = tapeSignal ? {
                     timingIssue: window.timingIssue || '',
@@ -21140,17 +21276,22 @@ service cloud.firestore {
                     timingThresholds: { start: window.startThreshold, end: window.endThreshold }
                 } : {};
                 if (timing.timingIssue) {
-                    pushRejection(startFrame, peakFrame, endFrame, timing.timingIssue, timing);
+                    if (timingOnly) rejections.push({ ...window, ...timing });
+                    else pushRejection(startFrame, peakFrame, endFrame, timing.timingIssue, timing);
                     return;
                 }
                 const duration = frames[endFrame].timeMs - frames[startFrame].timeMs;
                 const overlaps = segments.some(segment => startFrame <= segment.endFrame && endFrame >= segment.startFrame);
                 if (overlaps) {
-                    pushRejection(startFrame, peakFrame, endFrame, '重複');
+                    if (!timingOnly) pushRejection(startFrame, peakFrame, endFrame, '重複');
                     return;
                 }
-                if (duration < videoFormalMinDurationMs(data) || duration > videoFormalMaxDurationMs()) {
-                    pushRejection(startFrame, peakFrame, endFrame, duration < videoFormalMinDurationMs(data) ? '短すぎる' : '長すぎる');
+                if (duration < videoFormalMinDurationMs(data) || duration > videoFormalMaxDurationMs(data)) {
+                    if (!timingOnly) pushRejection(startFrame, peakFrame, endFrame, duration < videoFormalMinDurationMs(data) ? '短すぎる' : '長すぎる');
+                    return;
+                }
+                if (timingOnly) {
+                    segments.push({ ...window, durationMs: duration, peakSpeedMps: speeds[peakFrame], ...timing });
                     return;
                 }
                 const summary = summarizeVideoStrike(data, startFrame, peakFrame, endFrame, idx + 1);
@@ -21175,7 +21316,7 @@ service cloud.firestore {
             } else if (data.strikes.length) {
                 data.exclusionReason = '';
             }
-            normalizeVideoStrikeBuckets(data);
+            if (!timingOnly) normalizeVideoStrikeBuckets(data);
             return data.strikes;
         }
 
@@ -22417,8 +22558,8 @@ service cloud.firestore {
             data.frames.forEach(frame => {
                 if (!frame.landmarks?.[14] || !frame.landmarks?.[16]) return;
                 frame.hasujiSource = shinaiAxisFromLandmarks(frame.landmarks, frame.tapePoint)?.source || 'none';
-                frame.hasujiScreen = calculateShinaiHasuji(frame.landmarks, frame.tapePoint);
-                frame.hasujiBody = calculateBodyReferencedHasuji(frame.landmarks[14], frame.landmarks[16], frame.landmarks, frame.tapePoint);
+                frame.hasujiScreen = calculateShinaiHasuji(frame.landmarks, frame.tapePoint, videoImageAspect(data));
+                frame.hasujiBody = calculateBodyReferencedHasuji(frame.landmarks[14], frame.landmarks[16], frame.landmarks, frame.tapePoint, videoImageAspect(data));
                 frame.hasuji = Params.angleReference === 'torso' ? frame.hasujiBody : frame.hasujiScreen;
             });
             const slice = data.frames.slice(data.startFrame, data.endFrame + 1);
@@ -23068,18 +23209,18 @@ service cloud.firestore {
             return result;
         }
 
-        function refreshVideoPoseMetrics(frame) {
+        function refreshVideoPoseMetrics(frame, aspect = videoImageAspect()) {
             const lm = frame?.landmarks;
             if (!lm?.[11] || !lm?.[12] || !lm?.[14] || !lm?.[16]) return frame;
             const worldLm = frame.worldLandmarks || [];
             frame.visibility = visibilityOf(lm[16]);
             frame.poseConfidence = upperBodyVisibility(lm);
-            frame.viewQuality = rightArmViewQuality(lm);
-            frame.rightAng = calculateBestJointAngle(lm[12], lm[14], lm[16], worldLm[12], worldLm[14], worldLm[16]);
+            frame.viewQuality = rightArmViewQuality(lm, aspect);
+            frame.rightAng = calculateBestJointAngle(lm[12], lm[14], lm[16], worldLm[12], worldLm[14], worldLm[16], aspect);
             if (lm[13] && lm[15]) {
-                frame.leftAng = calculateBestJointAngle(lm[11], lm[13], lm[15], worldLm[11], worldLm[13], worldLm[15]);
+                frame.leftAng = calculateBestJointAngle(lm[11], lm[13], lm[15], worldLm[11], worldLm[13], worldLm[15], aspect);
             }
-            frame.shoulderLineAng = calculateLineTilt(lm[11], lm[12]);
+            frame.shoulderLineAng = calculateLineTilt(lm[11], lm[12], aspect);
             if (frame.shoulderLineAng > 90) frame.shoulderLineAng = 180 - frame.shoulderLineAng;
             if (lm[23] && lm[24]) {
                 const torso3d = calculateTorsoAxis3d(worldLm);
@@ -23088,7 +23229,7 @@ service cloud.firestore {
                 } else {
                     const midS = { x: (lm[11].x + lm[12].x) / 2, y: (lm[11].y + lm[12].y) / 2 };
                     const midH = { x: (lm[23].x + lm[24].x) / 2, y: (lm[23].y + lm[24].y) / 2 };
-                    frame.torsoAng = Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
+                    frame.torsoAng = calculateTorsoAxis2d(lm, aspect);
                 }
             }
             return frame;
@@ -23266,7 +23407,7 @@ service cloud.firestore {
                     tapeRoi: null,
                     shinaiSource: 'none'
                 };
-                refreshVideoPoseMetrics(fine);
+                refreshVideoPoseMetrics(fine, imagePlaneAspect(canvas.width, canvas.height));
                 drawDecodedVideoFrame(ctx, videoFrame, canvas.width, canvas.height, context.rotation);
                 if (fine.landmarks?.[11] && fine.landmarks?.[12] && fine.landmarks?.[14] && fine.landmarks?.[16]) {
                     const detection = detectShinaiPointInCanvas(ctx, canvas.width, canvas.height, fine.landmarks, {
@@ -23310,8 +23451,8 @@ service cloud.firestore {
                 }
                 if (fine.landmarks?.[14] && fine.landmarks?.[16]) {
                     fine.hasujiSource = shinaiAxisFromLandmarks(fine.landmarks, fine.tapePoint)?.source || 'none';
-                    fine.hasujiScreen = calculateShinaiHasuji(fine.landmarks, fine.tapePoint);
-                    fine.hasujiBody = calculateBodyReferencedHasuji(fine.landmarks[14], fine.landmarks[16], fine.landmarks, fine.tapePoint);
+                    fine.hasujiScreen = calculateShinaiHasuji(fine.landmarks, fine.tapePoint, imagePlaneAspect(canvas.width, canvas.height));
+                    fine.hasujiBody = calculateBodyReferencedHasuji(fine.landmarks[14], fine.landmarks[16], fine.landmarks, fine.tapePoint, imagePlaneAspect(canvas.width, canvas.height));
                     fine.hasuji = Params.angleReference === 'torso' ? fine.hasujiBody : fine.hasujiScreen;
                 }
                 fine.officialSpeed = chooseOfficialSpeed({
@@ -23328,7 +23469,7 @@ service cloud.firestore {
 
             fineFrames.sort((a, b) => a.rawTimeMs - b.rawTimeMs || a.ptsUs - b.ptsUs);
             // 1本の動画内では肩幅換算を固定し、姿勢推定の肩幅揺れを竹刀速度へ混ぜない。
-            const stableFinePxToMeters = stableVideoPixelScale(fineFrames, canvas.width);
+            const stableFinePxToMeters = stableVideoPixelScale(fineFrames, canvas.width, canvas.height);
             let orderedTapeFilter = new VisibilityAdaptiveFilter3D(35);
             let orderedTapeSource = 'none';
             fineFrames.forEach((frame, index) => {
@@ -23643,7 +23784,7 @@ service cloud.firestore {
                     confidenceSum += poseConfidence;
                 }
                 if (lm?.[11] && lm?.[12] && landmarkQuality(lm[11], lm[12]) >= 0.45) {
-                    const shoulderWidthPx = distance2d(lm[11], lm[12]) * videoScanCanvas.width;
+                    const shoulderWidthPx = imagePlaneDistance(lm[11], lm[12], imagePlaneAspect(videoScanCanvas.width, videoScanCanvas.height)) * videoScanCanvas.width;
                     if (shoulderWidthPx >= 20) {
                         videoShoulderWidthSamples.push(shoulderWidthPx);
                         if (videoShoulderWidthSamples.length > 90) videoShoulderWidthSamples.shift();
@@ -23654,13 +23795,14 @@ service cloud.firestore {
                     framePxToMeters = Params.referenceShoulderMeters / stableShoulderWidthPx;
                 }
                 if (lm?.[16] && lm?.[14]) {
-                    const wristMetric = getMetricLandmark(lm[16], worldLm[16], lm, worldLm);
+                    const frameAspect = imagePlaneAspect(videoScanCanvas.width, videoScanCanvas.height);
+                    const wristMetric = getMetricLandmark(lm[16], worldLm[16], lm, worldLm, frameAspect);
                     speedUnit = wristMetric.unit === 'm' ? 'm/s' : 'm/s*';
                     const filtered = filter.update(wristMetric, timeMs, visibilityOf(lm[16]));
                     frameSpeed = filtered.speed || 0;
                     framePosition = filtered.position ? { ...filtered.position } : null;
                     frameVisibility = visibilityOf(lm[16]);
-                    const estimatedTipMetric = estimateShinaiTipMetric(lm, worldLm);
+                    const estimatedTipMetric = estimateShinaiTipMetric(lm, worldLm, frameAspect);
                     if (estimatedTipMetric) {
                         const tipFiltered = tipFilter.update(estimatedTipMetric, timeMs, frameVisibility);
                         frameTipSpeed = tipFiltered.speed || 0;
@@ -23721,25 +23863,25 @@ service cloud.firestore {
                         }
                     }
                     if (lm[12] && lm[14] && lm[16]) {
-                        frameRightAng = calculateBestJointAngle(lm[12], lm[14], lm[16], worldLm[12], worldLm[14], worldLm[16]);
-                        frameViewQuality = rightArmViewQuality(lm);
+                        frameRightAng = calculateBestJointAngle(lm[12], lm[14], lm[16], worldLm[12], worldLm[14], worldLm[16], frameAspect);
+                        frameViewQuality = rightArmViewQuality(lm, frameAspect);
                         frameHasujiSource = shinaiAxisFromLandmarks(lm, frameTapePoint)?.source || 'none';
-                        frameHasujiScreen = calculateShinaiHasuji(lm, frameTapePoint);
-                        frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm, frameTapePoint);
+                        frameHasujiScreen = calculateShinaiHasuji(lm, frameTapePoint, frameAspect);
+                        frameHasujiBody = calculateBodyReferencedHasuji(lm[14], lm[16], lm, frameTapePoint, frameAspect);
                         frameHasuji = Params.angleReference === 'torso' ? frameHasujiBody : frameHasujiScreen;
                     }
                     if (lm[11] && lm[13] && lm[15]) {
-                        frameLeftAng = calculateBestJointAngle(lm[11], lm[13], lm[15], worldLm[11], worldLm[13], worldLm[15]);
+                        frameLeftAng = calculateBestJointAngle(lm[11], lm[13], lm[15], worldLm[11], worldLm[13], worldLm[15], frameAspect);
                     }
                     if (lm[11] && lm[12]) {
-                        frameShoulderLineAng = calculateLineTilt(lm[11], lm[12]);
+                        frameShoulderLineAng = calculateLineTilt(lm[11], lm[12], frameAspect);
                         if (frameShoulderLineAng > 90) frameShoulderLineAng = 180 - frameShoulderLineAng;
                     }
                     if (lm[11] && lm[12] && lm[23] && lm[24]) {
                         const midS = {x: (lm[11].x + lm[12].x)/2, y: (lm[11].y + lm[12].y)/2};
                         const midH = {x: (lm[23].x + lm[24].x)/2, y: (lm[23].y + lm[24].y)/2};
                         const torso3d = calculateTorsoAxis3d(worldLm);
-                        frameTorsoAng = Number.isFinite(torso3d) ? torso3d : Math.abs(180 - Math.abs(Math.atan2(midS.x - midH.x, midS.y - midH.y) * 180 / Math.PI));
+                        frameTorsoAng = Number.isFinite(torso3d) ? torso3d : calculateTorsoAxis2d(lm, frameAspect);
                     }
                     const wristY = lm[16].y;
                     const dy = previousY === null ? 0 : wristY - previousY;
@@ -24283,7 +24425,7 @@ service cloud.firestore {
 	                timingDefinition: `動画解析: ${strikeTimingModeDefinition(strikeTimingModeOf(data))}。${videoTapeRuleLabel(data) ? videoTapeRuleLabel(data) + '。' : ''}開始frame ${data.startFrame} / ピークframe ${data.peakFrame ?? '---'} / 終了frame ${data.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`
             };
             record.researchAngles = buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs, {
-                includeHasuji: !isHandSwingMode()
+                includeHasuji: !isHandSwingMode(), imageAspect: videoImageAspect(data)
             });
             record.researchCorrection = buildResearchCorrection(data);
             AppState.records.push(record);
@@ -24392,7 +24534,7 @@ service cloud.firestore {
                 clipFrames: [],
 	                timingDefinition: `動画解析${numberLabel}: ${strikeTimingModeDefinition(strikeTimingModeOf(strike) || strikeTimingModeOf(data))}。${videoTapeRuleLabel(data) ? videoTapeRuleLabel(data) + '。' : ''}開始frame ${strike.startFrame} / ピークframe ${strike.peakFrame} / 終了frame ${strike.endFrame}。開始/終了フレーム補正後は補正値を正式記録に反映。`,
 	                researchAngles: buildResearchAngleSummary(slice, startFrame.timeMs, peakFrameData?.timeMs, endFrame.timeMs, {
-	                    includeHasuji: !isHandSwingMode()
+	                    includeHasuji: !isHandSwingMode(), imageAspect: videoImageAspect(data)
 	                }),
                 researchCorrection: (
                     Number(data.startFrame) === Number(strike.startFrame)

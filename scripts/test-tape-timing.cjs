@@ -22,7 +22,7 @@ function loadTimingCore(filename = path.join(__dirname, '..', 'index.html')) {
         throw new Error(`Incomplete declaration: ${prefix}`);
     }
     const context = vm.createContext({ console, AppState: {}, isHandSwingMode: () => false });
-    const names = ['clamp', 'percentile', 'visibilityOf', 'landmarkQuality', 'distance2d',
+    const names = ['clamp', 'percentile', 'visibilityOf', 'landmarkQuality', 'distance2d', 'imagePlaneAspect', 'imagePlaneDistance',
         'videoSlowMotionFactorForData', 'videoFrameStepMs', 'videoEffectiveTimingFps',
         'normalizeStrikeTimingMode', 'strikeTimingModeOf', 'strikeTimingMinimumMs', 'strikeTimingMaximumMs',
         'videoFormalMinDurationMs', 'videoFormalMaxDurationMs', 'videoStrikeSensitivityProfile',

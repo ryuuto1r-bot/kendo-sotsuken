@@ -23,7 +23,7 @@ const context = vm.createContext({
     validateVideoStrikeSummary: s => ({ ok: s.quality !== false, reason: 'quality' }),
     videoFormalMaxDurationMs: () => 2000
 });
-const names = ['percentile', 'getMetricLandmark', 'VisibilityAdaptiveFilter3D', 'videoSlowMotionFactorForData',
+const names = ['percentile', 'imagePlaneAspect', 'imagePlaneDistance', 'getMetricLandmark', 'VisibilityAdaptiveFilter3D', 'videoSlowMotionFactorForData',
     'videoFrameStepMs', 'videoStrikeValidationTarget', 'normalizeVideoStrikeBuckets', 'toFiniteOrNull', 'averageNumber',
     'interpolateVideoLandmarkSet', 'interpolatedCoarseVideoFrame', 'videoRawMsFromFrame'];
 vm.runInContext(names.map(declaration).join('\n') + '\nthis.Filter = VisibilityAdaptiveFilter3D;', context);
