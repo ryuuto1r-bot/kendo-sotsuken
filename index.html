@@ -5602,6 +5602,7 @@
         }
     </style>
     <link rel="stylesheet" href="./video-editor.css?v=20261103">
+    <link rel="stylesheet" href="./ui-simple.css?v=20261116">
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui measurement-simple">
 
@@ -5620,7 +5621,7 @@
                 </button>
             </div>
             <div class="kvc-tab-strip flex space-x-1">
-                <button data-kendo-action="switch-tab" data-value="measure" id="tabBtn-measure" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> 練習</button>
+                <button data-kendo-action="switch-tab" data-value="measure" id="tabBtn-measure" aria-current="page" class="tab-btn active px-4 py-2 rounded-md text-sm bg-slate-800 text-white"><i class="fa-solid fa-video"></i> カメラ測定</button>
                 <button data-kendo-action="switch-tab" data-value="video" id="tabBtn-video" class="tab-btn hover:bg-slate-700 px-4 py-2 rounded-md text-sm text-slate-300"><i class="fa-solid fa-film"></i> 動画測定</button>
                 <button data-kendo-action="switch-tab" data-value="details" id="tabBtn-details" class="tab-btn text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-md text-sm"><i class="fa-solid fa-list-check"></i> 記録</button>
                 <details id="moreNavMenu" class="kvc-more-nav">
@@ -5654,7 +5655,7 @@
         <div id="measureHeader" class="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
             <div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <h2 class="font-bold text-lg"><i class="fa-solid fa-circle-play text-blue-500 mr-2"></i><span id="measureModeHeading">通常の打突測定</span></h2>
+                    <h2 class="font-bold text-lg"><i class="fa-solid fa-video text-blue-500 mr-2"></i>カメラ測定<span id="measureModeHeading" class="sr-only">通常の打突測定</span></h2>
                     <span id="measureModeBadge" class="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black text-blue-700">通常測定</span>
                 </div>
                 <p id="measureModeSubtitle" class="text-xs text-slate-500 mt-1">竹刀の動き始めから振り下ろし終了までを測定します。</p>
@@ -5737,7 +5738,7 @@
 
                     <div id="startOverlay" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
                         <i class="fa-solid fa-camera text-5xl text-slate-400 mb-6"></i>
-                        <div class="w-[min(92%,28rem)] mb-4 rounded-lg border border-slate-600 bg-black/35 p-3 text-white shadow-lg">
+                        <div id="cameraQuickControls" class="w-[min(92%,28rem)] mb-4 rounded-lg border border-slate-600 bg-black/35 p-3 text-white shadow-lg">
                             <div class="mb-2 flex items-center justify-between gap-3">
                                 <label for="cameraQuickSelect" class="text-sm font-black">使用カメラ</label>
                                 <div class="flex items-center gap-2">
@@ -5749,7 +5750,7 @@
 	                            <select id="cameraQuickSelect" class="w-full rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white">
 	                                <option value="">自動選択（内蔵/既定カメラ）</option>
 	                            </select>
-	                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300">「iPhoneを探す」でカメラ許可と接続を確認します。</p>
+	                            <p id="cameraQuickStatus" class="mt-2 text-xs text-slate-300" role="status"></p>
 	                            <label class="mt-3 flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/15 bg-white/10 px-3 py-2">
 	                                <span class="min-w-0">
 	                                    <span class="block text-sm font-black text-white">竹刀なし（手の素振りだけ）</span>
@@ -5819,7 +5820,7 @@
 	                    </div>
 	                </div>
 
-	                <div class="bg-white rounded-xl shadow-sm border p-4">
+	                <div id="latestMeasurementPanel" class="bg-white rounded-xl shadow-sm border p-4">
 	                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">直近の打突</h3>
 	                    <div class="grid grid-cols-2 gap-2 text-center">
                         <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2 relative">
@@ -5829,15 +5830,20 @@
                         <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestSync" class="text-lg md:text-xl font-black text-yellow-600 font-mono-num">---</div></div>
                         <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestSae" class="text-lg md:text-xl font-black text-red-600 font-mono-num">---</div></div>
                         <div class="hidden"><span class="text-[10px] text-slate-500">補助</span><div id="latestStride" class="text-lg md:text-xl font-black text-green-600 font-mono-num">---</div></div>
-		                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">ピーク時刻</span><div id="latestPeakSpeed" class="text-lg md:text-xl font-black text-cyan-600 font-mono-num">---</div></div>
-	                        <div id="liveHasujiMetricCard" class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">刃筋角度</span><div id="latestHasuji" class="text-lg md:text-xl font-black text-teal-600 font-mono-num">---</div></div>
 	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">右肘角度</span><div id="latestRightAng" class="text-lg md:text-xl font-black text-purple-600 font-mono-num">---</div></div>
-	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">体幹軸</span><div id="latestTorso" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
+	                        <div class="metric-card bg-slate-50 rounded border border-slate-100 p-2"><span class="text-[10px] text-slate-500">体幹傾斜</span><div id="latestTorso" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
 		                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">推定ピーク</span><div id="latestTipSpeed" class="text-lg md:text-xl font-black text-amber-600 font-mono-num">---</div></div>
 		                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">テープピーク</span><div id="latestTapeSpeed" class="text-lg md:text-xl font-black text-lime-600 font-mono-num">---</div></div>
 	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">検出信頼度</span><div id="latestVisibility" class="text-lg md:text-xl font-black text-emerald-600 font-mono-num">---</div></div>
 	                        <div class="hidden detail-only"><span class="text-[10px] text-slate-500">同期方式</span><div id="latestFrameMode" class="text-sm md:text-base font-black text-slate-700 font-mono-num">---</div></div>
 	                    </div>
+	                    <details class="simple-metric-details">
+	                        <summary>補助項目</summary>
+	                        <div class="grid grid-cols-2 gap-2 text-center">
+	                            <div class="metric-card"><span>ピーク時刻</span><div id="latestPeakSpeed" class="font-black font-mono-num">---</div></div>
+	                            <div id="liveHasujiMetricCard" class="metric-card"><span>推定刃筋</span><div id="latestHasuji" class="font-black font-mono-num">---</div></div>
+	                        </div>
+	                    </details>
 	                </div>
 
 	                <div id="realtimeSessionCard" class="bg-white rounded-xl shadow-sm border p-4">
@@ -5849,12 +5855,17 @@
 	                        <div class="realtime-session-item"><span>本数</span><strong id="realtimeSessionCount">0本</strong></div>
 	                        <div class="realtime-session-item"><span>平均時間</span><strong id="realtimeSessionAvgTime">---</strong></div>
 	                        <div class="realtime-session-item"><span>最短時間</span><strong id="realtimeSessionBestTime">---</strong></div>
+	                    </div>
+	                    <details class="simple-metric-details">
+	                        <summary>角度・反応・保存状況</summary>
+	                        <div class="realtime-session-grid">
 	                        <div class="realtime-session-item"><span>平均右肘</span><strong id="realtimeSessionAvgElbow">---</strong></div>
 	                        <div class="realtime-session-item"><span>平均体幹</span><strong id="realtimeSessionAvgTorso">---</strong></div>
 	                        <div class="realtime-session-item"><span>平均反応</span><strong id="realtimeSessionAvgReaction">---</strong></div>
 	                        <div class="realtime-session-item"><span>反応回数</span><strong id="realtimeSessionReactionCount">0本</strong></div>
 	                        <div class="realtime-session-item"><span>直近保存</span><strong id="realtimeSessionLastSaved">---</strong></div>
-	                    </div>
+	                        </div>
+	                    </details>
 	                    <p id="realtimeSessionHint" class="mt-3 text-[11px] text-slate-500">1本打つと自動で更新されます。</p>
 	                </div>
 
@@ -5920,7 +5931,7 @@
         </div>
     </div>
 
-    <div id="tab-analysis" class="tab-content">
+    <div id="tab-analysis" class="tab-content" data-empty="true">
         <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>データ分析</h2>
@@ -5934,8 +5945,8 @@
             <div class="analysis-toolbar-panel flex flex-wrap items-center gap-2">
                 <span class="text-xs font-black text-slate-500 px-1">対象</span>
                 <select id="recordFilterSelect" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white font-bold text-slate-700">
-                    <option value="formal" selected>正式測定</option>
-                    <option value="realtime">練習記録</option>
+                    <option value="formal" selected>動画測定</option>
+                    <option value="realtime">カメラ測定</option>
                     <option value="all">すべて</option>
                 </select>
                 <label class="text-xs font-black text-slate-500 pl-1" for="recordMeasurementFilterSelect">測定対象</label>
@@ -5954,7 +5965,16 @@
             </div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 shadow-sm">
+        <section id="analysisEmptyState" class="simple-empty-state" aria-live="polite">
+            <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+            <h3 id="analysisEmptyTitle">まだ測定記録がありません</h3>
+            <div class="simple-empty-actions">
+                <button type="button" data-kendo-action="switch-tab" data-value="measure"><i class="fa-solid fa-video" aria-hidden="true"></i>カメラ測定</button>
+                <button type="button" data-kendo-action="switch-tab" data-value="video"><i class="fa-solid fa-film" aria-hidden="true"></i>動画測定</button>
+                <button id="analysisClearFiltersBtn" type="button" data-kendo-action="reset-record-filters" hidden><i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>すべての記録を表示</button>
+            </div>
+        </section>
+        <div id="analysisRangePanel" class="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 shadow-sm">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div class="flex items-center gap-2">
                     <span class="w-9 h-9 shrink-0 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center" aria-hidden="true"><i class="fa-solid fa-filter"></i></span>
@@ -6010,7 +6030,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div id="analysisChartGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div class="analysis-chart-card bg-white p-4 rounded-xl shadow-sm border">
                 <h3 class="text-sm font-bold text-slate-700 mb-2">打突時間の推移</h3>
                 <div class="h-64"><canvas id="timeChart" height="512" style="display: block; box-sizing: border-box; height: 256px; width: 527px;" width="1054"></canvas></div>
@@ -6039,7 +6059,7 @@
 
     </div>
 
-    <div id="tab-data" class="tab-content">
+    <div id="tab-data" class="tab-content" data-empty="true">
         <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
                 <h2 class="font-bold text-lg"><i class="fa-solid fa-database text-sky-500 mr-2"></i>研究データ</h2>
@@ -6053,19 +6073,29 @@
                     <option value="all">すべて</option>
                 </select>
                 <button type="button" data-kendo-action="export-data-csv" data-value="realtime" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>練習CSV</button>
-                <button type="button" data-kendo-action="export-data-csv" data-value="formal" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>正式CSV</button>
+                <button type="button" data-kendo-action="export-data-csv" data-value="formal" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-download mr-1"></i>動画CSV</button>
+                <button type="button" data-kendo-action="export-research-excel" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-file-excel mr-1"></i>Excel出力</button>
                 <button type="button" data-kendo-action="switch-tab" data-value="analysis" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">グラフ分析</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-center mb-4">
+        <section id="dataEmptyState" class="simple-empty-state" aria-live="polite">
+            <i class="fa-solid fa-database" aria-hidden="true"></i>
+            <h3 id="dataEmptyTitle">まだ測定記録がありません</h3>
+            <div class="simple-empty-actions">
+                <button type="button" data-kendo-action="switch-tab" data-value="measure"><i class="fa-solid fa-video" aria-hidden="true"></i>カメラ測定</button>
+                <button type="button" data-kendo-action="switch-tab" data-value="video"><i class="fa-solid fa-film" aria-hidden="true"></i>動画測定</button>
+                <button id="dataClearFiltersBtn" type="button" data-kendo-action="reset-record-filters" hidden><i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>すべての記録を表示</button>
+            </div>
+        </section>
+        <div id="dataSummaryGrid" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-center mb-4">
             <div class="bg-white border rounded-xl px-3 py-3 shadow-sm"><span class="text-slate-500 font-bold">全記録</span><div id="dataAllCount" class="font-black text-slate-900 font-mono-num">0本</div></div>
             <div class="bg-blue-50 border border-blue-100 rounded-xl px-3 py-3"><span class="text-blue-700 font-bold">練習</span><div id="dataAllRealtimeCount" class="font-black text-blue-800 font-mono-num">0本</div></div>
             <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-3"><span class="text-emerald-700 font-bold">正式</span><div id="dataAllFormalCount" class="font-black text-emerald-800 font-mono-num">0本</div></div>
             <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-3"><span class="text-indigo-700 font-bold">最終保存</span><div id="dataAllLatest" class="font-black text-indigo-800">---</div></div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <div id="dataRecordTables" class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
             <section class="data-center-panel">
                 <div class="data-center-panel-header">
                     <div>
@@ -6135,7 +6165,7 @@
             </div>
         </details>
 
-        <section class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+        <section id="researchChartSection" class="bg-white rounded-xl shadow-sm border p-4 mb-6">
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="font-black text-slate-900"><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>研究用自動集計</h3>
@@ -6256,10 +6286,10 @@ service cloud.firestore {
 
         <div class="video-workflow-tabs bg-white p-3 rounded-xl shadow-sm border mb-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-bold">
-                <button type="button" id="videoStepBtn-load" aria-current="step" data-kendo-action="switch-video-step" data-value="load" class="video-step-btn active border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-upload mr-1"></i>1. 動画を選ぶ</button>
-                <button type="button" id="videoStepBtn-mark" data-kendo-action="switch-video-step" data-value="mark" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-scissors mr-1"></i>2. 打突を選ぶ</button>
-                <button type="button" id="videoStepBtn-correct" data-kendo-action="switch-video-step" data-value="correct" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-sliders mr-1"></i>3. 補正する</button>
-                <button type="button" id="videoStepBtn-result" data-kendo-action="switch-video-step" data-value="result" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>4. 結果を見る</button>
+                <button type="button" id="videoStepBtn-load" aria-current="step" data-kendo-action="switch-video-step" data-value="load" class="video-step-btn active border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-upload mr-1"></i>1. 動画</button>
+                <button type="button" id="videoStepBtn-mark" disabled data-kendo-action="switch-video-step" data-value="mark" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-magnifying-glass mr-1"></i>2. 解析</button>
+                <button type="button" id="videoStepBtn-result" disabled data-kendo-action="switch-video-step" data-value="result" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-chart-simple mr-1"></i>3. 結果</button>
+                <button type="button" id="videoStepBtn-report" disabled data-kendo-action="switch-video-step" data-value="report" class="video-step-btn border border-slate-200 rounded-lg px-3 py-3 text-slate-700 bg-white hover:bg-slate-50"><i class="fa-solid fa-floppy-disk mr-1"></i>4. 保存</button>
             </div>
         </div>
 
@@ -6310,7 +6340,7 @@ service cloud.firestore {
                                 document.querySelectorAll('.video-step-panel').forEach(function(panel){ panel.classList.remove('active'); });
                             document.querySelectorAll('.video-step-btn').forEach(function(btn){ btn.classList.remove('active'); });
                             var panel = document.getElementById('videoStep-' + step);
-                            var stepButtonMap = { analyze: 'mark', correct: 'correct', report: 'result' };
+                            var stepButtonMap = { analyze: 'mark', correct: 'result' };
                             var btn = document.getElementById('videoStepBtn-' + (stepButtonMap[step] || step));
                             if (panel) panel.classList.add('active');
                             if (btn) btn.classList.add('active');
@@ -6355,7 +6385,7 @@ service cloud.firestore {
                                 text('videoDiagFrames', String(Math.max(1, Math.min(Math.floor(duration * fps), 1800))));
                                 text('videoDeviceCheckVerdict', '動画選択済み');
                                 text('videoDeviceCheckReason', file.name);
-                                openStep('mark');
+                                openStep('load');
                             };
                             video.onerror = function(){
                                 text('videoAnalysisStatus', '読込エラー');
@@ -7066,7 +7096,7 @@ service cloud.firestore {
                                     </div>
                                 </div>
                                 <div class="ve-save-actions">
-                                    <button type="button" class="ve-confirm" data-kendo-action="confirm-timing"><i class="fa-solid fa-check"></i>この区間で確定</button>
+                                    <button type="button" class="ve-confirm" data-kendo-action="confirm-timing"><i class="fa-solid fa-check"></i>区間を確定</button>
                                     <button type="button" data-kendo-action="switch-video-step" data-value="report"><i class="fa-solid fa-floppy-disk"></i>保存へ</button>
                                 </div>
                                 <div id="videoCorrectionAutosaveStatus" class="ve-autosave" role="status">自動保存待機</div>
@@ -7126,6 +7156,7 @@ service cloud.firestore {
                         保存 / CSV / レポート
                     </div>
                     <div class="flex flex-wrap gap-2">
+                        <button id="videoReportReviewBtn" type="button" data-kendo-action="switch-video-step" data-value="correct" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-check mr-1"></i>開始・終了を確認</button>
                         <button id="saveVideoRecordBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-check mr-1"></i> 正式記録に保存</button>
                         <button id="exportVideoReportBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-file-export mr-1"></i> CSV出力</button>
                         <button id="buildVideoReportBtn" type="button" class="bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-file-lines mr-1"></i> レポート作成</button>
@@ -7233,14 +7264,13 @@ service cloud.firestore {
     <div id="tab-details" class="tab-content">
         <div class="app-section-header bg-white p-4 rounded-xl shadow-sm border mb-4 flex flex-wrap justify-between items-center gap-3">
             <div>
-                <h2 class="font-bold text-lg"><i class="fa-solid fa-list-check text-blue-500 mr-2"></i>打突詳細</h2>
-                <p class="text-xs text-slate-500 mt-1">保存した打突を、時間・ピーク時刻・角度ごとに練習後に確認します。</p>
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-list-check text-blue-500 mr-2"></i>記録</h2>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <label class="text-xs font-bold text-slate-500" for="detailRecordFilterSelect">表示</label>
                 <select id="detailRecordFilterSelect" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white font-bold text-slate-700">
-                    <option value="formal">正式記録</option>
-                    <option value="realtime">リアルタイム目安</option>
+                    <option value="formal">動画測定</option>
+                    <option value="realtime">カメラ測定</option>
                     <option value="all">すべて</option>
                 </select>
                 <label class="text-xs font-bold text-slate-500" for="detailMeasurementFilterSelect">測定対象</label>
@@ -7249,17 +7279,16 @@ service cloud.firestore {
                     <option value="hand">手の素振り</option>
                     <option value="all">すべて</option>
                 </select>
-                <button data-kendo-action="switch-tab" data-value="measure" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">練習に戻る</button>
+                <button data-kendo-action="switch-tab" data-value="measure" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-video mr-1"></i>カメラ測定</button>
             </div>
         </div>
 
         <div id="detailEmptyState" class="hidden rounded-xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
             <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-600"><i class="fa-solid fa-chart-line"></i></span>
             <h3 class="mt-4 text-lg font-black text-slate-900">まだ記録がありません</h3>
-            <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">練習のリアルタイム測定、または動画測定を行うと、打突時間と角度がここに保存されます。</p>
             <div class="mt-5 flex flex-wrap justify-center gap-3">
-                <button type="button" data-kendo-action="switch-tab" data-value="measure" class="min-h-[44px] rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"><i class="fa-solid fa-video mr-2"></i>練習を始める</button>
-                <button type="button" data-kendo-action="switch-tab" data-value="video" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-film mr-2"></i>動画を測定する</button>
+                <button type="button" data-kendo-action="switch-tab" data-value="measure" class="min-h-[44px] rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"><i class="fa-solid fa-video mr-2"></i>カメラ測定</button>
+                <button type="button" data-kendo-action="switch-tab" data-value="video" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-film mr-2"></i>動画測定</button>
             </div>
         </div>
 
@@ -8115,6 +8144,8 @@ service cloud.firestore {
             if (tab !== 'model') stopModelPlayback();
             document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+                el.removeAttribute('aria-current');
                 el.classList.remove('bg-slate-800', 'text-white', 'bg-blue-50', 'text-blue-700');
                 el.classList.remove('text-slate-300', 'text-slate-700');
                 el.classList.add(el.closest('.kvc-more-nav-panel') ? 'text-slate-700' : 'text-slate-300');
@@ -8123,6 +8154,8 @@ service cloud.firestore {
             const targetButton = document.getElementById(`tabBtn-${tab}`);
             if (!targetPanel || !targetButton) return;
             targetPanel.classList.add('active');
+            targetButton.classList.add('active');
+            targetButton.setAttribute('aria-current', 'page');
             targetButton.classList.remove('text-slate-300', 'text-slate-700');
             if (targetButton.closest('.kvc-more-nav-panel')) targetButton.classList.add('bg-blue-50', 'text-blue-700');
             else targetButton.classList.add('bg-slate-800', 'text-white');
@@ -8132,6 +8165,7 @@ service cloud.firestore {
                 moreMenu.open = false;
             }
             if(tab==='analysis') {
+                updateRecordEmptyState('analysis', analysisRangeRecords());
                 ensureChartsReady()
                     .then(updateCharts)
                     .catch(error => reportOptionalAssetError('グラフ', error));
@@ -8164,7 +8198,7 @@ service cloud.firestore {
                 btn.removeAttribute('aria-current');
             });
             const panel = document.getElementById(`videoStep-${activeStep}`);
-            const stepButtonMap = { analyze: 'mark', correct: 'correct', report: 'result' };
+            const stepButtonMap = { analyze: 'mark', correct: 'result' };
             const btn = document.getElementById(`videoStepBtn-${stepButtonMap[activeStep] || activeStep}`);
             if (panel) panel.classList.add('active');
             if (btn) {
@@ -8323,33 +8357,46 @@ service cloud.firestore {
             const video = document.getElementById('analysisVideoElement');
             const hasVideo = Number(video?.duration || 0) > 0 || !!AppState.videoSource;
             const hasAnalysis = !!AppState.videoAnalysis?.frames?.length;
+            const confirmed = hasAnalysis && isVideoTimingConfirmed(AppState.videoAnalysis);
             const hasManualRange = Number.isFinite(AppState.videoManualStartSec)
                 && Number.isFinite(AppState.videoManualEndSec)
                 && AppState.videoManualEndSec > AppState.videoManualStartSec;
             const states = {
                 load: hasVideo
-                    ? { text: '動画を読み込みました', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false }
-                    : { text: '最初に動画を選びます', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false },
+                    ? { text: '動画を読み込みました', label: '解析へ', icon: 'fa-arrow-right', disabled: false }
+                    : { text: '動画未選択', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false },
                 mark: hasVideo
                     ? { text: hasManualRange ? '開始と終了を指定済みです' : '開始・終了を置くか、自動解析します', label: '解析する', icon: 'fa-magnifying-glass-chart', disabled: false }
                     : { text: '先に動画を選んでください', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false },
                 analyze: { text: AppState.videoAnalysisBusy ? '動画を解析しています' : '解析を開始できます', label: AppState.videoAnalysisBusy ? '解析中' : '解析する', icon: AppState.videoAnalysisBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart', disabled: !!AppState.videoAnalysisBusy },
                 result: hasAnalysis
-                    ? { text: '各打突時間を確認できます', label: '選択した打突を補正', icon: 'fa-sliders', disabled: false }
+                    ? { text: confirmed ? '開始・終了を確認済み' : '解析結果・開始と終了は未確認', label: confirmed ? '保存へ' : '開始・終了を確認', icon: confirmed ? 'fa-arrow-right' : 'fa-circle-check', disabled: false }
                     : { text: '先に動画を解析してください', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false },
                 correct: hasAnalysis
-                    ? { text: '開始・終了を確認してください', label: '補正を確定', icon: 'fa-circle-check', disabled: false }
+                    ? { text: confirmed ? '開始・終了を確認済み' : '開始・終了を確認してください', label: confirmed ? '保存へ' : '確認して保存へ', icon: 'fa-circle-check', disabled: false }
                     : { text: '解析結果がありません', label: '打突を選ぶ', icon: 'fa-scissors', disabled: false },
                 report: hasAnalysis
-                    ? { text: '確定した結果を記録します', label: '保存する', icon: 'fa-floppy-disk', disabled: false }
+                    ? { text: confirmed ? '開始・終了を確認済み' : '開始・終了は未確認', label: confirmed ? '保存する' : '開始・終了を確認', icon: confirmed ? 'fa-floppy-disk' : 'fa-circle-check', disabled: false }
                     : { text: '保存できる結果がありません', label: '動画を選ぶ', icon: 'fa-folder-open', disabled: false }
             };
             const state = states[step] || states.load;
+            document.body.dataset.videoLoaded = hasVideo ? 'true' : 'false';
+            const saveButton = document.getElementById('saveVideoRecordBtn');
+            if (saveButton) saveButton.disabled = !confirmed || !!AppState.videoAnalysisBusy;
+            const reviewButton = document.getElementById('videoReportReviewBtn');
+            if (reviewButton) reviewButton.hidden = confirmed || !hasAnalysis;
+            document.querySelectorAll('.video-step-btn').forEach(stepButton => {
+                const destination = stepButton.dataset.value;
+                stepButton.disabled = !!AppState.videoAnalysisBusy
+                    || (destination === 'mark' && !hasVideo)
+                    || (['result', 'report'].includes(destination) && !hasAnalysis);
+            });
             textEl.textContent = state.text;
             button.disabled = !!state.disabled;
             button.dataset.contextStep = step;
             button.dataset.hasVideo = hasVideo ? 'true' : 'false';
             button.dataset.hasAnalysis = hasAnalysis ? 'true' : 'false';
+            button.dataset.confirmed = confirmed ? 'true' : 'false';
             button.dataset.hasManualRange = hasManualRange ? 'true' : 'false';
             button.innerHTML = `<i class="fa-solid ${state.icon}"></i><span>${state.label}</span>`;
         }
@@ -8371,16 +8418,20 @@ service cloud.firestore {
                 return;
             }
             if (step === 'result') {
-                switchVideoStep(hasAnalysis ? 'correct' : 'mark');
+                switchVideoStep(hasAnalysis ? (button.dataset.confirmed === 'true' ? 'report' : 'correct') : 'mark');
                 return;
             }
             if (step === 'correct') {
-                if (hasAnalysis) confirmVideoTimingCorrection();
+                if (hasAnalysis) {
+                    confirmVideoTimingCorrection();
+                    if (isVideoTimingConfirmed(AppState.videoAnalysis)) switchVideoStep('report');
+                }
                 else switchVideoStep('mark');
                 return;
             }
             if (step === 'report') {
                 if (!hasAnalysis) return document.getElementById('videoFileInput')?.click();
+                if (button.dataset.confirmed !== 'true') return switchVideoStep('correct');
                 document.getElementById('saveVideoRecordBtn')?.click();
             }
         }
@@ -10154,12 +10205,13 @@ service cloud.firestore {
             const realtime = all.length - formal;
             const visible = analysisRangeRecords().length;
             safeText('recordVisibleCount', `表示 ${visible}本`);
-            safeText('recordFormalCount', `正式 ${formal}本`);
-            safeText('recordRealtimeCount', `目安 ${realtime}本`);
+            safeText('recordFormalCount', `動画 ${formal}本`);
+            safeText('recordRealtimeCount', `カメラ ${realtime}本`);
         }
 
         function updateRecordComparisonSummary() {
             const records = analysisRangeRecords();
+            updateRecordEmptyState('analysis', records);
             const emptyIds = ['recordSummaryAvgTime', 'recordSummaryBest', 'recordSummaryWorst', 'recordSummaryAvgElbow', 'recordSummaryAvgTorso', 'recordSummaryAvgHasuji', 'recordSummaryLastSaved'];
             safeText('recordSummaryCount', `${records.length}本`);
             if (!records.length) {
@@ -10182,6 +10234,27 @@ service cloud.firestore {
             safeText('recordSummaryAvgTorso', torso.length ? `${avg(torso).toFixed(1)}°` : '---');
             safeText('recordSummaryAvgHasuji', hasuji.length ? `${avg(hasuji).toFixed(1)}°` : '---');
             safeText('recordSummaryLastSaved', latest ? `${formatRecordDate(latest)} / ${recordTypeLabel(latest)}` : '---');
+        }
+
+        function updateRecordEmptyState(section, records) {
+            const panel = document.getElementById(`tab-${section}`);
+            const empty = records.length === 0;
+            const hasRecords = !!AppState.records?.length;
+            if (panel) {
+                panel.dataset.empty = String(empty);
+                panel.dataset.hasRecords = String(hasRecords);
+            }
+            const message = document.getElementById(`${section}EmptyState`);
+            if (message) message.hidden = !empty;
+            safeText(`${section}EmptyTitle`, hasRecords ? 'この条件に一致する記録はありません' : 'まだ測定記録がありません');
+            const resetButton = document.getElementById(`${section}ClearFiltersBtn`);
+            if (resetButton) resetButton.hidden = !empty || !hasRecords;
+        }
+
+        function resetRecordFilters() {
+            setAnalysisRecordRange(null, null, { silent: true, update: false });
+            setRecordMeasurementFilter('all');
+            setRecordFilterMode('all');
         }
 
         function recordsByDataKind(kind) {
@@ -10257,6 +10330,7 @@ service cloud.firestore {
             renderDataCenterTable('realtime', realtime);
             renderDataCenterTable('formal', formal);
             const all = [...realtime, ...formal];
+            updateRecordEmptyState('data', all);
             const latest = all.length ? [...all].sort((a, b) => new Date(b.recordedAt || 0) - new Date(a.recordedAt || 0))[0] : null;
             safeText('dataAllCount', `${all.length}本`);
             safeText('dataAllRealtimeCount', `${realtime.length}本`);
@@ -13750,11 +13824,11 @@ service cloud.firestore {
                             : 'カメラ待機');
                 }
             }
-            card.classList.remove('condition-good', 'condition-warn', 'condition-bad');
-            card.classList.add(`condition-${tone}`);
-            safeText('realtimeConditionVerdict', tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足'));
+            card.classList.remove('condition-good', 'condition-warn', 'condition-bad', 'condition-idle');
+            card.classList.add(`condition-${AppState.isCameraRunning ? tone : 'idle'}`);
+            safeText('realtimeConditionVerdict', !AppState.isCameraRunning ? 'カメラ待機' : (tone === 'good' ? '測定しやすい' : (tone === 'warn' ? '補正推奨' : '条件不足')));
             safeText('realtimeConditionDistance', distance ? `${distance.toFixed(1)}m / 推奨2.0〜3.0m` : '推奨2.0〜3.0m');
-            safeText('realtimeConditionResolution', width && height ? `${width}x${height}` : '---');
+            safeText('realtimeConditionResolution', AppState.isCameraRunning && width && height ? `${width}x${height}` : '---');
             safeText('realtimeConditionFps', fps ? `${fps.toFixed(1)}fps` : '---');
             safeText('realtimeConditionUpperBody', upper ? `${Math.round(upper * 100)}%` : '未検出');
             safeText('realtimeConditionAngleQuality', angleQuality ? `${Math.round(angleQuality * 100)}%` : '未検出');
@@ -13764,7 +13838,7 @@ service cloud.firestore {
                 : (tone === 'warn'
                     ? '右肩・右肘・右手首が離れて見える位置へ微調整してください。'
                     : '距離2〜3m、胸〜肩の高さに固定してください。');
-            safeText('realtimeConditionAdvice', advice);
+            safeText('realtimeConditionAdvice', AppState.isCameraRunning ? advice : 'カメラ未接続');
         }
 
         function axisTiltFromVertical(dx, dy) {
@@ -24199,9 +24273,13 @@ service cloud.firestore {
             drawVideoResultGraphs(startFrame ?? peakFrame ?? 0);
             drawVideoCorrectionGraphs(startFrame ?? peakFrame ?? 0);
             await drawVideoAnalysisFrame(startFrame ?? peakFrame ?? 0);
-            openVideoEditorWorkspace({ frameIndex: startFrame ?? peakFrame ?? 0, zoom: 1.75, tool: 'select' });
+            if (AppState.videoCorrectionDraftRestored) {
+                openVideoEditorWorkspace({ frameIndex: startFrame ?? peakFrame ?? 0, zoom: 1.75, tool: 'select' });
+            } else {
+                switchVideoStep('result');
+            }
             setVideoAnalysisProgress(100, '解析完了');
-            showToast(AppState.videoCorrectionDraftRestored ? '前回の補正内容を復元しました' : '編集ワークスペースを開きました', AppState.videoCorrectionDraftRestored ? 'green' : 'blue');
+            showToast(AppState.videoCorrectionDraftRestored ? '前回の補正内容を復元しました' : '解析結果を表示しました', 'green');
         }
 
         function exportVideoAnalysisReport() {
@@ -24904,7 +24982,7 @@ service cloud.firestore {
                     actualFpsUnknown: true
                 });
                 updateVideoManualRangeUi();
-                if (!AppState.videoAnalysisBusy) switchVideoStep('mark');
+                if (!AppState.videoAnalysisBusy) switchVideoStep('load');
                 updateVideoNativeFpsEstimate(tempUrl);
             };
             video.onerror = () => {
@@ -25265,6 +25343,8 @@ service cloud.firestore {
             'export-csv': () => exportCSV(),
             'clear-history': () => clearHistory(),
             'export-data-csv': ({ value }) => exportDataCenterCSV(value),
+            'export-research-excel': () => exportResearchExcel(),
+            'reset-record-filters': () => resetRecordFilters(),
             'confirm-manual-range': ({ value }) => confirmVideoManualRange(value === 'analyze'),
             'start-video-analysis': () => startVideoAnalysisFromButton(),
             'set-video-rate': ({ number }) => setVideoSlowRateValue(number),

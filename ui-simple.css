@@ -1,0 +1,176 @@
+/* Keep the primary measurement workflow compact without changing the editor. */
+body.measurement-simple {
+    background: #f6f7f8;
+    letter-spacing: 0;
+}
+.simple-empty-state[hidden], .simple-empty-actions [hidden] { display: none !important; }
+body.measurement-simple .app-section-header {
+    border: 0 !important;
+    border-bottom: 1px solid #dce1e5 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 12px 0 20px !important;
+}
+body.measurement-simple button:focus-visible,
+body.measurement-simple summary:focus-visible,
+body.measurement-simple select:focus-visible {
+    outline: 3px solid #0284c7;
+    outline-offset: 3px;
+}
+body.measurement-simple:not(.practice-focus) #measureHeader {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0 0 14px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    margin-bottom: 0;
+}
+#measureModeBadge, #measureModeSubtitle, #systemStatus,
+#realtimeModeLauncher > div:first-child, #startModePrompt { display: none !important; }
+body.measurement-simple #realtimeModeLauncher {
+    display: block;
+    padding: 0;
+    margin: 0 0 16px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+body.measurement-simple .realtime-mode-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 460px;
+    gap: 4px;
+    padding: 4px;
+    background: #e7ebee;
+    border-radius: 8px;
+}
+body.measurement-simple .measure-mode-button {
+    min-height: 44px;
+    border-radius: 5px;
+    border: 0;
+    padding: 10px 12px;
+    box-shadow: none;
+    justify-content: center;
+    background: transparent;
+}
+body.measurement-simple .measure-mode-button.is-active {
+    background: #fff;
+    color: #075985;
+    box-shadow: 0 1px 3px #00000012;
+}
+body.measurement-simple .measure-mode-button small { display: none; }
+body.measurement-simple .measure-mode-button strong { font-size: 14px; }
+body.measurement-simple .measure-mode-button .mode-icon {
+    width: auto;
+    height: auto;
+    background: transparent;
+    font-size: 16px;
+}
+body.measurement-simple #videoContainer { border-radius: 8px; box-shadow: none; }
+body.measurement-simple #startOverlay { padding: 54px 16px 24px; background: #20272b; }
+body.measurement-simple #startOverlay > .fa-camera { font-size: 32px; margin: 0 0 18px; color: #9ca9b0; }
+body.measurement-simple #cameraQuickControls { padding: 0; border: 0; background: transparent; box-shadow: none; }
+#cameraQuickStatus:empty { display: none; }
+body.measurement-simple #cameraQuickControls label:has(#handSwingModeToggle) { border: 0; border-radius: 0; padding: 8px 0; background: transparent; }
+body.measurement-simple #cameraQuickControls label:has(#handSwingModeToggle) span.text-\[11px\] { display: none; }
+body.measurement-simple #realtimeMeasurementSourceHelp { color: #d0dae0; font-weight: 400; }
+body.measurement-simple #startBtn { background: #0284c7; border-radius: 6px; min-height: 48px; }
+body.measurement-simple #measureSidePanel > #latestMeasurementPanel,
+body.measurement-simple #measureSidePanel > #realtimeSessionCard {
+    border: 0;
+    border-bottom: 1px solid #dce1e5;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 0 16px;
+}
+#latestMeasurementPanel > .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.measurement-simple #latestMeasurementPanel .metric-card {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 8px 2px;
+    min-width: 0;
+}
+#latestMeasurementPanel .metric-card > span { font-size: 12px; color: #59666e; }
+body.measurement-simple #latestMeasurementPanel .metric-card > div { font-size: 21px; color: #263238; }
+body.measurement-simple #latestTime { color: #0369a1 !important; }
+#realtimeSessionCard > .realtime-session-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.measurement-simple .realtime-session-item { background: transparent; border: 0; padding: 8px 2px; border-radius: 0; }
+.simple-metric-details { border-top: 1px solid #e3e7e9; margin-top: 8px; }
+.simple-metric-details > summary { padding: 10px 0; min-height: 44px; color: #59666e; cursor: pointer; font-size: 12px; font-weight: 600; }
+#realtimeSessionHint { display: none; }
+body.measurement-simple #realtimeConditionCard { border-radius: 8px; box-shadow: none; }
+#realtimeConditionCard.condition-idle { color: #59666e; border-color: #dce1e5; background: #fff; }
+body.measurement-simple .video-workflow-tabs {
+    padding: 4px;
+    border: 0;
+    border-radius: 8px !important;
+    background: #e7ebee !important;
+    box-shadow: none;
+}
+body.measurement-simple .video-workflow-tabs .video-step-btn {
+    min-height: 48px;
+    padding: 8px;
+    font-size: 14px !important;
+    border: 0;
+    border-radius: 5px !important;
+    background: transparent !important;
+    color: #52616b !important;
+    white-space: nowrap;
+}
+body.measurement-simple .video-workflow-tabs .video-step-btn.active { background: #fff !important; color: #0369a1 !important; box-shadow: 0 1px 3px #00000012; }
+body.measurement-simple .video-workflow-tabs .video-step-btn:disabled { color: #6b7780 !important; cursor: not-allowed; box-shadow: none; }
+body.measurement-simple .video-workflow-tabs .video-step-btn:disabled.active { color: #0369a1 !important; }
+body[data-video-step="load"][data-video-loaded="false"] #videoContextActionBar { display: none !important; }
+body.measurement-simple .video-workflow-side > .official-flow-card { display: none; }
+.simple-empty-state { padding: 56px 16px; text-align: center; }
+.simple-empty-state > i { font-size: 28px; color: #71808a; }
+.simple-empty-state h3 { margin: 18px 0; font-size: 16px; font-weight: 700; color: #35454f; }
+.simple-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.simple-empty-actions button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #b8c8d0; border-radius: 6px; background: #fff; color: #075985; font-size: 14px; font-weight: 600; }
+.simple-empty-actions button:hover { background: #edf6fa; }
+#tab-analysis[data-empty="true"] .record-summary-grid,
+#tab-analysis[data-empty="true"] #analysisChartGrid,
+#tab-data[data-empty="true"] #dataSummaryGrid,
+#tab-data[data-empty="true"] #dataRecordTables,
+#tab-data[data-empty="true"] #researchChartSection { display: none; }
+#tab-analysis[data-empty="true"] #analysisRangePanel { margin-top: 12px; }
+#tab-analysis[data-has-records="false"] #analysisRangePanel,
+#tab-analysis[data-has-records="false"] .app-section-header > div:first-child > div { display: none; }
+body.measurement-simple .video-workflow-main { border: 0 !important; border-radius: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+body.measurement-simple .video-file-pick-card { border: 1px solid #c4d4dd !important; border-radius: 8px !important; background: #fff !important; box-shadow: none !important; }
+body.measurement-simple .video-file-pick-input { border-radius: 6px !important; border-width: 1px !important; font-size: 14px !important; padding: 8px !important; }
+body.measurement-simple .video-file-pick-input::file-selector-button { border-radius: 5px !important; background: #0369a1 !important; }
+body.measurement-simple .video-file-pick-icon { background: #e0f2fe !important; color: #0369a1 !important; border-radius: 8px !important; }
+body.measurement-simple[data-video-loaded="true"] #videoSlowMotionCard { display: block !important; border-radius: 8px; background: #edf6fa; border-color: #c4d4dd; color: #35454f; }
+body.measurement-simple #videoSlowMotionCard label { min-width: 0; width: 100%; }
+body.measurement-simple #videoSlowMotionCard select { width: 100%; min-width: 0; font-size: 13px; }
+body.measurement-simple #videoStep-load > label { border-radius: 6px !important; }
+body.measurement-simple #detailEmptyState { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+body.measurement-simple #tab-analysis .analysis-chart-card { border-radius: 8px; box-shadow: none; }
+@media (max-width: 820px) {
+    #videoStep-correct.video-editor-v2 .ve-transport { flex-wrap: wrap; }
+    #videoStep-correct.video-editor-v2 .ve-transport .ve-position { flex: 1 1 72px; }
+    body.measurement-simple #toastContainer { bottom: calc(82px + env(safe-area-inset-bottom)) !important; z-index: 100; }
+    body.measurement-simple[data-active-tab="video"] #toastContainer { bottom: calc(150px + env(safe-area-inset-bottom)) !important; }
+    body.measurement-simple:not(.practice-focus) #measureHeader { padding: 0 0 10px; flex-direction: row !important; align-items: center !important; }
+    #measureHeader h2 { font-size: 16px; }
+    body.measurement-simple #measureHeader > div { width: auto !important; }
+    body.measurement-simple #measureHeader > div:last-child { display: flex !important; flex: 0 0 auto; }
+    body.measurement-simple #measureHeader #practiceModeBtn { display: none; }
+    body.measurement-simple #measureHeader #practiceFocusBtn { min-height: 44px; width: auto; font-size: 12px; border-radius: 6px; background: #e7ebee; color: #35454f; }
+    body.measurement-simple #startOverlay { padding: 48px 14px 20px; }
+    body.measurement-simple #startOverlay #cameraQuickControls { width: 100%; margin-top: 0; padding: 0; }
+    body.measurement-simple #measureSidePanel { gap: 16px; }
+    body.measurement-simple .video-workflow-tabs .video-step-btn { font-size: 13px !important; padding: 8px 4px !important; }
+    body.measurement-simple .video-workflow-tabs .video-step-btn i { display: none; }
+    .simple-empty-state { padding: 36px 8px; }
+    #tab-analysis .analysis-toolbar-panel { width: 100%; }
+    body.measurement-simple #videoFilePickCard { border-radius: 8px; }
+}

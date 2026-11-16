@@ -77,7 +77,7 @@ async function main() {
     const uiContext = vm.createContext({
         AppState: { videoAnalysisBusy: true },
         clamp: (value, min, max) => Math.max(min, Math.min(max, value)),
-        document: { body: { dataset: { videoStep: 'mark' } }, getElementById: id => elements[id] },
+        document: { body: { dataset: { videoStep: 'mark' } }, getElementById: id => elements[id], querySelectorAll: () => [] },
         safeText: (id, value) => { elements[id].textContent = value; }
     });
     vm.runInContext(declaration('setVideoAnalysisProgress') + declaration('updateVideoContextAction'), uiContext);
@@ -88,7 +88,7 @@ async function main() {
     assert.equal(elements.videoContextNextBtn.disabled, true, 'metadata or tab updates cannot re-enable analysis while busy');
     assert.equal(elements.videoContextNextBtn.dataset.contextStep, 'analyze');
     assert.match(html, /video\.onloadedmetadata = \(\) => \{\s*video\.onloadedmetadata = null;/);
-    assert.match(html, /if \(!AppState\.videoAnalysisBusy\) switchVideoStep\('mark'\)/);
+    assert.match(html, /if \(!AppState\.videoAnalysisBusy\) switchVideoStep\('load'\)/);
     console.log('PASS: startup retry, metadata/decoded-frame readiness, seek ownership, progress and busy-state lifecycle');
 }
 
