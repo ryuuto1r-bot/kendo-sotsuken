@@ -5602,7 +5602,7 @@
         }
     </style>
     <link rel="stylesheet" href="./video-editor.css?v=20261103">
-    <link rel="stylesheet" href="./ui-simple.css?v=20261116">
+    <link rel="stylesheet" href="./ui-simple.css?v=20261116-fps">
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui measurement-simple">
 
@@ -6304,6 +6304,40 @@ service cloud.firestore {
                     動画選択
                 </div>
 	                <div id="videoStep-load" class="video-step-panel active space-y-3">
+                <section id="videoSlowMotionCard" class="video-fps-settings" aria-labelledby="videoFpsSettingsTitle">
+                    <div class="video-fps-heading">
+                        <h3 id="videoFpsSettingsTitle"><i class="fa-solid fa-clock mr-1" aria-hidden="true"></i>FPS設定</h3>
+                        <span id="videoSlowMotionStatus" role="status">補正なし</span>
+                    </div>
+                    <div class="video-fps-fields">
+                        <label for="videoAnalysisFpsSelect">解析FPS
+                            <select id="videoAnalysisFpsSelect">
+                                <option value="30">30 fps</option>
+                                <option value="60" selected>60 fps</option>
+                                <option value="120">120 fps</option>
+                                <option value="240">240 fps</option>
+                            </select>
+                        </label>
+                        <label for="videoSlowMotionSelect">撮影・再生条件
+                            <select id="videoSlowMotionSelect">
+                                <option value="1" selected>通常動画（スロー補正なし）</option>
+                                <option value="2">120 → 60 fps（2倍スロー）</option>
+                                <option value="4">120 → 30 / 240 → 60 fps（4倍）</option>
+                                <option value="8">240 → 30 fps（8倍スロー）</option>
+                                <option value="custom">撮影・再生FPSを指定</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="videoSlowMotionCustomControls" class="hidden video-fps-custom">
+                        <label for="videoCaptureFpsInput">撮影FPS
+                            <input id="videoCaptureFpsInput" type="number" min="30" max="960" step="1" value="240" inputmode="numeric">
+                        </label>
+                        <label for="videoPlaybackFpsInput">再生FPS
+                            <input id="videoPlaybackFpsInput" type="number" min="1" max="240" step="1" value="30" inputmode="numeric">
+                        </label>
+                    </div>
+                    <p id="videoSlowMotionHint" class="sr-only">通常 / 120→60 / 240→30</p>
+                </section>
 	                <div id="videoFilePickCard" class="video-file-pick-card">
                     <span class="video-file-pick-icon"><i class="fa-solid fa-file-video text-xl"></i></span>
                     <span class="min-w-0">
@@ -6503,32 +6537,6 @@ service cloud.firestore {
                         <div class="bg-white/70 rounded p-2"><span class="opacity-70">判定</span><div id="videoDiagUsability" class="font-black">---</div></div>
                     </div>
                 </div>
-                <div id="videoSlowMotionCard" class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-950">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                    <div class="font-black text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>スロー動画</div>
-                            <p id="videoSlowMotionStatus" class="mt-1 text-[11px] leading-relaxed">補正なし</p>
-                        </div>
-                        <label class="font-bold min-w-[220px]">動画の種類
-                            <select id="videoSlowMotionSelect" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
-                                <option value="1" selected="">通常動画（補正なし）</option>
-                                <option value="2">120fps撮影 → 60fps再生（2倍）</option>
-                                <option value="4">120fps撮影 → 30fps再生 / 240fps → 60fps（4倍）</option>
-                                <option value="8">240fps撮影 → 30fps再生（8倍）</option>
-                                <option value="custom">手動設定</option>
-                            </select>
-                        </label>
-                    </div>
-                    <div id="videoSlowMotionCustomControls" class="hidden grid grid-cols-2 gap-2 mt-3">
-                        <label class="font-bold">撮影fps
-                            <input id="videoCaptureFpsInput" type="number" min="30" max="960" step="1" value="240" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
-                        </label>
-                        <label class="font-bold">再生fps
-                            <input id="videoPlaybackFpsInput" type="number" min="1" max="240" step="1" value="30" class="mt-1 w-full border border-indigo-200 rounded px-3 py-2 bg-white">
-                        </label>
-                    </div>
-                    <p id="videoSlowMotionHint" class="mt-2 text-[11px] leading-relaxed text-indigo-800">通常 / 120→60 / 240→30</p>
-                </div>
                 <div class="flex justify-end mt-3">
                     <button type="button" data-kendo-action="switch-video-step" data-value="mark" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-bold">次へ</button>
                 </div>
@@ -6612,14 +6620,6 @@ service cloud.firestore {
                         <select id="angleReferenceSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
                             <option value="torso" selected="">体幹基準で補正</option>
                             <option value="screen">画面基準のまま</option>
-                        </select>
-                    </label>
-                    <label class="font-bold text-slate-700">解析fps
-                        <select id="videoAnalysisFpsSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
-                            <option value="30">30fps</option>
-                            <option value="60" selected="">60fps</option>
-                            <option value="120">120fps</option>
-                            <option value="240">240fps</option>
                         </select>
                     </label>
                 </div>
@@ -7188,19 +7188,20 @@ service cloud.firestore {
                     <label class="block font-bold text-slate-700">テープ色
                         <select id="videoTapeColorSelect" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 bg-white">
                             <option value="yellow" selected="">黄色テープ</option>
-                            <option value="green">黄緑テープ</option>
+                            <option value="green">緑テープ</option>
+                            <option value="blue">青テープ</option>
                             <option value="orange">オレンジテープ</option>
                             <option value="red">赤テープ</option>
                         </select>
                     </label>
-                    <label class="block font-bold text-slate-700">探索範囲 <span id="videoTapeRoiValue" class="font-mono-num text-lime-700">12%</span>
+                    <label class="block font-bold text-slate-700">追跡表示枠の半径（肩幅比） <span id="videoTapeRoiValue" class="font-mono-num text-lime-700">12%</span>
                         <input id="videoTapeRoiSlider" type="range" min="0.06" max="0.24" step="0.01" value="0.12" class="w-full accent-lime-600 mt-1">
                     </label>
                     <label class="block font-bold text-slate-700">色の許容幅 <span id="videoTapeToleranceValue" class="font-mono-num text-lime-700">24°</span>
                         <input id="videoTapeToleranceSlider" type="range" min="10" max="44" step="1" value="24" class="w-full accent-lime-600 mt-1">
                     </label>
-                    <label class="block font-bold text-slate-700">色の濃さ <span id="videoTapeSaturationValue" class="font-mono-num text-lime-700">32%</span>
-                        <input id="videoTapeSaturationSlider" type="range" min="0.18" max="0.62" step="0.01" value="0.32" class="w-full accent-lime-600 mt-1">
+                    <label class="block font-bold text-slate-700">彩度の下限 <span id="videoTapeSaturationValue" class="font-mono-num text-lime-700">55%</span>（明度65%以上）
+                        <input id="videoTapeSaturationSlider" type="range" min="0.55" max="0.90" step="0.01" value="0.55" class="w-full accent-lime-600 mt-1">
                     </label>
                     <label class="block font-bold text-slate-700">最小検出量 <span id="videoTapeMinPixelsValue" class="font-mono-num text-lime-700">8</span>
                         <input id="videoTapeMinPixelsSlider" type="range" min="4" max="40" step="1" value="8" class="w-full accent-lime-600 mt-1">
@@ -7210,7 +7211,7 @@ service cloud.firestore {
                     </label>
                     <label class="flex items-center gap-2 font-bold text-slate-700">
                         <input id="videoTapeRoiVisibleToggle" type="checkbox" checked class="w-4 h-4 accent-lime-600">
-                        ROIを映像上に表示
+                        追跡表示枠を映像に重ねる
                     </label>
                     <div id="videoTapeQualityStatus" class="rounded-lg border border-lime-100 bg-lime-50 px-3 py-2 text-[11px] font-bold text-lime-900">
                         竹刀検出: 未解析
@@ -7572,6 +7573,7 @@ service cloud.firestore {
 	                                    <option value="red">赤</option>
 	                                    <option value="blue">青</option>
 	                                    <option value="green">緑</option>
+	                                    <option value="orange">オレンジ</option>
 	                                </select>
 	                            </div>
 	                            <div>
@@ -8060,8 +8062,8 @@ service cloud.firestore {
             shinaiExtension: 2.4,
             tipRoiRatio: 0.12,
             tapeHueTolerance: 24,
-            tapeSaturationMin: 0.32,
-            tapeValueMin: 0.25,
+            tapeSaturationMin: 0.55,
+            tapeValueMin: 0.65,
             tapeMinPixels: 8,
             tapeRoiVisible: true,
             shaftAngleSearchDeg: 40,
@@ -9128,8 +9130,8 @@ service cloud.firestore {
             Params.shinaiExtension = 2.4;
             Params.tipRoiRatio = 0.12;
             Params.tapeHueTolerance = 24;
-            Params.tapeSaturationMin = 0.32;
-            Params.tapeValueMin = 0.25;
+            Params.tapeSaturationMin = 0.55;
+            Params.tapeValueMin = 0.65;
             Params.tapeMinPixels = 8;
             Params.tapeRoiVisible = true;
             Params.referenceShoulderMeters = 0.42;
@@ -10525,7 +10527,7 @@ service cloud.firestore {
                 cameraDirection: profile.cameraDirection || '',
                 cameraDistanceMeters: researchNumber(profile.cameraDistanceMeters),
                 deviceLabel: profile.deviceLabel || '',
-                appVersion: 'v194-shared-timing-aspect',
+                appVersion: 'v195-full-frame-tape',
                 angleCoordinateVersion: 'image-aspect-v1',
                 researchCapturedAt: new Date().toISOString()
             };
@@ -12423,7 +12425,7 @@ service cloud.firestore {
         function cloudRecordPayload(record) {
             const normalized = normalizeRecordMeta(record);
             return {
-                appVersion: normalized.appVersion || 'v188',
+                appVersion: normalized.appVersion || '',
                 recordId: String(normalized.id),
                 recordType: recordTypeOf(normalized),
                 source: normalized.source || '',
@@ -13202,7 +13204,7 @@ service cloud.firestore {
         }
 
         function getTapeHue(color) {
-            return { yellow: 55, red: 0, blue: 215, green: 125 }[color] ?? 55;
+            return { yellow: 55, orange: 30, red: 0, blue: 215, green: 125 }[color] ?? 55;
         }
 
         function hueDistance(a, b) {
@@ -13221,8 +13223,8 @@ service cloud.firestore {
             const data = scanCtx.getImageData(x0, y0, width, height).data;
             const targetHue = getTapeHue(color);
             const hueTolerance = clamp(Number(Params.tapeHueTolerance || 24), 8, 60);
-            const minSaturation = clamp(Number(Params.tapeSaturationMin || 0.32), 0.1, 0.8);
-            const minValue = clamp(Number(Params.tapeValueMin || 0.25), 0.1, 0.9);
+            const minSaturation = clamp(Number(Params.tapeSaturationMin || 0.55), 0.55, 1);
+            const minValue = clamp(Number(Params.tapeValueMin || 0.65), 0.65, 1);
             const minPixels = clamp(Math.round(Number(Params.tapeMinPixels || 8)), 3, 80);
             let count = 0, sx = 0, sy = 0;
             for (let y = 0; y < height; y += 2) {
@@ -13312,6 +13314,34 @@ service cloud.firestore {
 
         function normalizeShinaiTrackingMode(mode = Params.shinaiTrackingMode) {
             return ['auto', 'tape', 'shaft'].includes(mode) ? mode : 'auto';
+        }
+
+        function detectRealtimeTapeInCanvas(scanCtx, width, height, landmarks, previous, timeMs) {
+            if (!scanCtx?.canvas || width < 1 || height < 1) return null;
+            // 前腕方向の推定ROIで剣先を切り落とさず、縮小した全画面で色領域を追跡する。
+            const scale = Math.min(1, 640 / Math.max(width, height));
+            const w = Math.max(1, Math.round(width * scale));
+            const h = Math.max(1, Math.round(height * scale));
+            if (!AppState.liveTapeScanCanvas) {
+                AppState.liveTapeScanCanvas = document.createElement('canvas');
+                AppState.liveTapeScanCtx = AppState.liveTapeScanCanvas.getContext('2d', { willReadFrequently: true });
+            }
+            const canvas = AppState.liveTapeScanCanvas;
+            const ctx = AppState.liveTapeScanCtx;
+            if (!ctx) return null;
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+            }
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(scanCtx.canvas, 0, 0, width, height, 0, 0, w, h);
+            const sx = w / width, sy = h / height;
+            const prior = previous ? {
+                ...previous, x: previous.x * sx, y: previous.y * sy,
+                vx: Number(previous.vx || 0) * sx, vy: Number(previous.vy || 0) * sy,
+            } : null;
+            const hit = detectVideoTapeInCanvas(ctx, w, h, landmarks, prior, timeMs);
+            return hit ? { ...hit, x: hit.x / sx, y: hit.y / sy, vx: hit.vx / sx, vy: hit.vy / sy } : null;
         }
 
         function trackingModeUsesTape(mode = Params.shinaiTrackingMode) {
@@ -13601,15 +13631,15 @@ service cloud.firestore {
             if (trackingModeUsesTape(mode)) {
                 const tapeHit = options.videoTracking
                     ? detectVideoTapeInCanvas(scanCtx, w, h, landmarks, previous, frameTimeMs)
-                    : detectTapeInCanvas(scanCtx, w, h, roi.x, roi.y, radius, Params.tapeColor);
+                    : detectRealtimeTapeInCanvas(scanCtx, w, h, landmarks, previous, frameTimeMs);
                 if (tapeHit && Number(tapeHit.quality || 0) >= Number(Params.minTapeConfidence || 0.18)) {
                     const jump = previousFresh ? Math.hypot(tapeHit.x - previous.x, tapeHit.y - previous.y) : 0;
                     if (!(previous?.source === 'shaft' && previousFresh && jump > shoulderPx * 1.2 && Number(tapeHit.quality || 0) < 0.70)) {
-                    return {
+                        return {
                             hit: { ...tapeHit, source: 'tape', timeMs: frameTimeMs },
-                        roi,
-                        radius,
-                    };
+                            roi: options.videoTracking ? roi : { ...roi, x: tapeHit.x, y: tapeHit.y },
+                            radius,
+                        };
                     }
                 }
                 // 短い色欠落で本体推定へ切り替えると速度が跳ぶため、65msだけ同じ方式を保持する。
@@ -25549,7 +25579,6 @@ service cloud.firestore {
             if (globalFps) globalFps.value = String(Params.targetFps);
             applyCalibrationInputs();
             updateVideoDiagnostics(AppState.videoDiagnostics || { empty: true });
-            showToast(`動画解析fpsを ${Params.targetFps}fps にしました`, 'blue');
         });
         const videoSlowMotionSelect = document.getElementById('videoSlowMotionSelect');
         const videoCaptureFpsInput = document.getElementById('videoCaptureFpsInput');
@@ -25557,10 +25586,9 @@ service cloud.firestore {
         [videoSlowMotionSelect, videoCaptureFpsInput, videoPlaybackFpsInput].forEach(input => {
             if (!input) return;
             input.addEventListener('change', () => {
-                const settings = updateVideoSlowMotionUi();
+                updateVideoSlowMotionUi();
                 updateVideoManualRangeUi();
                 updateVideoDiagnostics(AppState.videoDiagnostics || { empty: true });
-                showToast(settings.factor > 1.001 ? `スロー補正 ${settings.factor.toFixed(settings.factor % 1 ? 2 : 0)}倍を適用します` : 'スロー補正をOFFにしました', 'blue');
             });
             input.addEventListener('input', () => {
                 updateVideoSlowMotionUi();
@@ -26042,6 +26070,8 @@ service cloud.firestore {
         const elTapeColor = document.getElementById('paramTapeColor');
         if (elTapeColor) elTapeColor.addEventListener('change', e=>{
             Params.tapeColor = e.target.value;
+            if (videoTapeColorSelect) videoTapeColorSelect.value = e.target.value;
+            updateVideoTapeQualityStatus();
         });
 
         const elShinaiExtension = document.getElementById('paramShinaiExtension');
