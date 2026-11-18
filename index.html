@@ -5603,8 +5603,23 @@
     </style>
     <link rel="stylesheet" href="./video-editor.css?v=20261103">
     <link rel="stylesheet" href="./ui-simple.css?v=20261116-fps">
+    <style>
+        .practice-trash { display:inline-grid; place-items:center; width:44px; height:44px; color:#ac3535; border-radius:4px; vertical-align:middle; }
+        .practice-trash:hover,.practice-trash:focus-visible { background:#fff0ef; }
+        #localRecordRemoval { position:fixed; inset:0; margin:auto; width:min(25rem,calc(100% - 2rem)); height:fit-content; padding:1.25rem; border:1px solid #d2d8da; border-radius:8px; color:#273039; background:white; }
+        #localRecordRemoval::backdrop { background:rgb(24 32 38 / 44%); }
+        #localRecordRemoval h2 { font-size:1.05rem; font-weight:700; }
+        #localRecordRemoval p { margin:.65rem 0 1rem; line-height:1.6; }
+        #localRecordRemoval form { display:flex; justify-content:flex-end; gap:.5rem; }
+        #localRecordRemoval button { padding:.65rem 1rem; min-height:44px; border:1px solid #c9cfd2; border-radius:4px; }
+        #localRecordRemoval button[value="delete"] { background:#a52f32; border-color:#a52f32; color:white; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased practice-simple easy-ui measurement-simple">
+    <dialog id="localRecordRemoval" aria-labelledby="recordRemovalTitle" aria-describedby="recordRemovalDescription">
+        <h2 id="recordRemovalTitle"></h2><p id="recordRemovalDescription"></p>
+        <form method="dialog"><button type="submit" value="cancel" autofocus>キャンセル</button><button type="submit" value="delete">削除する</button></form>
+    </dialog>
 
 <nav class="kvc-app-nav bg-slate-900 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10302,6 +10317,12 @@ service cloud.firestore {
             safeText(`${prefix}Latest`, summary.latest ? formatRecordDate(summary.latest) : '---');
         }
 
+        function practiceTrashButton(record) {
+            if (recordTypeOf(record) !== 'realtime' || !/^\d+$/.test(String(record.id))) return '';
+            const label = `練習記録 #${record.id} をこの端末から削除`;
+            return `<button type="button" class="practice-trash" data-practice-delete="${record.id}" aria-label="${label}" title="${label}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>`;
+        }
+
         function renderDataCenterTable(kind, records) {
             const body = document.getElementById(kind === 'formal' ? 'dataFormalBody' : 'dataRealtimeBody');
             if (!body) return;
@@ -10312,7 +10333,7 @@ service cloud.firestore {
             const newest = [...records].reverse();
             body.innerHTML = newest.map(record => `
                 <tr>
-                    <td class="font-mono-num text-slate-500">#${record.id}</td>
+                    <td class="font-mono-num text-slate-500 whitespace-nowrap">#${record.id} ${practiceTrashButton(record)}</td>
                     <td class="whitespace-nowrap text-slate-600">${formatRecordDate(record)}</td>
                     <td class="font-black text-blue-700 font-mono-num">${Number.isFinite(Number(record.timeMs)) ? Math.round(Number(record.timeMs)) + 'ms' : '---'}</td>
                     <td class="font-black text-cyan-700 font-mono-num">${recordPeakOffsetText(record, 'official')}</td>
@@ -16567,7 +16588,7 @@ service cloud.firestore {
                         <div class="flex justify-center gap-1">
                             <button type="button" data-action="memo" data-id="${record.id}" class="history-action bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-[10px] font-bold">メモ</button>
                             <button type="button" data-action="clip" data-id="${record.id}" class="history-action bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">動画クリップ</button>
-                            <button type="button" data-action="delete" data-id="${record.id}" class="history-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold">削除</button>
+                            ${practiceTrashButton(record) || `<button type="button" data-action="delete" data-id="${record.id}" class="history-action bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold">削除</button>`}
                         </div>
                     </td>
                 `;
@@ -16644,7 +16665,7 @@ service cloud.firestore {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition';
                 tr.innerHTML = `
-	                    <td class="px-2 py-2 text-slate-500">${record.id}</td>
+	                    <td class="px-2 py-2 text-slate-500 whitespace-nowrap">${record.id} ${practiceTrashButton(record)}</td>
                         <td class="px-2 py-2"><span class="px-2 py-1 rounded-full text-[11px] font-bold ${recordTypeOf(record) === 'formal' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}">${recordTypeLabel(record)}</span></td>
                         <td class="px-2 py-2 text-slate-600 whitespace-nowrap">${formatRecordDate(record)}</td>
 	                    <td class="px-2 py-2 text-blue-700 font-bold">${record.timeMs}ms</td>
@@ -16663,6 +16684,45 @@ service cloud.firestore {
 
         function findRecordById(id) {
             return AppState.records.find(record => String(record.id) === String(id));
+        }
+
+        function confirmLocalRemoval(title, description, onAccept) {
+            const dialog = document.getElementById('localRecordRemoval');
+            if (dialog.open) return;
+            dialog.querySelector('h2').textContent = title;
+            dialog.querySelector('p').textContent = description;
+            dialog.querySelector('form').onsubmit = event => {
+                event.preventDefault();
+                dialog.close();
+                if (event.submitter?.value === 'delete') onAccept();
+            };
+            dialog.showModal();
+        }
+
+        function requestPracticeRemoval(id) {
+            const record = findRecordById(id);
+            if (!record || recordTypeOf(record) !== 'realtime') return;
+            const matches = item => String(item.id) === String(id) && recordTypeOf(item) === 'realtime'
+                && (item.recordedAt || '') === (record.recordedAt || '') && String(item.timeMs) === String(record.timeMs);
+            confirmLocalRemoval(`練習記録 #${id} を削除しますか？`,
+                `${formatRecordDate(record)} ／ 打突時間 ${record.timeMs} ms。この端末の1件のみ削除します。`, () => {
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('kendoRecords') || '[]');
+                        if (!Array.isArray(saved) || saved.filter(matches).length !== 1 || AppState.records.filter(matches).length !== 1) {
+                            return showToast('対象を特定できません。記録を再読み込みしてください', 'yellow');
+                        }
+                        localStorage.setItem('kendoRecords', JSON.stringify(saved.filter(item => !matches(item))));
+                    } catch {
+                        return showToast('この端末の記録を更新できませんでした', 'red');
+                    }
+                    AppState.records = AppState.records.filter(item => !matches(item));
+                    updateHistoryTable();
+                    updateDetailsTab();
+                    updateCharts();
+                    updateRealtimePracticeSummary();
+                    updateDataCenter();
+                    showToast('この端末から練習記録を1件削除しました', 'blue');
+                });
         }
 
         function deleteRecord(id) {
@@ -24782,9 +24842,21 @@ service cloud.firestore {
         }
 
         function clearHistory() {
-            if(confirm('全データを消去しますか？')) {
+            const snapshot = safeStorageGet('kendoRecords');
+            const count = AppState.records.length;
+            if (!count) return showToast('削除する記録はありません', 'yellow');
+            try {
+                const stored = JSON.parse(snapshot);
+                if (!Array.isArray(stored) || stored.length !== count || stored.some((entry, i) => {
+                    const shown = AppState.records[i];
+                    return String(entry.id) !== String(shown.id) || recordTypeOf(entry) !== recordTypeOf(shown)
+                        || (entry.recordedAt || '') !== (shown.recordedAt || '') || String(entry.timeMs) !== String(shown.timeMs);
+                })) return showToast('保存件数または内容が変わりました。再読み込みしてください', 'yellow');
+            } catch { return showToast('保存記録を確認できませんでした', 'yellow'); }
+            confirmLocalRemoval(`この端末の測定履歴 ${count}件を削除しますか？`, 'カメラ測定と正式記録が対象です。クラウドの記録や補正下書きは削除しません。', () => {
+                if (safeStorageGet('kendoRecords') !== snapshot || AppState.records.length !== count) return showToast('記録が変わりました。再読み込みして件数を確認してください', 'yellow');
+                try { localStorage.removeItem('kendoRecords'); } catch { return showToast('この端末の記録を削除できませんでした', 'red'); }
                 AppState.records = [];
-                safeStorageRemove('kendoRecords');
                 document.getElementById('recentHistoryBody').innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-400 font-sans">記録なし</td></tr>';
 	                ['latestTime', 'latestReactionTime', 'latestTotalResponseTime', 'latestSync', 'latestSae', 'latestStride', 'latestHasuji', 'latestRightAng', 'latestTorso', 'latestPeakSpeed', 'latestTipSpeed', 'latestTapeSpeed', 'latestVisibility', 'latestFrameMode'].forEach(id => {
 	                    const el = document.getElementById(id);
@@ -24795,7 +24867,7 @@ service cloud.firestore {
                 updateRealtimePracticeSummary();
                 updateDataCenter();
                 showToast('履歴をクリアしました', 'blue');
-            }
+            });
         }
 
         document.getElementById('startBtn').addEventListener('click', async () => {
@@ -25844,6 +25916,12 @@ service cloud.firestore {
         if (saveVideoRecordBtn) saveVideoRecordBtn.addEventListener('click', saveVideoAnalysisAsRecord);
 
         const historyBody = document.getElementById('recentHistoryBody');
+        for (const bodyId of ['recentHistoryBody', 'detailRecordsBody', 'dataRealtimeBody']) {
+            document.getElementById(bodyId)?.addEventListener('click', event => {
+                const button = event.target.closest('button[data-practice-delete]');
+                if (button) requestPracticeRemoval(button.dataset.practiceDelete);
+            });
+        }
         if (historyBody) historyBody.addEventListener('click', e => {
             const btn = e.target.closest('.history-action');
             if (!btn) return;
